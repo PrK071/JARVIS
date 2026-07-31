@@ -1,7 +1,7 @@
 # JARVIS — assistente local Qwen3.5
 
 Assistente Windows local: Qwen3.5-4B na GPU, arquivos controlados, Codex,
-pesquisa web citada, STT faster-whisper e Piper pt_BR-faber-medium.
+pesquisa web citada, STT faster-whisper e Piper pt_BR-cadu-medium.
 
 ## Uso rápido
 
@@ -33,6 +33,9 @@ python -m tern.orchestrator voice-configure
 python -m tern.orchestrator voice-model-info
 python -m tern.orchestrator voice-diagnose
 python -m tern.orchestrator voice-pronunciation-test
+python -m tern.orchestrator voice-playback-diagnose
+python -m tern.orchestrator voice-phoneme-diagnose
+python -m tern.orchestrator voice-piper-compare
 ```
 
 Pesquisa classifica intenção, expande consultas, pontua resultados, valida páginas
@@ -41,6 +44,9 @@ página genérica como fonte principal. TTS inicia pelo primeiro segmento,
 sintetiza próximos em fila limitada e Esc cancela reprodução/síntese pendente.
 Dispositivos persistem por nome e host API, com ID como fallback.
 Piper é o único TTS ativo: totalmente local, sem clonagem e sem custo por uso.
+O preset `clear_adult` usa o sample rate nativo do modelo, taxa intuitiva
+`VOICE_TTS_RATE=0.94`, defaults acústicos do Piper e normalização falada de
+status comuns em inglês. A resposta textual original permanece intacta.
 
 Documentação:
 

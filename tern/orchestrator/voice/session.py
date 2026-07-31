@@ -8,7 +8,7 @@ from .audio import CaptureOptions, SoundDeviceAudio
 from .errors import VoiceCancelled, VoiceError
 from .logging import VoiceLogger
 from .models import SynthesisOptions, TranscriptionOptions
-from .normalize import normalize_for_speech
+from .normalize import normalize_for_speech, semantic_replacements
 from .policy import (
     ConfirmationDecision,
     ConsoleIO,
@@ -161,6 +161,14 @@ class VoiceSession:
             self.console.write(answer)
             web_result = result.get("web") or {}
             sources = web_result.get("sources") or []
+            lexicon_path = Path(__file__).with_name(
+                "pronunciation_ptbr.json"
+            )
+            status_replacements = (
+                semantic_replacements(lexicon_path)
+                if self.settings.voice_translate_common_status_terms
+                else {}
+            )
             if web_result.get("used"):
                 spoken = prepare_research_spoken_text(
                     answer,
@@ -169,6 +177,7 @@ class VoiceSession:
                     read_code=self.settings.voice_read_code,
                     read_urls=self.settings.voice_read_urls,
                     summarize_long=self.settings.voice_summarize_long_responses,
+                    semantic_replacements=status_replacements,
                 )
             else:
                 spoken = prepare_spoken_text(
@@ -177,15 +186,14 @@ class VoiceSession:
                     read_code=self.settings.voice_read_code,
                     read_urls=self.settings.voice_read_urls,
                     summarize_long=self.settings.voice_summarize_long_responses,
+                    semantic_replacements=status_replacements,
                 )
             if spoken:
                 spoken = normalize_for_speech(
                     spoken,
                     "piper",
                     self.settings.voice_style,
-                    lexicon_path=Path(__file__).with_name(
-                        "pronunciation_ptbr.json"
-                    ),
+                    lexicon_path=lexicon_path,
                 )
             tts_metrics = None
             if spoken and getattr(self.tts, "mode", None) != "silent":

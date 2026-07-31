@@ -39,7 +39,9 @@ class VoiceDiagnostic:
                 "model": str(self.settings.voice_tts_model),
                 "model_available": self.settings.voice_tts_model.is_file(),
                 "voice": self.settings.voice_tts_voice,
-                "speed": self.settings.voice_tts_rate,
+                "rate": self.settings.voice_tts_rate,
+                "length_scale": 1.0 / self.settings.voice_tts_rate,
+                "style": self.settings.voice_style,
                 "output_device_name": (
                     self.settings.voice_output_device_name
                 ),

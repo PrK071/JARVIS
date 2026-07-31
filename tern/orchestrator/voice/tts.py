@@ -27,6 +27,13 @@ from .postprocess import postprocess_audio
 from .streaming import segment_for_speech
 
 
+def rate_to_length_scale(rate: float) -> float:
+    """Convert an intuitive speech rate to Piper's duration scale."""
+    if rate <= 0:
+        raise ValueError("a taxa de fala deve ser positiva")
+    return 1.0 / rate
+
+
 class TextToSpeechProvider(ABC):
     @abstractmethod
     def synthesize(
@@ -166,7 +173,7 @@ class PiperTTS(TextToSpeechProvider):
             config_factory = SynthesisConfig
         config = config_factory(
             volume=options.volume,
-            length_scale=1.0 / options.rate,
+            length_scale=rate_to_length_scale(options.rate),
         )
         chunks = []
         sample_rate = None
@@ -174,7 +181,13 @@ class PiperTTS(TextToSpeechProvider):
             for chunk in voice.synthesize(text, syn_config=config):
                 if stop_event is not None and stop_event.is_set():
                     raise TTSStreamCancelled("sintese progressiva cancelada")
-                sample_rate = int(chunk.sample_rate)
+                chunk_sample_rate = int(chunk.sample_rate)
+                if sample_rate is None:
+                    sample_rate = chunk_sample_rate
+                elif chunk_sample_rate != sample_rate:
+                    raise TTSSynthesisFailed(
+                        "Piper retornou chunks com sample rates diferentes"
+                    )
                 if hasattr(chunk, "audio_float_array"):
                     values = np.asarray(
                         chunk.audio_float_array, dtype=np.float32
@@ -185,9 +198,14 @@ class PiperTTS(TextToSpeechProvider):
                         / 32768.0
                     )
                 else:
+                    raw_pcm = chunk.audio_int16_bytes
+                    if len(raw_pcm) % np.dtype(np.int16).itemsize:
+                        raise TTSSynthesisFailed(
+                            "Piper retornou PCM int16 desalinhado"
+                        )
                     values = (
                         np.frombuffer(
-                            chunk.audio_int16_bytes, dtype=np.int16
+                            raw_pcm, dtype="<i2"
                         ).astype(np.float32)
                         / 32768.0
                     )

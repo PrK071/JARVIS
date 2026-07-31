@@ -1,10 +1,46 @@
 {
   "piper": {
-    "Qwen3.5": "Qwen três ponto cinco",
-    "GGUF": "gê gê u éfe",
-    "JSON": "jêison",
-    "API": "a pê i",
-    "Codex": "Códex",
-    "PowerShell": "Páuer Chél"
+    "semantic_replacements": {
+      "working": "funcionando",
+      "running": "em execução",
+      "loading": "carregando",
+      "searching": "pesquisando",
+      "completed": "concluído",
+      "failed": "falhou",
+      "success": "sucesso",
+      "warning": "aviso",
+      "server": "servidor",
+      "file": "arquivo",
+      "directory": "diretório",
+      "task": "tarefa",
+      "tool": "ferramenta",
+      "processing": "processando",
+      "ready": "pronto",
+      "online": "disponível",
+      "offline": "modo offline"
+    },
+    "spoken_forms": {
+      "Qwen3.5": "Qwen três ponto cinco",
+      "GGUF": "gê gê u éfe",
+      "JSON": "jêison",
+      "API": "a pê i",
+      "Codex": "Códex",
+      "PowerShell": "Páuer Chél"
+    },
+    "phoneme_overrides": {},
+    "preserve": [
+      "Windows",
+      "Python",
+      "Codex",
+      "Git",
+      "GitHub",
+      "JavaScript",
+      "Kotlin",
+      "Chromium",
+      "Selenium",
+      "Playwright",
+      "hardware",
+      "software"
+    ]
   }
 }

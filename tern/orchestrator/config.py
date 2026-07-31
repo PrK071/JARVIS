@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -155,6 +156,8 @@ class Settings:
     voice_normalize_loudness: bool
     voice_light_compression: bool
     voice_light_eq: bool
+    voice_translate_common_status_terms: bool
+    voice_piper_use_model_default_noise: bool
 
     @property
     def base_url(self) -> str:
@@ -226,6 +229,16 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     allowed_default = os.pathsep.join(
         str(path) for path in (PROJECT_ROOT, PROJECT_ROOT.parent / "llama.cpp", PROJECT_ROOT.parent / "sasori_review")
     )
+    rate_value = values.get("VOICE_TTS_RATE")
+    if rate_value is None:
+        rate_value = values.get("VOICE_TTS_SPEED")
+        if rate_value is not None:
+            warnings.warn(
+                "VOICE_TTS_SPEED foi substituida por VOICE_TTS_RATE; "
+                "a opcao antiga sera removida futuramente",
+                DeprecationWarning,
+                stacklevel=2,
+            )
     settings = Settings(
         backend=backend,
         model_path=model_path,
@@ -336,20 +349,15 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
                     PROJECT_ROOT
                     / "models"
                     / "voice"
-                    / "pt_BR-faber-medium.onnx"
+                    / "pt_BR-cadu-medium.onnx"
                 ),
             )
         ).expanduser().resolve(),
         voice_tts_voice=values.get(
-            "VOICE_TTS_VOICE", "pt_BR-faber-medium"
+            "VOICE_TTS_VOICE", "pt_BR-cadu-medium"
         ).strip(),
         voice_tts_device=values.get("VOICE_TTS_DEVICE", "cpu").strip().lower(),
-        voice_tts_rate=float(
-            values.get(
-                "VOICE_TTS_SPEED",
-                values.get("VOICE_TTS_RATE", "0.96"),
-            )
-        ),
+        voice_tts_rate=float(rate_value or "0.94"),
         voice_tts_volume=float(values.get("VOICE_TTS_VOLUME", "1.0")),
         voice_tts_timeout_seconds=int(
             values.get("VOICE_TTS_TIMEOUT_SECONDS", "60")
@@ -412,12 +420,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         voice_interrupt_key=values.get(
             "VOICE_INTERRUPT_KEY", "esc"
         ).strip().lower(),
-        voice_style=values.get("VOICE_STYLE", "default").strip().lower(),
+        voice_style=values.get("VOICE_STYLE", "clear_adult").strip().lower(),
         voice_sentence_pause_ms=int(
-            values.get("VOICE_SENTENCE_PAUSE_MS", "140")
+            values.get("VOICE_SENTENCE_PAUSE_MS", "160")
         ),
         voice_paragraph_pause_ms=int(
-            values.get("VOICE_PARAGRAPH_PAUSE_MS", "260")
+            values.get("VOICE_PARAGRAPH_PAUSE_MS", "280")
         ),
         voice_post_processing=_bool(
             values.get("VOICE_POST_PROCESSING", "false")
@@ -429,6 +437,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
             values.get("VOICE_LIGHT_COMPRESSION", "false")
         ),
         voice_light_eq=_bool(values.get("VOICE_LIGHT_EQ", "false")),
+        voice_translate_common_status_terms=_bool(
+            values.get("VOICE_TRANSLATE_COMMON_STATUS_TERMS", "true")
+        ),
+        voice_piper_use_model_default_noise=_bool(
+            values.get("VOICE_PIPER_USE_MODEL_DEFAULT_NOISE", "true")
+        ),
     )
     _validate(settings)
     return settings
@@ -499,7 +513,7 @@ def _validate(settings: Settings) -> None:
         < settings.voice_tts_chunk_min_characters
         or settings.voice_tts_chunk_max_characters > 2000
         or not 1 <= settings.voice_tts_queue_size <= 10
-        or not 0.25 <= settings.voice_tts_rate <= 4
+        or not 0.88 <= settings.voice_tts_rate <= 1.25
         or not 0 <= settings.voice_tts_volume <= 2
         or not 0 <= settings.voice_sentence_pause_ms <= 2000
         or not 0 <= settings.voice_paragraph_pause_ms <= 5000

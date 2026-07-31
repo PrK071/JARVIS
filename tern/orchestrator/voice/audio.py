@@ -36,6 +36,25 @@ class CaptureOptions:
 KeyReader = Callable[[], str | None]
 
 
+def resample_mono(
+    samples: np.ndarray, source_rate: int, target_rate: int
+) -> np.ndarray:
+    """Resample mono float audio once; never merely relabel PCM."""
+    values = np.asarray(samples, dtype=np.float32).reshape(-1)
+    if source_rate <= 0 or target_rate <= 0:
+        raise ValueError("sample rate deve ser positivo")
+    if source_rate == target_rate or not values.size:
+        return values.copy()
+    target_frames = max(1, round(values.size * target_rate / source_rate))
+    source_positions = np.arange(values.size, dtype=np.float64)
+    target_positions = np.linspace(
+        0, values.size - 1, target_frames, dtype=np.float64
+    )
+    return np.interp(
+        target_positions, source_positions, values
+    ).astype(np.float32)
+
+
 class SilenceDetector:
     def __init__(
         self,
@@ -297,19 +316,40 @@ class SoundDeviceAudio:
             raise AudioPlaybackFailed("audio sintetizado vazio")
         interrupted = False
         try:
-            self.sd.check_output_settings(
-                device=device.index,
-                channels=1,
-                samplerate=audio.sample_rate,
-                dtype="float32",
-            )
+            playback_rate = int(audio.sample_rate)
+            try:
+                self.sd.check_output_settings(
+                    device=device.index,
+                    channels=1,
+                    samplerate=playback_rate,
+                    dtype="float32",
+                )
+                resampled = False
+            except Exception:
+                fallback_rate = int(device.default_sample_rate)
+                if fallback_rate <= 0 or fallback_rate == playback_rate:
+                    raise
+                samples = resample_mono(
+                    samples, playback_rate, fallback_rate
+                )
+                playback_rate = fallback_rate
+                self.sd.check_output_settings(
+                    device=device.index,
+                    channels=1,
+                    samplerate=playback_rate,
+                    dtype="float32",
+                )
+                resampled = True
+            audio.metadata["source_sample_rate"] = int(audio.sample_rate)
+            audio.metadata["playback_sample_rate"] = playback_rate
+            audio.metadata["resampled"] = resampled
             with self.sd.OutputStream(
-                samplerate=audio.sample_rate,
+                samplerate=playback_rate,
                 device=device.index,
                 channels=1,
                 dtype="float32",
             ) as stream:
-                chunk_size = max(256, audio.sample_rate // 20)
+                chunk_size = max(256, playback_rate // 20)
                 for offset in range(0, samples.size, chunk_size):
                     key = self.key_reader()
                     key_interrupt = key == "\x1b" or (

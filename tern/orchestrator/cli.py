@@ -143,6 +143,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pronunciation.add_argument("--output", default=None)
     pronunciation.add_argument("--play", action="store_true")
+    sub.add_parser(
+        "voice-playback-diagnose",
+        help="compara WAV bruto, chunks e reprodução Piper",
+    )
+    sub.add_parser(
+        "voice-phoneme-diagnose",
+        help="inspeciona fonemas pt-BR e gera WAVs de diagnóstico",
+    )
+    sub.add_parser(
+        "voice-piper-compare",
+        help="compara as vozes pt-BR do Piper disponíveis localmente",
+    )
     ask = sub.add_parser("ask", help="executa uma solicitacao pelo supervisor")
     ask.add_argument("prompt")
     ask.add_argument("--approve-destructive", action="store_true")
@@ -217,7 +229,17 @@ def main(argv: list[str] | None = None) -> int:
                         "confirm_transcription": settings.voice_confirm_transcription,
                         "keep_recordings": settings.voice_keep_recordings,
                         "tts_streaming": settings.voice_tts_streaming,
-                        "tts_speed": settings.voice_tts_rate,
+                        "tts_rate": settings.voice_tts_rate,
+                        "tts_length_scale": (
+                            1.0 / settings.voice_tts_rate
+                        ),
+                        "style": settings.voice_style,
+                        "translate_common_status_terms": (
+                            settings.voice_translate_common_status_terms
+                        ),
+                        "piper_use_model_default_noise": (
+                            settings.voice_piper_use_model_default_noise
+                        ),
                         "sentence_pause_ms": (
                             settings.voice_sentence_pause_ms
                         ),
@@ -334,6 +356,43 @@ def main(argv: list[str] | None = None) -> int:
                 )
             finally:
                 piper.close()
+        elif args.command == "voice-playback-diagnose":
+            from .voice.errors import VoiceDisabled
+            from .voice.quality import playback_diagnose
+
+            if not settings.voice_enabled:
+                raise VoiceDisabled("voz desativada por VOICE_ENABLED=false")
+            audio, stt, tts, voice_logger = _voice_stack(settings)
+            del stt, voice_logger
+            try:
+                _print(playback_diagnose(settings, audio, tts))
+            finally:
+                tts.close()
+        elif args.command == "voice-phoneme-diagnose":
+            from .voice.errors import VoiceDisabled
+            from .voice.quality import phoneme_diagnose
+
+            if not settings.voice_enabled:
+                raise VoiceDisabled("voz desativada por VOICE_ENABLED=false")
+            audio, stt, tts, voice_logger = _voice_stack(settings)
+            del audio, stt, voice_logger
+            try:
+                _print(phoneme_diagnose(settings, tts))
+            finally:
+                tts.close()
+        elif args.command == "voice-piper-compare":
+            from .voice.errors import VoiceDisabled
+            from .voice.quality import piper_compare
+
+            if not settings.voice_enabled:
+                raise VoiceDisabled("voz desativada por VOICE_ENABLED=false")
+            audio, stt, tts, voice_logger = _voice_stack(settings)
+            del voice_logger
+            try:
+                tts.close()
+                _print(piper_compare(settings, audio, stt))
+            finally:
+                stt.close()
         elif args.command == "voice":
             from .voice.errors import VoiceDisabled
             from .voice.policy import ConsoleIO, VoiceActionApprover

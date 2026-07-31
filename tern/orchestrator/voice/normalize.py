@@ -12,6 +12,7 @@ _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s\"<>|]+")
 _HASH_RE = re.compile(r"\b[0-9a-fA-F]{32,}\b")
 _MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _PIP_RE = re.compile(r"\bpip(?:3)?\s+install\s+([A-Za-z0-9_.\-\[\],]+)", re.I)
+_QUOTED_RE = re.compile(r'''"[^"\n]*"|'[^'\n]*' ''', re.VERBOSE)
 
 
 def _spoken_code_content(value: str, *, block: bool = False) -> str:
@@ -35,7 +36,9 @@ def unwrap_markdown_code(value: str) -> str:
     )
 
 
-def _load_lexicon(path: Path | None, provider: str) -> dict[str, str]:
+def load_provider_lexicon(
+    path: Path | None, provider: str
+) -> dict[str, object]:
     if path is None or not path.is_file():
         return {}
     try:
@@ -44,6 +47,69 @@ def _load_lexicon(path: Path | None, provider: str) -> dict[str, str]:
         return {}
     selected = value.get(provider, {}) if isinstance(value, dict) else {}
     return selected if isinstance(selected, dict) else {}
+
+
+def _lexicon_section(
+    lexicon: dict[str, object], name: str
+) -> dict[str, str]:
+    selected = lexicon.get(name)
+    if isinstance(selected, dict):
+        return {
+            str(source): str(replacement)
+            for source, replacement in selected.items()
+        }
+    # Backward compatibility with the original flat provider mapping.
+    if name == "spoken_forms":
+        return {
+            str(source): str(replacement)
+            for source, replacement in lexicon.items()
+            if isinstance(replacement, str)
+        }
+    return {}
+
+
+def semantic_replacements(
+    lexicon_path: Path | None, provider: str = "piper"
+) -> dict[str, str]:
+    return _lexicon_section(
+        load_provider_lexicon(lexicon_path, provider),
+        "semantic_replacements",
+    )
+
+
+def apply_semantic_replacements(
+    text: str, replacements: dict[str, str]
+) -> str:
+    """Translate status words only outside code, URLs, paths and quotes."""
+    if not replacements:
+        return text
+    protected: list[str] = []
+
+    def protect(match: re.Match[str]) -> str:
+        protected.append(match.group(0))
+        return f"TERNPROTECTED{len(protected) - 1}TOKEN"
+
+    value = text
+    for pattern in (
+        _CODE_BLOCK_RE,
+        _INLINE_CODE_RE,
+        _URL_RE,
+        _WINDOWS_PATH_RE,
+        _QUOTED_RE,
+    ):
+        value = pattern.sub(protect, value)
+    for source, replacement in sorted(
+        replacements.items(), key=lambda item: len(item[0]), reverse=True
+    ):
+        value = re.sub(
+            rf"(?<![\w-]){re.escape(source)}(?![\w-])",
+            replacement,
+            value,
+            flags=re.IGNORECASE,
+        )
+    for index, original in enumerate(protected):
+        value = value.replace(f"TERNPROTECTED{index}TOKEN", original)
+    return value
 
 
 def normalize_for_speech(
@@ -72,8 +138,9 @@ def normalize_for_speech(
     value = re.sub(r"[*_>|~]+", " ", value)
     value = re.sub(r"(?m)^\s*[-+]\s+", "", value)
     value = re.sub(r"(?m)^\s*(\d+)[.)]\s+", r"\1. ", value)
-    for source, replacement in _load_lexicon(
-        lexicon_path, provider
+    lexicon = load_provider_lexicon(lexicon_path, provider)
+    for source, replacement in _lexicon_section(
+        lexicon, "spoken_forms"
     ).items():
         value = value.replace(source, replacement)
     replacements = {
@@ -94,7 +161,7 @@ def normalize_for_speech(
     value = value.replace(paragraph_token, "\n\n")
     value = re.sub(r"\.{2,}", ".", value)
     value = value.strip(" .") + ("." if value.strip(" .") else "")
-    if style == "jarvis":
+    if style in {"jarvis", "clear_adult"}:
         value = re.sub(r"!+", ".", value)
     return value
 

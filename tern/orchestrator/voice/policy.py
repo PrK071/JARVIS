@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import Callable
 
-from .normalize import unwrap_markdown_code
+from .normalize import apply_semantic_replacements, unwrap_markdown_code
 
 
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
@@ -112,8 +112,12 @@ def prepare_spoken_text(
     read_code: bool,
     read_urls: bool,
     summarize_long: bool,
+    semantic_replacements: dict[str, str] | None = None,
 ) -> str:
     value = text.strip()
+    value = apply_semantic_replacements(
+        value, semantic_replacements or {}
+    )
     value = unwrap_markdown_code(value)
     url_found = bool(_URL_RE.search(value))
     if not read_urls:
@@ -171,6 +175,7 @@ def prepare_research_spoken_text(
     read_code: bool,
     read_urls: bool,
     summarize_long: bool,
+    semantic_replacements: dict[str, str] | None = None,
 ) -> str:
     answer = re.split(
         r"(?im)^\s*fontes?\s+consultadas?\s*:",
@@ -183,6 +188,7 @@ def prepare_research_spoken_text(
         read_code=read_code,
         read_urls=read_urls,
         summarize_long=summarize_long,
+        semantic_replacements=semantic_replacements,
     )
     if source_count:
         label = "fonte relevante" if source_count == 1 else "fontes relevantes"
