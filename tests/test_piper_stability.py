@@ -75,7 +75,7 @@ def test_cli_initializes_without_removed_dependency():
     assert build_parser().parse_args(["voice", "--no-voice"]).voice_mode == "silent"
 
 
-def test_piper_normalization_hides_markdown_urls_code_and_paths():
+def test_piper_normalization_handles_markdown_urls_code_and_paths():
     original = (
         "**Atenção:** veja https://example.com/a. "
         "Não remova o arquivo. "
@@ -96,12 +96,12 @@ def test_piper_normalization_hides_markdown_urls_code_and_paths():
     )
     assert original.startswith("**Atenção")
     assert "https://" not in spoken
-    assert "print" not in spoken
+    assert "print('não falar')" in spoken
     assert "módulo de voz" in spoken
     assert "não" in spoken.casefold()
 
 
-def test_piper_reads_inline_tool_identifiers():
+def test_piper_reads_all_inline_backtick_content():
     spoken = normalize_for_speech(
         (
             "Use `codex_delegate` e `codex_continue` com `session_id`, "
@@ -117,6 +117,21 @@ def test_piper_reads_inline_tool_identifiers():
     assert "session id" in spoken
     assert "working directory" in spoken
     assert "task" in spoken
+
+
+def test_piper_reads_commands_and_fenced_code_between_backticks():
+    spoken = normalize_for_speech(
+        (
+            "Execute `python -m pytest -q`. "
+            "Depois use:\n```python\nprint('teste concluído')\n```"
+        ),
+        "piper",
+        "default",
+    )
+
+    assert "código disponível" not in spoken.casefold()
+    assert "python -m pytest -q" in spoken
+    assert "print('teste concluído')" in spoken
 
 
 def test_piper_lexicon_is_provider_specific():

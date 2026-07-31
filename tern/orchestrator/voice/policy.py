@@ -4,12 +4,10 @@ import re
 from enum import Enum
 from typing import Callable
 
-from .normalize import spoken_inline_code
+from .normalize import unwrap_markdown_code
 
 
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
-_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```", re.MULTILINE)
-_INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _DANGEROUS_RE = re.compile(
     r"\b("
     r"apag(?:ar|ue)|delet(?:ar|e)|remov(?:er|a)|sobrescrev(?:er|a)|"
@@ -116,13 +114,7 @@ def prepare_spoken_text(
     summarize_long: bool,
 ) -> str:
     value = text.strip()
-    code_found = bool(_CODE_BLOCK_RE.search(value))
-    if not read_code:
-        value = _CODE_BLOCK_RE.sub(" Código disponível na tela. ", value)
-        value = _INLINE_CODE_RE.sub(
-            lambda match: spoken_inline_code(match.group(1)),
-            value,
-        )
+    value = unwrap_markdown_code(value)
     url_found = bool(_URL_RE.search(value))
     if not read_urls:
         value = _URL_RE.sub(" fonte disponível na tela ", value)
@@ -135,8 +127,6 @@ def prepare_spoken_text(
     value = re.sub(r"[*#>|_]+", " ", value)
     value = re.sub(r"\s+", " ", value).strip()
     suffixes = []
-    if code_found and not read_code and "Código disponível" not in value:
-        suffixes.append("Código disponível na tela.")
     if url_found and not read_urls and "fonte disponível" not in value.casefold():
         suffixes.append("Fontes disponíveis na tela.")
     if len(value) <= max_characters or not summarize_long:

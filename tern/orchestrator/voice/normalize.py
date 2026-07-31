@@ -5,24 +5,34 @@ import re
 from pathlib import Path
 
 
-_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```")
+_CODE_BLOCK_RE = re.compile(r"```([\s\S]*?)```")
 _INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _URL_RE = re.compile(r"https?://\S+", re.I)
 _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s\"<>|]+")
 _HASH_RE = re.compile(r"\b[0-9a-fA-F]{32,}\b")
 _MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _PIP_RE = re.compile(r"\bpip(?:3)?\s+install\s+([A-Za-z0-9_.\-\[\],]+)", re.I)
-_SIMPLE_INLINE_IDENTIFIER_RE = re.compile(
-    r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*$"
-)
 
 
-def spoken_inline_code(value: str) -> str:
-    """Speak simple identifiers while keeping actual commands on screen."""
-    identifier = value.strip()
-    if _SIMPLE_INLINE_IDENTIFIER_RE.fullmatch(identifier):
-        return identifier.replace("_", " ")
-    return "o comando exibido na tela"
+def _spoken_code_content(value: str, *, block: bool = False) -> str:
+    content = value.strip()
+    if block and "\n" in content:
+        first_line, remainder = content.split("\n", 1)
+        if re.fullmatch(r"[A-Za-z0-9_+.-]{1,30}", first_line.strip()):
+            content = remainder.strip()
+    return content.replace("_", " ")
+
+
+def unwrap_markdown_code(value: str) -> str:
+    """Remove Markdown backticks while preserving their content for speech."""
+    value = _CODE_BLOCK_RE.sub(
+        lambda match: _spoken_code_content(match.group(1), block=True),
+        value,
+    )
+    return _INLINE_CODE_RE.sub(
+        lambda match: _spoken_code_content(match.group(1)),
+        value,
+    )
 
 
 def _load_lexicon(path: Path | None, provider: str) -> dict[str, str]:
@@ -47,9 +57,7 @@ def normalize_for_speech(
     paragraph_token = "TERNPARAGRAPHPAUSE"
     value = re.sub(r"\n\s*\n+", f" {paragraph_token} ", value)
     value = _MARKDOWN_LINK_RE.sub(r"\1", value)
-    value = _CODE_BLOCK_RE.sub(
-        " O código completo está disponível na tela. ", value
-    )
+    value = unwrap_markdown_code(value)
     value = _PIP_RE.sub(
         lambda match: (
             f"Instale o pacote {match.group(1).replace('-', ' ')} "
@@ -60,10 +68,6 @@ def normalize_for_speech(
     value = _WINDOWS_PATH_RE.sub(_spoken_path, value)
     value = _URL_RE.sub("o link exibido na tela", value)
     value = _HASH_RE.sub("o identificador exibido na tela", value)
-    value = _INLINE_CODE_RE.sub(
-        lambda match: spoken_inline_code(match.group(1)),
-        value,
-    )
     value = re.sub(r"(?m)^\s*#{1,6}\s*", "", value)
     value = re.sub(r"[*_>|~]+", " ", value)
     value = re.sub(r"(?m)^\s*[-+]\s+", "", value)

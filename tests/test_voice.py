@@ -541,7 +541,7 @@ def test_long_response_is_summarized_for_speech():
     assert "Detalhes completos" in spoken
 
 
-def test_code_is_not_read_in_full():
+def test_code_between_backticks_is_read():
     spoken = prepare_spoken_text(
         "Use:\n```python\nprint('segredo')\n```",
         max_characters=300,
@@ -549,11 +549,11 @@ def test_code_is_not_read_in_full():
         read_urls=False,
         summarize_long=True,
     )
-    assert "print" not in spoken
-    assert "Código disponível" in spoken
+    assert "print('segredo')" in spoken
+    assert "código disponível" not in spoken.casefold()
 
 
-def test_inline_tool_identifiers_are_read_through_full_speech_pipeline():
+def test_inline_code_is_read_through_full_speech_pipeline():
     prepared = prepare_spoken_text(
         (
             "Ferramentas `codex_delegate` e `codex_continue`. "

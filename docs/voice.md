@@ -193,8 +193,10 @@ identificada; use `--play` para ouvi-los em sequência.
 
 ## TTS progressivo
 
-Resposta textual completa permanece visível. Texto falado remove código, caminhos
-e URLs conforme política; respostas web recebem resumo e aviso de links na tela.
+Resposta textual completa permanece visível. Crases são tratadas apenas como
+formatação: identificadores, comandos e blocos entre crases permanecem na fala.
+Caminhos e URLs seguem a política própria; respostas web recebem resumo e aviso
+de links na tela.
 Segmentador preserva abreviações (`Dr.`/`Sr.`), decimais, `Qwen3.5`, URLs,
 caminhos e código. Blocos obedecem limites configurados.
 

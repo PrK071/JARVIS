@@ -54,17 +54,17 @@ def test_url_is_not_spoken():
     assert "fonte disponível" in " ".join(values)
 
 
-def test_code_is_replaced_before_segmentation():
+def test_fenced_code_is_read_before_segmentation():
     values = segment_for_speech(
         "Código: ```python\nprint('x')\n``` Resultado pronto.",
         minimum=1,
         maximum=100,
     )
-    assert "print" not in " ".join(values)
-    assert "Código disponível" in " ".join(values)
+    assert "print('x')" in " ".join(values)
+    assert "disponível na tela" not in " ".join(values)
 
 
-def test_inline_tool_identifiers_are_spoken_before_segmentation():
+def test_inline_code_is_read_before_segmentation():
     values = segment_for_speech(
         (
             "Use `codex_delegate`, `codex_continue`, `session_id`, "
