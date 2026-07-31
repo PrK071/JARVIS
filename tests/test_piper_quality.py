@@ -173,8 +173,8 @@ def test_config_legacy_speed_warns_and_remains_compatible():
 
 def test_clear_adult_defaults_preserve_model_noise():
     settings = load_settings({})
-    assert settings.voice_tts_voice == "pt_BR-cadu-medium"
-    assert settings.voice_tts_model.name == "pt_BR-cadu-medium.onnx"
+    assert settings.voice_tts_voice == "miro"
+    assert settings.voice_tts_model.name == "miro_pt-BR.onnx"
     assert settings.voice_tts_rate == 0.94
     assert settings.voice_style == "clear_adult"
     assert settings.voice_sentence_pause_ms == 160
@@ -182,17 +182,11 @@ def test_clear_adult_defaults_preserve_model_noise():
     assert settings.voice_piper_use_model_default_noise is True
 
 
-def test_faber_remains_selectable_without_changing_provider(tmp_path):
-    model = tmp_path / "pt_BR-faber-medium.onnx"
-    settings = load_settings(
-        {
-            "VOICE_TTS_MODEL": str(model),
-            "VOICE_TTS_VOICE": "pt_BR-faber-medium",
-        }
-    )
+def test_faber_remains_selectable_without_changing_provider():
+    settings = load_settings({"VOICE_PIPER_VOICE": "faber"})
     assert settings.voice_tts_provider == "piper"
-    assert settings.voice_tts_model == model.resolve()
-    assert settings.voice_tts_voice == "pt_BR-faber-medium"
+    assert settings.voice_tts_model.name == "pt_BR-faber-medium.onnx"
+    assert settings.voice_tts_voice == "faber"
 
 
 def test_piper_receives_rate_as_inverse_length_scale(tmp_path):

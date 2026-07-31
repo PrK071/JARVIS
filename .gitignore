@@ -41,6 +41,7 @@ temp/
 *.gguf
 *.safetensors
 *.onnx
+models/piper/**/*.onnx.json
 *.pt
 *.pth
 *.ckpt

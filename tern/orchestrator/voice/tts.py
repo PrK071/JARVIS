@@ -62,6 +62,7 @@ class PiperTTS(TextToSpeechProvider):
         model_path: str | Path,
         audio: SoundDeviceAudio,
         *,
+        config_path: str | Path | None = None,
         output_device: str | int | None = None,
         output_device_name: str | None = None,
         interrupt_key: str = "esc",
@@ -75,6 +76,11 @@ class PiperTTS(TextToSpeechProvider):
         synthesis_config_factory: Any | None = None,
     ):
         self.model_path = Path(model_path).expanduser().resolve()
+        self.config_path = (
+            Path(config_path).expanduser().resolve()
+            if config_path is not None
+            else Path(str(self.model_path) + ".json")
+        )
         self.audio = audio
         self.output_device_selector = output_device
         self.output_device_name = output_device_name
@@ -110,9 +116,19 @@ class PiperTTS(TextToSpeechProvider):
                 ) from exc
             factory = PiperVoice.load
         try:
-            self._voice = factory(str(self.model_path), use_cuda=False)
+            self._voice = factory(
+                str(self.model_path),
+                config_path=str(self.config_path),
+                use_cuda=False,
+            )
         except TypeError:
-            self._voice = factory(str(self.model_path))
+            try:
+                self._voice = factory(
+                    str(self.model_path),
+                    config_path=str(self.config_path),
+                )
+            except TypeError:
+                self._voice = factory(str(self.model_path))
         except Exception as exc:
             raise TTSSynthesisFailed(
                 f"falha ao carregar voz Piper: {exc}"
@@ -472,3 +488,4 @@ class PiperTTS(TextToSpeechProvider):
 
     def close(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
+        self._voice = None

@@ -1,7 +1,9 @@
 # JARVIS — assistente local Qwen3.5
 
 Assistente Windows local: Qwen3.5-4B na GPU, arquivos controlados, Codex,
-pesquisa web citada, STT faster-whisper e Piper pt_BR-cadu-medium.
+pesquisa web citada, STT faster-whisper e Piper local. A voz pt-BR é
+selecionada por alias; Miro é a seleção provisória e Faber permanece como
+fallback.
 
 ## Uso rápido
 
@@ -36,6 +38,7 @@ python -m tern.orchestrator voice-pronunciation-test
 python -m tern.orchestrator voice-playback-diagnose
 python -m tern.orchestrator voice-phoneme-diagnose
 python -m tern.orchestrator voice-piper-compare
+python -m tern.orchestrator voice-compare-models
 ```
 
 Pesquisa classifica intenção, expande consultas, pontua resultados, valida páginas
@@ -47,6 +50,12 @@ Piper é o único TTS ativo: totalmente local, sem clonagem e sem custo por uso.
 O preset `clear_adult` usa o sample rate nativo do modelo, taxa intuitiva
 `VOICE_TTS_RATE=0.94`, defaults acústicos do Piper e normalização falada de
 status comuns em inglês. A resposta textual original permanece intacta.
+
+Vozes Piper instaladas podem ser selecionadas por `VOICE_PIPER_VOICE`:
+`miro`, `jeff`, `cadu`, `dii` ou `faber`. O comando
+`voice-compare-models` gera WAVs equivalentes, calcula CER/WER com o
+faster-whisper e reproduz Miro, Jeff, Cadu, Dii e Faber nessa ordem. Nenhum
+modelo é baixado durante síntese ou conversa.
 
 Documentação:
 

@@ -193,10 +193,11 @@ python -m tern.orchestrator voice-pronunciation-test
 python -m tern.orchestrator voice-playback-diagnose
 python -m tern.orchestrator voice-phoneme-diagnose
 python -m tern.orchestrator voice-piper-compare
+python -m tern.orchestrator voice-compare-models
 ```
 
 `voice-diagnose` é leve: não chama Qwen nem STT. Confirma Piper instalado,
-modelo Cadu, saída resolvida por nome, síntese, reprodução, cancelamento e
+modelo selecionado, saída resolvida por nome, síntese, reprodução, cancelamento e
 limpeza. `voice-pronunciation-test` gera 12 WAVs numa pasta temporária
 identificada; use `--play` para ouvi-los em sequência.
 
@@ -207,10 +208,50 @@ independente. Os WAVs ficam em
 o locale `pt-br`, mostra fonemas somente no diagnóstico e salva amostras em
 `.orchestrator\piper-phoneme-diagnose`.
 
-`voice-piper-compare` avalia apenas vozes pt-BR já instaladas, usa o
-faster-whisper como indicador de CER/WER e grava
-`.orchestrator\piper-voice-compare\comparison-report.json`. Cadu é o padrão;
-Faber e Jeff continuam selecionáveis por `VOICE_TTS_MODEL`.
+`voice-piper-compare` mantém o diagnóstico antigo de Faber, Cadu e Jeff.
+`voice-compare-models` é a comparação auditiva atual: usa exatamente o mesmo
+texto normalizado e os padrões acústicos de cada modelo para Miro, Jeff, Cadu,
+Dii e Faber. Também gera uma variante em taxa 0,94, usa o faster-whisper apenas
+como indicador de CER/WER e grava:
+
+```text
+.orchestrator\piper-model-comparison\
+  comparison-report.md
+  comparison-report.json
+  miro-completo.wav
+  jeff-completo.wav
+  cadu-completo.wav
+  dii-completo.wav
+  faber-completo.wav
+```
+
+Por padrão, os WAVs completos são reproduzidos nessa ordem e Esc cancela a
+reprodução. Ao final, a escolha numérica atualiza somente
+`VOICE_PIPER_VOICE` no `.env`. Para gerar sem reproduzir nem selecionar:
+
+```powershell
+python -m tern.orchestrator voice-compare-models --no-play --no-select
+```
+
+Aliases portáveis:
+
+```dotenv
+VOICE_PIPER_VOICE=miro
+# Valores: miro, jeff, cadu, dii, faber
+# VOICE_PIPER_MODEL_PATH=
+# VOICE_PIPER_CONFIG_PATH=
+```
+
+A ordem de resolução é: caminho explícito válido, alias, padrão Miro e Faber
+como fallback de emergência. Somente uma sessão ONNX é carregada. Trocar a voz
+exige reiniciar a sessão atual do assistente, liberando o modelo anterior.
+Não há download durante conversa nem acesso de rede durante síntese.
+
+Miro e Dii foram obtidos somente como pares `.onnx`/`.onnx.json` dos
+repositórios [Miro](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_miro/tree/main)
+e [Dii](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii/tree/main) do
+OpenVoiceOS. Checkpoints `.ckpt` não são usados nem baixados. Os modelos
+permanecem locais e ignorados pelo Git.
 
 ## Ritmo, sample rate e pronúncia
 

@@ -14,6 +14,7 @@ import numpy as np
 from .models import AudioData, AudioResult, SynthesisOptions, TranscriptionOptions
 from .normalize import normalize_for_speech
 from .tts import PiperTTS, rate_to_length_scale
+from .voices import piper_voice_aliases
 
 
 PLAYBACK_PHRASE = (
@@ -361,14 +362,9 @@ def piper_compare(
 
     root = settings.state_dir / "piper-voice-compare"
     root.mkdir(parents=True, exist_ok=True)
+    aliases = piper_voice_aliases(Path(__file__).resolve().parents[3])
     voice_paths = {
-        "faber": settings.voice_tts_model,
-        "cadu": settings.voice_tts_model.with_name(
-            "pt_BR-cadu-medium.onnx"
-        ),
-        "jeff": settings.voice_tts_model.with_name(
-            "pt_BR-jeff-medium.onnx"
-        ),
+        alias: aliases[alias][0] for alias in ("faber", "cadu", "jeff")
     }
     report: dict[str, Any] = {
         "ok": True,
@@ -386,7 +382,11 @@ def piper_compare(
                 ),
             }
             continue
-        provider = PiperTTS(model_path, audio)
+        provider = PiperTTS(
+            model_path,
+            audio,
+            config_path=aliases[voice_name][1],
+        )
         voice_root = root / voice_name
         voice_root.mkdir(parents=True, exist_ok=True)
         items = []

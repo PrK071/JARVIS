@@ -120,6 +120,10 @@ class Settings:
     voice_stt_timeout_seconds: int
     voice_tts_provider: str
     voice_mode: str
+    voice_piper_voice: str
+    voice_piper_requested_voice: str
+    voice_piper_config_path: Path
+    voice_piper_fallback: bool
     voice_tts_model: Path
     voice_tts_voice: str
     voice_tts_device: str
@@ -239,6 +243,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
                 DeprecationWarning,
                 stacklevel=2,
             )
+    from .voice.voices import resolve_piper_voice
+
+    piper_voice = resolve_piper_voice(values, PROJECT_ROOT)
     settings = Settings(
         backend=backend,
         model_path=model_path,
@@ -342,20 +349,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         voice_mode=values.get(
             "VOICE_MODE", values.get("VOICE_TTS_PROVIDER", "piper")
         ).strip().lower(),
-        voice_tts_model=Path(
-            values.get(
-                "VOICE_TTS_MODEL",
-                str(
-                    PROJECT_ROOT
-                    / "models"
-                    / "voice"
-                    / "pt_BR-cadu-medium.onnx"
-                ),
-            )
-        ).expanduser().resolve(),
-        voice_tts_voice=values.get(
-            "VOICE_TTS_VOICE", "pt_BR-cadu-medium"
-        ).strip(),
+        voice_piper_voice=piper_voice.alias,
+        voice_piper_requested_voice=piper_voice.requested_alias,
+        voice_piper_config_path=piper_voice.config_path,
+        voice_piper_fallback=piper_voice.fallback,
+        voice_tts_model=piper_voice.model_path,
+        voice_tts_voice=piper_voice.alias,
         voice_tts_device=values.get("VOICE_TTS_DEVICE", "cpu").strip().lower(),
         voice_tts_rate=float(rate_value or "0.94"),
         voice_tts_volume=float(values.get("VOICE_TTS_VOLUME", "1.0")),

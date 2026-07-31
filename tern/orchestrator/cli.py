@@ -66,6 +66,7 @@ def _voice_stack(settings, *, mode: str | None = None):
     tts = PiperTTS(
         settings.voice_tts_model,
         audio,
+        config_path=settings.voice_piper_config_path,
         output_device=settings.voice_output_device,
         output_device_name=settings.voice_output_device_name,
         interrupt_key=settings.voice_interrupt_key,
@@ -155,6 +156,17 @@ def build_parser() -> argparse.ArgumentParser:
         "voice-piper-compare",
         help="compara as vozes pt-BR do Piper disponíveis localmente",
     )
+    model_compare = sub.add_parser(
+        "voice-compare-models",
+        help="gera e reproduz comparação justa entre modelos Piper pt-BR",
+    )
+    model_compare.add_argument("--no-play", action="store_true")
+    selection = model_compare.add_mutually_exclusive_group()
+    selection.add_argument(
+        "--select",
+        choices=("miro", "jeff", "cadu", "dii", "faber"),
+    )
+    selection.add_argument("--no-select", action="store_true")
     ask = sub.add_parser("ask", help="executa uma solicitacao pelo supervisor")
     ask.add_argument("prompt")
     ask.add_argument("--approve-destructive", action="store_true")
@@ -219,6 +231,12 @@ def main(argv: list[str] | None = None) -> int:
                         "tts_provider": settings.voice_tts_provider,
                         "mode": settings.voice_mode,
                         "tts_model": settings.voice_tts_model,
+                        "piper_voice": settings.voice_piper_voice,
+                        "piper_requested_voice": (
+                            settings.voice_piper_requested_voice
+                        ),
+                        "piper_config": settings.voice_piper_config_path,
+                        "piper_fallback": settings.voice_piper_fallback,
                         "tts_voice": settings.voice_tts_voice,
                         "tts_device": settings.voice_tts_device,
                         "input_device": settings.voice_input_device,
@@ -340,6 +358,7 @@ def main(argv: list[str] | None = None) -> int:
             piper = PiperTTS(
                 settings.voice_tts_model,
                 audio,
+                config_path=settings.voice_piper_config_path,
                 output_device=settings.voice_output_device,
                 output_device_name=settings.voice_output_device_name,
                 interrupt_key=settings.voice_interrupt_key,
@@ -391,6 +410,30 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 tts.close()
                 _print(piper_compare(settings, audio, stt))
+            finally:
+                stt.close()
+        elif args.command == "voice-compare-models":
+            from .voice.errors import VoiceDisabled
+            from .voice.model_compare import compare_piper_models
+            from .voice.policy import ConsoleIO
+
+            if not settings.voice_enabled:
+                raise VoiceDisabled("voz desativada por VOICE_ENABLED=false")
+            audio, stt, tts, voice_logger = _voice_stack(settings)
+            del voice_logger
+            tts.close()
+            try:
+                _print(
+                    compare_piper_models(
+                        settings,
+                        audio,
+                        stt,
+                        play=not args.no_play,
+                        selection=args.select,
+                        prompt_for_selection=not args.no_select,
+                        console=ConsoleIO(),
+                    )
+                )
             finally:
                 stt.close()
         elif args.command == "voice":
