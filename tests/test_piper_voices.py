@@ -12,6 +12,7 @@ from tern.orchestrator.voice import model_compare
 from tern.orchestrator.voice.model_compare import (
     MODEL_COMPARISON_PHRASES,
     _join_with_pause,
+    _word_differences,
     compare_piper_models,
 )
 from tern.orchestrator.voice.models import AudioResult
@@ -175,10 +176,43 @@ def test_comparison_command_is_registered():
 
 def test_normalized_comparison_text_is_identical_for_every_voice():
     texts = [text for _filename, text in MODEL_COMPARISON_PHRASES]
-    assert len(texts) == 15
-    assert len(set(texts)) == 15
+    assert len(texts) == 20
+    assert len(set(texts)) == 20
     assert all("trrabalho" not in text.casefold() for text in texts)
     assert all("trabarro" not in text.casefold() for text in texts)
+    assert [name for name, _text in MODEL_COMPARISON_PHRASES] == [
+        "01-trabalho.wav",
+        "02-trabalhando.wav",
+        "03-trabalhador.wav",
+        "04-servidor.wav",
+        "05-orquestrador.wav",
+        "06-diretorio.wav",
+        "07-programacao.wav",
+        "08-assistente.wav",
+        "09-pergunta.wav",
+        "10-alerta.wav",
+        "11-tecnico.wav",
+        "12-familia-trabalho.wav",
+        "13-erres.wav",
+        "14-repositorio.wav",
+        "15-conclusao.wav",
+        "16-desenvolvimento.wav",
+        "17-arquivo.wav",
+        "18-pesquisa.wav",
+        "19-falha.wav",
+        "20-pronto.wav",
+    ]
+
+
+def test_word_differences_records_omissions_and_substitutions():
+    omitted, substitutions = _word_differences(
+        "O trabalhador verificou o retrabalho.",
+        "O trabalhador viu.",
+    )
+    assert omitted == ["verificou", "o"]
+    assert substitutions == [
+        {"expected": "retrabalho", "actual": "viu"},
+    ]
 
 
 def test_continuous_audio_uses_700ms_pause():
@@ -259,7 +293,7 @@ def test_comparison_generates_wavs_report_and_persists_alias(
         prompt_for_selection=False,
     )
     output = Path(result["output"])
-    assert len(list((output / "faber").glob("*.wav"))) == 15
+    assert len(list((output / "faber").glob("*.wav"))) == 20
     assert (output / "faber-completo.wav").is_file()
     assert (output / "faber-rate-094.wav").is_file()
     assert Path(result["report_markdown"]).is_file()

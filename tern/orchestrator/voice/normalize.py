@@ -160,7 +160,9 @@ def normalize_for_speech(
     value = re.sub(r"\s*\n+\s*", ". ", value)
     value = value.replace(paragraph_token, "\n\n")
     value = re.sub(r"\.{2,}", ".", value)
-    value = value.strip(" .") + ("." if value.strip(" .") else "")
+    value = value.strip(" .")
+    if value and value[-1] not in ".?!":
+        value += "."
     if style in {"jarvis", "clear_adult"}:
         value = re.sub(r"!+", ".", value)
     return value

@@ -38,9 +38,27 @@ class VoiceDiagnostic:
                 "provider": self.settings.voice_tts_provider,
                 "model": str(self.settings.voice_tts_model),
                 "model_available": self.settings.voice_tts_model.is_file(),
-                "voice": self.settings.voice_tts_voice,
-                "rate": self.settings.voice_tts_rate,
-                "length_scale": 1.0 / self.settings.voice_tts_rate,
+                "voice": (
+                    self.settings.voice_windows_voice_id
+                    if self.settings.voice_tts_provider == "windows_sapi"
+                    else self.settings.voice_tts_voice
+                ),
+                "rate": (
+                    self.settings.voice_windows_rate
+                    if self.settings.voice_tts_provider == "windows_sapi"
+                    else self.settings.voice_tts_rate
+                ),
+                "volume": (
+                    self.settings.voice_windows_volume
+                    if self.settings.voice_tts_provider == "windows_sapi"
+                    else self.settings.voice_tts_volume
+                ),
+                "length_scale": (
+                    None
+                    if self.settings.voice_tts_provider == "windows_sapi"
+                    else 1.0 / self.settings.voice_tts_rate
+                ),
+                "fallback": self.settings.voice_fallback_provider,
                 "style": self.settings.voice_style,
                 "output_device_name": (
                     self.settings.voice_output_device_name

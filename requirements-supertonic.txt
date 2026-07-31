@@ -1,0 +1,2 @@
+# Optional Phase-A-only environment for local Supertonic 3 inference.
+supertonic==1.3.1

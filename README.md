@@ -1,9 +1,8 @@
 # JARVIS — assistente local Qwen3.5
 
 Assistente Windows local: Qwen3.5-4B na GPU, arquivos controlados, Codex,
-pesquisa web citada, STT faster-whisper e Piper local. A voz pt-BR é
-selecionada por alias; Miro é a seleção provisória e Faber permanece como
-fallback.
+pesquisa web citada e STT faster-whisper. Microsoft Daniel pt-BR é o TTS
+principal; Piper permanece como fallback local.
 
 ## Uso rápido
 
@@ -54,8 +53,8 @@ status comuns em inglês. A resposta textual original permanece intacta.
 Vozes Piper instaladas podem ser selecionadas por `VOICE_PIPER_VOICE`:
 `miro`, `jeff`, `cadu`, `dii` ou `faber`. O comando
 `voice-compare-models` gera WAVs equivalentes, calcula CER/WER com o
-faster-whisper e reproduz Miro, Jeff, Cadu, Dii e Faber nessa ordem. Nenhum
-modelo é baixado durante síntese ou conversa.
+faster-whisper e reproduz somente candidatos locais com licença identificada.
+Nenhum modelo é baixado durante síntese ou conversa.
 
 Documentação:
 

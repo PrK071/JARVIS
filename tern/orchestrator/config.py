@@ -124,6 +124,10 @@ class Settings:
     voice_piper_requested_voice: str
     voice_piper_config_path: Path
     voice_piper_fallback: bool
+    voice_windows_voice_id: str
+    voice_windows_rate: float
+    voice_windows_volume: int
+    voice_fallback_provider: str
     voice_tts_model: Path
     voice_tts_voice: str
     voice_tts_device: str
@@ -353,6 +357,20 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         voice_piper_requested_voice=piper_voice.requested_alias,
         voice_piper_config_path=piper_voice.config_path,
         voice_piper_fallback=piper_voice.fallback,
+        voice_windows_voice_id=values.get(
+            "VOICE_WINDOWS_VOICE_ID",
+            (
+                "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore"
+                "\\Voices\\Tokens\\MSTTS_V110_ptBR_DanielM"
+            ),
+        ).strip(),
+        voice_windows_rate=float(values.get("VOICE_WINDOWS_RATE", "1.5")),
+        voice_windows_volume=int(
+            values.get("VOICE_WINDOWS_VOLUME", "100")
+        ),
+        voice_fallback_provider=values.get(
+            "VOICE_FALLBACK_PROVIDER", "piper"
+        ).strip().lower(),
         voice_tts_model=piper_voice.model_path,
         voice_tts_voice=piper_voice.alias,
         voice_tts_device=values.get("VOICE_TTS_DEVICE", "cpu").strip().lower(),
@@ -489,10 +507,25 @@ def _validate(settings: Settings) -> None:
         raise ValueError("configuracao de relevancia web invalida")
     if settings.voice_stt_provider not in {"faster_whisper"}:
         raise ValueError("VOICE_STT_PROVIDER deve ser faster_whisper")
-    if settings.voice_tts_provider != "piper":
-        raise ValueError("VOICE_TTS_PROVIDER deve ser piper")
-    if settings.voice_mode not in {"piper", "silent"}:
-        raise ValueError("VOICE_MODE deve ser piper ou silent")
+    if settings.voice_tts_provider not in {"piper", "windows_sapi"}:
+        raise ValueError(
+            "VOICE_TTS_PROVIDER deve ser piper ou windows_sapi"
+        )
+    if settings.voice_mode not in {"piper", "windows_sapi", "silent"}:
+        raise ValueError(
+            "VOICE_MODE deve ser piper, windows_sapi ou silent"
+        )
+    if settings.voice_fallback_provider != "piper":
+        raise ValueError("VOICE_FALLBACK_PROVIDER deve ser piper")
+    if (
+        not settings.voice_windows_voice_id
+        or not -10 <= settings.voice_windows_rate <= 10
+        or not 0 <= settings.voice_windows_volume <= 100
+    ):
+        raise ValueError(
+            "VOICE_WINDOWS_RATE deve estar entre -10 e 10 e "
+            "VOICE_WINDOWS_VOLUME entre 0 e 100"
+        )
     if settings.voice_stt_device != "cpu" or settings.voice_tts_device != "cpu":
         raise ValueError("STT e Piper devem usar CPU")
     if settings.voice_stt_compute_type not in {"int8", "int8_float32"}:

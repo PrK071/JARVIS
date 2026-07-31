@@ -173,8 +173,8 @@ def test_config_legacy_speed_warns_and_remains_compatible():
 
 def test_clear_adult_defaults_preserve_model_noise():
     settings = load_settings({})
-    assert settings.voice_tts_voice == "miro"
-    assert settings.voice_tts_model.name == "miro_pt-BR.onnx"
+    assert settings.voice_tts_voice == "faber"
+    assert settings.voice_tts_model.name == "pt_BR-faber-medium.onnx"
     assert settings.voice_tts_rate == 0.94
     assert settings.voice_style == "clear_adult"
     assert settings.voice_sentence_pause_ms == 160

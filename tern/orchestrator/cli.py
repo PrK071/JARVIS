@@ -54,7 +54,7 @@ def _voice_stack(settings, *, mode: str | None = None):
     from .voice.audio import SoundDeviceAudio
     from .voice.logging import VoiceLogger
     from .voice.stt import FasterWhisperSTT
-    from .voice.tts import PiperTTS
+    from .voice.tts import PiperTTS, WindowsSpeechTTS
 
     audio = SoundDeviceAudio()
     stt = FasterWhisperSTT(
@@ -63,7 +63,7 @@ def _voice_stack(settings, *, mode: str | None = None):
         compute_type=settings.voice_stt_compute_type,
         threads=settings.voice_stt_threads,
     )
-    tts = PiperTTS(
+    piper = PiperTTS(
         settings.voice_tts_model,
         audio,
         config_path=settings.voice_piper_config_path,
@@ -77,6 +77,20 @@ def _voice_stack(settings, *, mode: str | None = None):
         light_compression=settings.voice_light_compression,
         light_eq=settings.voice_light_eq,
     )
+    if settings.voice_tts_provider == "windows_sapi":
+        tts = WindowsSpeechTTS(
+            audio,
+            voice_id=settings.voice_windows_voice_id,
+            rate=settings.voice_windows_rate,
+            volume=settings.voice_windows_volume,
+            temp_directory=settings.voice_temp_directory,
+            output_device=settings.voice_output_device,
+            output_device_name=settings.voice_output_device_name,
+            interrupt_key=settings.voice_interrupt_key,
+            fallback=piper,
+        )
+    else:
+        tts = piper
     tts.mode = mode or settings.voice_mode
     logger = VoiceLogger(
         settings.state_dir / "voice-actions.jsonl",
@@ -118,12 +132,23 @@ def build_parser() -> argparse.ArgumentParser:
     voice.add_argument("--once", action="store_true")
     voice_mode = voice.add_mutually_exclusive_group()
     voice_mode.add_argument(
-        "--voice", choices=("piper",), dest="voice_mode"
+        "--voice", choices=("piper", "windows_sapi"), dest="voice_mode"
     )
     voice_mode.add_argument(
         "--no-voice", action="store_const", const="silent", dest="voice_mode"
     )
     sub.add_parser("voice-devices", help="lista dispositivos de audio")
+    sub.add_parser(
+        "voice-windows-list",
+        help="lista vozes SAPI, System.Speech e WinRT instaladas",
+    )
+    light_poc = sub.add_parser(
+        "voice-light-ptbr-poc",
+        help="gera comparação auditiva local leve pt-BR",
+    )
+    light_poc.add_argument("--windows-only", action="store_true")
+    light_poc.add_argument("--skip-stt", action="store_true")
+    light_poc.add_argument("--no-play", action="store_true")
     voice_configure = sub.add_parser(
         "voice-configure",
         help="seleciona e testa dispositivos de audio",
@@ -237,6 +262,12 @@ def main(argv: list[str] | None = None) -> int:
                         ),
                         "piper_config": settings.voice_piper_config_path,
                         "piper_fallback": settings.voice_piper_fallback,
+                        "windows_voice_id": settings.voice_windows_voice_id,
+                        "windows_rate": settings.voice_windows_rate,
+                        "windows_volume": settings.voice_windows_volume,
+                        "fallback_provider": (
+                            settings.voice_fallback_provider
+                        ),
                         "tts_voice": settings.voice_tts_voice,
                         "tts_device": settings.voice_tts_device,
                         "input_device": settings.voice_input_device,
@@ -436,6 +467,24 @@ def main(argv: list[str] | None = None) -> int:
                 )
             finally:
                 stt.close()
+        elif args.command == "voice-windows-list":
+            from .voice.windows_speech import list_windows_voices
+
+            _print(list_windows_voices())
+        elif args.command == "voice-light-ptbr-poc":
+            from .voice.light_compare import (
+                generate_light_comparison,
+                play_light_candidates,
+            )
+
+            result = generate_light_comparison(
+                settings,
+                include_stt=not args.skip_stt,
+                windows_only=args.windows_only,
+            )
+            if not args.no_play:
+                result["played"] = play_light_candidates(settings, result)
+            _print(result)
         elif args.command == "voice":
             from .voice.errors import VoiceDisabled
             from .voice.policy import ConsoleIO, VoiceActionApprover

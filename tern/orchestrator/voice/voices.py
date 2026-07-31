@@ -89,7 +89,7 @@ def resolve_piper_voice(
     values: Mapping[str, str],
     project_root: Path,
     *,
-    default_alias: str = "miro",
+    default_alias: str = "faber",
 ) -> PiperVoiceSpec:
     aliases = piper_voice_aliases(project_root)
     explicit_model = values.get("VOICE_PIPER_MODEL_PATH")

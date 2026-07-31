@@ -49,6 +49,8 @@ models/piper/**/*.onnx.json
 *.dll
 *.exe
 *.zip
+models/f5-tts-ptbr/
+models/supertonic-3/
 models/**/.cache/
 checkpoint_smollm2/
 qwen25-1.5b/

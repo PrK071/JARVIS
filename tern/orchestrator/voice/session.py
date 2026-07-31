@@ -191,7 +191,7 @@ class VoiceSession:
             if spoken:
                 spoken = normalize_for_speech(
                     spoken,
-                    "piper",
+                    self.settings.voice_tts_provider,
                     self.settings.voice_style,
                     lexicon_path=lexicon_path,
                 )
