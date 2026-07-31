@@ -1,4 +1,4 @@
-# Tern — assistente local Qwen3.5
+# JARVIS — assistente local Qwen3.5
 
 Assistente Windows local: Qwen3.5-4B na GPU, arquivos controlados, Codex,
 pesquisa web citada, STT faster-whisper e Piper pt_BR-faber-medium.
