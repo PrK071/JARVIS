@@ -24,6 +24,7 @@ all = ["tern[gguf,chat,voice]"]
 [project.scripts]
 tern = "tern.cli:main"
 tern-assistant = "tern.orchestrator.cli:main"
+jarvis = "tern.orchestrator.jarvis:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

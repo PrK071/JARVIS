@@ -12,6 +12,17 @@ python -m tern.orchestrator ask "Pesquise notícias recentes sobre IA e cite fon
 python -m tern.orchestrator voice
 ```
 
+Para disponibilizar o assistente pelo nome em qualquer terminal:
+
+```powershell
+python -m pip install --editable D:\tern
+jarvis
+```
+
+Digitar apenas `jarvis` inicia a sessão contínua de voz. Os comandos da CLI
+também ficam disponíveis pelo alias, por exemplo `jarvis status`,
+`jarvis voice --once` e `jarvis ask "Sua pergunta"`.
+
 Diagnóstico e configuração:
 
 ```powershell
