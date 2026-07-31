@@ -101,6 +101,24 @@ def test_piper_normalization_hides_markdown_urls_code_and_paths():
     assert "não" in spoken.casefold()
 
 
+def test_piper_reads_inline_tool_identifiers():
+    spoken = normalize_for_speech(
+        (
+            "Use `codex_delegate` e `codex_continue` com `session_id`, "
+            "`working_directory` e `task`."
+        ),
+        "piper",
+        "default",
+    )
+
+    assert "código disponível" not in spoken.casefold()
+    assert "codex delegate" in spoken
+    assert "codex continue" in spoken
+    assert "session id" in spoken
+    assert "working directory" in spoken
+    assert "task" in spoken
+
+
 def test_piper_lexicon_is_provider_specific():
     lexicon = (
         Path(__file__).parents[1]

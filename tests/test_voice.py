@@ -26,6 +26,7 @@ from tern.orchestrator.voice.errors import (
     VoiceCancelled,
 )
 from tern.orchestrator.voice.logging import VoiceLogger
+from tern.orchestrator.voice.normalize import normalize_for_speech
 from tern.orchestrator.voice.models import (
     AudioData,
     AudioResult,
@@ -550,6 +551,30 @@ def test_code_is_not_read_in_full():
     )
     assert "print" not in spoken
     assert "Código disponível" in spoken
+
+
+def test_inline_tool_identifiers_are_read_through_full_speech_pipeline():
+    prepared = prepare_spoken_text(
+        (
+            "Ferramentas `codex_delegate` e `codex_continue`. "
+            "Campos `session_id`, `working_directory` e `task`."
+        ),
+        max_characters=300,
+        read_code=False,
+        read_urls=False,
+        summarize_long=True,
+    )
+    spoken = normalize_for_speech(prepared, "piper", "default")
+
+    assert "código disponível" not in spoken.casefold()
+    for expected in (
+        "codex delegate",
+        "codex continue",
+        "session id",
+        "working directory",
+        "task",
+    ):
+        assert expected in spoken
 
 
 def test_url_is_not_read_in_full():

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import re
 
+from .normalize import spoken_inline_code
+
 
 _URL_RE = re.compile(r"https?://\S+", re.I)
 _CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```")
-_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+_INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s,;]+")
 _ABBREVIATION_RE = re.compile(
     r"\b(?:Dr|Dra|Sr|Sra|Srta|Prof|Profa|etc|ex|pág|vol|vs)\.",
@@ -41,7 +43,10 @@ def segment_for_speech(
     if minimum < 1 or maximum < minimum:
         raise ValueError("limites de segmento invalidos")
     value = _CODE_BLOCK_RE.sub(" Código disponível na tela. ", text)
-    value = _INLINE_CODE_RE.sub(" código disponível na tela ", value)
+    value = _INLINE_CODE_RE.sub(
+        lambda match: spoken_inline_code(match.group(1)),
+        value,
+    )
     value = _URL_RE.sub(" fonte disponível na tela. ", value)
     value = _WINDOWS_PATH_RE.sub(" caminho disponível na tela ", value)
     value = re.sub(

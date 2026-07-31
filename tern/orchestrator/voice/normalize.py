@@ -12,6 +12,17 @@ _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s\"<>|]+")
 _HASH_RE = re.compile(r"\b[0-9a-fA-F]{32,}\b")
 _MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _PIP_RE = re.compile(r"\bpip(?:3)?\s+install\s+([A-Za-z0-9_.\-\[\],]+)", re.I)
+_SIMPLE_INLINE_IDENTIFIER_RE = re.compile(
+    r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*$"
+)
+
+
+def spoken_inline_code(value: str) -> str:
+    """Speak simple identifiers while keeping actual commands on screen."""
+    identifier = value.strip()
+    if _SIMPLE_INLINE_IDENTIFIER_RE.fullmatch(identifier):
+        return identifier.replace("_", " ")
+    return "o comando exibido na tela"
 
 
 def _load_lexicon(path: Path | None, provider: str) -> dict[str, str]:
@@ -50,11 +61,7 @@ def normalize_for_speech(
     value = _URL_RE.sub("o link exibido na tela", value)
     value = _HASH_RE.sub("o identificador exibido na tela", value)
     value = _INLINE_CODE_RE.sub(
-        lambda match: (
-            "o comando exibido na tela"
-            if any(char in match.group(1) for char in " /\\-=.")
-            else match.group(1)
-        ),
+        lambda match: spoken_inline_code(match.group(1)),
         value,
     )
     value = re.sub(r"(?m)^\s*#{1,6}\s*", "", value)

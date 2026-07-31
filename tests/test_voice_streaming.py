@@ -64,6 +64,25 @@ def test_code_is_replaced_before_segmentation():
     assert "Código disponível" in " ".join(values)
 
 
+def test_inline_tool_identifiers_are_spoken_before_segmentation():
+    values = segment_for_speech(
+        (
+            "Use `codex_delegate`, `codex_continue`, `session_id`, "
+            "`working_directory` e `task`."
+        ),
+        minimum=1,
+        maximum=200,
+    )
+    spoken = " ".join(values)
+
+    assert "código disponível" not in spoken.casefold()
+    assert "codex delegate" in spoken
+    assert "codex continue" in spoken
+    assert "session id" in spoken
+    assert "working directory" in spoken
+    assert "task" in spoken
+
+
 def test_lists_keep_spoken_order():
     values = segment_for_speech(
         "- Primeiro item.\n- Segundo item.\n- Terceiro item.",
