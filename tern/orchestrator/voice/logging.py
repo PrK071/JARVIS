@@ -30,6 +30,7 @@ class VoiceLogger:
         if not self.debug_transcripts:
             record.pop("transcript", None)
             record.pop("text", None)
+            record.pop("transcript_normalized", None)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock, self.path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + os.linesep)

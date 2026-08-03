@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 from .agent import Supervisor
 from .client import LlamaClient
-from .codex import CodexRunner
-from .config import load_settings
+from .codex import CodexRunner, CodexSessionManager
+from .config import PROJECT_ROOT, load_settings
 from .runtime import RuntimeManager
 from .security import ActionLogger, PathPolicy
 from .tools import ToolRegistry
@@ -105,11 +111,221 @@ def _registry(settings, *, approval=None) -> ToolRegistry:
     return ToolRegistry(
         policy=policy,
         logger=ActionLogger(settings.state_dir / "actions.jsonl"),
-        codex=CodexRunner(policy, settings.codex_timeout),
+        codex=CodexRunner(
+            policy,
+            settings.codex_timeout,
+            endpoint=settings.codex_app_server_endpoint,
+            state_dir=settings.state_dir,
+            quick_wait_timeout=settings.codex_quick_wait_timeout_seconds,
+            hard_timeout=settings.codex_turn_hard_timeout_seconds,
+            job_retention_days=settings.codex_job_retention_days,
+        ),
         max_output_bytes=settings.max_tool_output_bytes,
         approval=approval,
+        confirmation_timeout_seconds=(
+            settings.action_confirmation_timeout_seconds
+        ),
         web=_web_client(settings),
     )
+
+
+def _show_codex_events(path: Path, *, lines: int, follow: bool) -> None:
+    position = 0
+    if path.is_file():
+        values = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        for value in values[-max(1, lines) :]:
+            print(value, flush=True)
+        position = path.stat().st_size
+    if not follow:
+        return
+    print(f"Aguardando eventos em {path}. Ctrl+C encerra o painel.", flush=True)
+    try:
+        while True:
+            if path.is_file():
+                size = path.stat().st_size
+                if size < position:
+                    position = 0
+                if size > position:
+                    with path.open("r", encoding="utf-8", errors="replace") as handle:
+                        handle.seek(position)
+                        for value in handle:
+                            print(value.rstrip(), flush=True)
+                        position = handle.tell()
+            time.sleep(0.25)
+    except KeyboardInterrupt:
+        return
+
+
+def _print_codex_shared_status(value: dict[str, object]) -> None:
+    age = value.get("last_event_age_seconds")
+    age_text = "unknown"
+    if isinstance(age, (int, float)):
+        age_text = f"{age:.1f} seconds ago"
+    tui = value.get("tui_clients_known")
+    tui_text = "unknown" if tui is None else str(tui)
+    print("Codex shared session")
+    print(f"Endpoint: {value.get('endpoint')}")
+    print(f"Thread: {value.get('thread_id') or '-'}")
+    print(f"Turn: {value.get('turn_id') or '-'}")
+    print(f"State: {value.get('state')}")
+    print(f"Last instruction: {value.get('last_instruction_source') or '-'}")
+    print(f"Queue: {value.get('queue_length', 0)}")
+    print(f"TUI clients known: {tui_text}")
+    print(
+        "Qwen bridge: "
+        + ("connected" if value.get("qwen_connected") else "disconnected")
+    )
+    print(f"Last event: {age_text}")
+    if value.get("error"):
+        print(f"Error: {value['error']}")
+
+
+def _codex_bridge_diagnose(settings, runtime: RuntimeManager, *, include_qwen: bool) -> int:
+    checks: list[tuple[str, bool, str]] = []
+
+    def record(label: str, ok: bool, detail: object = "") -> None:
+        checks.append((label, ok, str(detail) if detail not in {None, ""} else ""))
+        suffix = f": {detail}" if detail not in {None, ""} else ""
+        print(f"{label}: {'OK' if ok else 'FAIL'}{suffix}", flush=True)
+
+    executable = shutil.which("codex")
+    record("Codex executable", bool(executable), executable or "not found")
+    if not executable:
+        return 1
+    try:
+        version = subprocess.run(
+            [executable, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=True,
+        ).stdout.strip()
+        record("Codex version", True, version)
+    except Exception as exc:
+        record("Codex version", False, exc)
+        return 1
+
+    codex = CodexSessionManager(
+        PROJECT_ROOT,
+        endpoint=settings.codex_app_server_endpoint,
+        timeout=settings.codex_timeout,
+        executable=executable,
+        state_dir=settings.state_dir,
+    )
+    try:
+        try:
+            server = codex.start_server(settings.codex_app_server_start_timeout)
+            record("App Server", bool(server.get("ready")), settings.codex_app_server_endpoint)
+            record("Endpoint ready", codex.is_ready(), codex.readiness_url())
+        except Exception as exc:
+            record("App Server", False, exc)
+            return 1
+        try:
+            codex.connect()
+            record("Protocol initialized", True)
+        except Exception as exc:
+            record("Protocol initialized", False, exc)
+            return 1
+        try:
+            thread_id = codex.ensure_thread()
+            record("Thread", True, thread_id)
+            persisted = json.loads(
+                (settings.state_dir / "codex-session.json").read_text(encoding="utf-8")
+            )
+            record(
+                "Thread persisted",
+                persisted.get("thread_id") == thread_id,
+                settings.state_dir / "codex-session.json",
+            )
+        except Exception as exc:
+            record("Thread", False, exc)
+            return 1
+        direct = codex.run_turn(
+            "Leia o README do projeto e responda apenas com o nome do projeto.",
+            origin="human",
+        )
+        record(
+            "Direct turn",
+            direct.ok and bool(direct.turn_id) and bool(direct.final_response),
+            direct.turn_id or direct.error,
+        )
+        record("Events returned", direct.events > 0, direct.events)
+        record("Final response", bool(direct.final_response), direct.final_response)
+        second = codex.run_turn(
+            "Responda apenas com o thread_id atual se ele estiver disponivel; caso contrario, responda 'mesma thread'.",
+            origin="human",
+        )
+        record(
+            "Second turn same thread",
+            second.ok and second.thread_id == thread_id,
+            second.turn_id or second.error,
+        )
+        try:
+            codex.reconnect()
+            resumed = codex.ensure_thread()
+            record("Reconnection", resumed == thread_id, resumed)
+        except Exception as exc:
+            record("Reconnection", False, exc)
+
+        cancelled_result: dict[str, object] = {}
+
+        def slow_turn() -> None:
+            cancelled_result["result"] = codex.run_turn(
+                (
+                    "Execute um comando local que aguarde 20 segundos. "
+                    "Depois responda apenas 'espera concluida'. Nao altere arquivos."
+                ),
+                origin="human",
+            )
+
+        worker = threading.Thread(target=slow_turn, daemon=True)
+        worker.start()
+        deadline = time.monotonic() + 45
+        while codex.active_turn_id is None and worker.is_alive() and time.monotonic() < deadline:
+            time.sleep(0.1)
+        cancel = codex.cancel()
+        worker.join(timeout=60)
+        cancelled = cancelled_result.get("result")
+        record(
+            "Cancellation",
+            bool(cancel.get("cancelled"))
+            and cancelled is not None
+            and getattr(cancelled, "status", None) == "interrupted",
+            cancel.get("turn_id") or cancel.get("reason"),
+        )
+
+        if include_qwen:
+            try:
+                if not runtime.status()["healthy"]:
+                    runtime.start(240)
+                supervisor = Supervisor(
+                    settings,
+                    LlamaClient(settings.base_url, settings.timeout),
+                    _registry(settings, approval=_approval(True)),
+                )
+                qwen = supervisor.run(
+                    (
+                        "Peça explicitamente ao Codex para ler o README de D:\\tern "
+                        "e responder apenas com o nome do projeto. Use a ferramenta "
+                        "delegate_to_codex e mantenha a thread atual."
+                    )
+                )
+                qwen_called = qwen.get("tool_calls", 0) > 0
+                record("Qwen tool call", qwen_called, qwen.get("tool_calls", 0))
+                record(
+                    "Result returned to Qwen",
+                    qwen_called and qwen.get("ok", False) and bool(qwen.get("answer")),
+                    qwen.get("answer") or qwen.get("message"),
+                )
+            except Exception as exc:
+                record("Qwen tool call", False, exc)
+                record("Result returned to Qwen", False, "Qwen call failed")
+        else:
+            print("Qwen tool call: SKIP", flush=True)
+            print("Result returned to Qwen: SKIP", flush=True)
+    finally:
+        codex.close()
+    return 0 if all(ok for _label, ok, _detail in checks) else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -121,6 +337,65 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("stop", help="encerra llama-server")
     sub.add_parser("status", help="mostra estado do servidor")
     sub.add_parser("tools", help="lista schemas das ferramentas")
+    sub.add_parser(
+        "codex-shared-start",
+        help="inicia App Server e resolve thread persistente do projeto",
+    )
+    sub.add_parser(
+        "codex-shared-stop",
+        help="encerra App Server compartilhado iniciado pelo projeto",
+    )
+    codex_events = sub.add_parser(
+        "codex-shared-events",
+        help="mostra painel de eventos da thread compartilhada",
+    )
+    codex_events.add_argument("--follow", action="store_true")
+    codex_events.add_argument("--lines", type=int, default=40)
+    sub.add_parser(
+        "codex-shared-status",
+        help="mostra thread, turn, fila e clientes conhecidos",
+    )
+    codex_steer = sub.add_parser(
+        "codex-steer",
+        help="envia direcao humana ao turn Codex ativo",
+    )
+    codex_steer.add_argument("instruction")
+    sub.add_parser(
+        "codex-interrupt",
+        help="interrompe turn Codex ativo e limpa fila pendente",
+    )
+    codex_diagnose = sub.add_parser(
+        "codex-bridge-diagnose",
+        help="testa App Server, thread, turns, cancelamento e Qwen",
+    )
+    codex_diagnose.add_argument("--skip-qwen", action="store_true")
+    sub.add_parser("codex-jobs", help="lista jobs Codex persistidos")
+    codex_job_status = sub.add_parser(
+        "codex-job-status",
+        help="mostra estado de um job Codex",
+    )
+    codex_job_status.add_argument("job_id")
+    codex_job_result = sub.add_parser(
+        "codex-job-result",
+        help="mostra resultado persistido de um job Codex",
+    )
+    codex_job_result.add_argument("job_id")
+    sub.add_parser("projects", help="lista projetos conhecidos e aliases")
+    sub.add_parser("project-active", help="mostra o projeto ativo")
+    project_use = sub.add_parser(
+        "project-use",
+        help="seleciona projeto ativo por alias, nome ou caminho",
+    )
+    project_use.add_argument("project")
+    project_find = sub.add_parser(
+        "project-find",
+        help="localiza arquivos no projeto ativo",
+    )
+    project_find.add_argument("query")
+    sub.add_parser(
+        "project-refresh",
+        help="redescobre projetos permitidos e atualiza indices leves",
+    )
     diagnose = sub.add_parser(
         "search-diagnose",
         help="testa somente o provedor de busca, sem Qwen",
@@ -307,6 +582,162 @@ def main(argv: list[str] | None = None) -> int:
             _print(manager.stop())
         elif args.command == "status":
             _print(manager.status())
+        elif args.command == "codex-shared-start":
+            codex = CodexSessionManager(
+                settings.allowed_roots[0],
+                endpoint=settings.codex_app_server_endpoint,
+                timeout=settings.codex_timeout,
+                state_dir=settings.state_dir,
+            )
+            try:
+                _print(codex.shared_start())
+            finally:
+                codex.close()
+        elif args.command == "codex-shared-stop":
+            codex = CodexSessionManager(
+                settings.allowed_roots[0],
+                endpoint=settings.codex_app_server_endpoint,
+                timeout=settings.codex_timeout,
+                state_dir=settings.state_dir,
+            )
+            _print(codex.stop_server())
+        elif args.command == "codex-shared-events":
+            _show_codex_events(
+                settings.state_dir / "codex-events.jsonl",
+                lines=args.lines,
+                follow=args.follow,
+            )
+        elif args.command == "codex-shared-status":
+            codex = CodexSessionManager(
+                PROJECT_ROOT,
+                endpoint=settings.codex_app_server_endpoint,
+                timeout=settings.codex_timeout,
+                state_dir=settings.state_dir,
+            )
+            _print_codex_shared_status(codex.shared_status())
+        elif args.command == "codex-steer":
+            codex = CodexSessionManager(
+                PROJECT_ROOT,
+                endpoint=settings.codex_app_server_endpoint,
+                timeout=settings.codex_timeout,
+                state_dir=settings.state_dir,
+            )
+            result = codex.steer(args.instruction, origin="human")
+            print("Steer enviado")
+            print(f"Thread: {result['thread_id']}")
+            print(f"Turn: {result['turn_id']}")
+            print("Source: human")
+        elif args.command == "codex-interrupt":
+            codex = CodexSessionManager(
+                PROJECT_ROOT,
+                endpoint=settings.codex_app_server_endpoint,
+                timeout=settings.codex_timeout,
+                state_dir=settings.state_dir,
+            )
+            result = codex.cancel()
+            if not result.get("cancelled"):
+                raise RuntimeError(str(result.get("reason")))
+            print("Interrupt enviado")
+            print(f"Thread: {result['thread_id']}")
+            print(f"Turn: {result['turn_id']}")
+            print("Source: human")
+        elif args.command == "codex-bridge-diagnose":
+            return _codex_bridge_diagnose(
+                settings,
+                manager,
+                include_qwen=not args.skip_qwen,
+            )
+        elif args.command == "codex-jobs":
+            jobs = _registry(settings).codex.list_jobs()
+            print("Codex jobs")
+            now = datetime.now(timezone.utc)
+            for title, states in (
+                ("Running", {"queued", "starting", "running", "steering", "cancelling", "disconnected", "reconnecting"}),
+                ("Completed", {"completed", "failed", "interrupted"}),
+            ):
+                print(f"\n{title}:")
+                selected = [job for job in jobs if job.get("status") in states]
+                if not selected:
+                    print("- nenhum")
+                    continue
+                for job in reversed(selected):
+                    started = datetime.fromisoformat(str(job["started_at"]))
+                    end_value = job.get("completed_at")
+                    ended = datetime.fromisoformat(str(end_value)) if end_value else now
+                    seconds = max(0, int((ended - started).total_seconds()))
+                    duration = f"{seconds // 60:02d}:{seconds % 60:02d}"
+                    print(
+                        f"- {str(job.get('job_id'))[:8]}... — "
+                        f"{job.get('task_summary')} — {job.get('status')} {duration}"
+                    )
+        elif args.command == "codex-job-status":
+            result = _registry(settings).codex.get_job_status(job_id=args.job_id)
+            _print(result)
+            if not result.get("ok"):
+                return 1
+        elif args.command == "codex-job-result":
+            runner = _registry(settings).codex
+            runner.reconcile_jobs()
+            job = runner.jobs.get(args.job_id)
+            if job is None:
+                _print({"ok": False, "error": "codex_job_not_found"})
+                return 1
+            _print(
+                {
+                    "ok": True,
+                    "job_id": job.get("job_id"),
+                    "status": job.get("status"),
+                    "result_available": job.get("result_available"),
+                    "result": job.get("result"),
+                    "error": job.get("error"),
+                }
+            )
+        elif args.command == "projects":
+            projects = _registry(settings).projects
+            state = projects.read()
+            print("Known projects")
+            for project in projects.projects():
+                print(f"\n* {project['name']}")
+                print(f"  Root: {project['root']}")
+                print(f"  Aliases: {', '.join(project.get('aliases', []))}")
+                print(
+                    "  Active: "
+                    + ("yes" if project["id"] == state.get("active_project_id") else "no")
+                )
+        elif args.command == "project-active":
+            _print(_registry(settings).projects.active())
+        elif args.command == "project-use":
+            result = _registry(settings).projects.use(args.project)
+            _print(result)
+            if not result.get("ok"):
+                return 1
+        elif args.command == "project-find":
+            projects = _registry(settings).projects
+            active = projects.active()
+            project = active.get("project")
+            if not project:
+                _print({"ok": False, "error": "active_project_not_found"})
+                return 1
+            _print(
+                projects.find_files(
+                    project_id=project["id"],
+                    query=args.query,
+                )
+            )
+        elif args.command == "project-refresh":
+            projects = _registry(settings).projects
+            state = projects.refresh()
+            indexes = [
+                projects.refresh_index(project["id"])
+                for project in state["projects"]
+            ]
+            _print(
+                {
+                    "ok": all(item.get("ok") for item in indexes),
+                    "projects": state["projects"],
+                    "indexes": indexes,
+                }
+            )
         elif args.command == "search-diagnose":
             result = _web_client(settings).search(
                 query=args.query,

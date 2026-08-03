@@ -4,6 +4,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
+from ..projects import normalize_technical_transcript
 from .audio import CaptureOptions, SoundDeviceAudio
 from .errors import VoiceCancelled, VoiceError
 from .logging import VoiceLogger
@@ -40,6 +41,9 @@ class VoiceSession:
         self.tts = tts
         self.logger = logger
         self.console = console or ConsoleIO()
+        self._spoken_status: str | None = None
+        self._interaction_active = False
+        self._notification_lock = threading.Lock()
 
     def run(self, *, once: bool = False) -> dict[str, Any]:
         interactions = 0
@@ -87,6 +91,8 @@ class VoiceSession:
                 return last_result
 
     def _interaction(self) -> dict[str, Any]:
+        self._interaction_active = True
+        self._spoken_status = None
         self.console.write("[voz] ouvindo... Enter/Espaço encerra; Esc cancela")
         self.logger.write(
             "recording_started",
@@ -143,9 +149,18 @@ class VoiceSession:
                 return {"ok": False, "rerecord": True}
             if decision == ConfirmationDecision.CANCEL:
                 raise VoiceCancelled("transcricao cancelada")
+            if decision == ConfirmationDecision.SEND:
+                self.console.write("[voz] Transcrição confirmada.")
+            routing_text = normalize_technical_transcript(transcription.text)
+            self.logger.write(
+                "transcription_routing",
+                transcript_original=transcription.text,
+                transcript_normalized=routing_text,
+                changed=routing_text != transcription.text,
+            )
             self.console.write("[assistente] pensando...")
             result = self.supervisor.run(
-                transcription.text,
+                routing_text,
                 event_callback=self._event,
             )
             if not result.get("ok"):
@@ -188,6 +203,8 @@ class VoiceSession:
                     summarize_long=self.settings.voice_summarize_long_responses,
                     semantic_replacements=status_replacements,
                 )
+            if self._spoken_status:
+                spoken = self._spoken_status
             if spoken:
                 spoken = normalize_for_speech(
                     spoken,
@@ -247,6 +264,7 @@ class VoiceSession:
                 **result,
                 "transcription": {
                     "text": transcription.text,
+                    "routing_text": routing_text,
                     "language": transcription.language,
                     "confidence": transcription.confidence,
                 },
@@ -254,6 +272,7 @@ class VoiceSession:
                 "tts": tts_metrics,
             }
         finally:
+            self._interaction_active = False
             if not self.settings.voice_keep_recordings:
                 removed = self.audio.remove_temporary(audio_data)
                 if removed:
@@ -264,15 +283,98 @@ class VoiceSession:
             name = str(values.get("name") or "")
             if name.startswith("web_"):
                 self.console.write("[assistente] pesquisando...")
-            else:
+            elif name == "review_codex_session":
+                self.console.write(
+                    "[assistente] consultando a sessao compartilhada do Codex..."
+                )
+            elif name != "delegate_to_codex":
                 self.console.write(
                     f"[assistente] executando ferramenta: {name}"
                 )
+        elif event == "codex_sending":
+            self.console.write("[assistente] enviando tarefa ao Codex...")
+        elif event == "codex_turn_started":
+            thread_id = str(values.get("thread_id") or "")[:8]
+            turn_id = str(values.get("turn_id") or "")[:8]
+            self.console.write(f"[Codex] thread: {thread_id}")
+            self.console.write(f"[Codex] turn iniciado: {turn_id}")
+        elif event == "codex_job_started":
+            job_id = str(values.get("job_id") or "")[:8]
+            self.console.write("[Codex] tarefa iniciada.")
+            self.console.write(f"[Codex] job: {job_id}")
+            self.console.write("[Codex] estado: executando.")
+            self._spoken_status = "Enviei a tarefa ao Codex."
+        elif event == "codex_working":
+            self.console.write("[Codex] trabalhando...")
+        elif event in {"codex_job_completed", "codex_result_received"}:
+            self.console.write("[Codex] tarefa concluída.")
+            self.console.write("[assistente] resultado recebido.")
+            self._notify_short(
+                "A tarefa do Codex foi concluída.",
+                notify=bool(values.get("notify", event == "codex_job_completed")),
+            )
+        elif event == "codex_job_status":
+            status = str(values.get("status") or "")
+            if status in {"queued", "starting", "running", "reconnecting"}:
+                self.console.write("[Codex] ainda trabalhando.")
+                self._notify_short(
+                    "O Codex ainda está trabalhando.",
+                    notify=bool(values.get("notify")),
+                )
+        elif event == "codex_job_interrupted":
+            self.console.write("[Codex] tarefa cancelada.")
+            self._notify_short("Tarefa cancelada.", notify=True)
+        elif event == "codex_job_steered":
+            self.console.write("[Codex] direção humana aceita.")
+        elif event == "codex_job_failed":
+            self.console.write("[Codex] tarefa falhou.")
+            self._notify_short(
+                "O Codex encontrou um problema durante a execução.",
+                notify=True,
+            )
+        elif event == "codex_completed":
+            self.console.write("[Codex] tarefa concluída.")
+        elif event == "codex_failed":
+            self.console.write(
+                "[Codex] não foi possível iniciar a tarefa: "
+                + str(values.get("error") or values.get("status") or "erro")
+            )
+        elif event == "assistant_analyzing_result":
+            self.console.write("[assistente] analisando o resultado...")
         self.logger.write(
             "assistant_" + event,
             tool=values.get("name"),
             ok=values.get("ok"),
         )
+
+    def _notify_short(self, text: str, *, notify: bool) -> None:
+        if not notify:
+            return
+        if self._interaction_active:
+            self._spoken_status = text
+            return
+        if getattr(self.tts, "mode", None) == "silent":
+            return
+        with self._notification_lock:
+            try:
+                self.tts.speak(
+                    text,
+                    SynthesisOptions(
+                        rate=self.settings.voice_tts_rate,
+                        volume=self.settings.voice_tts_volume,
+                        timeout_seconds=self.settings.voice_tts_timeout_seconds,
+                    ),
+                    stop_event=threading.Event(),
+                )
+                self.logger.write(
+                    "background_notification_spoken",
+                    kind="codex_job",
+                )
+            except Exception as exc:
+                self.logger.write(
+                    "background_notification_failed",
+                    error=str(exc),
+                )
 
     def _tts_event(self, event: str, values: dict[str, Any]) -> None:
         self.logger.write("tts_" + event, **values)

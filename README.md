@@ -11,6 +11,29 @@ Set-Location D:\tern
 python -m tern.orchestrator start
 python -m tern.orchestrator ask "Pesquise notícias recentes sobre IA e cite fontes."
 python -m tern.orchestrator voice
+python -m tern.orchestrator codex-shared-start
+```
+
+O Codex usa um App Server local compartilhado. Abra a interface terminal com o
+comando exibido por `codex-shared-start`; para anexar exatamente a thread do
+projeto, prefira o comando `terminal_same_thread_command` retornado.
+
+Diagnostico completo da integracao Qwen/Codex:
+
+```powershell
+python -m tern.orchestrator codex-bridge-diagnose
+python -m tern.orchestrator codex-shared-status
+python -m tern.orchestrator codex-steer "Analise somente codex.py."
+python -m tern.orchestrator codex-interrupt
+python -m tern.orchestrator codex-shared-events --follow
+python -m tern.orchestrator codex-jobs
+python -m tern.orchestrator codex-job-status JOB_ID
+python -m tern.orchestrator codex-job-result JOB_ID
+python -m tern.orchestrator projects
+python -m tern.orchestrator project-active
+python -m tern.orchestrator project-use tern
+python -m tern.orchestrator project-find "configuracao da voz"
+python -m tern.orchestrator project-refresh
 ```
 
 Para disponibilizar o assistente pelo nome em qualquer terminal:
@@ -60,6 +83,8 @@ Documentação:
 
 - [Pesquisa web](docs/web-research.md)
 - [Voz](docs/voice.md)
+- [Bridge compartilhado Qwen/Codex](docs/codex-bridge.md)
+- [Descoberta de projetos](docs/project-discovery.md)
 
 Testes:
 

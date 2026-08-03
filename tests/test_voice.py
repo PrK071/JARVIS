@@ -528,6 +528,64 @@ def test_voice_codex_state_is_visible(tmp_path):
     assert any("codex_delegate" in value for value in console.values)
 
 
+def test_voice_codex_history_state_is_visible(tmp_path):
+    class HistorySupervisor(FakeSupervisor):
+        def run(self, text, event_callback=None):
+            event_callback("tool_start", {"name": "review_codex_session"})
+            return super().run(text, event_callback)
+
+    console = FakeConsole([""])
+    session, *_ = voice_session(
+        tmp_path, console=console, supervisor=HistorySupervisor()
+    )
+    session.run(once=True)
+    assert any(
+        "consultando a sessao compartilhada do Codex" in value
+        for value in console.values
+    )
+
+
+def test_voice_background_job_messages_are_short_and_hide_ids(tmp_path):
+    console = FakeConsole([])
+    session, _audio, tts, _supervisor = voice_session(
+        tmp_path,
+        console=console,
+    )
+    session._interaction_active = True
+    session._event(
+        "codex_job_started",
+        {
+            "job_id": "secret-job-id",
+            "thread_id": "secret-thread-id",
+            "turn_id": "secret-turn-id",
+        },
+    )
+    assert session._spoken_status == "Enviei a tarefa ao Codex."
+    session._interaction_active = False
+    session._event(
+        "codex_job_completed",
+        {
+            "job_id": "secret-job-id",
+            "thread_id": "secret-thread-id",
+            "turn_id": "secret-turn-id",
+        },
+    )
+    session._event(
+        "codex_job_status",
+        {"status": "running", "notify": True, "job_id": "secret-job-id"},
+    )
+    session._event("codex_job_interrupted", {"job_id": "secret-job-id"})
+    session._event("codex_job_failed", {"job_id": "secret-job-id"})
+    assert tts.values == [
+        "A tarefa do Codex foi concluída.",
+        "O Codex ainda está trabalhando.",
+        "Tarefa cancelada.",
+        "O Codex encontrou um problema durante a execução.",
+    ]
+    spoken = " ".join(tts.values)
+    assert "secret" not in spoken and "job" not in spoken.casefold()
+
+
 def test_long_response_is_summarized_for_speech():
     text = "Primeira frase. " + ("Detalhe repetido. " * 100) + "Conclusão."
     spoken = prepare_spoken_text(

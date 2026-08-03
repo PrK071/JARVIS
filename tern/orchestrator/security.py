@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-import os
+import re
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -51,13 +51,45 @@ class ActionLogger:
     def write(self, *, tool: str, arguments: dict[str, Any], result: dict[str, Any]) -> None:
         record = {
             "time": datetime.now(timezone.utc).isoformat(),
+            "event": "tool_result",
             "tool": tool,
-            "arguments": arguments,
-            "result": result,
+            "arguments": self._redact(arguments),
+            "result": self._redact(result),
         }
+        self._append(record)
+
+    def write_event(self, event: str, **values: Any) -> None:
+        record = {
+            "time": datetime.now(timezone.utc).isoformat(),
+            "event": event,
+            **self._redact(values),
+        }
+        self._append(record)
+
+    def _append(self, record: dict[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock, self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, ensure_ascii=False) + os.linesep)
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    @classmethod
+    def _redact(cls, value: Any, key: str = "") -> Any:
+        if re.search(
+            r"(?:api[_-]?key|authorization|password|passwd|secret|token|credential)",
+            key,
+            re.IGNORECASE,
+        ):
+            return "<redacted>"
+        if isinstance(value, dict):
+            return {str(k): cls._redact(v, str(k)) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [cls._redact(item) for item in value]
+        if isinstance(value, str):
+            return re.sub(
+                r"(?i)(?:sk-[A-Za-z0-9_-]{12,}|bearer\s+[A-Za-z0-9._~+/-]{12,})",
+                "<redacted>",
+                value,
+            )
+        return value
 
 
 ApprovalCallback = Callable[[str, dict[str, Any]], bool]

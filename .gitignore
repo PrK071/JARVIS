@@ -12,6 +12,8 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .pytest-tmp-*/
+pytest-tmp-*/
+pytest-python-*/
 .mypy_cache/
 .ruff_cache/
 .coverage

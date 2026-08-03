@@ -86,6 +86,12 @@ class Settings:
     max_attempts: int
     max_tool_output_bytes: int
     codex_timeout: int
+    codex_app_server_endpoint: str
+    codex_app_server_start_timeout: int
+    codex_quick_wait_timeout_seconds: int
+    codex_turn_hard_timeout_seconds: int
+    codex_job_retention_days: int
+    action_confirmation_timeout_seconds: int
     state_dir: Path
     env_file: Path
     env_file_loaded: bool
@@ -271,6 +277,24 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         max_attempts=int(values.get("MODEL_MAX_ATTEMPTS", "3")),
         max_tool_output_bytes=int(values.get("MODEL_MAX_TOOL_OUTPUT_BYTES", "131072")),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
+        codex_app_server_endpoint=values.get(
+            "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
+        ).strip(),
+        codex_app_server_start_timeout=int(
+            values.get("CODEX_APP_SERVER_START_TIMEOUT", "30")
+        ),
+        codex_quick_wait_timeout_seconds=int(
+            values.get("CODEX_QUICK_WAIT_TIMEOUT_SECONDS", "60")
+        ),
+        codex_turn_hard_timeout_seconds=int(
+            values.get("CODEX_TURN_HARD_TIMEOUT_SECONDS", "0")
+        ),
+        codex_job_retention_days=int(
+            values.get("CODEX_JOB_RETENTION_DAYS", "7")
+        ),
+        action_confirmation_timeout_seconds=int(
+            values.get("ACTION_CONFIRMATION_TIMEOUT_SECONDS", "300")
+        ),
         state_dir=Path(values.get("MODEL_STATE_DIR", str(PROJECT_ROOT / ".orchestrator"))).resolve(),
         env_file=env_file,
         env_file_loaded=env_file_loaded,
@@ -480,6 +504,19 @@ def _validate(settings: Settings) -> None:
         raise ValueError("MODEL_KV_CACHE_V nao suportado")
     if settings.max_tool_calls < 1 or settings.max_attempts < 1:
         raise ValueError("limites devem ser positivos")
+    if (
+        not re.fullmatch(
+            r"wss?://(?:127\.0\.0\.1|localhost|\[?::1\]?):\d+",
+            settings.codex_app_server_endpoint,
+            re.IGNORECASE,
+        )
+        or settings.codex_app_server_start_timeout < 1
+        or settings.codex_quick_wait_timeout_seconds < 1
+        or settings.codex_turn_hard_timeout_seconds < 0
+        or settings.codex_job_retention_days < 1
+        or settings.action_confirmation_timeout_seconds < 1
+    ):
+        raise ValueError("CODEX_APP_SERVER_ENDPOINT deve ser WebSocket local com porta")
     if settings.web_search_provider not in SEARCH_PROVIDER_URLS:
         allowed = ", ".join(SEARCH_PROVIDER_URLS)
         raise ValueError(
