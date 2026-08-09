@@ -160,6 +160,7 @@ class PendingActionStore:
         status: str,
         result: dict[str, Any] | None = None,
         error: str | None = None,
+        arguments_override: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if status not in {"completed", "failed", "cancelled", "expired"}:
             raise ValueError("estado terminal invalido")
@@ -173,6 +174,8 @@ class PendingActionStore:
                 raise KeyError(f"acao pendente ausente: {action_id}")
             pending["status"] = status
             pending["updated_at"] = utc_now()
+            if arguments_override is not None:
+                pending["arguments"] = arguments_override
             pending["result"] = result
             pending["error"] = error
             history = list(state.get("history") or [])

@@ -1,0 +1,18 @@
+{
+  "benchmark_id": "agent_routing_semantic_regression_v2",
+  "status": "known_development_corpus",
+  "composition": [
+    {
+      "path": "agent_routing_test_v3.jsonl",
+      "ids_from": "agent_routing_test_v3_result.json#failure_ids",
+      "count": 33
+    },
+    {
+      "path": "agent_routing_semantic_regression_v2_variations.jsonl",
+      "count": 67,
+      "minimal_pairs": 30
+    }
+  ],
+  "total_cases": 100,
+  "methodology": "Known development corpus. It may be iterated. It is not an independent holdout."
+}

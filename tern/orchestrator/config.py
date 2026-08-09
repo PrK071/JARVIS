@@ -85,6 +85,10 @@ class Settings:
     max_tool_calls: int
     max_attempts: int
     max_tool_output_bytes: int
+    agent_decision_shadow: bool
+    agent_decision_fast_path: bool
+    agent_decision_context_cache: bool
+    agent_decision_semantic_first: bool
     codex_timeout: int
     codex_app_server_endpoint: str
     codex_app_server_start_timeout: int
@@ -92,6 +96,14 @@ class Settings:
     codex_turn_hard_timeout_seconds: int
     codex_job_retention_days: int
     action_confirmation_timeout_seconds: int
+    deepseek_enabled: bool
+    deepseek_api_key: str | None
+    deepseek_base_url: str
+    deepseek_model: str
+    deepseek_auto_escalation: bool
+    deepseek_request_timeout_seconds: int
+    deepseek_max_retries: int
+    deepseek_session_max_recent_turns: int
     state_dir: Path
     env_file: Path
     env_file_loaded: bool
@@ -276,6 +288,18 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         max_tool_calls=int(values.get("MODEL_MAX_TOOL_CALLS", "8")),
         max_attempts=int(values.get("MODEL_MAX_ATTEMPTS", "3")),
         max_tool_output_bytes=int(values.get("MODEL_MAX_TOOL_OUTPUT_BYTES", "131072")),
+        agent_decision_shadow=_bool(
+            values.get("AGENT_DECISION_SHADOW", "false")
+        ),
+        agent_decision_fast_path=_bool(
+            values.get("AGENT_DECISION_FAST_PATH", "true")
+        ),
+        agent_decision_context_cache=_bool(
+            values.get("AGENT_DECISION_CONTEXT_CACHE", "true")
+        ),
+        agent_decision_semantic_first=_bool(
+            values.get("AGENT_DECISION_SEMANTIC_FIRST", "true")
+        ),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
         codex_app_server_endpoint=values.get(
             "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
@@ -294,6 +318,22 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         ),
         action_confirmation_timeout_seconds=int(
             values.get("ACTION_CONFIRMATION_TIMEOUT_SECONDS", "300")
+        ),
+        deepseek_enabled=_bool(values.get("DEEPSEEK_ENABLED", "true")),
+        deepseek_api_key=values.get("DEEPSEEK_API_KEY") or None,
+        deepseek_base_url=values.get(
+            "DEEPSEEK_BASE_URL", "https://api.deepseek.com"
+        ).strip(),
+        deepseek_model=values.get("DEEPSEEK_MODEL", "").strip(),
+        deepseek_auto_escalation=_bool(
+            values.get("DEEPSEEK_AUTO_ESCALATION", "false")
+        ),
+        deepseek_request_timeout_seconds=int(
+            values.get("DEEPSEEK_REQUEST_TIMEOUT_SECONDS", "180")
+        ),
+        deepseek_max_retries=int(values.get("DEEPSEEK_MAX_RETRIES", "2")),
+        deepseek_session_max_recent_turns=int(
+            values.get("DEEPSEEK_SESSION_MAX_RECENT_TURNS", "20")
         ),
         state_dir=Path(values.get("MODEL_STATE_DIR", str(PROJECT_ROOT / ".orchestrator"))).resolve(),
         env_file=env_file,
@@ -498,6 +538,14 @@ def _validate(settings: Settings) -> None:
         raise ValueError("MODEL_FLASH_ATTENTION deve ser on, off ou auto")
     if settings.reasoning not in {"on", "off", "auto"}:
         raise ValueError("MODEL_REASONING deve ser on, off ou auto")
+    if not settings.deepseek_base_url.startswith(("https://", "http://")):
+        raise ValueError("DEEPSEEK_BASE_URL deve ser uma URL HTTP(S)")
+    if settings.deepseek_request_timeout_seconds <= 0:
+        raise ValueError("DEEPSEEK_REQUEST_TIMEOUT_SECONDS deve ser positivo")
+    if settings.deepseek_max_retries < 0:
+        raise ValueError("DEEPSEEK_MAX_RETRIES nao pode ser negativo")
+    if settings.deepseek_session_max_recent_turns <= 0:
+        raise ValueError("DEEPSEEK_SESSION_MAX_RECENT_TURNS deve ser positivo")
     if settings.kv_cache_k not in {"f16", "bf16", "q8_0", "q4_0"}:
         raise ValueError("MODEL_KV_CACHE_K nao suportado")
     if settings.kv_cache_v not in {"f16", "bf16", "q8_0", "q4_0"}:

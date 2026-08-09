@@ -1,0 +1,50 @@
+{
+  "benchmark_id": "agent_routing_test_v2",
+  "status": "sealed_evaluated_known_regression",
+  "sealed_at": "2026-08-08T12:33:49.2568906-03:00",
+  "cases": 40,
+  "sha256": "5013f75e7a25b91409636703047f5cd7bc4ed5f985f128fad5cad0a7c9324cb0",
+  "generation": {
+    "method": "manually curated from requirement categories without policy evaluation",
+    "seed": null,
+    "categories": {
+      "DIRECT": 8,
+      "READ": 8,
+      "CODEX": 8,
+      "DEEPSEEK": 8,
+      "FOLLOWUP": 8
+    },
+    "adversarial_cases": 12,
+    "multi_turn_sequences": 8
+  },
+  "policy_before_evaluation": {
+    "sha256": "62a4375c00b6a2780e2f7c15cfb52b90d1efeb6494d46158dfb46bad36288ab5",
+    "git_commit": "54438b7715f7d67bc37f798bcf8081fd3103fd45"
+  },
+  "evaluation": {
+    "first_attempt_at": "2026-08-08T12:59:45.2441312-03:00",
+    "first_attempt_status": "harness_aborted_missing_optional_split_field",
+    "policy_changed_after_first_attempt": false,
+    "valid_pass_at": "2026-08-08T13:00:11.7615570-03:00",
+    "evaluated_policy_sha256": "8497d3d8cd5a97a550ec83b801d7384771422f26e28dbfe9b9bb11202d93b144",
+    "git_commit": "54438b7715f7d67bc37f798bcf8081fd3103fd45",
+    "cases": 40,
+    "passed": 23,
+    "overall_accuracy": 0.575,
+    "intent_accuracy": 0.6,
+    "tool_selection_accuracy": 0.575,
+    "project_accuracy": 1.0,
+    "unnecessary_delegations": 1,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 4,
+    "excess_tool_calls": 3,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "policy_changed_from_results": false
+  },
+  "rules": {
+    "do_not_evaluate_until_final_phase": true,
+    "do_not_modify_after_seal": true,
+    "do_not_adjust_policy_from_results_in_this_task": true
+  }
+}

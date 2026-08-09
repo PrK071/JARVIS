@@ -98,6 +98,140 @@ class CodexResult:
         }
 
 
+@dataclass(frozen=True)
+class TurnSnapshot:
+    """Stable subset of one App Server turn/read turn."""
+
+    turn_id: str
+    status: str | None
+    messages: list[dict[str, Any]]
+    items: list[dict[str, Any]]
+    started_at: int | None
+    completed_at: int | None
+    duration_ms: int | None
+    error: Any = None
+
+
+@dataclass(frozen=True)
+class ThreadSnapshot:
+    """Stable subset of an App Server thread/read response."""
+
+    thread_id: str
+    status: str | None
+    turns: list[TurnSnapshot]
+    created_at: int | None
+    updated_at: int | None
+    cli_version: str | None
+
+
+class InvalidThreadResponse(ValueError):
+    pass
+
+
+def _optional_counter(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _messages_from_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    messages: list[dict[str, Any]] = []
+    for item in items:
+        item_type = item.get("type")
+        if item_type == "userMessage":
+            content = item.get("content")
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if not isinstance(part, dict) or not isinstance(part.get("text"), str):
+                    continue
+                messages.append(
+                    {
+                        "role": "user",
+                        "text": part["text"],
+                        "item_id": item.get("id"),
+                        "client_id": item.get("clientId"),
+                    }
+                )
+        elif item_type == "agentMessage" and isinstance(item.get("text"), str):
+            messages.append(
+                {
+                    "role": "assistant",
+                    "text": item["text"],
+                    "item_id": item.get("id"),
+                    "phase": item.get("phase"),
+                }
+            )
+    return messages
+
+
+def normalize_thread_read(response: Any) -> ThreadSnapshot:
+    """Normalize the real App Server thread/read envelope without coercing types."""
+    if not isinstance(response, dict):
+        raise InvalidThreadResponse("thread/read response must be an object")
+    thread = response.get("thread")
+    if not isinstance(thread, dict):
+        raise InvalidThreadResponse("thread/read response.thread must be an object")
+    thread_id = thread.get("id")
+    if not isinstance(thread_id, str) or not thread_id:
+        raise InvalidThreadResponse("thread/read response.thread.id must be a string")
+
+    raw_turns = thread.get("turns", [])
+    if raw_turns is None:
+        raw_turns = []
+    if not isinstance(raw_turns, list):
+        raise InvalidThreadResponse("thread/read response.thread.turns must be a list")
+
+    turns: list[TurnSnapshot] = []
+    for raw_turn in raw_turns:
+        if not isinstance(raw_turn, dict):
+            continue
+        raw_items = raw_turn.get("items", [])
+        if raw_items is None:
+            raw_items = []
+        if not isinstance(raw_items, list):
+            raise InvalidThreadResponse("thread/read turn.items must be a list")
+        items = [dict(item) for item in raw_items if isinstance(item, dict)]
+
+        raw_messages = raw_turn.get("messages")
+        if raw_messages is None:
+            messages = _messages_from_items(items)
+        elif isinstance(raw_messages, list):
+            messages = [dict(item) for item in raw_messages if isinstance(item, dict)]
+            messages.extend(_messages_from_items(items))
+        else:
+            raise InvalidThreadResponse("thread/read turn.messages must be a list")
+
+        status = raw_turn.get("status")
+        turns.append(
+            TurnSnapshot(
+                turn_id=str(raw_turn.get("id") or ""),
+                status=status if isinstance(status, str) else None,
+                messages=messages,
+                items=items,
+                started_at=_optional_counter(raw_turn.get("startedAt")),
+                completed_at=_optional_counter(raw_turn.get("completedAt")),
+                duration_ms=_optional_counter(raw_turn.get("durationMs")),
+                error=raw_turn.get("error"),
+            )
+        )
+
+    raw_status = thread.get("status")
+    if isinstance(raw_status, str):
+        status = raw_status
+    elif isinstance(raw_status, dict) and isinstance(raw_status.get("type"), str):
+        status = raw_status["type"]
+    else:
+        status = None
+    cli_version = thread.get("cliVersion")
+    return ThreadSnapshot(
+        thread_id=thread_id,
+        status=status,
+        turns=turns,
+        created_at=_optional_counter(thread.get("createdAt")),
+        updated_at=_optional_counter(thread.get("updatedAt")),
+        cli_version=cli_version if isinstance(cli_version, str) else None,
+    )
+
+
 def _utc_now() -> str:
     return utc_now()
 
@@ -345,6 +479,43 @@ class CodexSessionManager:
             raise CodexError("App Server compartilhado deve permanecer local", layer="endpoint")
         if parsed.port is None:
             raise CodexError("endpoint Codex sem porta", layer="endpoint")
+
+    @classmethod
+    def from_persisted_session(
+        cls,
+        state_dir: Path,
+        *,
+        timeout: int = 1800,
+        executable: str | None = None,
+    ) -> CodexSessionManager:
+        state_dir = state_dir.resolve()
+        session = cls._read_json(state_dir / "codex-session.json")
+        if not session:
+            raise CodexError(
+                "sessao compartilhada nao encontrada; "
+                "use codex-shared-start para recuperar",
+                layer="shared_session_not_found",
+            )
+        project = session.get("project")
+        endpoint = session.get("server_endpoint")
+        thread_id = session.get("thread_id")
+        if (
+            not isinstance(project, str)
+            or not isinstance(endpoint, str)
+            or not isinstance(thread_id, str)
+            or not thread_id
+        ):
+            raise CodexError(
+                "codex-session.json nao contem project, endpoint e thread_id validos",
+                layer="invalid_shared_session",
+            )
+        return cls(
+            Path(project),
+            endpoint=endpoint,
+            timeout=timeout,
+            executable=executable,
+            state_dir=state_dir,
+        )
 
     def readiness_url(self) -> str:
         parsed = urlparse(self.endpoint)
@@ -1058,13 +1229,148 @@ class CodexSessionManager:
             "server_started": server.get("started", False),
             "terminal_command": f"codex --remote {self.endpoint}",
             "terminal_same_thread_command": (
-                f"codex --remote {self.endpoint} -C \"{self.project}\" resume {thread_id}"
+                subprocess.list2cmdline(self._shared_tui_command(thread_id))
             ),
+            "tui_command": "python -m tern.orchestrator codex-shared-tui",
             "events_command": "python -m tern.orchestrator codex-shared-events --follow",
             "status_command": "python -m tern.orchestrator codex-shared-status",
             "steer_command": "python -m tern.orchestrator codex-steer \"instrucao\"",
             "interrupt_command": "python -m tern.orchestrator codex-interrupt",
         }
+
+    def _shared_tui_command(self, thread_id: str) -> list[str]:
+        return [
+            self.executable,
+            "resume",
+            "--remote",
+            self.endpoint,
+            "--dangerously-bypass-approvals-and-sandbox",
+            "-C",
+            str(self.project),
+            thread_id,
+        ]
+
+    def prepare_shared_tui(self) -> dict[str, Any]:
+        """Validate the persisted thread and build a TUI command without a new turn."""
+        session = self._load_session()
+        thread_id = session.get("thread_id") if session else None
+        if not isinstance(thread_id, str) or not thread_id:
+            return {
+                "ok": False,
+                "error": "shared_session_not_found",
+                "message": (
+                    "sessao compartilhada nao encontrada; "
+                    "use codex-shared-start para recuperar"
+                ),
+                "new_thread_started": False,
+            }
+        try:
+            self.start_server()
+        except CodexError as exc:
+            return {
+                "ok": False,
+                "error": "codex_server_unavailable",
+                "message": str(exc),
+                "thread_id": thread_id,
+                "new_thread_started": False,
+            }
+
+        client = CodexAppServerClient(
+            self.endpoint,
+            timeout=min(self.timeout, 60),
+        )
+        try:
+            client.connect()
+            response = client.request(
+                "thread/read",
+                {"threadId": thread_id, "includeTurns": False},
+            )
+        except CodexProtocolError as exc:
+            return {
+                "ok": False,
+                "error": "thread_not_found",
+                "message": (
+                    f"thread persistida {thread_id} nao existe mais: {exc}. "
+                    "Use codex-shared-start para criar uma recuperacao explicita."
+                ),
+                "thread_id": thread_id,
+                "new_thread_started": False,
+            }
+        except CodexError as exc:
+            return {
+                "ok": False,
+                "error": "thread_read_failed",
+                "message": str(exc),
+                "thread_id": thread_id,
+                "new_thread_started": False,
+            }
+        finally:
+            client.close()
+        thread = response.get("thread")
+        if not isinstance(thread, dict) or thread.get("id") != thread_id:
+            return {
+                "ok": False,
+                "error": "invalid_thread_response",
+                "message": "thread/read nao confirmou a thread persistida",
+                "thread_id": thread_id,
+                "new_thread_started": False,
+            }
+        command = self._shared_tui_command(thread_id)
+        return {
+            "ok": True,
+            "title": "Codex shared TUI",
+            "project": str(self.project),
+            "thread_id": thread_id,
+            "endpoint": self.endpoint,
+            "permissions": "dangerously-bypass-approvals-and-sandbox",
+            "command": command,
+            "command_line": subprocess.list2cmdline(command),
+            "new_thread_started": False,
+        }
+
+    def open_shared_tui(
+        self,
+        *,
+        launcher: Callable[[list[str], Path], Any] | None = None,
+    ) -> dict[str, Any]:
+        prepared = self.prepare_shared_tui()
+        if not prepared.get("ok"):
+            return prepared
+        command = list(prepared["command"])
+        try:
+            if launcher is not None:
+                launched = launcher(command, self.project)
+            else:
+                flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+                launched = subprocess.Popen(
+                    command,
+                    cwd=str(self.project),
+                    creationflags=flags,
+                    shell=False,
+                )
+        except OSError as exc:
+            return {
+                **prepared,
+                "ok": False,
+                "error": "tui_launch_failed",
+                "message": str(exc),
+            }
+        pid = getattr(
+            launched,
+            "pid",
+            launched if isinstance(launched, int) else None,
+        )
+        self.bridge_log.write(
+            "shared_tui_opened",
+            source="human",
+            operation="tui/open",
+            project=str(self.project),
+            thread_id=prepared["thread_id"],
+            endpoint=self.endpoint,
+            permissions=prepared["permissions"],
+            pid=pid,
+        )
+        return {**prepared, "tui_pid": pid}
 
     def shared_status(self) -> dict[str, Any]:
         session = self._load_session() or {}
@@ -1137,9 +1443,29 @@ class CodexSessionManager:
                 pass
         bridge_pid = shared.get("bridge_pid")
         qwen_pid = shared.get("qwen_pid")
-        tui_clients = self._known_tui_clients(
-            str(thread_id) if thread_id else None
+        tui_processes = self._known_tui_processes()
+        if tui_processes is None:
+            tui_clients = None
+            standalone_tui_count = None
+        else:
+            target_thread = str(thread_id) if thread_id else None
+            shared_processes = [
+                item
+                for item in tui_processes
+                if item.get("remote_endpoint") == self.endpoint
+                and item.get("thread_id") == target_thread
+            ]
+            tui_clients = len(shared_processes)
+            standalone_tui_count = len(tui_processes) - tui_clients
+        shared_tui_connected = (
+            bool(tui_clients) if tui_clients is not None else None
         )
+        standalone_warning = None
+        if standalone_tui_count:
+            standalone_warning = (
+                "A standalone Codex TUI is running. Messages entered there may not "
+                "appear in the Jarvis shared thread."
+            )
         return {
             "title": "Codex shared session",
             "endpoint": self.endpoint,
@@ -1153,7 +1479,15 @@ class CodexSessionManager:
             "app_server_ready": self.is_ready(),
             "app_server_thread_status": actual_thread_status,
             "tui_clients_known": tui_clients,
-            "tui_connected": bool(tui_clients) if tui_clients is not None else None,
+            "tui_connected": shared_tui_connected,
+            "shared_tui_connected": shared_tui_connected,
+            "standalone_tui_count": standalone_tui_count,
+            "standalone_tui_detected": (
+                bool(standalone_tui_count)
+                if standalone_tui_count is not None
+                else None
+            ),
+            "tui_warning": standalone_warning,
             "qwen_connected": bool(shared.get("qwen_connected"))
             and self._pid_alive(qwen_pid),
             "bridge_connected": bool(shared.get("bridge_connected"))
@@ -1175,13 +1509,12 @@ class CodexSessionManager:
             return len(values)
         return sum(1 for value in values if value == thread_id)
 
-    def _known_tui_thread_ids(self) -> list[str] | None:
+    def _known_tui_processes(self) -> list[dict[str, Any]] | None:
         if os.name != "nt":
             return None
         command = (
             "$items=Get-CimInstance Win32_Process | "
-            "Where-Object {$_.Name -eq 'codex.exe' -and "
-            "$_.CommandLine -match '--remote'} | "
+            "Where-Object {$_.Name -eq 'codex.exe'} | "
             "Select-Object ProcessId,CommandLine; "
             "$items | ConvertTo-Json -Compress"
         )
@@ -1194,27 +1527,73 @@ class CodexSessionManager:
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
             if result.returncode != 0 or not result.stdout.strip():
-                return 0
+                return []
             values = json.loads(result.stdout)
             if isinstance(values, dict):
                 values = [values]
-            thread_ids: list[str] = []
+            if not isinstance(values, list):
+                return []
+            processes: list[dict[str, Any]] = []
+            non_tui_commands = re.compile(
+                r"(?i)^\s*(?:app-server|exec|review|mcp-server|remote-control|"
+                r"doctor|sandbox|completion|update|login|logout)\b"
+            )
+            remote_pattern = re.compile(
+                r"(?i)(?:^|\s)--remote(?:=|\s+)(?:\"([^\"]+)\"|(\S+))"
+            )
+            thread_pattern = re.compile(
+                r"\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b",
+                re.IGNORECASE,
+            )
             for item in values:
                 if not isinstance(item, dict):
                     continue
                 command_line = str(item.get("CommandLine") or "")
-                if self.endpoint not in command_line:
-                    continue
-                match = re.search(
-                    r"\bresume\s+([0-9a-f-]{20,})\b",
+                executable_match = re.search(
+                    r"(?i)codex\.exe\"?\s*(.*)$",
                     command_line,
-                    re.IGNORECASE,
                 )
-                if match:
-                    thread_ids.append(match.group(1))
-            return thread_ids
+                executable_tail = (
+                    executable_match.group(1) if executable_match else command_line
+                )
+                if non_tui_commands.search(executable_tail):
+                    continue
+                remote_match = remote_pattern.search(command_line)
+                remote_endpoint = (
+                    (remote_match.group(1) or remote_match.group(2))
+                    if remote_match
+                    else None
+                )
+                resume_match = re.search(r"(?i)\bresume\b(.*)$", command_line)
+                thread_match = (
+                    thread_pattern.search(resume_match.group(1))
+                    if resume_match
+                    else None
+                )
+                processes.append(
+                    {
+                        "pid": item.get("ProcessId"),
+                        "command_line": command_line,
+                        "remote_endpoint": remote_endpoint,
+                        "thread_id": (
+                            thread_match.group(0) if thread_match else None
+                        ),
+                    }
+                )
+            return processes
         except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
             return None
+
+    def _known_tui_thread_ids(self) -> list[str] | None:
+        processes = self._known_tui_processes()
+        if processes is None:
+            return None
+        return [
+            str(item["thread_id"])
+            for item in processes
+            if item.get("remote_endpoint") == self.endpoint
+            and isinstance(item.get("thread_id"), str)
+        ]
 
     def read_turn(self, thread_id: str, turn_id: str) -> dict[str, Any]:
         """Read one existing turn without starting or changing it."""
@@ -1394,21 +1773,40 @@ class CodexSessionManager:
             result_discarded=discarded,
         )
 
-    def review_session(self, *, turn_limit: int = 10) -> dict[str, Any]:
+    def review_session(self, *, turn_limit: int | str = 10) -> dict[str, Any]:
         """Read persisted Codex history without starting or resuming a turn."""
-        if not 1 <= turn_limit <= 50:
-            raise CodexError(
-                "turn_limit deve estar entre 1 e 50",
-                layer="validation",
+        if isinstance(turn_limit, str) and re.fullmatch(r"\s*\d+\s*", turn_limit):
+            normalized_limit: Any = int(turn_limit)
+        else:
+            normalized_limit = turn_limit
+        if (
+            not isinstance(normalized_limit, int)
+            or isinstance(normalized_limit, bool)
+            or not 1 <= normalized_limit <= 50
+        ):
+            return self._session_review_error(
+                "invalid_turn_limit",
+                "turn_limit deve ser um inteiro entre 1 e 50",
+                thread_id=None,
             )
+        turn_limit = normalized_limit
         session = self._load_session()
         thread_id = session.get("thread_id") if session else None
         if not isinstance(thread_id, str) or not thread_id:
-            raise CodexError(
-                "thread compartilhada persistida ausente",
-                layer="thread/read",
+            return self._session_review_error(
+                "thread_not_found",
+                "thread compartilhada nao encontrada",
+                thread_id=None,
             )
-        self.start_server()
+        try:
+            self.start_server()
+        except CodexError as exc:
+            return self._session_review_error(
+                "codex_server_unavailable",
+                "servidor Codex indisponivel",
+                thread_id=thread_id,
+                technical=exc,
+            )
         client = CodexAppServerClient(
             self.endpoint,
             timeout=min(self.timeout, 60),
@@ -1419,24 +1817,69 @@ class CodexSessionManager:
                 "thread/read",
                 {"threadId": thread_id, "includeTurns": True},
             )
+        except CodexProtocolError as exc:
+            message = str(exc).casefold()
+            error = (
+                "thread_not_found"
+                if any(value in message for value in ("not found", "no rollout", "unknown thread"))
+                else "thread_read_failed"
+            )
+            return self._session_review_error(
+                error,
+                (
+                    "thread compartilhada nao encontrada"
+                    if error == "thread_not_found"
+                    else "nao foi possivel ler a thread Codex"
+                ),
+                thread_id=thread_id,
+                technical=exc,
+            )
+        except CodexError as exc:
+            error = (
+                "codex_server_unavailable"
+                if exc.layer in {"websocket", "send", "events"}
+                else "thread_read_failed"
+            )
+            return self._session_review_error(
+                error,
+                (
+                    "servidor Codex indisponivel"
+                    if error == "codex_server_unavailable"
+                    else "nao foi possivel ler a thread Codex"
+                ),
+                thread_id=thread_id,
+                technical=exc,
+            )
         finally:
             client.close()
-        thread = response.get("thread")
-        if not isinstance(thread, dict) or thread.get("id") != thread_id:
-            raise CodexError(
-                "thread/read nao retornou a thread persistida",
-                layer="thread/read",
+        try:
+            snapshot = normalize_thread_read(response)
+        except InvalidThreadResponse as exc:
+            return self._session_review_error(
+                "invalid_thread_response",
+                "resposta invalida ao ler a thread Codex",
+                thread_id=thread_id,
+                technical=exc,
             )
-        all_turns = thread.get("turns")
-        all_turns = all_turns if isinstance(all_turns, list) else []
-        selected = [item for item in all_turns[-turn_limit:] if isinstance(item, dict)]
+        if snapshot.thread_id != thread_id:
+            return self._session_review_error(
+                "invalid_thread_response",
+                "thread retornada nao corresponde a thread compartilhada",
+                thread_id=thread_id,
+            )
+        all_turns = snapshot.turns
+        selected = all_turns[-turn_limit:]
         turns = [self._summarize_history_turn(item) for item in selected]
         tui_thread_ids = self._known_tui_thread_ids()
-        known_tui_threads = tui_thread_ids if tui_thread_ids is not None else []
+        known_tui_threads = (
+            [value for value in tui_thread_ids if isinstance(value, str)]
+            if isinstance(tui_thread_ids, list)
+            else []
+        )
         threads_match = (
             None
-            if tui_thread_ids is None or not tui_thread_ids
-            else all(value == thread_id for value in tui_thread_ids)
+            if not known_tui_threads
+            else all(value == thread_id for value in known_tui_threads)
         )
         warning = None
         if threads_match is False:
@@ -1448,7 +1891,7 @@ class CodexSessionManager:
         summary = "\n".join(
             (
                 f"Turn {item['turn_id']} [{item['status']}]. "
-                f"Tarefa: {_safe_summary(item['task_requested']) or 'nao registrada'}. "
+                f"Tarefa: {_safe_summary(item['requested']) or 'nao registrada'}. "
                 f"Resposta: {_safe_summary(item['final_response']) or 'sem resposta final'}."
             )
             for item in turns
@@ -1476,10 +1919,17 @@ class CodexSessionManager:
             "tui_thread_ids": known_tui_threads,
             "threads_match": threads_match,
             "thread_warning": warning,
+            "thread_status": snapshot.status,
+            "codex_cli_version": snapshot.cli_version,
+            "turns_available": len(all_turns),
+            "turns_reviewed": len(turns),
+            "last_turn_id": last_turn.get("turn_id") if last_turn else None,
+            "last_status": last_turn.get("status") if last_turn else None,
+            "summary_source": turns,
+            "error": None,
             "turn_count_total": len(all_turns),
             "turns_read": len(turns),
             "turn_limit": turn_limit,
-            "turns": turns,
             "last_turn": last_turn,
             "last_turn_state": last_turn.get("status") if last_turn else "empty",
             "conversation_summary": summary,
@@ -1487,14 +1937,17 @@ class CodexSessionManager:
         }
 
     @staticmethod
-    def _summarize_history_turn(turn: dict[str, Any]) -> dict[str, Any]:
+    def _summarize_history_turn(turn: TurnSnapshot) -> dict[str, Any]:
         tasks: list[str] = []
         responses: list[str] = []
+        final_responses: list[str] = []
+        human_interventions: list[str] = []
+        events: list[str] = []
         files: list[str] = []
         tests: list[str] = []
         errors: list[str] = []
 
-        def add_unique(values: list[str], value: str, *, limit: int = 6000) -> None:
+        def add_unique(values: list[str], value: str, *, limit: int = 1000) -> None:
             safe = str(_redact(value)).strip()[:limit]
             if safe and safe not in values:
                 values.append(safe)
@@ -1504,23 +1957,24 @@ class CodexSessionManager:
                 r"(?i)(?:[A-Z]:\\[^\s\]\[()'\"`]+\."
                 r"(?:py|md|json|jsonl|toml|txt|yaml|yml|ini|cfg)(?::\d+)?|"
                 r"[A-Za-z0-9_.\\/-]+\.(?:py|md|json|jsonl|toml|txt|yaml|yml|ini|cfg)(?::\d+)?)",
-                text,
+                text[:4000],
             ):
                 add_unique(files, value.rstrip(".,:;"), limit=1000)
 
-        for item in turn.get("items") or []:
-            if not isinstance(item, dict):
+        for message in turn.messages:
+            text = message.get("text")
+            if not isinstance(text, str):
                 continue
-            item_type = item.get("type")
-            if item_type == "userMessage":
-                for content in item.get("content") or []:
-                    if isinstance(content, dict) and isinstance(content.get("text"), str):
-                        text = content["text"]
-                        add_unique(tasks, text)
-                        mentioned_paths(text)
-            elif item_type == "agentMessage" and isinstance(item.get("text"), str):
-                text = item["text"]
+            if message.get("role") == "user":
+                add_unique(tasks, text, limit=600)
+                mentioned_paths(text)
+                client_id = str(message.get("client_id") or "")
+                if "human" in client_id.casefold():
+                    add_unique(human_interventions, text, limit=500)
+            elif message.get("role") == "assistant":
                 add_unique(responses, text)
+                if message.get("phase") == "final_answer":
+                    add_unique(final_responses, text)
                 mentioned_paths(text)
                 for line in text.splitlines():
                     if re.search(
@@ -1530,8 +1984,11 @@ class CodexSessionManager:
                         r"\btestes?\s+(?:passaram|falharam|executados?)\b)",
                         line,
                     ):
-                        add_unique(tests, line, limit=2000)
-            elif item_type == "fileChange":
+                        add_unique(tests, line, limit=400)
+
+        for item in turn.items:
+            item_type = item.get("type")
+            if item_type == "fileChange":
                 for change in item.get("changes") or []:
                     if isinstance(change, dict) and isinstance(change.get("path"), str):
                         add_unique(files, change["path"], limit=1000)
@@ -1547,24 +2004,92 @@ class CodexSessionManager:
                     add_unique(
                         errors,
                         f"command status={status or 'unknown'} exit_code={exit_code}: {command}",
-                        limit=3000,
+                        limit=800,
                     )
-        status = str(turn.get("status") or "unknown")
-        error = turn.get("error")
+                add_unique(
+                    events,
+                    f"commandExecution status={status or 'unknown'}: {command}",
+                    limit=600,
+                )
+            elif item_type not in {"userMessage", "agentMessage", "contextCompaction"}:
+                item_status = item.get("status")
+                add_unique(
+                    events,
+                    f"{item_type or 'unknown'}"
+                    + (f" status={item_status}" if item_status is not None else ""),
+                    limit=300,
+                )
+        status = turn.status or "unknown"
+        error = turn.error
         if error:
-            add_unique(errors, json.dumps(error, ensure_ascii=False) if isinstance(error, dict) else str(error))
-        if status in {"interrupted", "failed", "cancelled", "inProgress"}:
+            detail = (
+                json.dumps(error, ensure_ascii=False)
+                if isinstance(error, dict)
+                else str(error)
+            )
+            add_unique(errors, detail)
+        if status in {
+            "interrupted",
+            "failed",
+            "cancelled",
+            "canceled",
+            "inProgress",
+            "in_progress",
+        }:
             add_unique(errors, f"turn status={status}")
+        final_response = (
+            final_responses[-1]
+            if final_responses
+            else (responses[-1] if responses else "")
+        )
         return {
-            "turn_id": str(turn.get("id") or ""),
+            "turn_id": turn.turn_id,
             "status": status,
-            "task_requested": "\n".join(tasks),
-            "tasks_requested": tasks,
-            "final_response": responses[-1] if responses else "",
-            "codex_responses": responses[-1:],
+            "requested": tasks[0] if tasks else "",
+            "additional_instructions": tasks[1:2],
+            "final_response": final_response,
+            "human_interventions": human_interventions,
+            "events": events[:8],
             "files_mentioned_or_changed": files,
             "tests_mentioned_or_executed": tests,
             "errors_cancellations_or_pending": errors,
+            "started_at": turn.started_at,
+            "completed_at": turn.completed_at,
+            "duration_ms": turn.duration_ms,
+        }
+
+    def _session_review_error(
+        self,
+        error: str,
+        message: str,
+        *,
+        thread_id: str | None,
+        technical: Exception | None = None,
+    ) -> dict[str, Any]:
+        self.bridge_log.write(
+            "session_review_failed",
+            source="qwen",
+            operation="thread/read",
+            project=str(self.project),
+            thread_id=thread_id,
+            state="failed",
+            error=error,
+            technical_type=type(technical).__name__ if technical else None,
+            technical_detail=str(technical) if technical else None,
+        )
+        return {
+            "ok": False,
+            "operation": "thread/read",
+            "project": str(self.project),
+            "thread_id": thread_id,
+            "turns_available": 0,
+            "turns_reviewed": 0,
+            "last_turn_id": None,
+            "last_status": None,
+            "summary_source": [],
+            "error": error,
+            "message": message,
+            "new_turn_started": False,
         }
 
     @staticmethod

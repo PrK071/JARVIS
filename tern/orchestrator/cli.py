@@ -12,8 +12,22 @@ from pathlib import Path
 
 from .agent import Supervisor
 from .client import LlamaClient
-from .codex import CodexRunner, CodexSessionManager
+from .codex import CodexError, CodexRunner, CodexSessionManager
 from .config import PROJECT_ROOT, load_settings
+from .deepseek import DeepSeekClient, DeepSeekService, DeepSeekSessionManager
+from .decision_policy import AgentDecisionPolicy, tool_catalog_audit
+from .decision_observability import AgentDecisionObserver
+from .projects import ProjectRegistry, normalize_technical_transcript
+from .semantic_pass import QwenSemanticInterpreter
+from .routing_eval import (
+    balanced_live_sample,
+    evaluate,
+    evaluate_live_qwen,
+    evaluate_live_semantic_qwen,
+    format_confusion,
+    format_report,
+    load_cases,
+)
 from .runtime import RuntimeManager
 from .security import ActionLogger, PathPolicy
 from .tools import ToolRegistry
@@ -22,6 +36,17 @@ from .web import WebClient, WebConfig, WebError
 
 def _print(value: object) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2, default=str))
+
+
+def _print_llama_startup(value: dict[str, object]) -> None:
+    if value.get("reused"):
+        print("[Qwen] servidor existente encontrado")
+    else:
+        print("[Qwen] servidor iniciado")
+    print(f"[Qwen] modelo: {value.get('model') or 'nao identificado'}")
+    print(f"[Qwen] estado: {'saudavel' if value.get('healthy') else 'indisponivel'}")
+    if value.get("reused"):
+        print("[Qwen] reutilizando servidor existente")
 
 
 def _approval(enabled: bool):
@@ -108,24 +133,95 @@ def _voice_stack(settings, *, mode: str | None = None):
 
 def _registry(settings, *, approval=None) -> ToolRegistry:
     policy = PathPolicy(settings.allowed_roots)
+    logger = ActionLogger(settings.state_dir / "actions.jsonl")
+    codex = CodexRunner(
+        policy,
+        settings.codex_timeout,
+        endpoint=settings.codex_app_server_endpoint,
+        state_dir=settings.state_dir,
+        quick_wait_timeout=settings.codex_quick_wait_timeout_seconds,
+        hard_timeout=settings.codex_turn_hard_timeout_seconds,
+        job_retention_days=settings.codex_job_retention_days,
+    )
+    projects = ProjectRegistry(policy, settings.state_dir, codex=codex)
+    deepseek = DeepSeekSessionManager(
+        client=DeepSeekClient(
+            enabled=settings.deepseek_enabled,
+            api_key=settings.deepseek_api_key,
+            base_url=settings.deepseek_base_url,
+            model=settings.deepseek_model,
+            timeout_seconds=settings.deepseek_request_timeout_seconds,
+            max_retries=settings.deepseek_max_retries,
+        ),
+        state_dir=settings.state_dir,
+        projects=projects,
+        logger=logger,
+        max_recent_turns=settings.deepseek_session_max_recent_turns,
+    )
     return ToolRegistry(
         policy=policy,
-        logger=ActionLogger(settings.state_dir / "actions.jsonl"),
-        codex=CodexRunner(
-            policy,
-            settings.codex_timeout,
-            endpoint=settings.codex_app_server_endpoint,
-            state_dir=settings.state_dir,
-            quick_wait_timeout=settings.codex_quick_wait_timeout_seconds,
-            hard_timeout=settings.codex_turn_hard_timeout_seconds,
-            job_retention_days=settings.codex_job_retention_days,
-        ),
+        logger=logger,
+        codex=codex,
         max_output_bytes=settings.max_tool_output_bytes,
         approval=approval,
         confirmation_timeout_seconds=(
             settings.action_confirmation_timeout_seconds
         ),
         web=_web_client(settings),
+        projects=projects,
+        deepseek=deepseek,
+    )
+
+
+def _deepseek_project(registry: ToolRegistry, value: str | None) -> str | None:
+    if not value:
+        result = registry.projects.resolve()
+    else:
+        candidate = Path(value)
+        result = registry.projects.resolve(
+            query=value,
+            path_hint=value if candidate.is_absolute() else None,
+        )
+    return str(result["root"]) if result.get("ok") else None
+
+
+def _run_deepseek_tui(
+    registry: ToolRegistry,
+    project: str,
+    *,
+    settings,
+    runtime: RuntimeManager,
+) -> int:
+    assert registry.deepseek is not None
+
+    def qwen_handoff(prompt: str) -> dict[str, object]:
+        runtime.ensure_llama_server(240)
+        return Supervisor(
+            settings,
+            LlamaClient(settings.base_url, settings.timeout),
+            registry,
+        ).run(prompt)
+
+    from .deepseek_tui import DeepSeekTUI
+
+    DeepSeekTUI(
+        DeepSeekService(
+            registry.deepseek,
+            project_path=project,
+            codex=registry.codex,
+        ),
+        qwen_handler=qwen_handoff,
+    ).run()
+    return 0
+
+
+def _run_jarvis_ui(settings, runtime: RuntimeManager) -> int:
+    from .jarvis_ui import run_jarvis_ui
+
+    return run_jarvis_ui(
+        settings=settings,
+        runtime=runtime,
+        registry=_registry(settings),
     )
 
 
@@ -166,6 +262,21 @@ def _print_codex_shared_status(value: dict[str, object]) -> None:
     print("Codex shared session")
     print(f"Endpoint: {value.get('endpoint')}")
     print(f"Thread: {value.get('thread_id') or '-'}")
+    print(
+        "App Server: "
+        + ("connected" if value.get("app_server_ready") else "disconnected")
+    )
+    shared_tui = value.get("shared_tui_connected")
+    print(
+        "Shared TUI: "
+        + (
+            "unknown"
+            if shared_tui is None
+            else "yes"
+            if shared_tui
+            else "no"
+        )
+    )
     print(f"Turn: {value.get('turn_id') or '-'}")
     print(f"State: {value.get('state')}")
     print(f"Last instruction: {value.get('last_instruction_source') or '-'}")
@@ -176,8 +287,53 @@ def _print_codex_shared_status(value: dict[str, object]) -> None:
         + ("connected" if value.get("qwen_connected") else "disconnected")
     )
     print(f"Last event: {age_text}")
+    if value.get("tui_warning"):
+        print("\nWarning:")
+        print(value["tui_warning"])
     if value.get("error"):
         print(f"Error: {value['error']}")
+
+
+def _print_codex_shared_tui(value: dict[str, object]) -> None:
+    if not value.get("ok"):
+        print("Codex shared TUI")
+        print(f"Error: {value.get('error')}")
+        print(f"Message: {value.get('message')}")
+        return
+    print("Codex shared TUI")
+    print(f"Project: {value.get('project')}")
+    print(f"Thread: {value.get('thread_id')}")
+    print(f"Endpoint: {value.get('endpoint')}")
+    print(f"Permissions: {value.get('permissions')}")
+    print(f"Command: {value.get('command_line')}")
+    if value.get("tui_pid"):
+        print(f"PID: {value.get('tui_pid')}")
+
+
+def _print_codex_startup(settings) -> None:
+    try:
+        codex = CodexSessionManager.from_persisted_session(
+            settings.state_dir,
+            timeout=settings.codex_timeout,
+        )
+    except CodexError:
+        print("[Codex] sessão compartilhada indisponível")
+        return
+    try:
+        status = codex.shared_status()
+    finally:
+        codex.close()
+    available = bool(status.get("thread_id") and status.get("app_server_ready"))
+    print(
+        "[Codex] sessão compartilhada "
+        + ("disponível" if available else "indisponível")
+    )
+    print(f"[Codex] thread: {status.get('thread_id') or '-'}")
+    shared = status.get("shared_tui_connected")
+    tui_text = "desconhecida" if shared is None else "conectada" if shared else "desconectada"
+    print(f"[Codex] TUI compartilhada: {tui_text}")
+    if not shared:
+        print("Use `jarvis codex` para abrir a sessão compartilhada.")
 
 
 def _codex_bridge_diagnose(settings, runtime: RuntimeManager, *, include_qwen: bool) -> int:
@@ -332,14 +488,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Orquestrador local Qwen3.5")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("config", help="mostra configuracao efetiva")
+    sub.add_parser("ui", help="abre a interface grafica local do Jarvis")
     start = sub.add_parser("start", help="inicia llama-server sem duplicar processo")
     start.add_argument("--wait", type=int, default=240)
     sub.add_parser("stop", help="encerra llama-server")
     sub.add_parser("status", help="mostra estado do servidor")
+    deepseek = sub.add_parser(
+        "deepseek", help="abre ou administra a sessao consultiva DeepSeek"
+    )
+    deepseek.add_argument("action", nargs="?", choices=("status", "new", "history"))
+    deepseek.add_argument("--project", default=None)
     sub.add_parser("tools", help="lista schemas das ferramentas")
     sub.add_parser(
         "codex-shared-start",
         help="inicia App Server e resolve thread persistente do projeto",
+    )
+    sub.add_parser(
+        "codex-shared-tui",
+        help="abre a TUI na thread e no App Server compartilhados",
     )
     sub.add_parser(
         "codex-shared-stop",
@@ -412,6 +578,8 @@ def build_parser() -> argparse.ArgumentParser:
     voice_mode.add_argument(
         "--no-voice", action="store_const", const="silent", dest="voice_mode"
     )
+    text_session = sub.add_parser("text", help="sessao interativa digitada")
+    text_session.add_argument("--once", action="store_true")
     sub.add_parser("voice-devices", help="lista dispositivos de audio")
     sub.add_parser(
         "voice-windows-list",
@@ -470,6 +638,68 @@ def build_parser() -> argparse.ArgumentParser:
     ask = sub.add_parser("ask", help="executa uma solicitacao pelo supervisor")
     ask.add_argument("prompt")
     ask.add_argument("--approve-destructive", action="store_true")
+    routing = sub.add_parser(
+        "agent-routing-eval",
+        help="executa benchmark deterministico de intencao e roteamento",
+    )
+    routing.add_argument(
+        "--mode", choices=("compare", "baseline", "policy"), default="compare"
+    )
+    routing.add_argument(
+        "--split", choices=("all", "development", "holdout"), default="all"
+    )
+    routing.add_argument("--live-qwen", action="store_true")
+    routing.add_argument(
+        "--semantic-first",
+        action="store_true",
+        help="no live dry-run, avalia o frame Qwen e o mapeamento deterministico",
+    )
+    routing.add_argument(
+        "--cases-file",
+        type=Path,
+        default=None,
+        help="corpus JSONL local alternativo",
+    )
+    routing.add_argument(
+        "--balanced",
+        action="store_true",
+        help="seleciona amostra live balanceada por grupo",
+    )
+    routing.add_argument(
+        "--fast-path",
+        action="store_true",
+        help="simula fast path read-only no live dry-run",
+    )
+    routing.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="limita casos (util para amostra live local)",
+    )
+    routing.add_argument("--confusion", action="store_true")
+    routing.add_argument("--json", action="store_true", dest="json_output")
+    decision = sub.add_parser(
+        "agent-decision",
+        help="mostra uma decisao dry-run sem executar ferramentas",
+    )
+    decision.add_argument("prompt")
+    decision.add_argument(
+        "--explain",
+        action="store_true",
+        help="inclui o frame semantico e a referencia resolvida (sem chain-of-thought)",
+    )
+    feedback = sub.add_parser(
+        "agent-feedback",
+        help="marca a decisao shadow mais recente para revisao humana",
+    )
+    feedback.add_argument("verdict", help="correct, wrong ou expected=INTENT")
+    feedback.add_argument("--last", action="store_true", required=True)
+    feedback.add_argument("--expected", default=None)
+    stats = sub.add_parser(
+        "agent-decision-stats",
+        help="agrega localmente decisoes shadow recentes",
+    )
+    stats.add_argument("--days", type=int, default=7)
     return parser
 
 
@@ -482,6 +712,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         settings = load_settings()
         manager = RuntimeManager(settings)
+        if args.command == "ui":
+            return _run_jarvis_ui(settings, manager)
         if args.command == "config":
             _print(
                 {
@@ -519,6 +751,23 @@ def main(argv: list[str] | None = None) -> int:
                         "max_research_corrections": settings.web_max_research_corrections,
                         "max_total_searches": settings.web_max_total_searches,
                         "max_total_opens": settings.web_max_total_opens,
+                    },
+                    "deepseek": {
+                        "enabled": settings.deepseek_enabled,
+                        "configured": bool(
+                            settings.deepseek_api_key and settings.deepseek_model
+                        ),
+                        "base_url": settings.deepseek_base_url,
+                        "model": settings.deepseek_model or None,
+                        "auto_escalation": settings.deepseek_auto_escalation,
+                        "request_timeout_seconds": settings.deepseek_request_timeout_seconds,
+                        "max_retries": settings.deepseek_max_retries,
+                        "session_max_recent_turns": settings.deepseek_session_max_recent_turns,
+                    },
+                    "agent_decision": {
+                        "shadow": settings.agent_decision_shadow,
+                        "fast_path": settings.agent_decision_fast_path,
+                        "context_cache": settings.agent_decision_context_cache,
                     },
                     "voice": {
                         "enabled": settings.voice_enabled,
@@ -577,11 +826,165 @@ def main(argv: list[str] | None = None) -> int:
                 }
             )
         elif args.command == "start":
-            _print(manager.start(args.wait))
+            _print(manager.ensure_llama_server(args.wait))
         elif args.command == "stop":
             _print(manager.stop())
         elif args.command == "status":
-            _print(manager.status())
+            registry = _registry(settings)
+            value = manager.status()
+            value["deepseek"] = registry.deepseek.status() if registry.deepseek else None
+            _print(value)
+        elif args.command == "deepseek":
+            registry = _registry(settings)
+            project = _deepseek_project(registry, args.project)
+            if project is None:
+                _print({"ok": False, "error": "project_not_found"})
+                return 1
+            assert registry.deepseek is not None
+            if args.action == "status":
+                _print(registry.deepseek.status(project_path=project))
+            elif args.action == "new":
+                _print(registry.deepseek.new_session(project))
+            elif args.action == "history":
+                _print(registry.deepseek.review_session(project_path=project, turn_limit=10))
+            else:
+                return _run_deepseek_tui(
+                    registry,
+                    project,
+                    settings=settings,
+                    runtime=manager,
+                )
+        elif args.command == "agent-decision":
+            registry = _registry(settings)
+            policy = AgentDecisionPolicy(tools=registry)
+            context = policy.build_context()
+            normalized = normalize_technical_transcript(args.prompt)
+            semantic_result = QwenSemanticInterpreter.skipped()
+            if (
+                settings.agent_decision_semantic_first
+                and QwenSemanticInterpreter.needs_semantic_pass(normalized, context)
+            ):
+                manager.ensure_llama_server(240)
+                semantic_result = QwenSemanticInterpreter(
+                    LlamaClient(settings.base_url, settings.timeout)
+                ).interpret(args.prompt, normalized, context)
+            decision = policy.decide(
+                args.prompt,
+                context=context,
+                semantic_decision=semantic_result.decision,
+            )
+            if semantic_result.used and not semantic_result.parse_valid:
+                decision = policy.safe_fallback_decision(decision)
+            catalog = tool_catalog_audit(registry.specs(), decision)
+            if args.explain:
+                frame = decision.intent_frame
+                reference = decision.resolved_reference
+                value = {
+                    "original": args.prompt,
+                    "normalized": normalized,
+                    "semantic_pass": semantic_result.used,
+                    "semantic_parse_valid": semantic_result.parse_valid,
+                    "semantic_repair_used": semantic_result.repair_used,
+                    "semantic_latency_ms": semantic_result.latency_ms,
+                    "speech_act": frame.speech_act.value if frame else None,
+                    "intent": decision.intent.value,
+                    "operation": frame.operation if frame else None,
+                    "agent": frame.agent if frame else None,
+                    "target_type": reference.type if reference else None,
+                    "execution_requested": frame.execution_requested if frame else None,
+                    "constraints": [item.value for item in frame.constraints] if frame else [],
+                    "followup_type": frame.followup_type.value if frame else None,
+                    "resolved_reference": reference.as_dict() if reference else None,
+                    "confidence": decision.confidence,
+                    "selected_tool": decision.selected_action,
+                    "allowed_tools": catalog["allowed"],
+                    "rejected_tools": catalog["rejected"],
+                    "side_effects": [item.value for item in decision.side_effects],
+                    "reason_code": decision.reason_code,
+                    "dry_run": True,
+                    "tool_execution": False,
+                }
+            else:
+                value = decision.as_dict()
+                value["semantic_pass"] = semantic_result.as_dict()
+                value["tool_catalog"] = catalog
+                value["decision_context"] = context.prompt_text()
+                value["dry_run"] = True
+                value["tool_execution"] = False
+            _print(value)
+        elif args.command == "agent-feedback":
+            verdict = str(args.verdict)
+            expected = args.expected
+            if verdict.startswith("expected="):
+                expected = verdict.split("=", 1)[1]
+                verdict = "wrong"
+            if verdict not in {"correct", "wrong"}:
+                raise ValueError("verdict deve ser correct, wrong ou expected=INTENT")
+            observer = AgentDecisionObserver(settings.state_dir, enabled=True)
+            result = observer.feedback(verdict=verdict, expected=expected)
+            _print(result)
+            return 0 if result.get("ok") else 1
+        elif args.command == "agent-decision-stats":
+            observer = AgentDecisionObserver(settings.state_dir, enabled=True)
+            _print(observer.stats(days=args.days))
+        elif args.command == "agent-routing-eval":
+            split = None if args.split == "all" else args.split
+            cases_path = args.cases_file
+            cases = load_cases(cases_path) if cases_path else load_cases()
+            if split:
+                cases = [case for case in cases if case.get("split") == split]
+            if args.live_qwen:
+                if args.balanced:
+                    per_group = max(1, (args.limit or 20) // 5)
+                    cases = balanced_live_sample(cases, per_group=per_group)
+                if args.limit is not None:
+                    if args.limit <= 0:
+                        raise ValueError("--limit deve ser maior que zero")
+                    cases = cases[: args.limit]
+                manager.ensure_llama_server(240)
+                if args.semantic_first:
+                    report = evaluate_live_semantic_qwen(
+                        cases=cases,
+                        client=LlamaClient(settings.base_url, settings.timeout),
+                        server_state=manager.inspect_llama_server,
+                    )
+                else:
+                    registry = _registry(settings)
+                    report = evaluate_live_qwen(
+                        cases=cases,
+                        client=LlamaClient(settings.base_url, settings.timeout),
+                        tool_specs=registry.specs(),
+                        fast_path=args.fast_path,
+                    )
+                if args.json_output:
+                    _print(report)
+                else:
+                    print(format_report(report, title="Agent Routing Evaluation (live Qwen dry-run)"))
+                    if args.confusion:
+                        print("\n" + format_confusion(report))
+                return 0 if report["failed"] == 0 else 1
+            modes = ("legacy", "policy") if args.mode == "compare" else (
+                "legacy" if args.mode == "baseline" else "policy",
+            )
+            reports = {
+                mode: evaluate(
+                    mode=mode,
+                    split=split,
+                    **({"cases_path": cases_path} if cases_path else {}),
+                )
+                for mode in modes
+            }
+            if args.json_output:
+                _print(reports)
+            else:
+                for number, (mode, report) in enumerate(reports.items()):
+                    if number:
+                        print()
+                    title = "BASELINE" if mode == "legacy" else "AGENT DECISION POLICY"
+                    print(format_report(report, title=title))
+                    if args.confusion:
+                        print("\n" + format_confusion(report))
+            return 0
         elif args.command == "codex-shared-start":
             codex = CodexSessionManager(
                 settings.allowed_roots[0],
@@ -593,6 +996,23 @@ def main(argv: list[str] | None = None) -> int:
                 _print(codex.shared_start())
             finally:
                 codex.close()
+        elif args.command == "codex-shared-tui":
+            try:
+                codex = CodexSessionManager.from_persisted_session(
+                    settings.state_dir,
+                    timeout=settings.codex_timeout,
+                )
+            except CodexError as exc:
+                _print_codex_shared_tui(
+                    {"ok": False, "error": exc.layer, "message": str(exc)}
+                )
+                return 1
+            try:
+                result = codex.open_shared_tui()
+            finally:
+                codex.close()
+            _print_codex_shared_tui(result)
+            return 0 if result.get("ok") else 1
         elif args.command == "codex-shared-stop":
             codex = CodexSessionManager(
                 settings.allowed_roots[0],
@@ -923,8 +1343,9 @@ def main(argv: list[str] | None = None) -> int:
 
             if not settings.voice_enabled:
                 raise VoiceDisabled("voz desativada por VOICE_ENABLED=false")
-            if not manager.status()["healthy"]:
-                manager.start(240)
+            server = manager.ensure_llama_server(240)
+            _print_llama_startup(server)
+            _print_codex_startup(settings)
             console = ConsoleIO()
             approval = VoiceActionApprover(console)
             registry = _registry(settings, approval=approval)
@@ -949,6 +1370,26 @@ def main(argv: list[str] | None = None) -> int:
             finally:
                 tts.close()
             _print(result)
+        elif args.command == "text":
+            from .text import TextSession
+            from .voice.policy import ConsoleIO, VoiceActionApprover
+
+            server = manager.ensure_llama_server(240)
+            _print_llama_startup(server)
+            _print_codex_startup(settings)
+            console = ConsoleIO()
+            registry = _registry(
+                settings,
+                approval=VoiceActionApprover(console),
+            )
+            supervisor = Supervisor(
+                settings,
+                LlamaClient(settings.base_url, settings.timeout),
+                registry,
+            )
+            TextSession(supervisor, console=console).run(
+                once=args.once
+            )
         else:
             registry = _registry(
                 settings,

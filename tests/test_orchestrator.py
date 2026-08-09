@@ -427,7 +427,7 @@ def test_normal_codex_actions_are_not_history_requests(user_text):
     assert not _is_codex_history_request(user_text)
 
 
-def test_non_history_request_keeps_all_tools_available(tmp_path):
+def test_explicit_codex_delegate_receives_only_relevant_tool(tmp_path):
     observed_tools = []
 
     class CapturingClient(Result):
@@ -444,12 +444,7 @@ def test_non_history_request_keeps_all_tools_available(tmp_path):
         "Peca ao Codex para revisar codex.py."
     )
     assert result["ok"]
-    assert {
-        "review_codex_session",
-        "delegate_to_codex",
-        "filesystem_list",
-        "web_search",
-    } <= set(observed_tools)
+    assert set(observed_tools) == {"delegate_to_codex"}
 
 
 def test_codex_history_exposes_only_review_tool_and_does_not_repeat(tmp_path):

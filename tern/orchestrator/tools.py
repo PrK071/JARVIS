@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .codex import CodexRunner
+from .deepseek import DeepSeekSessionManager
 from .pending_actions import PendingActionStore
 from .projects import ProjectRegistry
 from .schema import SchemaError, validate
@@ -94,6 +95,7 @@ class ToolRegistry:
         confirmation_timeout_seconds: int = 300,
         web: WebClient | None = None,
         projects: ProjectRegistry | None = None,
+        deepseek: DeepSeekSessionManager | None = None,
     ):
         self.policy = policy
         self.logger = logger
@@ -110,6 +112,7 @@ class ToolRegistry:
             logger.path.parent,
             codex=codex,
         )
+        self.deepseek = deepseek
         self._execution = threading.local()
         self._tools: dict[str, Tool] = {}
         self._register_defaults()
@@ -146,9 +149,22 @@ class ToolRegistry:
                 self.policy.resolve(str(normalized["directory"]))
             )
             return normalized
-        if name == "review_codex_session" and normalized.get("project_path"):
+        if name in {"review_codex_session", "review_deepseek_session"} and normalized.get("project_path"):
             normalized["project_path"] = str(
                 self.policy.resolve(str(normalized["project_path"]))
+            )
+            return normalized
+        if name == "delegate_to_deepseek":
+            requested = str(normalized.get("project_path") or "").strip()
+            user_text = str(context.get("user_text") or "")
+            resolution = self.projects.resolve(
+                query=user_text,
+                path_hint=requested if requested and Path(requested).is_absolute() else None,
+            )
+            if not resolution.get("ok"):
+                raise ValueError("nao foi possivel identificar um projeto permitido")
+            normalized["project_path"] = str(
+                self.policy.resolve(str(resolution["root"]))
             )
             return normalized
         if name != "delegate_to_codex":
@@ -428,7 +444,26 @@ class ToolRegistry:
                     event_callback=event_callback,
                 )
             arguments = normalized
-        self.logger.write(tool=name, arguments=arguments, result=result)
+        if name == "delegate_to_deepseek":
+            self.logger.write(
+                tool=name,
+                arguments={
+                    "project_path": arguments.get("project_path"),
+                    "continue_current_session": arguments.get("continue_current_session", True),
+                    "task_characters": len(str(arguments.get("task") or "")),
+                    "context_characters": len(str(arguments.get("context") or "")),
+                },
+                result={
+                    "ok": result.get("ok"),
+                    "session_id": result.get("session_id"),
+                    "project": result.get("project"),
+                    "model": result.get("model"),
+                    "response_characters": len(str(result.get("response") or "")),
+                    "error": result.get("error"),
+                },
+            )
+        else:
+            self.logger.write(tool=name, arguments=arguments, result=result)
         return result
 
     def confirm_pending_action(
@@ -491,11 +526,42 @@ class ToolRegistry:
             finally:
                 self._execution.event_callback = None
         succeeded = bool(result.get("ok"))
+        private_deepseek = record.get("tool") == "delegate_to_deepseek"
+        raw_arguments = (
+            record.get("arguments")
+            if isinstance(record.get("arguments"), dict)
+            else {}
+        )
+        stored_arguments = (
+            {
+                "project_path": raw_arguments.get("project_path"),
+                "continue_current_session": raw_arguments.get(
+                    "continue_current_session", True
+                ),
+                "task_characters": len(str(raw_arguments.get("task") or "")),
+                "context_characters": len(str(raw_arguments.get("context") or "")),
+            }
+            if private_deepseek
+            else None
+        )
+        stored_result = (
+            {
+                "ok": result.get("ok"),
+                "session_id": result.get("session_id"),
+                "project": result.get("project"),
+                "model": result.get("model"),
+                "response_characters": len(str(result.get("response") or "")),
+                "error": result.get("error"),
+            }
+            if private_deepseek
+            else result
+        )
         self.pending_actions.complete(
             action_id,
             status="completed" if succeeded else "failed",
-            result=result,
+            result=stored_result,
             error=None if succeeded else str(result.get("error") or "failed"),
+            arguments_override=stored_arguments,
         )
         self.logger.write_event(
             "pending_action_finished",
@@ -700,6 +766,55 @@ class ToolRegistry:
             self._delegate_to_codex,
             self.codex.timeout,
         )
+        if self.deepseek is not None:
+            nullable_project = {
+                "anyOf": [path, {"type": "null"}],
+            }
+            nullable_context = {
+                "anyOf": [
+                    {"type": "string", "minLength": 1, "maxLength": 30000},
+                    {"type": "null"},
+                ]
+            }
+            self._add(
+                "review_deepseek_session",
+                (
+                    "Le apenas o historico persistido da sessao DeepSeek do projeto. "
+                    "Nao chama a API nem cria uma nova sessao."
+                ),
+                _object(
+                    {
+                        "project_path": nullable_project,
+                        "turn_limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 50,
+                        },
+                    },
+                    [],
+                ),
+                self._review_deepseek_session,
+                15,
+            )
+            self._add(
+                "delegate_to_deepseek",
+                (
+                    "Consulta explicitamente o DeepSeek como agente consultivo, sem "
+                    "filesystem ou execucao local. Persiste pergunta e resposta na "
+                    "sessao logica compartilhada do projeto."
+                ),
+                _object(
+                    {
+                        "task": {"type": "string", "minLength": 1, "maxLength": 20000},
+                        "project_path": nullable_project,
+                        "continue_current_session": {"type": "boolean"},
+                        "context": nullable_context,
+                    },
+                    ["task"],
+                ),
+                self._delegate_to_deepseek,
+                self.deepseek.client.timeout_seconds,
+            )
         nullable_job_id = {
             "anyOf": [
                 {"type": "string", "minLength": 1, "maxLength": 100},
@@ -992,6 +1107,29 @@ class ToolRegistry:
             origin="qwen",
             event_callback=event_callback,
         ).as_dict()
+
+    def _delegate_to_deepseek(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert self.deepseek is not None
+        callback = getattr(self._execution, "event_callback", None)
+        if callback is not None:
+            callback("deepseek_sending", {})
+        result = self.deepseek.delegate(
+            arguments["task"],
+            project_path=arguments.get("project_path"),
+            continue_current_session=arguments.get("continue_current_session", True),
+            context=arguments.get("context"),
+            source="qwen",
+        )
+        if callback is not None:
+            callback("deepseek_completed" if result.get("ok") else "deepseek_failed", result)
+        return result
+
+    def _review_deepseek_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert self.deepseek is not None
+        return self.deepseek.review_session(
+            project_path=arguments.get("project_path"),
+            turn_limit=arguments.get("turn_limit", 10),
+        )
 
     def _get_codex_job_status(self, arguments: dict[str, Any]) -> dict[str, Any]:
         result = self.codex.get_job_status(

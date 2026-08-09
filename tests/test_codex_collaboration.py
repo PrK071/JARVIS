@@ -4,6 +4,7 @@ import json
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +14,8 @@ from tern.orchestrator.codex import (
     CodexError,
     CodexProtocolError,
     CodexSessionManager,
+    InvalidThreadResponse,
+    normalize_thread_read,
 )
 
 
@@ -466,7 +469,13 @@ def test_shared_status_repairs_stale_running_state(tmp_path, protocol_client):
         qwen_connected=True,
         qwen_pid=999999,
     )
-    manager._known_tui_clients = lambda _thread_id: 1
+    manager._known_tui_processes = lambda: [
+        {
+            "pid": 100,
+            "remote_endpoint": manager.endpoint,
+            "thread_id": THREAD_ID,
+        }
+    ]
     status = manager.shared_status()
     assert status["thread_id"] == THREAD_ID
     assert status["turn_id"] is None
@@ -501,6 +510,10 @@ def test_cli_codex_steer_status_and_interrupt(monkeypatch, capsys):
                 "last_instruction_source": "human",
                 "queue_length": 0,
                 "tui_clients_known": 1,
+                "app_server_ready": True,
+                "shared_tui_connected": True,
+                "standalone_tui_detected": False,
+                "tui_warning": None,
                 "qwen_connected": True,
                 "last_event_age_seconds": 1.0,
                 "error": None,
@@ -515,6 +528,8 @@ def test_cli_codex_steer_status_and_interrupt(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "State: running" in output
     assert "TUI clients known: 1" in output
+    assert "App Server: connected" in output
+    assert "Shared TUI: yes" in output
 
 
 def test_missing_thread_is_replaced_and_reason_logged(tmp_path, protocol_client):
@@ -633,3 +648,616 @@ def test_review_session_warns_when_tui_uses_other_thread(
     assert "Thread do assistente: thread-shared" in result["thread_warning"]
     assert "Thread da TUI: different-thread-id-12345" in result["thread_warning"]
     assert "As sessoes nao sao iguais." in result["thread_warning"]
+
+
+def history_turn(number: int, *, status: str = "completed", items=None) -> dict:
+    return {
+        "id": f"history-{number}",
+        "status": status,
+        "error": None,
+        "startedAt": 1_700_000_000 + number,
+        "completedAt": 1_700_000_100 + number,
+        "durationMs": 100 + number,
+        "items": (
+            items
+            if items is not None
+            else [
+                {
+                    "type": "userMessage",
+                    "content": [{"type": "text", "text": f"request {number}"}],
+                },
+                {
+                    "type": "agentMessage",
+                    "phase": "final_answer",
+                    "text": f"result {number}; {number} tests passed",
+                },
+            ]
+        ),
+    }
+
+
+@pytest.mark.parametrize(
+    ("available", "limit", "expected_ids"),
+    [
+        (12, 10, [f"history-{number}" for number in range(3, 13)]),
+        (3, 10, ["history-1", "history-2", "history-3"]),
+        (3, 1, ["history-3"]),
+        (12, "10", [f"history-{number}" for number in range(3, 13)]),
+    ],
+)
+def test_review_session_selects_last_turns_and_accepts_configured_string_limit(
+    tmp_path, protocol_client, available, limit, expected_ids
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.turns.extend(history_turn(number) for number in range(1, available + 1))
+    manager._known_tui_thread_ids = lambda: []
+
+    result = manager.review_session(turn_limit=limit)
+
+    assert result["ok"]
+    assert result["turns_available"] == available
+    assert result["turns_reviewed"] == len(expected_ids)
+    assert [item["turn_id"] for item in result["summary_source"]] == expected_ids
+    assert result["last_turn_id"] == expected_ids[-1]
+    assert result["turn_limit"] == int(limit)
+
+
+def test_review_session_handles_empty_thread_without_starting_turn(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    manager._known_tui_thread_ids = lambda: []
+
+    result = manager.review_session(turn_limit=10)
+
+    assert result["ok"]
+    assert result["turns_available"] == result["turns_reviewed"] == 0
+    assert result["summary_source"] == []
+    assert result["last_turn_id"] is None
+    assert protocol_client.start_calls == []
+    assert [method for method, _params in protocol_client.request_calls] == [
+        "thread/read"
+    ]
+
+
+def test_review_session_handles_empty_items_missing_final_and_interruption(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.turns.extend(
+        [
+            history_turn(1, items=[]),
+            history_turn(
+                2,
+                items=[
+                    {
+                        "type": "userMessage",
+                        "content": [{"type": "text", "text": "started only"}],
+                    }
+                ],
+            ),
+            history_turn(3, status="interrupted", items=[]),
+        ]
+    )
+    manager._known_tui_thread_ids = lambda: []
+
+    result = manager.review_session(turn_limit=10)
+
+    first, second, interrupted = result["summary_source"]
+    assert first["requested"] == first["final_response"] == ""
+    assert second["requested"] == "started only"
+    assert second["final_response"] == ""
+    assert interrupted["status"] == "interrupted"
+    assert interrupted["errors_cancellations_or_pending"] == [
+        "turn status=interrupted"
+    ]
+
+
+def test_normalize_real_app_server_0146_envelope_preserves_counter_types():
+    response = {
+        "thread": {
+            "id": THREAD_ID,
+            "status": {"type": "notLoaded"},
+            "cliVersion": "0.146.0",
+            "createdAt": 1_700_000_000,
+            "updatedAt": 1_700_000_001,
+            "turns": [history_turn(1)],
+        }
+    }
+
+    snapshot = normalize_thread_read(response)
+
+    assert snapshot.thread_id == THREAD_ID
+    assert snapshot.status == "notLoaded"
+    assert snapshot.cli_version == "0.146.0"
+    assert isinstance(snapshot.created_at, int)
+    assert isinstance(snapshot.turns, list)
+    assert isinstance(snapshot.turns[0].items, list)
+    assert isinstance(snapshot.turns[0].duration_ms, int)
+    assert snapshot.turns[0].messages[-1]["phase"] == "final_answer"
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        None,
+        {},
+        {"thread": []},
+        {"thread": {"id": THREAD_ID, "turns": 10}},
+        {"thread": {"id": THREAD_ID, "turns": [{"items": 3}]}},
+    ],
+)
+def test_normalize_thread_read_rejects_invalid_collection_contracts(response):
+    with pytest.raises(InvalidThreadResponse):
+        normalize_thread_read(response)
+
+
+def test_review_session_returns_specific_invalid_response_error(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.read_thread = lambda: {
+        "thread": {"id": THREAD_ID, "turns": 10}
+    }
+
+    result = manager.review_session(turn_limit=10)
+
+    assert not result["ok"]
+    assert result["error"] == "invalid_thread_response"
+    assert result["summary_source"] == []
+    assert result["new_turn_started"] is False
+
+
+def test_review_session_regression_tui_counter_never_receives_len(
+    tmp_path, protocol_client
+):
+    """Before the fix, the legacy integer probe raised TypeError at len(...)."""
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.turns.extend(history_turn(number) for number in range(1, 12))
+    manager._known_tui_thread_ids = lambda: 0
+
+    result = manager.review_session(turn_limit=10)
+
+    assert result["ok"]
+    assert result["turns_available"] == 11
+    assert result["turns_reviewed"] == 10
+    assert result["tui_thread_ids"] == []
+    assert result["threads_match"] is None
+
+
+@pytest.mark.parametrize("stdout", ["", "0"])
+def test_known_tui_thread_ids_empty_probe_returns_collection(
+    tmp_path, monkeypatch, stdout
+):
+    manager = CodexSessionManager(tmp_path, state_dir=tmp_path / ".orchestrator")
+
+    class Completed:
+        returncode = 0
+
+    Completed.stdout = stdout
+
+    monkeypatch.setattr(codex_module.subprocess, "run", lambda *_args, **_kwargs: Completed())
+
+    result = manager._known_tui_thread_ids()
+
+    assert result == []
+    assert isinstance(result, list)
+
+
+@pytest.mark.parametrize("turn_limit", [0, -1, 51, True, "ten", ""])
+def test_review_session_rejects_invalid_turn_limit_without_reading_thread(
+    tmp_path, protocol_client, turn_limit
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+
+    result = manager.review_session(turn_limit=turn_limit)
+
+    assert not result["ok"]
+    assert result["error"] == "invalid_turn_limit"
+    assert protocol_client.request_calls == []
+    assert protocol_client.start_calls == []
+
+
+def test_review_session_missing_persisted_thread_is_specific(tmp_path, protocol_client):
+    manager = RunManager(tmp_path, protocol_client)
+
+    result = manager.review_session(turn_limit=10)
+
+    assert not result["ok"]
+    assert result["error"] == "thread_not_found"
+    assert protocol_client.request_calls == []
+
+
+def test_review_session_maps_protocol_not_found_and_read_failure(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+
+    def missing():
+        raise CodexProtocolError("no rollout found")
+
+    protocol_client.read_thread = missing
+    missing_result = manager.review_session(turn_limit=10)
+    assert missing_result["error"] == "thread_not_found"
+
+    def failed():
+        raise CodexProtocolError("internal read failure")
+
+    protocol_client.read_thread = failed
+    failed_result = manager.review_session(turn_limit=10)
+    assert failed_result["error"] == "thread_read_failed"
+
+
+def test_review_session_maps_server_start_failure(tmp_path):
+    manager = CodexSessionManager(tmp_path, state_dir=tmp_path / ".orchestrator")
+    manager._persist_session(THREAD_ID)
+
+    def unavailable(*_args, **_kwargs):
+        raise CodexError("offline", layer="readiness")
+
+    manager.start_server = unavailable
+
+    result = manager.review_session(turn_limit=10)
+
+    assert result["error"] == "codex_server_unavailable"
+    assert result["message"] == "servidor Codex indisponivel"
+
+
+def test_normalizer_accepts_turn_with_messages_only():
+    snapshot = normalize_thread_read(
+        {
+            "thread": {
+                "id": THREAD_ID,
+                "turns": [
+                    {
+                        "id": "messages-only",
+                        "status": "completed",
+                        "messages": [
+                            {"role": "user", "text": "inspect"},
+                            {"role": "assistant", "text": "done"},
+                        ],
+                    }
+                ],
+            }
+        }
+    )
+
+    summary = CodexSessionManager._summarize_history_turn(snapshot.turns[0])
+    assert summary["requested"] == "inspect"
+    assert summary["final_response"] == "done"
+
+
+def test_review_session_summary_is_compact_and_contains_qwen_source(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    huge = "x" * 20_000
+    protocol_client.turns.extend(
+        history_turn(
+            number,
+            items=[
+                {
+                    "type": "userMessage",
+                    "content": [{"type": "text", "text": f"request {number} {huge}"}],
+                },
+                {
+                    "type": "agentMessage",
+                    "phase": "final_answer",
+                    "text": f"result {number} {huge}",
+                },
+            ],
+        )
+        for number in range(1, 11)
+    )
+    manager._known_tui_thread_ids = lambda: []
+
+    result = manager.review_session(turn_limit=10)
+    encoded = json.dumps(result, ensure_ascii=False).encode("utf-8")
+
+    assert result["ok"] and result["turns_reviewed"] == 10
+    assert result["summary_source"][0]["requested"].startswith("request 1")
+    assert result["summary_source"][-1]["final_response"].startswith("result 10")
+    assert len(encoded) < 50_000
+    assert protocol_client.start_calls == []
+    assert protocol_client.steer_calls == []
+    assert protocol_client.interrupt_calls == []
+    assert [method for method, _params in protocol_client.request_calls] == [
+        "thread/read"
+    ]
+
+
+def test_persisted_shared_session_loads_project_endpoint_and_thread(tmp_path):
+    manager = CodexSessionManager(
+        tmp_path,
+        endpoint="ws://127.0.0.1:4555",
+        state_dir=tmp_path / ".orchestrator",
+    )
+    manager._persist_session(THREAD_ID)
+
+    loaded = CodexSessionManager.from_persisted_session(
+        tmp_path / ".orchestrator"
+    )
+
+    assert loaded.project == tmp_path.resolve()
+    assert loaded.endpoint == "ws://127.0.0.1:4555"
+    assert loaded._load_session()["thread_id"] == THREAD_ID
+
+
+def test_prepare_shared_tui_reads_existing_thread_and_builds_real_0146_command(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+
+    result = manager.prepare_shared_tui()
+
+    assert result["ok"]
+    assert result["project"] == str(tmp_path.resolve())
+    assert result["endpoint"] == manager.endpoint
+    assert result["thread_id"] == THREAD_ID
+    assert result["permissions"] == "dangerously-bypass-approvals-and-sandbox"
+    command = result["command"]
+    assert command[1] == "resume"
+    assert command[command.index("--remote") + 1] == manager.endpoint
+    assert "--dangerously-bypass-approvals-and-sandbox" in command
+    assert command[command.index("-C") + 1] == str(tmp_path.resolve())
+    assert command[-1] == THREAD_ID
+    assert protocol_client.start_calls == []
+    assert [method for method, _params in protocol_client.request_calls] == [
+        "thread/read"
+    ]
+
+
+def test_open_shared_tui_uses_project_as_working_directory(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    observed = {}
+
+    def launcher(command, cwd):
+        observed["command"] = command
+        observed["cwd"] = cwd
+        return SimpleNamespace(pid=4321)
+
+    result = manager.open_shared_tui(launcher=launcher)
+
+    assert result["ok"] and result["tui_pid"] == 4321
+    assert observed["cwd"] == tmp_path.resolve()
+    assert observed["command"][-1] == THREAD_ID
+    assert protocol_client.start_calls == []
+    assert not any(
+        method in {"thread/start", "turn/start"}
+        for method, _params in protocol_client.request_calls
+    )
+
+
+def test_prepare_shared_tui_reports_missing_thread_without_recovery_start(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.thread_exists = False
+
+    result = manager.prepare_shared_tui()
+
+    assert not result["ok"]
+    assert result["error"] == "thread_not_found"
+    assert "codex-shared-start" in result["message"]
+    assert result["new_thread_started"] is False
+    assert protocol_client.start_calls == []
+
+
+def test_prepare_shared_tui_reports_unavailable_server(tmp_path):
+    manager = CodexSessionManager(tmp_path, state_dir=tmp_path / ".orchestrator")
+    manager._persist_session(THREAD_ID)
+
+    def unavailable(*_args, **_kwargs):
+        raise CodexError("offline", layer="readiness")
+
+    manager.start_server = unavailable
+
+    result = manager.prepare_shared_tui()
+
+    assert result["error"] == "codex_server_unavailable"
+    assert result["new_thread_started"] is False
+
+
+def test_tui_process_detection_distinguishes_standalone_and_shared(
+    tmp_path, monkeypatch
+):
+    manager = CodexSessionManager(tmp_path, state_dir=tmp_path / ".orchestrator")
+    persisted_thread = "019fbbb0-7ba1-7631-835c-229147e9316c"
+    command = manager._shared_tui_command(persisted_thread)
+    values = [
+        {
+            "ProcessId": 1,
+            "CommandLine": "codex.exe app-server --listen ws://127.0.0.1:4500",
+        },
+        {"ProcessId": 2, "CommandLine": "codex.exe --yolo"},
+        {
+            "ProcessId": 3,
+            "CommandLine": codex_module.subprocess.list2cmdline(command),
+        },
+    ]
+
+    completed = SimpleNamespace(returncode=0, stdout=json.dumps(values))
+    monkeypatch.setattr(
+        codex_module.subprocess,
+        "run",
+        lambda *_args, **_kwargs: completed,
+    )
+
+    processes = manager._known_tui_processes()
+
+    assert [item["pid"] for item in processes] == [2, 3]
+    standalone, shared = processes
+    assert standalone["remote_endpoint"] is None
+    assert standalone["thread_id"] is None
+    assert shared["remote_endpoint"] == manager.endpoint
+    assert shared["thread_id"] == persisted_thread
+
+
+@pytest.mark.parametrize(
+    ("processes", "shared", "standalone"),
+    [
+        ([{"pid": 2, "remote_endpoint": None, "thread_id": None}], False, True),
+        (
+            [
+                {
+                    "pid": 3,
+                    "remote_endpoint": "ws://127.0.0.1:4500",
+                    "thread_id": THREAD_ID,
+                }
+            ],
+            True,
+            False,
+        ),
+    ],
+)
+def test_shared_status_marks_only_exact_remote_thread_as_shared(
+    tmp_path, protocol_client, processes, shared, standalone
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    manager._known_tui_processes = lambda: processes
+
+    status = manager.shared_status()
+
+    assert status["shared_tui_connected"] is shared
+    assert status["standalone_tui_detected"] is standalone
+    assert bool(status["tui_warning"]) is standalone
+
+
+def test_human_shared_tui_message_is_visible_to_jarvis_review(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    protocol_client.turns.append(
+        {
+            "id": "human-shared",
+            "status": "completed",
+            "items": [
+                {
+                    "type": "userMessage",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Responda apenas: MENSAGEM-HUMANA-COMPARTILHADA",
+                        }
+                    ],
+                },
+                {
+                    "type": "agentMessage",
+                    "phase": "final_answer",
+                    "text": "MENSAGEM-HUMANA-COMPARTILHADA",
+                },
+            ],
+        }
+    )
+    manager._known_tui_processes = lambda: []
+
+    result = manager.review_session(turn_limit=1)
+
+    assert result["thread_id"] == THREAD_ID
+    assert "MENSAGEM-HUMANA-COMPARTILHADA" in result["last_turn"]["requested"]
+    assert result["last_turn"]["final_response"] == (
+        "MENSAGEM-HUMANA-COMPARTILHADA"
+    )
+    assert protocol_client.start_calls == []
+
+
+def test_qwen_turn_is_visible_from_same_shared_tui_thread(
+    tmp_path, protocol_client
+):
+    manager = RunManager(tmp_path, protocol_client)
+    manager.ensure_thread()
+    worker, values = start_qwen_turn(
+        manager,
+        "Responda apenas QWEN-COMPARTILHADO.",
+    )
+    protocol_client.finish(final="QWEN-COMPARTILHADO")
+    worker.join(5)
+
+    thread = protocol_client.read_thread()["thread"]
+    last_turn = thread["turns"][-1]
+
+    assert values["result"].thread_id == THREAD_ID
+    assert values["result"].final_response == "QWEN-COMPARTILHADO"
+    assert thread["id"] == THREAD_ID
+    assert last_turn["items"][-1]["text"] == "QWEN-COMPARTILHADO"
+
+
+def test_cli_shared_tui_opens_persisted_session(monkeypatch, capsys):
+    class Manager:
+        @classmethod
+        def from_persisted_session(cls, state_dir, *, timeout):
+            assert state_dir.name == ".orchestrator"
+            assert timeout > 0
+            return cls()
+
+        def open_shared_tui(self):
+            return {
+                "ok": True,
+                "project": r"D:\tern",
+                "thread_id": THREAD_ID,
+                "endpoint": "ws://127.0.0.1:4500",
+                "permissions": "dangerously-bypass-approvals-and-sandbox",
+                "command_line": "codex resume --remote ws://127.0.0.1:4500",
+                "tui_pid": 123,
+            }
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(cli_module, "CodexSessionManager", Manager)
+
+    assert cli_module.main(["codex-shared-tui"]) == 0
+    output = capsys.readouterr().out
+    assert "Codex shared TUI" in output
+    assert "Project: D:\\tern" in output
+    assert f"Thread: {THREAD_ID}" in output
+    assert "Permissions: dangerously-bypass-approvals-and-sandbox" in output
+
+
+def test_jarvis_startup_prints_shared_thread_without_opening_tui(
+    monkeypatch, capsys, tmp_path
+):
+    calls = []
+
+    class Manager:
+        @classmethod
+        def from_persisted_session(cls, state_dir, *, timeout):
+            calls.append((state_dir, timeout))
+            return cls()
+
+        def shared_status(self):
+            return {
+                "thread_id": THREAD_ID,
+                "app_server_ready": True,
+                "shared_tui_connected": False,
+            }
+
+        def close(self):
+            return None
+
+    settings = SimpleNamespace(state_dir=tmp_path, codex_timeout=10)
+    monkeypatch.setattr(cli_module, "CodexSessionManager", Manager)
+
+    cli_module._print_codex_startup(settings)
+
+    output = capsys.readouterr().out
+    assert "[Codex] sessão compartilhada disponível" in output
+    assert f"[Codex] thread: {THREAD_ID}" in output
+    assert "[Codex] TUI compartilhada: desconectada" in output
+    assert "Use `jarvis codex`" in output
+    assert len(calls) == 1

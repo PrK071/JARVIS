@@ -1,0 +1,102 @@
+{
+  "protocol": {
+    "cases": 20,
+    "groups": {
+      "DIRECT": 4,
+      "READ": 4,
+      "CODEX": 4,
+      "DEEPSEEK": 4,
+      "FOLLOWUP": 4
+    },
+    "dry_run": true,
+    "tools_executed": 0,
+    "max_output_tokens": 256,
+    "source": "agent_routing_regression"
+  },
+  "before": {
+    "fast_path": false,
+    "passed": 16,
+    "accuracy": 0.8,
+    "forbidden_tool_calls": 0,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "decision_ms": {
+      "average": 8992.922905000887,
+      "p50": 6774.052499997197,
+      "p90": 21021.976020000875,
+      "p95": 21444.561314996103
+    },
+    "first_tool_ms": {
+      "average": 6793.521785715711,
+      "p50": 5724.595699997735,
+      "p90": 8695.081620007113,
+      "p95": 14315.22957500419
+    },
+    "response_ms": {
+      "average": 10362.865754999075,
+      "p50": 6774.075649998849,
+      "p90": 21021.979219996138,
+      "p95": 22333.602369991437
+    },
+    "context_build_p95_ms": 0.03817499527940527,
+    "policy_p95_ms": 0.7703049952397123,
+    "prompt_build_p95_ms": 0.2411849935015198,
+    "tool_schema_tokens_average": 533.2
+    ,"system_prompt_tokens": 2435,
+    "decision_context_tokens_average": 84.55,
+    "current_user_message_tokens_average": 7.7
+  },
+  "after": {
+    "fast_path": true,
+    "passed": 19,
+    "accuracy": 0.95,
+    "forbidden_tool_calls": 0,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "decision_ms": {
+      "average": 6792.11773499992,
+      "p50": 6790.584449991002,
+      "p90": 12089.357770005883,
+      "p95": 13832.356644996622
+    },
+    "first_tool_ms": {
+      "average": 4907.124813330786,
+      "p50": 6017.155900000944,
+      "p90": 9814.335079991724,
+      "p95": 10724.867809993157
+    },
+    "response_ms": {
+      "average": 9197.241885000403,
+      "p50": 7337.546299997484,
+      "p90": 15713.133040000685,
+      "p95": 16443.88046500026
+    },
+    "context_build_p95_ms": 0.03162500652251765,
+    "policy_p95_ms": 0.5634449975332247,
+    "prompt_build_p95_ms": 0.11344501326675528,
+    "tool_schema_tokens_average": 131.8,
+    "system_prompt_tokens": 2435,
+    "decision_context_tokens_average": 84.55,
+    "current_user_message_tokens_average": 7.7,
+    "followup_decision_ms": {
+      "average": 0.2104499981214758,
+      "p95": 0.23567000389448367
+    }
+  },
+  "change": {
+    "decision_average_reduction_percent": 24.47375428549318,
+    "decision_p90_reduction_percent": 42.49177980256932,
+    "decision_p95_reduction_percent": 35.49838917937988,
+    "first_tool_average_reduction_percent": 27.76906794936962,
+    "response_average_reduction_percent": 11.24705482046184,
+    "tool_schema_average_reduction_percent": 75.28132033008271,
+    "followup_average_reduction_percent": 99.99433690426855
+  },
+  "remaining_live_failure": {
+    "id": "C001",
+    "input": "corrige esse bug no projeto",
+    "expected": "CODEX_DELEGATE",
+    "actual": "ANSWER_DIRECTLY",
+    "policy_was_not_changed_from_this_stochastic_live_result": true
+  }
+}

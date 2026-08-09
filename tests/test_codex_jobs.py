@@ -466,7 +466,11 @@ def test_status_question_uses_job_tool_without_filesystem_or_new_turn(tmp_path):
         },
     }
     client = ToolCallingClient(call)
-    answer = Supervisor(load_settings({}), client, tools).run("O Codex já terminou?")
+    answer = Supervisor(
+        load_settings({"AGENT_DECISION_FAST_PATH": "false"}),
+        client,
+        tools,
+    ).run("O Codex já terminou?")
     assert answer["ok"] and answer["tool_calls"] == 1
     assert [item["function"]["name"] for item in client.tools_seen[0]] == [
         "get_codex_job_status"

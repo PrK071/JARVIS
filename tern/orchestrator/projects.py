@@ -146,7 +146,8 @@ def normalize_technical_transcript(value: str) -> str:
         re.search(
             r"(?i)\b(?:arquivo|codigo|c[oó]digo|projeto|assistente|jarves|jarvis|"
             r"config|diretorio|pasta|sessao|thread|teste|bridge|voz|provider|"
-            r"codex|c[oó]dex|c[oó]digo ex|terne|ll?ama|lama ponto cpp)\b",
+            r"codex|c[oó]dex|c[oó]digo ex|terne|ll?ama|lama ponto cpp|"
+            r"dip\s+(?:sique|chique)|acessao|uornings)\b",
             value,
         )
     )
@@ -157,6 +158,9 @@ def normalize_technical_transcript(value: str) -> str:
         (r"(?i)\bterne\b", "Tern"),
         (r"(?i)\blama\s+ponto\s+cpp\b", "llama.cpp"),
         (r"(?i)\bjarves\b", "Jarvis"),
+        (r"(?i)\bdip\s+(?:sique|chique)\b", "DeepSeek"),
+        (r"(?i)\bacessao\b", "sessao"),
+        (r"(?i)\buornings\b", "warnings"),
     )
     result = value
     for pattern, replacement in replacements:

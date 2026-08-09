@@ -1,0 +1,47 @@
+{
+  "benchmark_id": "agent_routing_test_v3",
+  "methodology": "single valid evaluation after sealing; policy was not changed afterward",
+  "evaluated_at": "2026-08-08T21:02:30-03:00",
+  "sha256": "382fbfde9951ae3e9c5a61160c2c7a16bfe641cccd0f5170a5826d38b91d516e",
+  "policy_sha256": "6352cb0d3292d09a185c4368ea8b55748dc4751cc70a64ba474a98642c6438e2",
+  "git_commit": "54438b7715f7d67bc37f798bcf8081fd3103fd45",
+  "metrics": {
+    "cases": 50,
+    "passed": 17,
+    "failed": 33,
+    "overall_accuracy": 0.34,
+    "intent_accuracy": 0.56,
+    "tool_selection_accuracy": 0.56,
+    "project_accuracy": 0.96,
+    "speech_act_accuracy": 0.0,
+    "constraint_satisfaction_accuracy": 0.1666666667,
+    "reference_resolution_accuracy": 0.875,
+    "unnecessary_delegations": 2,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 6,
+    "excess_tool_calls": 5,
+    "new_codex_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "average_tool_calls": 0.44
+  },
+  "category_breakdown": {
+    "direct_meta": {"cases": 10, "passed": 6, "accuracy": 0.6},
+    "references": {"cases": 10, "passed": 2, "accuracy": 0.2},
+    "negation_constraints": {"cases": 10, "passed": 3, "accuracy": 0.3},
+    "followups": {"cases": 10, "passed": 4, "accuracy": 0.4},
+    "multiagent_compound": {"cases": 10, "passed": 2, "accuracy": 0.2}
+  },
+  "failure_ids": [
+    "V3-DIR-001", "V3-DIR-002", "V3-DIR-007", "V3-DIR-010",
+    "V3-REF-001", "V3-REF-002", "V3-REF-003", "V3-REF-004",
+    "V3-REF-006", "V3-REF-007", "V3-REF-009", "V3-REF-010",
+    "V3-NEG-001", "V3-NEG-002", "V3-NEG-004", "V3-NEG-005",
+    "V3-NEG-008", "V3-NEG-009", "V3-NEG-010", "V3-FOL-002",
+    "V3-FOL-003", "V3-FOL-004", "V3-FOL-005", "V3-FOL-006",
+    "V3-FOL-009", "V3-CMP-001", "V3-CMP-003", "V3-CMP-004",
+    "V3-CMP-006", "V3-CMP-007", "V3-CMP-008", "V3-CMP-009",
+    "V3-CMP-010"
+  ],
+  "policy_changed_from_results": false,
+  "next_step": "Treat v3 as known regression data. Any future independent measurement must use v4."
+}

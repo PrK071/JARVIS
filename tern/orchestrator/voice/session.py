@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -159,6 +160,7 @@ class VoiceSession:
                 changed=routing_text != transcription.text,
             )
             self.console.write("[assistente] pensando...")
+            assistant_started = time.perf_counter()
             result = self.supervisor.run(
                 routing_text,
                 event_callback=self._event,
@@ -214,6 +216,17 @@ class VoiceSession:
                 )
             tts_metrics = None
             if spoken and getattr(self.tts, "mode", None) != "silent":
+                time_to_first_audio_ms = (
+                    time.perf_counter() - assistant_started
+                ) * 1000
+                if isinstance(result.get("timing"), dict):
+                    result["timing"]["time_to_first_audio_ms"] = (
+                        time_to_first_audio_ms
+                    )
+                self.logger.write(
+                    "tts_started",
+                    time_to_first_audio_ms=time_to_first_audio_ms,
+                )
                 self.console.write("[assistente] falando... Esc interrompe")
                 self.logger.write(
                     "synthesis_started",
@@ -279,6 +292,18 @@ class VoiceSession:
                     self.logger.write("temporary_removed")
 
     def _event(self, event: str, values: dict[str, Any]) -> None:
+        if event in {
+            "input_received",
+            "decision_context_ready",
+            "prompt_ready",
+            "qwen_request_started",
+            "tool_call_detected",
+            "tool_start",
+            "tool_end",
+            "final_response_started",
+            "agent_timing",
+        }:
+            self.logger.write(event, **values)
         if event == "tool_start":
             name = str(values.get("name") or "")
             if name.startswith("web_"):
@@ -287,12 +312,23 @@ class VoiceSession:
                 self.console.write(
                     "[assistente] consultando a sessao compartilhada do Codex..."
                 )
-            elif name != "delegate_to_codex":
+            elif name == "review_deepseek_session":
+                self.console.write("[assistente] lendo a sessao do DeepSeek...")
+            elif name not in {"delegate_to_codex", "delegate_to_deepseek"}:
                 self.console.write(
                     f"[assistente] executando ferramenta: {name}"
                 )
         elif event == "codex_sending":
             self.console.write("[assistente] enviando tarefa ao Codex...")
+        elif event == "deepseek_sending":
+            self.console.write("[assistente] consultando o DeepSeek...")
+            self._spoken_status = "Consultando o DeepSeek."
+        elif event == "deepseek_completed":
+            self.console.write("[DeepSeek] resposta recebida.")
+            self._spoken_status = "O DeepSeek respondeu."
+        elif event == "deepseek_failed":
+            self.console.write("[DeepSeek] consulta indisponivel.")
+            self._spoken_status = "Nao foi possivel consultar o DeepSeek."
         elif event == "codex_turn_started":
             thread_id = str(values.get("thread_id") or "")[:8]
             turn_id = str(values.get("turn_id") or "")[:8]

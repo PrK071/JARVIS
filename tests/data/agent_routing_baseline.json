@@ -1,0 +1,52 @@
+{
+  "captured_from": "legacy deterministic routing gates before AgentDecisionPolicy integration",
+  "live_qwen": false,
+  "development": {
+    "cases": 80,
+    "passed": 29,
+    "failed": 51,
+    "overall_accuracy": 0.3625,
+    "intent_accuracy": 0.3875,
+    "tool_selection_accuracy": 0.475,
+    "project_accuracy": 0.9125,
+    "unnecessary_delegations": 1,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 1,
+    "excess_tool_calls": 1,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "average_tool_calls": 0.3375
+  },
+  "holdout": {
+    "cases": 20,
+    "passed": 8,
+    "failed": 12,
+    "overall_accuracy": 0.4,
+    "intent_accuracy": 0.45,
+    "tool_selection_accuracy": 0.5,
+    "project_accuracy": 1.0,
+    "unnecessary_delegations": 1,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 1,
+    "excess_tool_calls": 1,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "average_tool_calls": 0.4
+  },
+  "all": {
+    "cases": 100,
+    "passed": 37,
+    "failed": 63,
+    "overall_accuracy": 0.37,
+    "intent_accuracy": 0.4,
+    "tool_selection_accuracy": 0.48,
+    "project_accuracy": 0.93,
+    "unnecessary_delegations": 2,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 2,
+    "excess_tool_calls": 2,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "average_tool_calls": 0.35
+  }
+}
