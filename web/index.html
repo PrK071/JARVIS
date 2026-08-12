@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T.R.I.A.D.E — Sistema Ternário</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="grid-overlay"></div>
+
+  <header class="hud-header">
+    <div class="brand">
+      <span class="brand-icon">◈</span>
+      <div>
+        <h1>T.R.I.A.D.E</h1>
+        <p class="subtitle">Ternary Reasoning & Intelligent Adaptive Decision Engine</p>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="label">SISTEMA</span>
+        <span class="value online" id="system-status">ONLINE</span>
+      </div>
+      <div class="status-item">
+        <span class="label">NÚCLEO</span>
+        <span class="value" id="core-temp">37.2°C</span>
+      </div>
+      <div class="status-item">
+        <span class="label">HORA</span>
+        <span class="value" id="clock">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="hud-main">
+    <!-- Painel esquerdo: telemetria -->
+    <aside class="panel panel-left">
+      <section class="module">
+        <h2>◆ Telemetria Neural</h2>
+        <div class="metric">
+          <span>Camadas ativas</span>
+          <span class="metric-value" id="active-layers">12 / 12</span>
+        </div>
+        <div class="metric">
+          <span>Neurônios ternários</span>
+          <span class="metric-value" id="neuron-count">4.096</span>
+        </div>
+        <div class="metric">
+          <span>Taxa de convergência</span>
+          <span class="metric-value" id="convergence">98.7%</span>
+        </div>
+        <div class="waveform" id="waveform">
+          <canvas id="wave-canvas"></canvas>
+        </div>
+      </section>
+
+      <section class="module">
+        <h2>◆ Estados Ternários</h2>
+        <div class="ternary-legend">
+          <div class="state state-negative">
+            <span class="state-symbol">−1</span>
+            <span>Inibição</span>
+          </div>
+          <div class="state state-neutral">
+            <span class="state-symbol">0</span>
+            <span>Neutro</span>
+          </div>
+          <div class="state state-positive">
+            <span class="state-symbol">+1</span>
+            <span>Ativação</span>
+          </div>
+        </div>
+        <div class="ternary-grid" id="ternary-grid"></div>
+      </section>
+    </aside>
+
+    <!-- Centro: núcleo / arc reactor -->
+    <section class="core-section">
+      <div class="core-container">
+        <div class="ring ring-outer"></div>
+        <div class="ring ring-mid"></div>
+        <div class="ring ring-inner"></div>
+        <div class="core-glow"></div>
+        <div class="core-center">
+          <canvas id="core-canvas" width="280" height="280"></canvas>
+          <div class="core-label">
+            <span class="core-state" id="core-state">STANDBY</span>
+            <span class="core-confidence" id="core-confidence">—</span>
+          </div>
+        </div>
+        <div class="orbit-particles" id="particles"></div>
+      </div>
+
+      <div class="input-zone">
+        <div class="input-wrapper">
+          <span class="prompt-symbol">&gt;</span>
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Comando ou consulta ao modelo ternário..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="send-btn" aria-label="Enviar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-btn" data-cmd="status">Status</button>
+          <button class="quick-btn" data-cmd="diagnóstico">Diagnóstico</button>
+          <button class="quick-btn" data-cmd="analise ternária">Análise</button>
+          <button class="quick-btn" data-cmd="reiniciar núcleo">Reiniciar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Painel direito: log / respostas -->
+    <aside class="panel panel-right">
+      <section class="module module-log">
+        <h2>◆ Terminal de Resposta</h2>
+        <div class="log-container" id="log-container">
+          <div class="log-entry system">
+            <span class="timestamp">[INIT]</span>
+            <span class="message">Sistema T.R.I.A.D.E inicializado. Modelo ternário carregado.</span>
+          </div>
+          <div class="log-entry system">
+            <span class="timestamp">[READY]</span>
+            <span class="message">Aguardando entrada. Estados: −1 | 0 | +1</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="module">
+        <h2>◆ Distribuição de Decisão</h2>
+        <div class="decision-bars">
+          <div class="bar-row">
+            <span>−1</span>
+            <div class="bar-track"><div class="bar-fill negative" id="bar-negative" style="width: 33%"></div></div>
+            <span id="pct-negative">33%</span>
+          </div>
+          <div class="bar-row">
+            <span>0</span>
+            <div class="bar-track"><div class="bar-fill neutral" id="bar-neutral" style="width: 34%"></div></div>
+            <span id="pct-neutral">34%</span>
+          </div>
+          <div class="bar-row">
+            <span>+1</span>
+            <div class="bar-track"><div class="bar-fill positive" id="bar-positive" style="width: 33%"></div></div>
+            <span id="pct-positive">33%</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="module">
+        <h2>◆ Histórico de Inferência</h2>
+        <ul class="inference-history" id="inference-history"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="hud-footer">
+    <span>v2.4.1-TER</span>
+    <span class="footer-divider">|</span>
+    <span>Latência: <strong id="latency">12ms</strong></span>
+    <span class="footer-divider">|</span>
+    <span>Modo: <strong id="mode">AUTÔNOMO</strong></span>
+    <span class="footer-divider">|</span>
+    <span>© Stark Industries — Faculdade</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
