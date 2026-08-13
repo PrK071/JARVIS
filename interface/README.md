@@ -6,14 +6,14 @@ O T.R.I.A.D.E. apresenta animações, telemetria visual, terminal interativo e u
 
 > **Uso livre:** qualquer pessoa pode usar, copiar, modificar, adaptar, distribuir ou incorporar esta interface em projetos próprios, inclusive pessoais, acadêmicos ou comerciais, conforme os termos da [Licença MIT](LICENSE).
 
-> Este projeto é uma demonstração visual. As inferências, temperaturas, métricas e respostas são simuladas localmente; não há inteligência artificial, sensores, banco de dados ou backend conectado.
+> As inferências, temperaturas e métricas ternárias são simuladas. A conversa livre pode usar a OpenAI Responses API quando o servidor web é iniciado com `OPENAI_API_KEY`; os comandos do T.R.I.A.D.E continuam funcionando localmente sem chave.
 
 ## Recursos
 
 - Interface HUD responsiva para navegador
 - Versão desktop desenvolvida em Python com Tkinter
 - Núcleo central e forma de onda animados
-- Terminal interativo com comandos e ações rápidas
+- Terminal interativo com comandos, conversa livre, memória curta e ações rápidas
 - Histórico e distribuição visual das decisões
 - Simulação de estados ternários `−1`, `0` e `+1`
 - Nenhuma dependência Python externa
@@ -26,22 +26,36 @@ jarvis-ternario/
 ├── hudkit/           # Componentes visuais da versão desktop
 ├── triade/           # Aplicação e motor ternário simulado
 ├── main.py           # Ponto de entrada da aplicação desktop
-└── run.bat           # Inicializador para Windows
+├── web_server.py     # Servidor web e ponte opcional para o modelo
+├── run.bat           # Inicializador desktop para Windows
+└── run_web.bat       # Inicializador web para Windows
 ```
 
 As versões web e desktop são independentes. A lógica executada no navegador está em `web/app.js`, enquanto a versão desktop utiliza `triade/engine.py`.
 
 ## Executar no navegador
 
-Abra o arquivo `web/index.html` em um navegador moderno.
+Para ter comandos locais, conversa livre e Terminal de Resposta integrados, defina a chave da API como variável de ambiente e inicie o servidor:
 
-Opcionalmente, execute um servidor local a partir da pasta do projeto:
-
-```bash
-python -m http.server 8000 --directory web
+```powershell
+$env:OPENAI_API_KEY="sua_chave"
+python web_server.py
 ```
 
-Depois acesse `http://localhost:8000`.
+No Windows, também é possível executar `run_web.bat` depois de configurar a variável. Acesse `http://localhost:8000`.
+
+O modelo padrão é `gpt-5.6-terra`. Para selecionar outro modelo disponível na sua conta:
+
+```powershell
+$env:OPENAI_MODEL="gpt-5.6-terra"
+python web_server.py
+```
+
+Nunca coloque a chave dentro de `web/app.js`, `index.html` ou em arquivos versionados. Sem `OPENAI_API_KEY`, os comandos locais continuam disponíveis, mas perguntas livres exibem uma mensagem de configuração no Terminal de Resposta.
+
+Abrir diretamente `web/index.html` mantém a interface visual e os comandos locais, porém não permite conversa livre com o modelo.
+
+Digite `ajuda` ou `comandos` na barra central para ver os comandos disponíveis. O painel “Terminal de Resposta” é o histórico visual da conversa; ele não executa comandos do sistema operacional.
 
 As fontes Orbitron e Rajdhani são carregadas pelo Google Fonts. Sem conexão com a internet, o navegador utilizará fontes alternativas.
 

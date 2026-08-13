@@ -79,21 +79,63 @@
       </section>
     </aside>
 
-    <!-- Centro: núcleo / arc reactor -->
-    <section class="core-section">
-      <div class="core-container">
-        <div class="ring ring-outer"></div>
-        <div class="ring ring-mid"></div>
-        <div class="ring ring-inner"></div>
-        <div class="core-glow"></div>
-        <div class="core-center">
-          <canvas id="core-canvas" width="280" height="280"></canvas>
-          <div class="core-label">
+    <!-- Centro: núcleo em repouso / avatar durante as respostas -->
+    <section class="core-section" data-focus="core">
+      <div class="core-container" data-phase="idle" data-view="core" data-ternary="neu">
+        <div class="reactor-view" aria-hidden="true">
+          <div class="ring ring-outer"></div>
+          <div class="ring ring-mid"></div>
+          <div class="ring ring-inner"></div>
+          <div class="core-glow"></div>
+          <div class="core-center">
+            <canvas id="core-canvas" width="280" height="280"></canvas>
+          </div>
+          <div class="orbit-particles" id="particles"></div>
+        </div>
+
+        <button
+          class="core-trigger"
+          id="show-avatar-btn"
+          type="button"
+          aria-label="Mostrar o robô Synth-Alpha"
+          aria-controls="avatar-view"
+          aria-expanded="false"
+        ><span aria-hidden="true">◈</span></button>
+
+        <div class="avatar-view" id="avatar-view" aria-hidden="true">
+          <div class="avatar-halo"></div>
+          <div class="avatar-scan"></div>
+          <div
+            class="avatar-stage"
+            id="avatar-turntable"
+            role="slider"
+            tabindex="-1"
+            aria-label="Ângulo da cabeça Synth-Alpha"
+            aria-valuemin="0"
+            aria-valuemax="7"
+            aria-valuenow="0"
+            aria-valuetext="Vista frontal"
+            aria-describedby="turntable-help"
+          >
+            <div class="avatar-head-window">
+              <div class="avatar-rig" id="avatar-rig">
+                <img class="avatar-head-image" id="avatar-head" src="assets/synth-alpha/head/synth-alpha-head-00.png" alt="" draggable="false" />
+              </div>
+              <div class="turntable-frames" id="turntable-frames" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="core-label">
+          <div class="core-announcement" aria-live="polite">
             <span class="core-state" id="core-state">STANDBY</span>
             <span class="core-confidence" id="core-confidence">—</span>
           </div>
+          <button class="return-core-btn" id="return-core-btn" type="button" aria-label="Voltar ao núcleo ternário" title="Voltar ao núcleo">
+            <span aria-hidden="true">◈</span>
+          </button>
         </div>
-        <div class="orbit-particles" id="particles"></div>
+        <p class="sr-only" id="turntable-help">Arraste horizontalmente ou use as setas para girar a cabeça. A vista inicial é frontal.</p>
       </div>
 
       <div class="input-zone">
@@ -103,6 +145,7 @@
             type="text"
             id="user-input"
             placeholder="Comando ou consulta ao modelo ternário..."
+            maxlength="4000"
             autocomplete="off"
             spellcheck="false"
           />
@@ -125,7 +168,7 @@
     <aside class="panel panel-right">
       <section class="module module-log">
         <h2>◆ Terminal de Resposta</h2>
-        <div class="log-container" id="log-container">
+        <div class="log-container" id="log-container" role="log" aria-live="polite" aria-relevant="additions text">
           <div class="log-entry system">
             <span class="timestamp">[INIT]</span>
             <span class="message">Sistema T.R.I.A.D.E inicializado. Modelo ternário carregado.</span>
