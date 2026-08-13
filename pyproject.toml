@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tern"
+version = "0.1.0"
+description = "Local ternary LLM inference — quantize any model to {-1,0,+1} planes, run CPU-only via llama.cpp/ollama"
+requires-python = ">=3.9"
+dependencies = ["numpy", "torch", "tqdm", "beautifulsoup4>=4.12", "pymupdf>=1.24", "python-dotenv>=1.0"]
+
+[project.optional-dependencies]
+gguf = ["gguf", "aenum"]
+chat = ["llama-cpp-python"]
+voice = [
+  "sounddevice>=0.5,<1",
+  "soundfile>=0.13,<1",
+  "faster-whisper>=1.1,<2",
+  "piper-tts>=1.4,<2",
+]
+ollama = []
+all = ["tern[gguf,chat,voice]"]
+
+[project.scripts]
+tern = "tern.cli:main"
+tern-assistant = "tern.orchestrator.cli:main"
+jarvis = "tern.orchestrator.jarvis:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+"tern.orchestrator.voice" = ["pronunciation_ptbr.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

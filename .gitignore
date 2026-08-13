@@ -1,0 +1,59 @@
+# Local configuration and secrets
+.env
+.env.local
+.env.*.local
+
+# Python environments and generated files
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.pytest-tmp-*/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Runtime state, caches and temporary data
+.orchestrator/
+cache/
+logs/
+tmp/
+temp/
+*.log
+*.tmp
+*.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated audio
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Model weights and large runtime binaries
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.dll
+*.exe
+*.zip
+models/**/.cache/
+checkpoint_smollm2/
+qwen25-1.5b/
+smollm2-135m/
+runtime/
+
+# Local agent/plugin installations and preserved recovery metadata
+.agents/
+.git-corrupt-*/
