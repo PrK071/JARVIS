@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import threading
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
 from .codex import CodexRunner
+from .deepseek import DeepSeekSessionManager
+from .pending_actions import PendingActionStore
+from .projects import ProjectRegistry
 from .schema import SchemaError, validate
-from .security import ActionLogger, ApprovalCallback, PathPolicy, require_approval
+from .security import ActionLogger, ApprovalCallback, PathPolicy
 from .web import WebClient, WebConfig, WebError
 
 
@@ -34,6 +40,18 @@ _CODEX_SENSITIVE_PATTERNS = (
         r"corrig(?:ir|e)|corrij(?:a|am)|edit(?:ar|e)|modific(?:ar|e)|implement(?:ar|e)|"
         r"criar?\s+(?:arquivo|codigo|código)|fix|delete|overwrite|modify|edit)\b",
     ),
+)
+
+_PASSIVE_PROGRESS_TOOLS = frozenset(
+    {
+        "filesystem_list",
+        "filesystem_read_text",
+        "resolve_project",
+        "find_project_files",
+        "web_search",
+        "web_open",
+        "web_extract",
+    }
 )
 
 
@@ -74,7 +92,10 @@ class ToolRegistry:
         codex: CodexRunner,
         max_output_bytes: int,
         approval: ApprovalCallback | None = None,
+        confirmation_timeout_seconds: int = 300,
         web: WebClient | None = None,
+        projects: ProjectRegistry | None = None,
+        deepseek: DeepSeekSessionManager | None = None,
     ):
         self.policy = policy
         self.logger = logger
@@ -82,6 +103,17 @@ class ToolRegistry:
         self.max_output_bytes = max_output_bytes
         self.approval = approval
         self.web = web or WebClient(WebConfig(enabled=False))
+        self.pending_actions = PendingActionStore(
+            logger.path.parent,
+            timeout_seconds=confirmation_timeout_seconds,
+        )
+        self.projects = projects or ProjectRegistry(
+            policy,
+            logger.path.parent,
+            codex=codex,
+        )
+        self.deepseek = deepseek
+        self._execution = threading.local()
         self._tools: dict[str, Tool] = {}
         self._register_defaults()
 
@@ -91,46 +123,571 @@ class ToolRegistry:
     def names(self) -> tuple[str, ...]:
         return tuple(self._tools)
 
-    def execute(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    def _normalize_arguments(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized = dict(arguments)
+        if name == "resolve_project":
+            return normalized
+        if name == "find_project_files":
+            project_id = str(normalized.get("project_id") or "").strip()
+            if not any(item["id"] == project_id for item in self.projects.projects()):
+                raise ValueError("project_id nao registrado")
+            return normalized
+        if name in {
+            "filesystem_list",
+            "filesystem_read_text",
+            "filesystem_delete",
+        }:
+            normalized["path"] = str(self.policy.resolve(str(normalized["path"])))
+            return normalized
+        if name == "filesystem_write_text":
+            normalized["directory"] = str(
+                self.policy.resolve(str(normalized["directory"]))
+            )
+            return normalized
+        if name in {"review_codex_session", "review_deepseek_session"} and normalized.get("project_path"):
+            normalized["project_path"] = str(
+                self.policy.resolve(str(normalized["project_path"]))
+            )
+            return normalized
+        if name == "delegate_to_deepseek":
+            requested = str(normalized.get("project_path") or "").strip()
+            user_text = str(context.get("user_text") or "")
+            resolution = self.projects.resolve(
+                query=user_text,
+                path_hint=requested if requested and Path(requested).is_absolute() else None,
+            )
+            if not resolution.get("ok"):
+                raise ValueError("nao foi possivel identificar um projeto permitido")
+            normalized["project_path"] = str(
+                self.policy.resolve(str(resolution["root"]))
+            )
+            return normalized
+        if name != "delegate_to_codex":
+            return normalized
+        user_text = str(context.get("user_text") or "")
+        explicit_paths = re.findall(
+            r"(?i)(?:[A-Z]:\\[^\s,;]+)",
+            user_text,
+        )
+        project: Path | None = None
+        for raw_path in explicit_paths:
+            candidate = raw_path.rstrip(".?!:)")
+            try:
+                resolution = self.projects.resolve(path_hint=candidate)
+                if resolution.get("ok"):
+                    project = self.policy.resolve(str(resolution["root"]))
+                    break
+            except Exception:
+                continue
+        if project is None and not user_text:
+            requested = str(normalized.get("project_path") or "").strip()
+            if requested:
+                try:
+                    resolution = self.projects.resolve(path_hint=requested)
+                    if resolution.get("ok"):
+                        project = self.policy.resolve(str(resolution["root"]))
+                except Exception:
+                    project = None
+        if project is None:
+            requested = str(normalized.get("project_path") or "").strip()
+            resolution = self.projects.resolve(
+                query=user_text,
+                path_hint=(
+                    requested
+                    if not user_text and requested and Path(requested).is_absolute()
+                    else None
+                ),
+            )
+            if resolution.get("ok"):
+                project = self.policy.resolve(str(resolution["root"]))
+        if project is None:
+            raise ValueError("nao foi possivel identificar um projeto permitido")
+        normalized["project_path"] = str(project)
+        task = str(normalized.get("task") or "").strip()
+        project_record = next(
+            (
+                item
+                for item in self.projects.projects()
+                if Path(item["root"]) == project
+            ),
+            None,
+        )
+        recent = []
+        if project_record is not None:
+            state = self.projects.read()
+            recent = [
+                item["path"]
+                for item in reversed(state.get("recent_files", []))
+                if item.get("project_id") == project_record["id"]
+            ][:5]
+        prefix = [f"Trabalhe no projeto {project}."]
+        if recent:
+            prefix.extend(
+                ["", "Arquivos relevantes ja localizados:"]
+                + [f"- {path}" for path in recent]
+            )
+        prefix.extend(
+            [
+                "",
+                "Use somente a raiz autorizada informada e preserve as restricoes de seguranca.",
+            ]
+        )
+        task = "\n".join(prefix) + "\n\n" + task
+        normalized["task"] = task
+        if "wait" not in normalized:
+            intent = f"{user_text}\n{task}".casefold()
+            if re.search(r"\b(?:segundo plano|background|nao aguarde|não aguarde)\b", intent):
+                normalized["wait"] = False
+            elif re.search(r"\b(?:aguarde terminar|espere terminar|wait)\b", intent):
+                normalized["wait"] = True
+            else:
+                normalized["wait"] = not bool(
+                    re.search(
+                        r"\b(?:implement|corrig|su[ií]te completa|auditoria ampla|"
+                        r"instal|benchmark|muitos arquivos|refator|migrar|build)\w*\b",
+                        intent,
+                    )
+                )
+        return normalized
+
+    def _confirmation_requirement(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        user_text: str,
+    ) -> str | None:
+        if name == "filesystem_delete":
+            return "delete"
+        if name == "filesystem_write_text":
+            try:
+                destination = self.policy.child(
+                    arguments["directory"],
+                    arguments["name"],
+                    must_exist=False,
+                )
+                return "overwrite" if destination.exists() else None
+            except Exception:
+                return "outside_project"
+        if name != "delegate_to_codex":
+            return None
+        project_path = Path(str(arguments["project_path"])).resolve()
+        shared_project = getattr(self.codex, "shared_project", None)
+        current_project = shared_project() if callable(shared_project) else project_path
+        if current_project is None:
+            current_project = Path(__file__).resolve().parents[2]
+        if project_path != Path(current_project).resolve():
+            return "outside_project"
+        task = str(arguments["task"])
+        action = self._codex_sensitive_action(task)
+        if action in {
+            "install_software",
+            "remove_software",
+            "system_change",
+            "administrative",
+        }:
+            return action
+        if re.search(
+            r"(?i)\b(?:credenciais?|senhas?|passwords?|api[_ -]?keys?|"
+            r"arquivos? pessoais?|irreversivel|irreversível|backup|sincroniza)\b",
+            task,
+        ):
+            return "high_impact"
+        if action != "codex_modify_files":
+            return None
+        explicitly_requested = bool(
+            re.search(
+                r"(?i)\b(?:corrig(?:ir|e|a)|implementar?|implemente|"
+                r"modific(?:ar|e|a)|edit(?:ar|e)|criar?|melhor(?:ar|e)|"
+                r"ajust(?:ar|e)|consert(?:ar|e))\b",
+                user_text,
+            )
+        )
+        return None if explicitly_requested else "codex_modify_files"
+
+    def execute(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        *,
+        context: dict[str, Any] | None = None,
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
         tool = self._tools.get(name)
         if tool is None:
             return {"ok": False, "error": "unknown_tool", "message": f"ferramenta inexistente: {name}"}
+        context = context or {}
         try:
             validate(arguments, tool.schema)
+            normalized = self._normalize_arguments(name, arguments, context)
+            validate(normalized, tool.schema)
+        except SchemaError as exc:
+            result = {"ok": False, "error": "invalid_arguments", "message": str(exc)}
+        except Exception as exc:
+            result = {"ok": False, "error": type(exc).__name__, "message": str(exc)}
+        else:
+            project = normalized.get("project_path") or normalized.get(
+                "working_directory"
+            )
+            risk = self._confirmation_requirement(
+                name,
+                normalized,
+                str(context.get("user_text") or ""),
+            )
+            turn_id = str(context.get("turn_id") or f"direct-{uuid.uuid4()}")
+            pending_turn_id = (
+                f"{turn_id}:observation-{uuid.uuid4()}"
+                if risk is None and name in _PASSIVE_PROGRESS_TOOLS
+                else turn_id
+            )
+            action_id = str(uuid.uuid4())
+            record, prepared = self.pending_actions.prepare(
+                action_id=action_id,
+                tool=name,
+                arguments=normalized,
+                project=str(project) if project else None,
+                risk=risk or "normal",
+                confirmation_required=risk is not None,
+                turn_id=pending_turn_id,
+            )
+            if prepared != "created":
+                self.logger.write_event(
+                    "duplicate_tool_call_blocked",
+                    action_id=record.get("action_id"),
+                    tool=name,
+                    arguments=normalized,
+                    project=project,
+                    risk=risk or "normal",
+                    turn_id=turn_id,
+                    reason=prepared,
+                    request_fingerprint=record.get("request_fingerprint"),
+                )
+                result = {
+                    "ok": False,
+                    "error": "duplicate_tool_call_blocked",
+                    "message": "chamada identica ja pendente ou executada neste turno",
+                    "action_id": record.get("action_id"),
+                    "status": record.get("status"),
+                }
+            elif risk is not None:
+                self.pending_actions.mark_presented(action_id)
+                self.logger.write_event(
+                    "pending_action_created",
+                    action_id=action_id,
+                    tool=name,
+                    project=project,
+                    risk=risk,
+                    status="awaiting_confirmation",
+                    request_fingerprint=record.get("request_fingerprint"),
+                )
+                if event_callback is not None:
+                    event_callback(
+                        "action_pending",
+                        {
+                            "action_id": action_id,
+                            "tool": name,
+                            "risk": risk,
+                            "project": project,
+                        },
+                    )
+                approval_arguments = {
+                    **normalized,
+                    "path": str(project or normalized.get("path") or ""),
+                    "action_id": action_id,
+                    "tool": name,
+                    "risk": risk,
+                }
+                if self.approval is None:
+                    self.cancel_pending_action(
+                        action_id,
+                        reason="confirmation_callback_unavailable",
+                    )
+                    result = {
+                        "ok": False,
+                        "error": "ApprovalRequired",
+                        "message": f"confirmacao necessaria para {risk}",
+                        "action_id": action_id,
+                    }
+                else:
+                    try:
+                        approved = self.approval(risk, approval_arguments)
+                    except BaseException as exc:
+                        self.cancel_pending_action(
+                            action_id,
+                            reason=f"confirmation_aborted:{type(exc).__name__}",
+                        )
+                        raise
+                if self.approval is not None and not approved:
+                    self.cancel_pending_action(
+                        action_id,
+                        reason="user_cancelled",
+                    )
+                    result = {
+                        "ok": False,
+                        "error": "ActionCancelled",
+                        "message": "acao pendente cancelada pelo usuario",
+                        "action_id": action_id,
+                        "status": "cancelled",
+                    }
+                elif self.approval is not None:
+                    result = self.confirm_pending_action(
+                        action_id,
+                        event_callback=event_callback,
+                    )
+            else:
+                result = self.confirm_pending_action(
+                    action_id,
+                    event_callback=event_callback,
+                )
+            arguments = normalized
+        if name == "delegate_to_deepseek":
+            self.logger.write(
+                tool=name,
+                arguments={
+                    "project_path": arguments.get("project_path"),
+                    "continue_current_session": arguments.get("continue_current_session", True),
+                    "task_characters": len(str(arguments.get("task") or "")),
+                    "context_characters": len(str(arguments.get("context") or "")),
+                },
+                result={
+                    "ok": result.get("ok"),
+                    "session_id": result.get("session_id"),
+                    "project": result.get("project"),
+                    "model": result.get("model"),
+                    "response_characters": len(str(result.get("response") or "")),
+                    "error": result.get("error"),
+                },
+            )
+        else:
+            self.logger.write(tool=name, arguments=arguments, result=result)
+        return result
+
+    def confirm_pending_action(
+        self,
+        action_id: str,
+        *,
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        try:
+            record, claimed = self.pending_actions.claim_execution(action_id)
+        except KeyError as exc:
+            return {
+                "ok": False,
+                "error": "pending_action_not_found",
+                "message": str(exc),
+                "action_id": action_id,
+            }
+        if not claimed:
+            status = str(record.get("status") or "unknown")
+            error = (
+                "ActionExpired"
+                if status == "expired"
+                else "duplicate_tool_call_blocked"
+            )
+            return {
+                "ok": False,
+                "error": error,
+                "message": (
+                    "confirmacao expirada"
+                    if status == "expired"
+                    else "acao ja esta em execucao ou foi finalizada"
+                ),
+                "action_id": action_id,
+                "status": status,
+            }
+        self.logger.write_event(
+            "pending_action_executing",
+            action_id=action_id,
+            tool=record.get("tool"),
+            project=record.get("project"),
+            status="executing",
+            request_fingerprint=record.get("request_fingerprint"),
+        )
+        if event_callback is not None and record.get("tool") == "delegate_to_codex":
+            event_callback(
+                "codex_sending",
+                {"action_id": action_id, "project": record.get("project")},
+            )
+        tool = self._tools.get(str(record.get("tool") or ""))
+        if tool is None:
+            result = {
+                "ok": False,
+                "error": "unknown_tool",
+                "message": "ferramenta da acao pendente nao existe",
+            }
+        else:
+            self._execution.event_callback = event_callback
+            try:
+                result = self._invoke_handler(tool, dict(record["arguments"]))
+            finally:
+                self._execution.event_callback = None
+        succeeded = bool(result.get("ok"))
+        private_deepseek = record.get("tool") == "delegate_to_deepseek"
+        raw_arguments = (
+            record.get("arguments")
+            if isinstance(record.get("arguments"), dict)
+            else {}
+        )
+        stored_arguments = (
+            {
+                "project_path": raw_arguments.get("project_path"),
+                "continue_current_session": raw_arguments.get(
+                    "continue_current_session", True
+                ),
+                "task_characters": len(str(raw_arguments.get("task") or "")),
+                "context_characters": len(str(raw_arguments.get("context") or "")),
+            }
+            if private_deepseek
+            else None
+        )
+        stored_result = (
+            {
+                "ok": result.get("ok"),
+                "session_id": result.get("session_id"),
+                "project": result.get("project"),
+                "model": result.get("model"),
+                "response_characters": len(str(result.get("response") or "")),
+                "error": result.get("error"),
+            }
+            if private_deepseek
+            else result
+        )
+        self.pending_actions.complete(
+            action_id,
+            status="completed" if succeeded else "failed",
+            result=stored_result,
+            error=None if succeeded else str(result.get("error") or "failed"),
+            arguments_override=stored_arguments,
+        )
+        self.logger.write_event(
+            "pending_action_finished",
+            action_id=action_id,
+            tool=record.get("tool"),
+            project=record.get("project"),
+            status="completed" if succeeded else "failed",
+            error=result.get("error"),
+        )
+        return result
+
+    def cancel_pending_action(self, action_id: str, *, reason: str) -> dict[str, Any]:
+        record = self.pending_actions.complete(
+            action_id,
+            status="cancelled",
+            error=reason,
+        )
+        self.logger.write_event(
+            "pending_action_cancelled",
+            action_id=action_id,
+            tool=record.get("tool"),
+            project=record.get("project"),
+            status="cancelled",
+            reason=reason,
+        )
+        return record
+
+    def _invoke_handler(self, tool: Tool, arguments: dict[str, Any]) -> dict[str, Any]:
+        try:
             result = tool.handler(arguments)
             encoded = json.dumps(result, ensure_ascii=False).encode("utf-8")
             if len(encoded) > self.max_output_bytes:
-                result = {
+                return {
                     "ok": False,
                     "error": "output_too_large",
                     "message": f"retorno excedeu {self.max_output_bytes} bytes",
                 }
-        except SchemaError as exc:
-            result = {"ok": False, "error": "invalid_arguments", "message": str(exc)}
+            return result
         except WebError as exc:
-            result = {
-                "ok": False,
-                "error": exc.code,
-                "message": str(exc),
-            }
+            result = {"ok": False, "error": exc.code, "message": str(exc)}
             if exc.details:
                 result["details"] = exc.details
+            return result
         except TimeoutError as exc:
-            result = {"ok": False, "error": "timeout", "message": str(exc)}
+            return {"ok": False, "error": "timeout", "message": str(exc)}
         except Exception as exc:
-            result = {"ok": False, "error": type(exc).__name__, "message": str(exc)}
-        self.logger.write(tool=name, arguments=arguments, result=result)
-        return result
+            return {
+                "ok": False,
+                "error": type(exc).__name__,
+                "message": str(exc),
+            }
 
     def _add(self, name: str, description: str, schema: dict[str, Any], handler: ToolHandler, timeout: int) -> None:
         self._tools[name] = Tool(name, description, schema, handler, timeout)
 
     def _register_defaults(self) -> None:
         path = {"type": "string", "minLength": 1, "maxLength": 4096}
+        nullable_text = {
+            "anyOf": [
+                {"type": "string", "minLength": 1, "maxLength": 4096},
+                {"type": "null"},
+            ]
+        }
+        self._add(
+            "resolve_project",
+            (
+                "Resolve projeto por caminho, nome, alias, thread Codex ou "
+                "projeto ativo. Nao le arquivos, nao modifica e nao delega."
+            ),
+            _object(
+                {
+                    "query": nullable_text,
+                    "path_hint": nullable_text,
+                    "require_unique": {"type": "boolean"},
+                },
+                [],
+            ),
+            self._resolve_project,
+            15,
+        )
+        self._add(
+            "find_project_files",
+            (
+                "Localiza arquivos no indice leve de um projeto resolvido. "
+                "Use para nomes, descricoes, testes, documentacao e providers; "
+                "nao use filesystem_list para a mesma descoberta."
+            ),
+            _object(
+                {
+                    "project_id": {"type": "string", "minLength": 1, "maxLength": 100},
+                    "query": {"type": "string", "minLength": 1, "maxLength": 1000},
+                    "file_types": {
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "items": {"type": "string", "minLength": 1, "maxLength": 20},
+                                "maxItems": 20,
+                            },
+                            {"type": "null"},
+                        ]
+                    },
+                    "max_results": {"type": "integer", "minimum": 1, "maximum": 50},
+                },
+                ["project_id", "query"],
+            ),
+            self._find_project_files,
+            30,
+        )
         self._add(
             "filesystem_list",
-            "Lista uma pasta permitida. Retorna nomes, tipos e tamanhos; no maximo 500 entradas.",
-            _object({"path": path}, ["path"]),
+            (
+                "Lista uma pasta permitida em uma unica chamada. Pode percorrer "
+                "subpastas com profundidade limitada; retorna no maximo 500 entradas."
+            ),
+            _object(
+                {
+                    "path": path,
+                    "recursive": {"type": "boolean"},
+                    "max_depth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5,
+                    },
+                },
+                ["path"],
+            ),
             self._list,
             15,
         )
@@ -169,42 +726,147 @@ class ToolRegistry:
             15,
         )
         self._add(
-            "codex_delegate",
-            "Delega programacao ao Codex em sandbox workspace-write.",
+            "review_codex_session",
+            (
+                "Consulta o historico real da thread Codex compartilhada com "
+                "thread/read. Use para ultimas informacoes, ultimos turns, "
+                "revisao ou resumo da sessao. Nunca inicia turn, delega tarefa "
+                "ou pesquisa arquivos e logs."
+            ),
             _object(
                 {
-                    "working_directory": path,
-                    "task": {"type": "string", "minLength": 1, "maxLength": 20000},
-                    "context": {"type": "array", "items": {"type": "string"}, "maxItems": 40},
-                    "constraints": {"type": "array", "items": {"type": "string"}, "maxItems": 40},
-                    "acceptance_criteria": {"type": "array", "items": {"type": "string"}, "maxItems": 40},
-                    "validation": {"type": "array", "items": {"type": "string"}, "maxItems": 40},
+                    "project_path": path,
+                    "turn_limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50,
+                    },
                 },
-                [
-                    "working_directory",
-                    "task",
-                    "context",
-                    "constraints",
-                    "acceptance_criteria",
-                    "validation",
-                ],
+                [],
             ),
-            self._codex_delegate,
-            self.codex.timeout,
+            self._review_codex_session,
+            min(self.codex.timeout, 60),
         )
         self._add(
-            "codex_continue",
-            "Continua uma sessao Codex existente para correcao ou validacao adicional.",
+            "delegate_to_codex",
+            (
+                "Envia tarefa real ao Codex App Server compartilhado e aguarda "
+                "resultado. Retorna tambem intervencoes humanas e cancelamento. "
+                "Use para codigo, testes, repositorio, bugs e recursos."
+            ),
             _object(
                 {
-                    "session_id": {"type": "string", "minLength": 1, "maxLength": 200},
-                    "working_directory": path,
                     "task": {"type": "string", "minLength": 1, "maxLength": 20000},
+                    "project_path": path,
+                    "continue_current_thread": {"type": "boolean"},
+                    "wait": {"type": "boolean"},
                 },
-                ["session_id", "working_directory", "task"],
+                ["task", "project_path"],
             ),
-            self._codex_continue,
+            self._delegate_to_codex,
             self.codex.timeout,
+        )
+        if self.deepseek is not None:
+            nullable_project = {
+                "anyOf": [path, {"type": "null"}],
+            }
+            nullable_context = {
+                "anyOf": [
+                    {"type": "string", "minLength": 1, "maxLength": 30000},
+                    {"type": "null"},
+                ]
+            }
+            self._add(
+                "review_deepseek_session",
+                (
+                    "Le apenas o historico persistido da sessao DeepSeek do projeto. "
+                    "Nao chama a API nem cria uma nova sessao."
+                ),
+                _object(
+                    {
+                        "project_path": nullable_project,
+                        "turn_limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 50,
+                        },
+                    },
+                    [],
+                ),
+                self._review_deepseek_session,
+                15,
+            )
+            self._add(
+                "delegate_to_deepseek",
+                (
+                    "Consulta explicitamente o DeepSeek como agente consultivo, sem "
+                    "filesystem ou execucao local. Persiste pergunta e resposta na "
+                    "sessao logica compartilhada do projeto."
+                ),
+                _object(
+                    {
+                        "task": {"type": "string", "minLength": 1, "maxLength": 20000},
+                        "project_path": nullable_project,
+                        "continue_current_session": {"type": "boolean"},
+                        "context": nullable_context,
+                    },
+                    ["task"],
+                ),
+                self._delegate_to_deepseek,
+                self.deepseek.client.timeout_seconds,
+            )
+        nullable_job_id = {
+            "anyOf": [
+                {"type": "string", "minLength": 1, "maxLength": 100},
+                {"type": "null"},
+            ]
+        }
+        self._add(
+            "get_codex_job_status",
+            (
+                "Consulta o job Codex persistido sem iniciar turn nem ler o "
+                "filesystem. Use para saber se a ultima delegacao terminou."
+            ),
+            _object(
+                {
+                    "job_id": nullable_job_id,
+                    "latest": {"type": "boolean"},
+                },
+                [],
+            ),
+            self._get_codex_job_status,
+            30,
+        )
+        self._add(
+            "cancel_codex_job",
+            "Interrompe o turn do job Codex ativo sem iniciar outro turn.",
+            _object(
+                {
+                    "job_id": nullable_job_id,
+                    "latest": {"type": "boolean"},
+                },
+                [],
+            ),
+            self._cancel_codex_job,
+            30,
+        )
+        self._add(
+            "steer_codex_job",
+            "Envia direcao humana ao mesmo turn de um job Codex ativo.",
+            _object(
+                {
+                    "instruction": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 10000,
+                    },
+                    "job_id": nullable_job_id,
+                    "latest": {"type": "boolean"},
+                },
+                ["instruction"],
+            ),
+            self._steer_codex_job,
+            30,
         )
         domain = {
             "type": "string",
@@ -321,11 +983,75 @@ class ToolRegistry:
         directory = self.policy.resolve(arguments["path"])
         if not directory.is_dir():
             raise NotADirectoryError(directory)
+        recursive = bool(arguments.get("recursive", False))
+        max_depth = int(arguments.get("max_depth", 2))
         entries = []
-        for item in sorted(directory.iterdir(), key=lambda entry: entry.name.lower())[:500]:
+
+        def append(item: Path) -> None:
+            if len(entries) >= 500 or item.is_symlink():
+                return
             stat = item.stat()
-            entries.append({"name": item.name, "type": "directory" if item.is_dir() else "file", "size": stat.st_size})
-        return {"ok": True, "path": str(directory), "entries": entries}
+            entries.append(
+                {
+                    "name": item.name,
+                    "relative_path": item.relative_to(directory).as_posix(),
+                    "type": "directory" if item.is_dir() else "file",
+                    "size": stat.st_size,
+                }
+            )
+
+        if recursive:
+            for current, directories, files in os.walk(
+                str(directory),
+                followlinks=False,
+            ):
+                current_path = Path(current)
+                depth = len(current_path.relative_to(directory).parts)
+                directories[:] = sorted(
+                    [
+                        name
+                        for name in directories
+                        if not (current_path / name).is_symlink()
+                    ],
+                    key=str.casefold,
+                )
+                if depth >= max_depth:
+                    directories[:] = []
+                for name in directories:
+                    append(current_path / name)
+                for name in sorted(files, key=str.casefold):
+                    append(current_path / name)
+                if len(entries) >= 500:
+                    break
+        else:
+            for item in sorted(
+                directory.iterdir(),
+                key=lambda entry: entry.name.casefold(),
+            )[:500]:
+                append(item)
+        return {
+            "ok": True,
+            "path": str(directory),
+            "recursive": recursive,
+            "max_depth": max_depth if recursive else 0,
+            "truncated": len(entries) >= 500,
+            "entries": entries,
+        }
+
+    def _resolve_project(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.projects.resolve(
+            query=arguments.get("query"),
+            path_hint=arguments.get("path_hint"),
+            require_unique=arguments.get("require_unique", True),
+        )
+
+    def _find_project_files(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.projects.find_files(
+            project_id=arguments["project_id"],
+            query=arguments["query"],
+            file_types=arguments.get("file_types"),
+            max_results=arguments.get("max_results", 20),
+        )
 
     def _read(self, arguments: dict[str, Any]) -> dict[str, Any]:
         file_path = self.policy.resolve(arguments["path"])
@@ -335,12 +1061,14 @@ class ToolRegistry:
         data = file_path.read_bytes()
         if len(data) > limit:
             raise ValueError(f"arquivo excede limite de {limit} bytes")
+        resolution = self.projects.resolve(path_hint=str(file_path))
+        if resolution.get("ok"):
+            relative = file_path.relative_to(Path(str(resolution["root"]))).as_posix()
+            self.projects.note_file(str(resolution["project_id"]), relative)
         return {"ok": True, "path": str(file_path), "content": data.decode("utf-8")}
 
     def _write(self, arguments: dict[str, Any]) -> dict[str, Any]:
         destination = self.policy.child(arguments["directory"], arguments["name"])
-        if destination.exists():
-            require_approval(self.approval, "overwrite", {"path": str(destination)})
         destination.write_text(arguments["content"], encoding="utf-8")
         return {"ok": True, "path": str(destination), "bytes": destination.stat().st_size}
 
@@ -348,7 +1076,6 @@ class ToolRegistry:
         target = self.policy.resolve(arguments["path"])
         if not target.is_file():
             raise ValueError("somente arquivo individual pode ser apagado")
-        require_approval(self.approval, "delete", {"path": str(target)})
         size = target.stat().st_size
         target.unlink()
         return {"ok": True, "path": str(target), "bytes_deleted": size}
@@ -368,25 +1095,92 @@ class ToolRegistry:
                 return action
         return None
 
-    def _codex_delegate(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        action = self._codex_sensitive_action(arguments["task"])
-        if action:
-            require_approval(
-                self.approval,
-                action,
-                {"path": arguments["working_directory"]},
-            )
-        return self.codex.delegate(arguments).as_dict()
+    def _delegate_to_codex(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        event_callback = getattr(self._execution, "event_callback", None)
+        return self.codex.delegate_to_codex(
+            task=arguments["task"],
+            project_path=arguments["project_path"],
+            continue_current_thread=arguments.get(
+                "continue_current_thread", True
+            ),
+            wait=arguments.get("wait", True),
+            origin="qwen",
+            event_callback=event_callback,
+        ).as_dict()
 
-    def _codex_continue(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        action = self._codex_sensitive_action(arguments["task"])
-        if action:
-            require_approval(
-                self.approval,
-                action,
-                {"path": arguments["working_directory"]},
+    def _delegate_to_deepseek(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert self.deepseek is not None
+        callback = getattr(self._execution, "event_callback", None)
+        if callback is not None:
+            callback("deepseek_sending", {})
+        result = self.deepseek.delegate(
+            arguments["task"],
+            project_path=arguments.get("project_path"),
+            continue_current_session=arguments.get("continue_current_session", True),
+            context=arguments.get("context"),
+            source="qwen",
+        )
+        if callback is not None:
+            callback("deepseek_completed" if result.get("ok") else "deepseek_failed", result)
+        return result
+
+    def _review_deepseek_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert self.deepseek is not None
+        return self.deepseek.review_session(
+            project_path=arguments.get("project_path"),
+            turn_limit=arguments.get("turn_limit", 10),
+        )
+
+    def _get_codex_job_status(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        result = self.codex.get_job_status(
+            job_id=arguments.get("job_id"),
+            latest=arguments.get("latest", False),
+        )
+        callback = getattr(self._execution, "event_callback", None)
+        if callback is not None and result.get("ok"):
+            status = str(result.get("status") or "")
+            callback(
+                "codex_job_status",
+                {
+                    "job_id": result.get("job_id"),
+                    "status": status,
+                    "notify": (
+                        status in {"running", "starting", "queued", "reconnecting"}
+                        and self.codex.jobs.mark_progress_notified(str(result.get("job_id")))
+                    ),
+                },
             )
-        return self.codex.continue_session(**arguments).as_dict()
+        return result
+
+    def _cancel_codex_job(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        result = self.codex.cancel_job(
+            job_id=arguments.get("job_id"),
+            latest=arguments.get("latest", False),
+        )
+        callback = getattr(self._execution, "event_callback", None)
+        if callback is not None and result.get("ok"):
+            callback("codex_job_interrupted", result)
+        return result
+
+    def _steer_codex_job(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        result = self.codex.steer_job(
+            arguments["instruction"],
+            job_id=arguments.get("job_id"),
+            latest=arguments.get("latest", False),
+        )
+        callback = getattr(self._execution, "event_callback", None)
+        if callback is not None and result.get("ok"):
+            callback("codex_job_steered", result)
+        return result
+
+    def _review_codex_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.codex.review_session(
+            project_path=arguments.get(
+                "project_path",
+                str(Path(__file__).resolve().parents[2]),
+            ),
+            turn_limit=arguments.get("turn_limit", 10),
+        )
 
     def _web_search(self, arguments: dict[str, Any]) -> dict[str, Any]:
         return self.web.search(

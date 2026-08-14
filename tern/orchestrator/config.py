@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -84,7 +85,25 @@ class Settings:
     max_tool_calls: int
     max_attempts: int
     max_tool_output_bytes: int
+    agent_decision_shadow: bool
+    agent_decision_fast_path: bool
+    agent_decision_context_cache: bool
+    agent_decision_semantic_first: bool
     codex_timeout: int
+    codex_app_server_endpoint: str
+    codex_app_server_start_timeout: int
+    codex_quick_wait_timeout_seconds: int
+    codex_turn_hard_timeout_seconds: int
+    codex_job_retention_days: int
+    action_confirmation_timeout_seconds: int
+    deepseek_enabled: bool
+    deepseek_api_key: str | None
+    deepseek_base_url: str
+    deepseek_model: str
+    deepseek_auto_escalation: bool
+    deepseek_request_timeout_seconds: int
+    deepseek_max_retries: int
+    deepseek_session_max_recent_turns: int
     state_dir: Path
     env_file: Path
     env_file_loaded: bool
@@ -119,6 +138,14 @@ class Settings:
     voice_stt_timeout_seconds: int
     voice_tts_provider: str
     voice_mode: str
+    voice_piper_voice: str
+    voice_piper_requested_voice: str
+    voice_piper_config_path: Path
+    voice_piper_fallback: bool
+    voice_windows_voice_id: str
+    voice_windows_rate: float
+    voice_windows_volume: int
+    voice_fallback_provider: str
     voice_tts_model: Path
     voice_tts_voice: str
     voice_tts_device: str
@@ -155,6 +182,8 @@ class Settings:
     voice_normalize_loudness: bool
     voice_light_compression: bool
     voice_light_eq: bool
+    voice_translate_common_status_terms: bool
+    voice_piper_use_model_default_noise: bool
 
     @property
     def base_url(self) -> str:
@@ -226,6 +255,19 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     allowed_default = os.pathsep.join(
         str(path) for path in (PROJECT_ROOT, PROJECT_ROOT.parent / "llama.cpp", PROJECT_ROOT.parent / "sasori_review")
     )
+    rate_value = values.get("VOICE_TTS_RATE")
+    if rate_value is None:
+        rate_value = values.get("VOICE_TTS_SPEED")
+        if rate_value is not None:
+            warnings.warn(
+                "VOICE_TTS_SPEED foi substituida por VOICE_TTS_RATE; "
+                "a opcao antiga sera removida futuramente",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+    from .voice.voices import resolve_piper_voice
+
+    piper_voice = resolve_piper_voice(values, PROJECT_ROOT)
     settings = Settings(
         backend=backend,
         model_path=model_path,
@@ -246,7 +288,53 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         max_tool_calls=int(values.get("MODEL_MAX_TOOL_CALLS", "8")),
         max_attempts=int(values.get("MODEL_MAX_ATTEMPTS", "3")),
         max_tool_output_bytes=int(values.get("MODEL_MAX_TOOL_OUTPUT_BYTES", "131072")),
+        agent_decision_shadow=_bool(
+            values.get("AGENT_DECISION_SHADOW", "false")
+        ),
+        agent_decision_fast_path=_bool(
+            values.get("AGENT_DECISION_FAST_PATH", "true")
+        ),
+        agent_decision_context_cache=_bool(
+            values.get("AGENT_DECISION_CONTEXT_CACHE", "true")
+        ),
+        agent_decision_semantic_first=_bool(
+            values.get("AGENT_DECISION_SEMANTIC_FIRST", "true")
+        ),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
+        codex_app_server_endpoint=values.get(
+            "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
+        ).strip(),
+        codex_app_server_start_timeout=int(
+            values.get("CODEX_APP_SERVER_START_TIMEOUT", "30")
+        ),
+        codex_quick_wait_timeout_seconds=int(
+            values.get("CODEX_QUICK_WAIT_TIMEOUT_SECONDS", "60")
+        ),
+        codex_turn_hard_timeout_seconds=int(
+            values.get("CODEX_TURN_HARD_TIMEOUT_SECONDS", "0")
+        ),
+        codex_job_retention_days=int(
+            values.get("CODEX_JOB_RETENTION_DAYS", "7")
+        ),
+        action_confirmation_timeout_seconds=int(
+            values.get("ACTION_CONFIRMATION_TIMEOUT_SECONDS", "300")
+        ),
+        deepseek_enabled=_bool(values.get("DEEPSEEK_ENABLED", "true")),
+        deepseek_api_key=values.get("DEEPSEEK_API_KEY") or None,
+        deepseek_base_url=values.get(
+            "DEEPSEEK_BASE_URL", "https://api.deepseek.com"
+        ).strip(),
+        deepseek_model=values.get("DEEPSEEK_MODEL", "").strip(),
+        deepseek_auto_escalation=_bool(
+            values.get("DEEPSEEK_AUTO_ESCALATION", "false")
+        ),
+        deepseek_request_timeout_seconds=int(
+            values.get("DEEPSEEK_REQUEST_TIMEOUT_SECONDS", "180")
+        ),
+        deepseek_max_retries=int(values.get("DEEPSEEK_MAX_RETRIES", "2")),
+        deepseek_session_max_recent_turns=int(
+            values.get("DEEPSEEK_SESSION_MAX_RECENT_TURNS", "20")
+        ),
         state_dir=Path(values.get("MODEL_STATE_DIR", str(PROJECT_ROOT / ".orchestrator"))).resolve(),
         env_file=env_file,
         env_file_loaded=env_file_loaded,
@@ -329,27 +417,28 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         voice_mode=values.get(
             "VOICE_MODE", values.get("VOICE_TTS_PROVIDER", "piper")
         ).strip().lower(),
-        voice_tts_model=Path(
-            values.get(
-                "VOICE_TTS_MODEL",
-                str(
-                    PROJECT_ROOT
-                    / "models"
-                    / "voice"
-                    / "pt_BR-faber-medium.onnx"
-                ),
-            )
-        ).expanduser().resolve(),
-        voice_tts_voice=values.get(
-            "VOICE_TTS_VOICE", "pt_BR-faber-medium"
+        voice_piper_voice=piper_voice.alias,
+        voice_piper_requested_voice=piper_voice.requested_alias,
+        voice_piper_config_path=piper_voice.config_path,
+        voice_piper_fallback=piper_voice.fallback,
+        voice_windows_voice_id=values.get(
+            "VOICE_WINDOWS_VOICE_ID",
+            (
+                "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore"
+                "\\Voices\\Tokens\\MSTTS_V110_ptBR_DanielM"
+            ),
         ).strip(),
-        voice_tts_device=values.get("VOICE_TTS_DEVICE", "cpu").strip().lower(),
-        voice_tts_rate=float(
-            values.get(
-                "VOICE_TTS_SPEED",
-                values.get("VOICE_TTS_RATE", "0.96"),
-            )
+        voice_windows_rate=float(values.get("VOICE_WINDOWS_RATE", "1.5")),
+        voice_windows_volume=int(
+            values.get("VOICE_WINDOWS_VOLUME", "100")
         ),
+        voice_fallback_provider=values.get(
+            "VOICE_FALLBACK_PROVIDER", "piper"
+        ).strip().lower(),
+        voice_tts_model=piper_voice.model_path,
+        voice_tts_voice=piper_voice.alias,
+        voice_tts_device=values.get("VOICE_TTS_DEVICE", "cpu").strip().lower(),
+        voice_tts_rate=float(rate_value or "0.94"),
         voice_tts_volume=float(values.get("VOICE_TTS_VOLUME", "1.0")),
         voice_tts_timeout_seconds=int(
             values.get("VOICE_TTS_TIMEOUT_SECONDS", "60")
@@ -412,12 +501,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         voice_interrupt_key=values.get(
             "VOICE_INTERRUPT_KEY", "esc"
         ).strip().lower(),
-        voice_style=values.get("VOICE_STYLE", "default").strip().lower(),
+        voice_style=values.get("VOICE_STYLE", "clear_adult").strip().lower(),
         voice_sentence_pause_ms=int(
-            values.get("VOICE_SENTENCE_PAUSE_MS", "140")
+            values.get("VOICE_SENTENCE_PAUSE_MS", "160")
         ),
         voice_paragraph_pause_ms=int(
-            values.get("VOICE_PARAGRAPH_PAUSE_MS", "260")
+            values.get("VOICE_PARAGRAPH_PAUSE_MS", "280")
         ),
         voice_post_processing=_bool(
             values.get("VOICE_POST_PROCESSING", "false")
@@ -429,6 +518,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
             values.get("VOICE_LIGHT_COMPRESSION", "false")
         ),
         voice_light_eq=_bool(values.get("VOICE_LIGHT_EQ", "false")),
+        voice_translate_common_status_terms=_bool(
+            values.get("VOICE_TRANSLATE_COMMON_STATUS_TERMS", "true")
+        ),
+        voice_piper_use_model_default_noise=_bool(
+            values.get("VOICE_PIPER_USE_MODEL_DEFAULT_NOISE", "true")
+        ),
     )
     _validate(settings)
     return settings
@@ -443,12 +538,33 @@ def _validate(settings: Settings) -> None:
         raise ValueError("MODEL_FLASH_ATTENTION deve ser on, off ou auto")
     if settings.reasoning not in {"on", "off", "auto"}:
         raise ValueError("MODEL_REASONING deve ser on, off ou auto")
+    if not settings.deepseek_base_url.startswith(("https://", "http://")):
+        raise ValueError("DEEPSEEK_BASE_URL deve ser uma URL HTTP(S)")
+    if settings.deepseek_request_timeout_seconds <= 0:
+        raise ValueError("DEEPSEEK_REQUEST_TIMEOUT_SECONDS deve ser positivo")
+    if settings.deepseek_max_retries < 0:
+        raise ValueError("DEEPSEEK_MAX_RETRIES nao pode ser negativo")
+    if settings.deepseek_session_max_recent_turns <= 0:
+        raise ValueError("DEEPSEEK_SESSION_MAX_RECENT_TURNS deve ser positivo")
     if settings.kv_cache_k not in {"f16", "bf16", "q8_0", "q4_0"}:
         raise ValueError("MODEL_KV_CACHE_K nao suportado")
     if settings.kv_cache_v not in {"f16", "bf16", "q8_0", "q4_0"}:
         raise ValueError("MODEL_KV_CACHE_V nao suportado")
     if settings.max_tool_calls < 1 or settings.max_attempts < 1:
         raise ValueError("limites devem ser positivos")
+    if (
+        not re.fullmatch(
+            r"wss?://(?:127\.0\.0\.1|localhost|\[?::1\]?):\d+",
+            settings.codex_app_server_endpoint,
+            re.IGNORECASE,
+        )
+        or settings.codex_app_server_start_timeout < 1
+        or settings.codex_quick_wait_timeout_seconds < 1
+        or settings.codex_turn_hard_timeout_seconds < 0
+        or settings.codex_job_retention_days < 1
+        or settings.action_confirmation_timeout_seconds < 1
+    ):
+        raise ValueError("CODEX_APP_SERVER_ENDPOINT deve ser WebSocket local com porta")
     if settings.web_search_provider not in SEARCH_PROVIDER_URLS:
         allowed = ", ".join(SEARCH_PROVIDER_URLS)
         raise ValueError(
@@ -476,10 +592,25 @@ def _validate(settings: Settings) -> None:
         raise ValueError("configuracao de relevancia web invalida")
     if settings.voice_stt_provider not in {"faster_whisper"}:
         raise ValueError("VOICE_STT_PROVIDER deve ser faster_whisper")
-    if settings.voice_tts_provider != "piper":
-        raise ValueError("VOICE_TTS_PROVIDER deve ser piper")
-    if settings.voice_mode not in {"piper", "silent"}:
-        raise ValueError("VOICE_MODE deve ser piper ou silent")
+    if settings.voice_tts_provider not in {"piper", "windows_sapi"}:
+        raise ValueError(
+            "VOICE_TTS_PROVIDER deve ser piper ou windows_sapi"
+        )
+    if settings.voice_mode not in {"piper", "windows_sapi", "silent"}:
+        raise ValueError(
+            "VOICE_MODE deve ser piper, windows_sapi ou silent"
+        )
+    if settings.voice_fallback_provider != "piper":
+        raise ValueError("VOICE_FALLBACK_PROVIDER deve ser piper")
+    if (
+        not settings.voice_windows_voice_id
+        or not -10 <= settings.voice_windows_rate <= 10
+        or not 0 <= settings.voice_windows_volume <= 100
+    ):
+        raise ValueError(
+            "VOICE_WINDOWS_RATE deve estar entre -10 e 10 e "
+            "VOICE_WINDOWS_VOLUME entre 0 e 100"
+        )
     if settings.voice_stt_device != "cpu" or settings.voice_tts_device != "cpu":
         raise ValueError("STT e Piper devem usar CPU")
     if settings.voice_stt_compute_type not in {"int8", "int8_float32"}:
@@ -499,7 +630,7 @@ def _validate(settings: Settings) -> None:
         < settings.voice_tts_chunk_min_characters
         or settings.voice_tts_chunk_max_characters > 2000
         or not 1 <= settings.voice_tts_queue_size <= 10
-        or not 0.25 <= settings.voice_tts_rate <= 4
+        or not 0.88 <= settings.voice_tts_rate <= 1.25
         or not 0 <= settings.voice_tts_volume <= 2
         or not 0 <= settings.voice_sentence_pause_ms <= 2000
         or not 0 <= settings.voice_paragraph_pause_ms <= 5000

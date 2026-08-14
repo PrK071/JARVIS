@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
+import uuid
 from queue import Empty, Full, Queue
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
@@ -25,6 +26,13 @@ from .errors import (
 from .models import AudioResult, SynthesisOptions
 from .postprocess import postprocess_audio
 from .streaming import segment_for_speech
+
+
+def rate_to_length_scale(rate: float) -> float:
+    """Convert an intuitive speech rate to Piper's duration scale."""
+    if rate <= 0:
+        raise ValueError("a taxa de fala deve ser positiva")
+    return 1.0 / rate
 
 
 class TextToSpeechProvider(ABC):
@@ -55,6 +63,7 @@ class PiperTTS(TextToSpeechProvider):
         model_path: str | Path,
         audio: SoundDeviceAudio,
         *,
+        config_path: str | Path | None = None,
         output_device: str | int | None = None,
         output_device_name: str | None = None,
         interrupt_key: str = "esc",
@@ -68,6 +77,11 @@ class PiperTTS(TextToSpeechProvider):
         synthesis_config_factory: Any | None = None,
     ):
         self.model_path = Path(model_path).expanduser().resolve()
+        self.config_path = (
+            Path(config_path).expanduser().resolve()
+            if config_path is not None
+            else Path(str(self.model_path) + ".json")
+        )
         self.audio = audio
         self.output_device_selector = output_device
         self.output_device_name = output_device_name
@@ -103,9 +117,19 @@ class PiperTTS(TextToSpeechProvider):
                 ) from exc
             factory = PiperVoice.load
         try:
-            self._voice = factory(str(self.model_path), use_cuda=False)
+            self._voice = factory(
+                str(self.model_path),
+                config_path=str(self.config_path),
+                use_cuda=False,
+            )
         except TypeError:
-            self._voice = factory(str(self.model_path))
+            try:
+                self._voice = factory(
+                    str(self.model_path),
+                    config_path=str(self.config_path),
+                )
+            except TypeError:
+                self._voice = factory(str(self.model_path))
         except Exception as exc:
             raise TTSSynthesisFailed(
                 f"falha ao carregar voz Piper: {exc}"
@@ -166,7 +190,7 @@ class PiperTTS(TextToSpeechProvider):
             config_factory = SynthesisConfig
         config = config_factory(
             volume=options.volume,
-            length_scale=1.0 / options.rate,
+            length_scale=rate_to_length_scale(options.rate),
         )
         chunks = []
         sample_rate = None
@@ -174,7 +198,13 @@ class PiperTTS(TextToSpeechProvider):
             for chunk in voice.synthesize(text, syn_config=config):
                 if stop_event is not None and stop_event.is_set():
                     raise TTSStreamCancelled("sintese progressiva cancelada")
-                sample_rate = int(chunk.sample_rate)
+                chunk_sample_rate = int(chunk.sample_rate)
+                if sample_rate is None:
+                    sample_rate = chunk_sample_rate
+                elif chunk_sample_rate != sample_rate:
+                    raise TTSSynthesisFailed(
+                        "Piper retornou chunks com sample rates diferentes"
+                    )
                 if hasattr(chunk, "audio_float_array"):
                     values = np.asarray(
                         chunk.audio_float_array, dtype=np.float32
@@ -185,9 +215,14 @@ class PiperTTS(TextToSpeechProvider):
                         / 32768.0
                     )
                 else:
+                    raw_pcm = chunk.audio_int16_bytes
+                    if len(raw_pcm) % np.dtype(np.int16).itemsize:
+                        raise TTSSynthesisFailed(
+                            "Piper retornou PCM int16 desalinhado"
+                        )
                     values = (
                         np.frombuffer(
-                            chunk.audio_int16_bytes, dtype=np.int16
+                            raw_pcm, dtype="<i2"
                         ).astype(np.float32)
                         / 32768.0
                     )
@@ -454,3 +489,157 @@ class PiperTTS(TextToSpeechProvider):
 
     def close(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
+        self._voice = None
+
+
+class WindowsSpeechTTS(TextToSpeechProvider):
+    """Windows provider using stable voice IDs.
+
+    Daniel is a OneCore voice on this machine, so synthesis uses WinRT while
+    retaining the requested ``windows_sapi`` provider/configuration name.
+    """
+
+    name = "windows_sapi"
+
+    def __init__(
+        self,
+        audio: SoundDeviceAudio,
+        *,
+        voice_id: str,
+        rate: float = 1.5,
+        volume: int = 100,
+        temp_directory: str | Path,
+        output_device: str | int | None = None,
+        output_device_name: str | None = None,
+        interrupt_key: str = "esc",
+        fallback: TextToSpeechProvider | None = None,
+    ):
+        if not voice_id.strip():
+            raise ValueError("VOICE_WINDOWS_VOICE_ID vazio")
+        if not -10 <= rate <= 10:
+            raise ValueError("VOICE_WINDOWS_RATE deve estar entre -10 e 10")
+        if not 0 <= volume <= 100:
+            raise ValueError(
+                "VOICE_WINDOWS_VOLUME deve estar entre 0 e 100"
+            )
+        self.audio = audio
+        self.voice_id = voice_id
+        self.rate = rate
+        self.volume = volume
+        self.temp_directory = Path(temp_directory).expanduser().resolve()
+        self.output_device_selector = output_device
+        self.output_device_name = output_device_name
+        self.interrupt_key = interrupt_key
+        self.fallback = fallback
+        self.mode = self.name
+
+    def synthesize(
+        self,
+        text: str,
+        options: SynthesisOptions,
+    ) -> AudioResult:
+        text = text.strip()
+        if not text:
+            raise TTSSynthesisFailed("texto vazio para sintese")
+        try:
+            return self._synthesize_windows(text, options)
+        except Exception as exc:
+            if self.fallback is None:
+                if isinstance(exc, TTSSynthesisFailed):
+                    raise
+                raise TTSSynthesisFailed(
+                    f"Windows Speech falhou: {exc}"
+                ) from exc
+            result = self.fallback.synthesize(text, options)
+            result.metadata.update(
+                {
+                    "fallback_from": self.name,
+                    "fallback_reason": f"{type(exc).__name__}: {exc}",
+                }
+            )
+            return result
+
+    def _synthesize_windows(
+        self,
+        text: str,
+        options: SynthesisOptions,
+    ) -> AudioResult:
+        import soundfile as sf
+
+        from .windows_speech import synthesize_windows_voice
+
+        self.temp_directory.mkdir(parents=True, exist_ok=True)
+        filename = f"windows-speech-{uuid.uuid4().hex}.wav"
+        target = self.temp_directory / filename
+        started = time.monotonic()
+        try:
+            response = synthesize_windows_voice(
+                voice_id=self.voice_id,
+                interface="WinRT",
+                output_directory=self.temp_directory,
+                items=[{"filename": filename, "text": text}],
+                rate=self.rate,
+                volume=self.volume,
+                timeout_seconds=options.timeout_seconds,
+            )
+            samples, sample_rate = sf.read(
+                target,
+                dtype="float32",
+                always_2d=False,
+            )
+            values = np.asarray(samples, dtype=np.float32)
+            if values.ndim == 2:
+                if values.shape[1] != 1:
+                    raise TTSSynthesisFailed(
+                        "Windows Speech retornou áudio multicanal"
+                    )
+                values = values[:, 0]
+            values = values.reshape(-1)
+            if not values.size:
+                raise TTSSynthesisFailed(
+                    "Windows Speech retornou áudio vazio"
+                )
+            metrics = response.get("metrics") or [{}]
+            metric = metrics[0]
+            return AudioResult(
+                samples=values,
+                sample_rate=int(sample_rate),
+                duration_seconds=len(values) / int(sample_rate),
+                provider=self.name,
+                metadata={
+                    "synthesis_seconds": time.monotonic() - started,
+                    "engine_synthesis_seconds": metric.get(
+                        "synthesis_seconds"
+                    ),
+                    "voice_id": self.voice_id,
+                    "configured_rate": self.rate,
+                    "applied_speaking_rate": metric.get(
+                        "applied_speaking_rate"
+                    ),
+                    "volume": self.volume,
+                    "interface": "WinRT",
+                },
+            )
+        finally:
+            target.unlink(missing_ok=True)
+
+    def speak(
+        self,
+        text: str,
+        options: SynthesisOptions,
+        *,
+        stop_event: threading.Event | None = None,
+    ) -> bool:
+        result = self.synthesize(text, options)
+        return self.audio.play(
+            result,
+            output_device=self.output_device_selector,
+            output_device_name=self.output_device_name,
+            stop_event=stop_event,
+            interrupt_key=self.interrupt_key,
+        )
+
+    def close(self) -> None:
+        close = getattr(self.fallback, "close", None)
+        if callable(close):
+            close()

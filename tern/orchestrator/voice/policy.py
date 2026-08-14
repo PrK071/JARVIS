@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import Callable
 
-from .normalize import unwrap_markdown_code
+from .normalize import apply_semantic_replacements, unwrap_markdown_code
 
 
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
@@ -70,37 +70,46 @@ class VoiceActionApprover:
             impact = "substitui conteúdo existente"
             reversible = "não garantido"
         elif action == "codex_modify_files":
-            tool = "codex_delegate"
+            tool = "delegate_to_codex"
             impact = "pode criar ou modificar arquivos no workspace"
             reversible = "depende do controle de versão ou backup"
         elif action == "install_software":
-            tool = "codex_delegate"
+            tool = "delegate_to_codex"
             impact = "instala software ou pacotes"
             reversible = "pode exigir desinstalação separada"
         elif action == "remove_software":
-            tool = "codex_delegate"
+            tool = "delegate_to_codex"
             impact = "remove software ou pacotes"
             reversible = "pode exigir reinstalação"
         elif action == "system_change":
-            tool = "codex_delegate"
+            tool = "delegate_to_codex"
             impact = "altera configuração do sistema"
             reversible = "não garantido"
         elif action == "administrative":
-            tool = "codex_delegate"
+            tool = "delegate_to_codex"
             impact = "executa operação administrativa"
+            reversible = "não garantido"
+        elif action == "outside_project":
+            tool = str(arguments.get("tool") or "delegate_to_codex")
+            impact = "atua fora do projeto compartilhado atual"
+            reversible = "depende da operação solicitada"
+        elif action == "high_impact":
+            tool = str(arguments.get("tool") or "delegate_to_codex")
+            impact = "pode afetar dados sensíveis ou escopo amplo"
             reversible = "não garantido"
         else:
             tool = "unknown"
             impact = action
             reversible = "desconhecido"
-        self.console.write("[confirmação obrigatória]")
+        self.console.write("[ação pendente]")
+        self.console.write(f"id: {arguments.get('action_id', '<não informado>')}")
         self.console.write(f"ferramenta: {tool}")
         self.console.write(f"ação: {action}")
         self.console.write(f"caminho: {path}")
         self.console.write(f"impacto: {impact}")
         self.console.write(f"reversão: {reversible}")
         value = self.console.read(
-            "Digite CONFIRMAR para executar; qualquer outro texto cancela: "
+            "Digite CONFIRMAR para continuar ou CANCELAR para desistir:\n> "
         )
         return value.strip() == "CONFIRMAR"
 
@@ -112,8 +121,12 @@ def prepare_spoken_text(
     read_code: bool,
     read_urls: bool,
     summarize_long: bool,
+    semantic_replacements: dict[str, str] | None = None,
 ) -> str:
     value = text.strip()
+    value = apply_semantic_replacements(
+        value, semantic_replacements or {}
+    )
     value = unwrap_markdown_code(value)
     url_found = bool(_URL_RE.search(value))
     if not read_urls:
@@ -171,6 +184,7 @@ def prepare_research_spoken_text(
     read_code: bool,
     read_urls: bool,
     summarize_long: bool,
+    semantic_replacements: dict[str, str] | None = None,
 ) -> str:
     answer = re.split(
         r"(?im)^\s*fontes?\s+consultadas?\s*:",
@@ -183,6 +197,7 @@ def prepare_research_spoken_text(
         read_code=read_code,
         read_urls=read_urls,
         summarize_long=summarize_long,
+        semantic_replacements=semantic_replacements,
     )
     if source_count:
         label = "fonte relevante" if source_count == 1 else "fontes relevantes"

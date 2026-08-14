@@ -1,0 +1,22 @@
+{
+  "benchmark_id": "agent_routing_test_v3",
+  "status": "sealed_before_first_evaluation",
+  "created_at": "2026-08-08T21:01:41.6411652-03:00",
+  "sha256": "382fbfde9951ae3e9c5a61160c2c7a16bfe641cccd0f5170a5826d38b91d516e",
+  "cases": 50,
+  "categories": {
+    "direct_meta": 10,
+    "references": 10,
+    "negation_constraints": 10,
+    "followups": 10,
+    "multiagent_compound": 10
+  },
+  "adversarial_cases": 19,
+  "multi_turn_scenarios": 10,
+  "stt_or_noisy_cases": 10,
+  "policy_version": "agent-decision-policy-phase3",
+  "policy_sha256": "6352cb0d3292d09a185c4368ea8b55748dc4751cc70a64ba474a98642c6438e2",
+  "git_commit": "54438b7715f7d67bc37f798bcf8081fd3103fd45",
+  "authorship_protocol": "case authoring and expectation validation did not query AgentDecisionPolicy",
+  "evaluation_protocol": "evaluate exactly once after sealing; do not alter policy from observed v3 failures in this task"
+}

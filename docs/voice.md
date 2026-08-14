@@ -11,9 +11,8 @@ microfone
   -> Supervisor.run(texto)
   -> Qwen3.5 e ToolRegistry existentes
   -> resposta textual completa
-  -> prepare_spoken_text + normalize_for_speech(provider="piper")
-  -> segment_for_speech
-  -> PiperTTS produtor + fila limitada
+  -> prepare_spoken_text + normalize_for_speech(provider ativo)
+  -> WindowsSpeechTTS (Daniel) ou PiperTTS fallback
   -> SoundDeviceAudio consumidor ordenado (Esc interrompe)
 ```
 
@@ -29,13 +28,16 @@ pesquisa web, Codex, sessões e confirmações destrutivas.
 - `faster-whisper-small`: opção manual, aproximadamente 460–500 MB em disco;
   maior precisão esperada, mais RAM e latência que `base`.
 - `piper-tts`: síntese local leve, engine GPL-3.0.
-- `pt_BR-faber-medium`: voz brasileira, licença MIT, aproximadamente 63 MB,
-  22.050 Hz.
+- `pt_BR-faber-medium`: voz brasileira atual e fallback, aproximadamente
+  63 MB, 22.050 Hz.
+- `pt_BR-cadu-medium` e `pt_BR-jeff-medium`: alternativas brasileiras locais
+  de tamanho semelhante.
+- Faber, Cadu e Jeff: repositório de modelos MIT; cards declaram dataset CC0.
 
 Fontes: [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
 [modelo base](https://huggingface.co/Systran/faster-whisper-base),
 [Piper](https://github.com/OHF-Voice/piper1-gpl) e
-[pt_BR-faber-medium](https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR/faber/medium).
+[vozes pt-BR do Piper](https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR).
 
 STT e Piper rodam em CPU. Qwen permanece na GPU. Nenhum áudio ou texto é
 enviado para serviço externo. Não existe clonagem de voz nem custo por uso.
@@ -49,7 +51,7 @@ Set-Location D:\tern
 python -m pip install -e ".[voice]"
 New-Item -ItemType Directory -Force D:\tern\models\voice
 python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-base', local_dir=r'D:\tern\models\voice\faster-whisper-base')"
-python -m piper.download_voices --data-dir D:\tern\models\voice pt_BR-faber-medium
+python -m piper.download_voices --data-dir D:\tern\models\voice pt_BR-cadu-medium
 ```
 
 Modelo `small` opcional; não baixado automaticamente:
@@ -70,8 +72,8 @@ Arquivos esperados:
 
 ```text
 D:\tern\models\voice\faster-whisper-base\model.bin
-D:\tern\models\voice\pt_BR-faber-medium.onnx
-D:\tern\models\voice\pt_BR-faber-medium.onnx.json
+D:\tern\models\voice\pt_BR-cadu-medium.onnx
+D:\tern\models\voice\pt_BR-cadu-medium.onnx.json
 ```
 
 Primeira carga do STT e TTS demora mais. Depois do download, uso é offline.
@@ -92,14 +94,22 @@ VOICE_STT_LANGUAGE=pt
 VOICE_STT_THREADS=4
 VOICE_STT_TIMEOUT_SECONDS=120
 
-VOICE_TTS_PROVIDER=piper
-VOICE_MODE=piper
-VOICE_TTS_MODEL=D:\tern\models\voice\pt_BR-faber-medium.onnx
-VOICE_TTS_VOICE=pt_BR-faber-medium
+VOICE_TTS_PROVIDER=windows_sapi
+VOICE_MODE=windows_sapi
+VOICE_WINDOWS_VOICE_ID=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_ptBR_DanielM
+VOICE_WINDOWS_RATE=1.5
+VOICE_WINDOWS_VOLUME=100
+VOICE_FALLBACK_PROVIDER=piper
+VOICE_PIPER_VOICE=faber
+# VOICE_PIPER_MODEL_PATH=
+# VOICE_PIPER_CONFIG_PATH=
 VOICE_TTS_DEVICE=cpu
-VOICE_TTS_SPEED=0.96
+VOICE_TTS_RATE=0.94
 VOICE_TTS_VOLUME=1.0
 VOICE_TTS_TIMEOUT_SECONDS=60
+VOICE_STYLE=clear_adult
+VOICE_TRANSLATE_COMMON_STATUS_TERMS=true
+VOICE_PIPER_USE_MODEL_DEFAULT_NOISE=true
 
 VOICE_INPUT_DEVICE=5
 VOICE_OUTPUT_DEVICE=3
@@ -125,13 +135,19 @@ VOICE_TTS_STREAMING=true
 VOICE_TTS_CHUNK_MIN_CHARACTERS=60
 VOICE_TTS_CHUNK_MAX_CHARACTERS=220
 VOICE_TTS_QUEUE_SIZE=3
-VOICE_SENTENCE_PAUSE_MS=140
-VOICE_PARAGRAPH_PAUSE_MS=260
+VOICE_SENTENCE_PAUSE_MS=160
+VOICE_PARAGRAPH_PAUSE_MS=280
 VOICE_POST_PROCESSING=false
 VOICE_NORMALIZE_LOUDNESS=true
 VOICE_LIGHT_COMPRESSION=false
 VOICE_LIGHT_EQ=false
 ```
+
+Microsoft Daniel é selecionado pelo ID OneCore estável. Neste computador ele
+está disponível pela API WinRT, não pelo catálogo SAPI 5. O valor
+`VOICE_WINDOWS_RATE` usa a escala logarítmica SAPI e é aplicado pela opção
+nativa `SpeakingRate` antes da síntese; aceita valores de `-10` a `10`,
+inclusive fracionários. Volume padrão: `100`. Piper permanece fallback.
 
 Resolução: identidade exata `nome [host API]`, nome exato, correspondência
 normalizada, ID explícito, dispositivo padrão. Nome duplicado retorna opções;
@@ -184,12 +200,90 @@ Sem Qwen:
 python -m tern.orchestrator voice-diagnose
 python -m tern.orchestrator voice-model-info
 python -m tern.orchestrator voice-pronunciation-test
+python -m tern.orchestrator voice-playback-diagnose
+python -m tern.orchestrator voice-phoneme-diagnose
+python -m tern.orchestrator voice-piper-compare
+python -m tern.orchestrator voice-compare-models
 ```
 
 `voice-diagnose` é leve: não chama Qwen nem STT. Confirma Piper instalado,
-modelo Faber, saída resolvida por nome, síntese, reprodução, cancelamento e
+modelo selecionado, saída resolvida por nome, síntese, reprodução, cancelamento e
 limpeza. `voice-pronunciation-test` gera 12 WAVs numa pasta temporária
 identificada; use `--play` para ouvi-los em sequência.
+
+`voice-playback-diagnose` compara o PCM bruto do Piper com o reconstruído da
+fila progressiva, registra sample rates e reproduz pelos caminhos normal e
+independente. Os WAVs ficam em
+`.orchestrator\piper-playback-diagnose`. `voice-phoneme-diagnose` confirma
+o locale `pt-br`, mostra fonemas somente no diagnóstico e salva amostras em
+`.orchestrator\piper-phoneme-diagnose`.
+
+`voice-piper-compare` mantém o diagnóstico antigo de Faber, Cadu e Jeff.
+`voice-compare-models` usa as mesmas 20 frases normalizadas e os padrões
+acústicos de cada modelo. Candidatos ausentes, inválidos ou sem licença
+identificada são registrados e ignorados. Também gera uma variante em taxa
+0,94, usa o faster-whisper apenas como indicador de CER/WER e grava:
+
+```text
+.orchestrator\piper-model-comparison\
+  comparison-report.md
+  comparison-report.json
+  jeff-completo.wav
+  cadu-completo.wav
+  faber-completo.wav
+```
+
+Por padrão, WAVs elegíveis são reproduzidos na ordem preferida e Esc cancela
+a reprodução. Ao final, a escolha numérica atualiza somente
+`VOICE_PIPER_VOICE` no `.env`. Para gerar sem reproduzir nem selecionar:
+
+```powershell
+python -m tern.orchestrator voice-compare-models --no-play --no-select
+```
+
+Aliases portáveis:
+
+```dotenv
+VOICE_PIPER_VOICE=faber
+# Valores: miro, jeff, cadu, dii, faber
+# VOICE_PIPER_MODEL_PATH=
+# VOICE_PIPER_CONFIG_PATH=
+```
+
+A ordem de resolução é: caminho explícito válido, alias, voz padrão e Faber
+como fallback de emergência. Somente uma sessão ONNX é carregada. Trocar a voz
+exige reiniciar a sessão atual do assistente, liberando o modelo anterior.
+Não há download durante conversa nem acesso de rede durante síntese.
+
+Origens testadas: [Faber](https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR/faber/medium),
+[Cadu](https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR/cadu/medium)
+e [Jeff](https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR/jeff/medium)
+no repositório `rhasspy/piper-voices`; [Miro](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_miro)
+e [Dii](https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii) no OpenVoiceOS.
+Miro e Dii permanecem rejeitados porque seus repositórios/model cards não
+identificam licença. Checkpoints `.ckpt` não são usados nem baixados. Modelos
+locais permanecem ignorados pelo Git.
+
+## Ritmo, sample rate e pronúncia
+
+O Piper fornece o sample rate pelo JSON do modelo e por cada chunk. O player
+abre a saída nessa taxa nativa; se o dispositivo a rejeitar, ocorre uma única
+reamostragem real para a taxa padrão do dispositivo. Os bytes nunca são apenas
+reinterpretados com outro número.
+
+`VOICE_TTS_RATE` possui semântica intuitiva: `1.0` é o ritmo original, valores
+menores falam mais devagar e valores maiores mais rápido. Internamente o Piper
+recebe `length_scale = 1 / rate`. `VOICE_TTS_SPEED` continua aceito
+temporariamente com aviso de depreciação.
+
+O preset leve `clear_adult` usa taxa 0,94 e pausas moderadas, sem alterar pitch,
+formantes ou identidade. `VOICE_PIPER_USE_MODEL_DEFAULT_NOISE=true` mantém
+`noise_scale` e `noise_w` definidos pelo próprio modelo.
+
+Termos comuns de status em inglês são traduzidos somente na versão falada:
+por exemplo, `working` vira “funcionando”. Código entre crases, comandos,
+URLs, caminhos e citações literais são preservados. A resposta exibida nunca é
+modificada.
 
 ## TTS progressivo
 
@@ -264,7 +358,7 @@ VOICE_ENABLED=false
 Medição local inicial:
 
 - faster-whisper base: cerca de 177 MiB adicionais de RAM no primeiro teste;
-- Piper Faber medium: cerca de 147 MiB adicionais de RAM;
+- Piper medium (Cadu/Faber/Jeff): cerca de 147 MiB adicionais de RAM;
 - VRAM adicional: zero; STT e TTS foram configurados e executados em CPU.
 
 Valores variam com duração, cache, versão e backend. Uma interação por vez evita
@@ -296,7 +390,7 @@ Remove-Item Env:RUN_VOICE_INTEGRATION_TESTS
 - uma interação de voz por vez;
 - sem biometria, múltiplos usuários ou serviços externos;
 - sem clonagem ou imitação de voz;
-- qualidade e variedade ficam limitadas à voz Piper Faber.
+- qualidade e variedade ficam limitadas às vozes pt-BR disponíveis no Piper.
 
 Próximas etapas úteis: VAD mais robusto, confirmação vocal separada com política
 explícita, seleção por identificador estável do sistema e empacotamento dos

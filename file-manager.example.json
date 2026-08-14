@@ -1,0 +1,44 @@
+{
+  "allowed_roots": [
+    "~/Downloads",
+    "~/Documents",
+    "D:/JARVIS-Backups",
+    "D:/JARVIS-Sync"
+  ],
+  "state_dir": "~/.jarvis-file-manager",
+  "report_dir": "~/.jarvis-file-manager/reports",
+  "interval_seconds": 900,
+  "hash_max_bytes": 104857600,
+  "exclude_patterns": [
+    ".*",
+    "*.crdownload",
+    "*.part",
+    "*.tmp",
+    "~$*"
+  ],
+  "organization": [
+    {
+      "root": "~/Downloads",
+      "recursive": false,
+      "minimum_age_seconds": 300,
+      "layout": "category/year/month"
+    }
+  ],
+  "backups": [
+    {
+      "source": "~/Documents",
+      "destination": "D:/JARVIS-Backups/Documents"
+    }
+  ],
+  "synchronizations": [
+    {
+      "source": "~/Documents/Projects",
+      "destination": "D:/JARVIS-Sync/Projects",
+      "overwrite_newer_destination": false
+    }
+  ],
+  "notifications": {
+    "console": true,
+    "jsonl": true
+  }
+}

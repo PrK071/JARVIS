@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
-import subprocess
+import threading
+import time
 from pathlib import Path
 
 import pytest
 
-from tern.orchestrator.agent import Supervisor
-from tern.orchestrator.codex import CodexRunner
+from tern.orchestrator.agent import Supervisor, _is_codex_history_request
+from tern.orchestrator.codex import CodexResult, CodexRunner, CodexSessionManager
 from tern.orchestrator.config import load_settings
 from tern.orchestrator.security import AccessDenied, ActionLogger, PathPolicy
 from tern.orchestrator.tools import ToolRegistry
@@ -16,11 +17,33 @@ from tern.orchestrator.tools import ToolRegistry
 class FakeCodex:
     timeout = 1
 
+    def delegate_to_codex(self, **_arguments):
+        return CodexResult(
+            accepted=True,
+            thread_id="thread-1",
+            turn_id="turn-1",
+            status="completed",
+            final_response="feito",
+            error=None,
+            events=3,
+        )
+
     def delegate(self, _task):
         raise AssertionError("not expected")
 
     def continue_session(self, **_arguments):
         raise AssertionError("not expected")
+
+    def review_session(self, **_arguments):
+        return {
+            "ok": True,
+            "operation": "thread/read",
+            "thread_id": "thread-1",
+            "turns_read": 1,
+            "last_turn_state": "completed",
+            "conversation_summary": "feito",
+            "new_turn_started": False,
+        }
 
 
 class Result:
@@ -97,6 +120,20 @@ def test_allowed_read_and_outside_block(tmp_path):
     assert not bad["ok"] and bad["error"] == "AccessDenied"
 
 
+def test_filesystem_list_can_consolidate_recursive_discovery(tmp_path):
+    nested = tmp_path / "one" / "two"
+    nested.mkdir(parents=True)
+    (tmp_path / "root.txt").write_text("root", encoding="utf-8")
+    (nested / "nested.txt").write_text("nested", encoding="utf-8")
+    result = registry(tmp_path).execute(
+        "filesystem_list",
+        {"path": str(tmp_path), "recursive": True, "max_depth": 2},
+    )
+    assert result["ok"] and result["recursive"]
+    paths = {item["relative_path"] for item in result["entries"]}
+    assert {"root.txt", "one", "one/two", "one/two/nested.txt"} <= paths
+
+
 def test_overwrite_requires_confirmation(tmp_path):
     tools = registry(tmp_path)
     sample = tmp_path / "sample.txt"
@@ -139,7 +176,7 @@ def test_structured_tool_call(tmp_path):
     assert result["ok"] and result["tool_calls"] == 1
 
 
-def test_repeated_call_prevents_loop(tmp_path):
+def test_repeated_call_without_progress_forces_replan(tmp_path):
     call = {
         "role": "assistant",
         "content": None,
@@ -154,49 +191,328 @@ def test_repeated_call_prevents_loop(tmp_path):
             }
         ],
     }
-    client = Result([response(call), response(call)])
+    client = Result(
+        [
+            response(call),
+            response(call),
+            response({"role": "assistant", "content": "Usei o que ja encontrei."}),
+        ]
+    )
     result = Supervisor(load_settings({}), client, registry(tmp_path)).run("Repita")
-    assert result["error"] == "loop_prevented"
+    assert result["ok"]
+    assert result["tool_calls"] == 2
 
 
-def test_codex_does_not_inherit_voice_stdin(tmp_path, monkeypatch):
+def test_second_filesystem_list_with_different_path_can_make_progress(tmp_path):
+    nested = tmp_path / "nested"
+    nested.mkdir()
+
+    def list_call(identifier, path):
+        return {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": identifier,
+                    "type": "function",
+                    "function": {
+                        "name": "filesystem_list",
+                        "arguments": json.dumps({"path": str(path)}),
+                    },
+                }
+            ],
+        }
+
+    client = Result(
+        [
+            response(list_call("root", tmp_path)),
+            response(list_call("nested", nested)),
+            response({"role": "assistant", "content": "Exploração concluída"}),
+        ]
+    )
+    result = Supervisor(load_settings({}), client, registry(tmp_path)).run(
+        "Explore repetidamente"
+    )
+    assert result["ok"]
+    assert result["tool_calls"] == 2
+
+
+def test_tool_call_after_access_denied_is_not_executed(tmp_path):
+    outside = tmp_path.parent
+
+    def list_call(identifier, path):
+        return {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": identifier,
+                    "type": "function",
+                    "function": {
+                        "name": "filesystem_list",
+                        "arguments": json.dumps({"path": str(path)}),
+                    },
+                }
+            ],
+        }
+
+    tools = registry(tmp_path)
+    client = Result(
+        [
+            response(list_call("denied", outside)),
+            response(list_call("must-not-run", tmp_path)),
+        ]
+    )
+    result = Supervisor(load_settings({}), client, tools).run("Liste pastas")
+    assert result["error"] == "tool_loop_blocked"
+    assert result["tool_calls"] == 1
+    records = [
+        json.loads(line)
+        for line in tools.logger.path.read_text(encoding="utf-8").splitlines()
+    ]
+    executed = [item for item in records if item.get("event") == "tool_result"]
+    assert len(executed) == 1
+    assert executed[0]["result"]["error"] == "AccessDenied"
+
+
+def test_batched_calls_after_denial_are_acknowledged_but_not_executed(tmp_path):
+    batch = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "denied",
+                "type": "function",
+                "function": {
+                    "name": "filesystem_list",
+                    "arguments": json.dumps({"path": str(tmp_path.parent)}),
+                },
+            },
+            {
+                "id": "skipped",
+                "type": "function",
+                "function": {
+                    "name": "filesystem_list",
+                    "arguments": json.dumps({"path": str(tmp_path)}),
+                },
+            },
+        ],
+    }
+
+    class CapturingClient:
+        def __init__(self):
+            self.calls = 0
+            self.final_messages = None
+
+        def chat(self, messages, **_kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return response(batch)
+            self.final_messages = list(messages)
+            return response({"role": "assistant", "content": "Bloqueado com seguranca"})
+
+    tools = registry(tmp_path)
+    client = CapturingClient()
+    result = Supervisor(load_settings({}), client, tools).run("Liste pastas")
+    assert result["ok"] and result["tool_calls"] == 1
+    tool_messages = [
+        item for item in client.final_messages if item.get("role") == "tool"
+    ]
+    assert [item["tool_call_id"] for item in tool_messages] == [
+        "denied",
+        "skipped",
+    ]
+    assert json.loads(tool_messages[1]["content"])["error"] == "tools_disabled"
+    records = [
+        json.loads(line)
+        for line in tools.logger.path.read_text(encoding="utf-8").splitlines()
+    ]
+    executed = [item for item in records if item.get("event") == "tool_result"]
+    assert len(executed) == 1
+
+
+def test_codex_uses_project_session_manager(tmp_path):
     observed = {}
 
-    def fake_run(command, **kwargs):
-        observed.update(kwargs)
-        stdout = "\n".join(
-            [
-                json.dumps(
-                    {"type": "thread.started", "thread_id": "session-1"}
-                ),
-                json.dumps(
-                    {
-                        "type": "item.completed",
-                        "item": {
-                            "type": "agent_message",
-                            "text": "87",
-                        },
-                    }
-                ),
-            ]
-        )
-        return subprocess.CompletedProcess(command, 0, stdout, "")
+    class Manager:
+        def run_turn(self, task, **kwargs):
+            observed.update(task=task, **kwargs)
+            return CodexResult(
+                accepted=True,
+                thread_id="thread-1",
+                turn_id="turn-1",
+                status="completed",
+                final_response="87",
+                error=None,
+                events=7,
+            )
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
-    result = CodexRunner(
-        PathPolicy((tmp_path,)), executable="codex"
-    ).delegate(
-        {
-            "working_directory": str(tmp_path),
-            "task": "contar testes",
-            "context": [],
-            "constraints": ["nao alterar arquivos"],
-            "acceptance_criteria": ["informar total"],
-            "validation": ["pytest --collect-only"],
-        }
+    runner = CodexRunner(PathPolicy((tmp_path,)), executable="codex")
+    runner._managers[tmp_path.resolve()] = Manager()
+    result = runner.delegate_to_codex(
+        task="contar testes",
+        project_path=str(tmp_path),
+        continue_current_thread=True,
     )
-    assert observed["stdin"] is subprocess.DEVNULL
-    assert result.ok and result.session_id == "session-1"
+    assert observed["task"] == "contar testes"
+    assert observed["origin"] == "qwen"
+    assert observed["continue_current_thread"] is True
+    assert callable(observed["event_callback"])
+    assert result.ok and result.thread_id == "thread-1"
+
+
+def test_qwen_codex_tool_is_small_and_returns_thread(tmp_path):
+    tools = registry(tmp_path)
+    specs = {item["function"]["name"]: item for item in tools.specs()}
+    assert "delegate_to_codex" in specs
+    assert "codex_delegate" not in specs
+    assert set(
+        specs["delegate_to_codex"]["function"]["parameters"]["properties"]
+    ) == {"task", "project_path", "continue_current_thread", "wait"}
+    result = tools.execute(
+        "delegate_to_codex",
+        {
+            "task": "Leia o README",
+            "project_path": str(tmp_path),
+            "continue_current_thread": True,
+        },
+    )
+    assert result["accepted"]
+    assert result["thread_id"] == "thread-1"
+    assert result["turn_id"] == "turn-1"
+
+
+def test_review_codex_session_tool_has_safe_defaults(tmp_path):
+    tools = registry(tmp_path)
+    specs = {item["function"]["name"]: item for item in tools.specs()}
+    schema = specs["review_codex_session"]["function"]["parameters"]
+    assert schema["required"] == []
+    assert set(schema["properties"]) == {"project_path", "turn_limit"}
+    result = tools.execute(
+        "review_codex_session",
+        {"project_path": str(tmp_path), "turn_limit": 10},
+    )
+    assert result["operation"] == "thread/read"
+    assert not result["new_turn_started"]
+
+
+@pytest.mark.parametrize(
+    "user_text",
+    [
+        "Leia as ultimas informacoes do Codex.",
+        "O que aconteceu na sessao do Codex?",
+        "Resuma os ultimos turns do Codex.",
+        "Faca uma revisao da ultima sessao do Codex.",
+        "O que o Codex fez por ultimo?",
+        "De uma olhada na tarefa do Codex.",
+        "Faca uma vistoria do trabalho do Codex.",
+        "Revise o resultado da tarefa do Codex.",
+    ],
+)
+def test_codex_history_intent_is_detected(user_text):
+    assert _is_codex_history_request(user_text)
+
+
+@pytest.mark.parametrize(
+    "user_text",
+    [
+        "Peca ao Codex para revisar codex.py.",
+        "Use o Codex para executar os testes.",
+        "Codex, analise e corrija este bug.",
+        "Resuma este texto sobre o Codex.",
+        "Pesquise noticias sobre o Codex.",
+    ],
+)
+def test_normal_codex_actions_are_not_history_requests(user_text):
+    assert not _is_codex_history_request(user_text)
+
+
+def test_explicit_codex_delegate_receives_only_relevant_tool(tmp_path):
+    observed_tools = []
+
+    class CapturingClient(Result):
+        def chat(self, _messages, **kwargs):
+            observed_tools.extend(
+                item["function"]["name"] for item in kwargs["tools"]
+            )
+            return next(self.values)
+
+    client = CapturingClient(
+        [response({"role": "assistant", "content": "Posso ajudar."})]
+    )
+    result = Supervisor(load_settings({}), client, registry(tmp_path)).run(
+        "Peca ao Codex para revisar codex.py."
+    )
+    assert result["ok"]
+    assert set(observed_tools) == {"delegate_to_codex"}
+
+
+def test_codex_history_exposes_only_review_tool_and_does_not_repeat(tmp_path):
+    observed_tools = []
+    call = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "review-one",
+                "type": "function",
+                "function": {
+                    "name": "review_codex_session",
+                    "arguments": json.dumps(
+                        {"project_path": str(tmp_path), "turn_limit": 10}
+                    ),
+                },
+            }
+        ],
+    }
+
+    class CapturingClient(Result):
+        def chat(self, _messages, **kwargs):
+            tools = kwargs.get("tools")
+            observed_tools.append(
+                None
+                if tools is None
+                else [item["function"]["name"] for item in tools]
+            )
+            return next(self.values)
+
+    client = CapturingClient(
+        [
+            response(call),
+            response({"role": "assistant", "content": "Resumo real"}),
+        ]
+    )
+    result = Supervisor(load_settings({}), client, registry(tmp_path)).run(
+        "Quero que voce leia as ultimas informacoes do Codex e me forneca um resumo."
+    )
+    assert result["ok"] and result["tool_calls"] == 1
+    assert observed_tools == [["review_codex_session"], None]
+
+
+def test_human_waiter_has_priority_over_qwen_waiter(tmp_path):
+    manager = CodexSessionManager(tmp_path)
+    active = manager._queue_acquire("qwen")
+    order = []
+
+    def wait(origin):
+        ticket = manager._queue_acquire(origin)
+        order.append(origin)
+        manager._queue_release(ticket)
+
+    qwen = threading.Thread(target=wait, args=("qwen",))
+    human = threading.Thread(target=wait, args=("human",))
+    qwen.start()
+    deadline = time.monotonic() + 2
+    while len(manager._queue) < 1 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    human.start()
+    deadline = time.monotonic() + 2
+    while len(manager._queue) < 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    manager._queue_release(active)
+    qwen.join(2)
+    human.join(2)
+    assert order == ["human", "qwen"]
 
 
 def test_denied_destructive_action_stops_tool_loop(tmp_path):
@@ -219,9 +535,22 @@ def test_denied_destructive_action_stops_tool_loop(tmp_path):
         ],
     }
     result = Supervisor(
-        load_settings({}), Result([response(call)]), tools
+        load_settings({}),
+        Result(
+            [
+                response(call),
+                response(
+                    {
+                        "role": "assistant",
+                        "content": "Ação cancelada pelo usuário.",
+                    }
+                ),
+            ]
+        ),
+        tools,
     ).run("apague")
-    assert result["error"] == "approval_required"
+    assert result["ok"]
+    assert "cancelada" in result["answer"]
     assert target.read_text(encoding="utf-8") == "keep"
 
 

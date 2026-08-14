@@ -1,0 +1,108 @@
+{
+  "benchmark_id": "agent_routing_regression",
+  "note": "The original 100 cases are now a known regression corpus. The first sealed holdout pass is retained separately from post-fix verification.",
+  "methodology": {
+    "sealed_holdout_first_pass": 0.95,
+    "holdout_contaminated_after_case_V010_analysis": true,
+    "regression_score_after_fix": 1.0
+  },
+  "development": {
+    "baseline": {
+      "cases": 80,
+      "passed": 29,
+      "overall_accuracy": 0.3625,
+      "intent_accuracy": 0.3875,
+      "tool_selection_accuracy": 0.475,
+      "project_accuracy": 0.9125,
+      "unnecessary_delegations": 1,
+      "unnecessary_clarifications": 0,
+      "forbidden_tool_calls": 1,
+      "new_turn_violations": 0,
+      "tool_loop_violations": 0,
+      "average_tool_calls": 0.3375
+    },
+    "policy": {
+      "cases": 80,
+      "passed": 80,
+      "overall_accuracy": 1.0,
+      "intent_accuracy": 1.0,
+      "tool_selection_accuracy": 1.0,
+      "project_accuracy": 1.0,
+      "unnecessary_delegations": 0,
+      "unnecessary_clarifications": 0,
+      "forbidden_tool_calls": 0,
+      "new_turn_violations": 0,
+      "tool_loop_violations": 0,
+      "average_tool_calls": 0.8875
+    }
+  },
+  "holdout": {
+    "baseline": {
+      "cases": 20,
+      "passed": 8,
+      "overall_accuracy": 0.4,
+      "intent_accuracy": 0.45,
+      "tool_selection_accuracy": 0.5,
+      "project_accuracy": 1.0,
+      "unnecessary_delegations": 1,
+      "unnecessary_clarifications": 0,
+      "forbidden_tool_calls": 1,
+      "new_turn_violations": 0,
+      "tool_loop_violations": 0,
+      "average_tool_calls": 0.4
+    },
+    "first_sealed_policy_pass": {
+      "cases": 20,
+      "passed": 19,
+      "overall_accuracy": 0.95,
+      "intent_accuracy": 0.95,
+      "tool_selection_accuracy": 0.95,
+      "project_accuracy": 1.0,
+      "unnecessary_delegations": 1,
+      "unnecessary_clarifications": 0,
+      "forbidden_tool_calls": 1,
+      "new_turn_violations": 0,
+      "tool_loop_violations": 0,
+      "average_tool_calls": 0.75,
+      "failure": {
+        "id": "V010",
+        "input": "o dip chique falou o que",
+        "expected": "DEEPSEEK_REVIEW",
+        "actual": "DEEPSEEK_DELEGATE",
+        "reason": "reverse-order history question was not recognized"
+      }
+    },
+    "post_fix_verification": {
+      "cases": 20,
+      "passed": 20,
+      "overall_accuracy": 1.0,
+      "intent_accuracy": 1.0,
+      "tool_selection_accuracy": 1.0,
+      "project_accuracy": 1.0,
+      "unnecessary_delegations": 0,
+      "unnecessary_clarifications": 0,
+      "forbidden_tool_calls": 0,
+      "new_turn_violations": 0,
+      "tool_loop_violations": 0,
+      "average_tool_calls": 0.75
+    }
+  },
+  "live_qwen_sample": {
+    "split": "holdout",
+    "cases": 5,
+    "passed": 5,
+    "overall_accuracy": 1.0,
+    "intent_accuracy": 1.0,
+    "tool_selection_accuracy": 1.0,
+    "project_accuracy": 1.0,
+    "unnecessary_delegations": 0,
+    "unnecessary_clarifications": 0,
+    "forbidden_tool_calls": 0,
+    "new_turn_violations": 0,
+    "tool_loop_violations": 0,
+    "average_tool_calls": 0.4,
+    "average_time_to_decision_ms": 13744.6,
+    "average_time_to_first_tool_call_ms": 8253.9,
+    "full_holdout_note": "The 20-case multi-step run exceeded the 300 second command timeout and produced no final report."
+  }
+}

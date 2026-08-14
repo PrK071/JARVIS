@@ -1,0 +1,38 @@
+{
+  "corpus": "agent_routing_semantic_regression",
+  "mode": "live_qwen_dry_run",
+  "evaluated_at": "2026-08-08T20:56:00-03:00",
+  "cases": 20,
+  "passed": 19,
+  "failed": 1,
+  "overall_accuracy": 0.95,
+  "intent_accuracy": 0.95,
+  "tool_selection_accuracy": 1.0,
+  "project_accuracy": 1.0,
+  "speech_act_accuracy": 1.0,
+  "constraint_satisfaction_accuracy": 1.0,
+  "reference_resolution_accuracy": 1.0,
+  "unnecessary_delegations": 0,
+  "unnecessary_clarifications": 1,
+  "forbidden_tool_calls": 0,
+  "new_codex_turn_violations": 0,
+  "tool_loop_violations": 0,
+  "average_tool_calls": 0.8,
+  "latency_ms": {
+    "average_decision": 13748.1,
+    "decision_p50": 9323.9,
+    "decision_p90": 25198.2,
+    "decision_p95": 27244.1,
+    "average_first_tool": 13349.8
+  },
+  "failure": {
+    "id": "SEM-NEG-004",
+    "expected": "ANSWER_DIRECTLY",
+    "actual": "CLARIFY",
+    "policy_tool_catalogue": [],
+    "tool_side_effect": false
+  },
+  "real_tools_executed": 0,
+  "deepseek_api_calls": 0,
+  "codex_turns_created": 0
+}

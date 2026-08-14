@@ -12,6 +12,8 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .pytest-tmp-*/
+pytest-tmp-*/
+pytest-python-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -41,6 +43,7 @@ temp/
 *.gguf
 *.safetensors
 *.onnx
+models/piper/**/*.onnx.json
 *.pt
 *.pth
 *.ckpt
@@ -48,6 +51,8 @@ temp/
 *.dll
 *.exe
 *.zip
+models/f5-tts-ptbr/
+models/supertonic-3/
 models/**/.cache/
 checkpoint_smollm2/
 qwen25-1.5b/
@@ -57,3 +62,16 @@ runtime/
 # Local agent/plugin installations and preserved recovery metadata
 .agents/
 .git-corrupt-*/
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS junk
+Desktop.ini
+$RECYCLE.BIN/
