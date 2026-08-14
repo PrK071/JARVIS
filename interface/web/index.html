@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>T.R.I.A.D.E — Sistema Ternário</title>
+  <meta name="theme-color" content="#020810" />
+  <title>J.A.R.V.I.S. — Interface Neural</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,8 +18,8 @@
     <div class="brand">
       <span class="brand-icon">◈</span>
       <div>
-        <h1>T.R.I.A.D.E</h1>
-        <p class="subtitle">Ternary Reasoning & Intelligent Adaptive Decision Engine</p>
+        <h1>J.A.R.V.I.S.</h1>
+        <p class="subtitle">Just A Rather Very Intelligent System</p>
       </div>
     </div>
     <div class="status-bar">
@@ -41,7 +42,7 @@
     <!-- Painel esquerdo: telemetria -->
     <aside class="panel panel-left">
       <section class="module">
-        <h2>◆ Telemetria Neural</h2>
+        <h2>◆ Telemetria do Sistema</h2>
         <div class="metric">
           <span>Camadas ativas</span>
           <span class="metric-value" id="active-layers">12 / 12</span>
@@ -60,7 +61,7 @@
       </section>
 
       <section class="module">
-        <h2>◆ Estados Ternários</h2>
+        <h2>◆ Matriz de Decisão</h2>
         <div class="ternary-legend">
           <div class="state state-negative">
             <span class="state-symbol">−1</span>
@@ -144,7 +145,7 @@
           <input
             type="text"
             id="user-input"
-            placeholder="Comando ou consulta ao modelo ternário..."
+            placeholder="Digite um comando para J.A.R.V.I.S...."
             maxlength="4000"
             autocomplete="off"
             spellcheck="false"
@@ -171,7 +172,7 @@
         <div class="log-container" id="log-container" role="log" aria-live="polite" aria-relevant="additions text">
           <div class="log-entry system">
             <span class="timestamp">[INIT]</span>
-            <span class="message">Sistema T.R.I.A.D.E inicializado. Modelo ternário carregado.</span>
+            <span class="message">Interface J.A.R.V.I.S. inicializada. Matriz neural carregada.</span>
           </div>
           <div class="log-entry system">
             <span class="timestamp">[READY]</span>
@@ -209,13 +210,13 @@
   </main>
 
   <footer class="hud-footer">
-    <span>v2.4.1-TER</span>
+    <span>v1.0.0-JARVIS</span>
     <span class="footer-divider">|</span>
     <span>Latência: <strong id="latency">12ms</strong></span>
     <span class="footer-divider">|</span>
     <span>Modo: <strong id="mode">AUTÔNOMO</strong></span>
     <span class="footer-divider">|</span>
-    <span>© Stark Industries — Faculdade</span>
+    <span>J.A.R.V.I.S. HUD · MIT</span>
   </footer>
 
   <script src="app.js"></script>

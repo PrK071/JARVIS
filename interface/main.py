@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Ponto de entrada do T.R.I.A.D.E — aplicativo desktop tkinter."""
+"""Ponto de entrada da interface desktop J.A.R.V.I.S."""
 
-from triade.app import TRIADEApp
+from triade.app import JARVISApp
 
 
 def main() -> None:
-    app = TRIADEApp()
+    app = JARVISApp()
     app.run()
 
 

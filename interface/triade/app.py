@@ -1,4 +1,4 @@
-"""Aplicativo T.R.I.A.D.E construído sobre o HUD Kit."""
+"""Interface J.A.R.V.I.S. construída sobre o HUD Kit."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ from hudkit.animations import CoreReactor, WaveformDisplay, TernaryGrid
 from triade.engine import TernaryEngine, STATE_LABELS
 
 
-class TRIADEApp(HUDApplication):
-    title = "T.R.I.A.D.E — Sistema Ternário"
+class JARVISApp(HUDApplication):
+    title = "J.A.R.V.I.S. — Interface Neural"
     geometry = "1280x740"
 
     QUICK_ACTIONS = [
@@ -93,7 +93,7 @@ class TRIADEApp(HUDApplication):
         log_panel.pack(fill="both", expand=True, pady=(0, 8))
         self.log = HUDLogTerminal(log_panel.body, theme=t, height=12)
         self.log.pack(fill="both", expand=True)
-        self._log("system", "INIT", "Sistema T.R.I.A.D.E inicializado. Modelo ternário carregado.")
+        self._log("system", "INIT", "Interface J.A.R.V.I.S. inicializada. Matriz neural carregada.")
         self._log("system", "READY", "Aguardando entrada. Estados: −1 | 0 | +1")
 
         dist_panel = HUDPanel(parent, "Distribuição de Decisão", theme=t)
@@ -111,8 +111,8 @@ class TRIADEApp(HUDApplication):
 
         header = HUDHeader(
             self.header,
-            "T.R.I.A.D.E",
-            "Ternary Reasoning & Intelligent Adaptive Decision Engine",
+            "J.A.R.V.I.S.",
+            "Just A Rather Very Intelligent System",
             theme=t,
         )
         header.pack(fill="both", expand=True)
@@ -154,10 +154,10 @@ class TRIADEApp(HUDApplication):
     def _update_footer(self) -> None:
         latency = getattr(self, "_latency", "12ms")
         self.footer_widget.set_text([
-            "v2.4.1-TER",
+            "v1.0.0-JARVIS",
             f"Latência: {latency}",
             "Modo: AUTÔNOMO",
-            "© Faculdade — TRIADE",
+            "J.A.R.V.I.S. HUD",
         ])
 
     def handle_command(self, text: str) -> None:
