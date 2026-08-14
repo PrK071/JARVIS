@@ -12,11 +12,18 @@ python -m tern.orchestrator start
 python -m tern.orchestrator ask "Pesquise notícias recentes sobre IA e cite fontes."
 python -m tern.orchestrator voice
 python -m tern.orchestrator codex-shared-start
+python -m tern.orchestrator codex-shared-tui
+jarvis deepseek
 ```
 
-O Codex usa um App Server local compartilhado. Abra a interface terminal com o
-comando exibido por `codex-shared-start`; para anexar exatamente a thread do
-projeto, prefira o comando `terminal_same_thread_command` retornado.
+O Codex usa um App Server local compartilhado. Abra a TUI diretamente na thread
+persistida com `python -m tern.orchestrator codex-shared-tui` ou `jarvis codex`;
+o comando valida a thread antes de abrir e nao exige copiar o `thread_id`.
+
+O DeepSeek e um consultor opcional e stateless. `jarvis deepseek` abre uma TUI
+persistente compartilhada com o Qwen, sem chamar a API no startup. Configure
+`DEEPSEEK_API_KEY` e `DEEPSEEK_MODEL` para enviar mensagens; sem chave, historico
+e comandos locais continuam disponiveis em modo leitura.
 
 Diagnostico completo da integracao Qwen/Codex:
 
@@ -100,6 +107,7 @@ Documentação:
 - [Pesquisa web](docs/web-research.md)
 - [Voz](docs/voice.md)
 - [Bridge compartilhado Qwen/Codex](docs/codex-bridge.md)
+- [DeepSeek consultivo e TUI](docs/deepseek.md)
 - [Descoberta de projetos](docs/project-discovery.md)
 
 Testes:

@@ -1,7 +1,7 @@
 from tern.orchestrator import jarvis
 
 
-def test_jarvis_without_arguments_starts_voice(monkeypatch):
+def test_jarvis_without_arguments_opens_ui(monkeypatch):
     received = []
     monkeypatch.setattr(
         jarvis,
@@ -10,7 +10,19 @@ def test_jarvis_without_arguments_starts_voice(monkeypatch):
     )
 
     assert jarvis.main([]) == 0
-    assert received == [["voice"]]
+    assert received == [["ui"]]
+
+
+def test_consoleless_gui_entrypoint_opens_ui(monkeypatch):
+    received = []
+    monkeypatch.setattr(
+        jarvis,
+        "orchestrator_main",
+        lambda arguments: received.append(arguments) or 0,
+    )
+
+    assert jarvis.gui_main() == 0
+    assert received == [["ui"]]
 
 
 def test_jarvis_forwards_existing_commands(monkeypatch):

@@ -80,6 +80,12 @@ def test_qwen35_is_default_and_no_missing_model_fallback():
     assert "--jinja" in command
 
 
+def test_codex_visible_thread_id_is_loaded_from_runtime_environment():
+    settings = load_settings({"CODEX_THREAD_ID": "thread-visible"})
+
+    assert settings.codex_current_thread_id == "thread-visible"
+
+
 @pytest.mark.parametrize("backend", ["qwen35", "qwen25-base", "qwen25-tq3p"])
 def test_backends_are_explicit(backend):
     settings = load_settings({"MODEL_BACKEND": backend})
@@ -335,6 +341,31 @@ def test_codex_uses_project_session_manager(tmp_path):
     observed = {}
 
     class Manager:
+        class Log:
+            def write(self, *_args, **_kwargs):
+                return None
+
+        bridge_log = Log()
+
+        def list_project_threads(self):
+            return []
+
+        def create_thread(self):
+            return {
+                "thread_id": "thread-1",
+                "session_id": "thread-1",
+                "project": str(tmp_path),
+                "state": "idle",
+                "source": "appServer",
+                "visible": False,
+                "recoverable": True,
+                "ephemeral": False,
+            }
+
+        def adopt_thread(self, thread_id):
+            assert thread_id == "thread-1"
+            return self.create_thread()
+
         def run_turn(self, task, **kwargs):
             observed.update(task=task, **kwargs)
             return CodexResult(
@@ -368,7 +399,13 @@ def test_qwen_codex_tool_is_small_and_returns_thread(tmp_path):
     assert "codex_delegate" not in specs
     assert set(
         specs["delegate_to_codex"]["function"]["parameters"]["properties"]
-    ) == {"task", "project_path", "continue_current_thread", "wait"}
+    ) == {
+        "task",
+        "project_path",
+        "continue_current_thread",
+        "thread_id",
+        "wait",
+    }
     result = tools.execute(
         "delegate_to_codex",
         {
@@ -380,6 +417,40 @@ def test_qwen_codex_tool_is_small_and_returns_thread(tmp_path):
     assert result["accepted"]
     assert result["thread_id"] == "thread-1"
     assert result["turn_id"] == "turn-1"
+
+
+def test_session_identity_changes_do_not_rewrite_delegation_payload(tmp_path):
+    captured = []
+
+    class CapturingCodex(FakeCodex):
+        def delegate_to_codex(self, **arguments):
+            captured.append(arguments)
+            return super().delegate_to_codex(**arguments)
+
+    tools = ToolRegistry(
+        policy=PathPolicy((tmp_path,)),
+        logger=ActionLogger(tmp_path / "actions.jsonl"),
+        codex=CapturingCodex(),
+        max_output_bytes=131072,
+        approval=lambda _action, _arguments: True,
+    )
+    for number, thread_id in enumerate(("thread-a", "thread-b"), 1):
+        result = tools.execute(
+            "delegate_to_codex",
+            {
+                "task": "implemente PAYLOAD-IDÊNTICO",
+                "project_path": str(tmp_path),
+                "thread_id": thread_id,
+            },
+            context={
+                "turn_id": f"turn-{number}",
+                "conversation_id": "conversation-1",
+            },
+        )
+        assert result["ok"], result
+    assert captured[0]["task"] == captured[1]["task"]
+    assert captured[0]["thread_id"] == "thread-a"
+    assert captured[1]["thread_id"] == "thread-b"
 
 
 def test_review_codex_session_tool_has_safe_defaults(tmp_path):
@@ -427,7 +498,7 @@ def test_normal_codex_actions_are_not_history_requests(user_text):
     assert not _is_codex_history_request(user_text)
 
 
-def test_explicit_codex_delegate_receives_only_relevant_tool(tmp_path):
+def test_explicit_codex_delegate_bypasses_qwen_and_calls_codex_directly(tmp_path):
     observed_tools = []
 
     class CapturingClient(Result):
@@ -444,7 +515,10 @@ def test_explicit_codex_delegate_receives_only_relevant_tool(tmp_path):
         "Peca ao Codex para revisar codex.py."
     )
     assert result["ok"]
-    assert set(observed_tools) == {"delegate_to_codex"}
+    assert observed_tools == []
+    assert result["tool_calls"] == 1
+    assert result["answer"] == "feito"
+    assert result["decision"]["fast_path"] is True
 
 
 def test_codex_history_exposes_only_review_tool_and_does_not_repeat(tmp_path):

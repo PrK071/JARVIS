@@ -1,0 +1,4 @@
+{"id":"PU-001","input":"descubra onde o routing e a decisão semântica são implementados","expected_files":["tern/orchestrator/decision_policy.py","tern/orchestrator/routing_eval.py","tern/orchestrator/semantic_pass.py"]}
+{"id":"PU-002","input":"audite a afinidade e recuperação de sessões Codex","expected_files":["tern/orchestrator/codex.py","tern/orchestrator/codex_sessions.py","tests/test_codex_session_affinity.py"]}
+{"id":"PU-003","input":"mapeie as capacidades reais do DeepSeek e seus limites de ferramentas","expected_files":["tern/orchestrator/deepseek.py","tern/orchestrator/tools.py","tern/orchestrator/prompt.py"]}
+{"id":"PU-004","input":"revise a nova fundação de requirements e eligibility","expected_files":["tern/orchestrator/autonomy_foundation.py","tests/test_autonomy_foundation.py"]}

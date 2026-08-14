@@ -64,11 +64,15 @@ class CodexJobStore:
         task_summary: str,
         source: str,
         wait: bool,
+        thread_id: str | None = None,
+        session_resolution: dict[str, Any] | None = None,
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         now = utc_now()
         job = {
             "job_id": str(uuid.uuid4()),
-            "thread_id": None,
+            "request_id": request_id or str(uuid.uuid4()),
+            "thread_id": thread_id,
             "turn_id": None,
             "project": project,
             "task_summary": task_summary,
@@ -91,6 +95,7 @@ class CodexJobStore:
             "completion_notified": False,
             "failure_notified": False,
             "progress_notified_at": None,
+            "session_resolution": dict(session_resolution or {}),
         }
         with FileMutex(self.lock_path):
             state = self._read_unlocked()

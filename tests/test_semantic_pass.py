@@ -16,8 +16,12 @@ from tern.orchestrator.decision_policy import (
     tool_catalog_audit,
 )
 from tern.orchestrator.semantic_pass import (
+    COMMAND_PRESERVATION_PROMPT_ADDITION,
+    COMMAND_PRESERVATION_SYSTEM_PROMPT,
     QwenSemanticInterpreter,
+    SafeCanonicalizationReason,
     SemanticValidationError,
+    canonicalize_semantic_decision,
     semantic_json_schema,
     validate_semantic_decision,
 )
@@ -106,6 +110,34 @@ def test_schema_is_strict_and_reuses_existing_enums():
     }
 
 
+def test_command_preservation_prompt_is_contrastive_without_route_table():
+    assert "Preserve the operational force" in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert '"O que faz pytest?"' in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert '"Execute pytest no projeto."' in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert '"Leia este arquivo."' in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert '"Exclua este arquivo."' in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert "READ_ONLY limits effects" in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert "LOCAL_READ" not in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert "LOCAL_ACTION" not in COMMAND_PRESERVATION_PROMPT_ADDITION
+    assert "CODEX_DELEGATE" not in COMMAND_PRESERVATION_PROMPT_ADDITION
+
+
+def test_semantic_prompt_override_changes_only_system_instruction():
+    client = StructuredClient([json.dumps(raw_frame())])
+    result = QwenSemanticInterpreter(
+        client,
+        system_prompt=COMMAND_PRESERVATION_SYSTEM_PROMPT,
+    ).interpret("o que faz pytest?", "o que faz pytest?", context())
+
+    assert result.parse_valid
+    messages, kwargs = client.calls[0]
+    assert messages[0]["content"] == COMMAND_PRESERVATION_SYSTEM_PROMPT
+    assert messages[1]["role"] == "user"
+    assert kwargs["temperature"] == 0.0
+    assert kwargs["max_tokens"] == 320
+    assert kwargs["tools"] is None
+
+
 def test_question_and_command_are_contrastive():
     question = validate_semantic_decision(raw_frame())
     command = validate_semantic_decision(
@@ -127,6 +159,30 @@ def test_side_effect_intent_requires_execution_requested():
         validate_semantic_decision(
             raw_frame(primary_intent="CODEX_CANCEL", operation="cancel", agent="codex")
         )
+
+
+def test_web_open_has_a_typed_semantic_representation():
+    value = validate_semantic_decision(
+        raw_frame(
+            speech_act="COMMAND",
+            primary_intent="WEB_OPEN",
+            operation="open_url",
+            execution_requested=True,
+            agent="web",
+            target={"type": "url", "reference": "https://example.com"},
+        )
+    )
+    assert value.primary_intent is Intent.WEB_OPEN
+    assert value.target_type == "url"
+
+
+def test_explicit_url_skips_ambiguous_semantic_inference():
+    assert not QwenSemanticInterpreter.needs_semantic_pass(
+        "abra https://example.com", context()
+    )
+    assert not QwenSemanticInterpreter.needs_semantic_pass(
+        "abra example.com", context()
+    )
 
 
 def test_conditional_plan_requires_order_and_deepseek_precondition():
@@ -183,10 +239,149 @@ def test_one_repair_contains_only_schema_error_invalid_object_and_schema():
     assert set(repair) == {"schema_error", "invalid_object", "expected_schema"}
 
 
+def test_exact_duplicate_constraints_are_repaired_without_second_inference():
+    client = StructuredClient(
+        [json.dumps(raw_frame(constraints=["READ_ONLY", "READ_ONLY"]))]
+    )
+    result = QwenSemanticInterpreter(client).interpret(
+        "só leia isso", "so leia isso", context()
+    )
+
+    assert result.parse_valid
+    assert not result.repair_used
+    assert result.canonicalization_reason == "EXACT_CONSTRAINT_DEDUP"
+    assert len(client.calls) == 1
+    assert [item.value for item in result.decision.constraints] == ["READ_ONLY"]
+
+
+def test_safe_canonicalization_is_idempotent_and_post_validated():
+    raw = raw_frame(constraints=["READ_ONLY", "READ_ONLY", "BACKGROUND"])
+    with pytest.raises(SemanticValidationError) as captured:
+        validate_semantic_decision(raw)
+
+    first = canonicalize_semantic_decision(raw, captured.value)
+    second = canonicalize_semantic_decision(first.value, captured.value)
+
+    assert first.changed
+    assert first.reason is SafeCanonicalizationReason.EXACT_CONSTRAINT_DEDUP
+    assert not second.changed
+    assert second.value == first.value
+    assert validate_semantic_decision(first.value)
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        raw_frame(
+            constraints=["ORDERED"],
+            compound_plan=[
+                {
+                    "intent": "DEEPSEEK_DELEGATE",
+                    "operation": "delegate",
+                    "agent": "deepseek",
+                    "target_type": "task",
+                    "target_reference": "user_mentioned_target",
+                    "condition": "positive_recommendation",
+                }
+            ],
+        ),
+        raw_frame(
+            primary_intent="CODEX_DELEGATE",
+            operation="delegate",
+            execution_requested=True,
+            agent="codex",
+            constraints=["ANSWER_SELF"],
+        ),
+        raw_frame(
+            compound_plan=[
+                {
+                    "intent": "DEEPSEEK_DELEGATE",
+                    "operation": "delegate",
+                    "agent": "deepseek",
+                    "target_type": "task",
+                    "target_reference": "user_mentioned_target",
+                    "condition": None,
+                }
+            ],
+        ),
+    ],
+)
+def test_ambiguous_semantic_errors_are_never_canonicalized(invalid):
+    with pytest.raises(SemanticValidationError) as captured:
+        validate_semantic_decision(invalid)
+
+    result = canonicalize_semantic_decision(invalid, captured.value)
+
+    assert not result.changed
+    assert result.value is invalid
+
+
+def test_duplicate_repair_never_masks_a_remaining_semantic_error():
+    invalid = raw_frame(
+        speech_act="COMMAND",
+        primary_intent="CODEX_DELEGATE",
+        operation="delegate",
+        execution_requested=True,
+        agent="codex",
+        constraints=["BACKGROUND", "BACKGROUND"],
+        compound_plan=[
+            {
+                "intent": "CODEX_DELEGATE",
+                "operation": "delegate",
+                "agent": "codex",
+                "target_type": "task",
+                "target_reference": "user_mentioned_target",
+                "condition": None,
+            }
+        ],
+    )
+    client = StructuredClient([json.dumps(invalid), json.dumps(raw_frame())])
+    result = QwenSemanticInterpreter(client).interpret(
+        "faça em segundo plano", "faca em segundo plano", context()
+    )
+
+    assert result.parse_valid and result.repair_used
+    assert len(client.calls) == 2
+    repair = json.loads(client.calls[1][0][1]["content"])
+    assert repair["schema_error"] == "constraints must not contain duplicates"
+
+
 def test_second_parse_failure_stops_without_loop():
     client = StructuredClient(["bad", "still bad"])
     result = QwenSemanticInterpreter(client).interpret("faz isso", "faz isso", context())
     assert not result.parse_valid and result.error == "semantic_parse_failed"
+    assert len(client.calls) == 2
+
+
+def test_length_limited_retry_does_not_trigger_speculative_third_inference():
+    class LengthClient:
+        def __init__(self):
+            self.calls = []
+            self.values = [
+                ("not json", "stop"),
+                ('{"speech_act":"COMMAND"', "length"),
+                (json.dumps(raw_frame()), "stop"),
+            ]
+
+        def chat(self, messages, **kwargs):
+            self.calls.append((messages, kwargs))
+            content, finish_reason = self.values.pop(0)
+            return {
+                "choices": [
+                    {
+                        "finish_reason": finish_reason,
+                        "message": {"content": content},
+                    }
+                ]
+            }
+
+    client = LengthClient()
+    result = QwenSemanticInterpreter(client).interpret(
+        "faça isso", "faca isso", context()
+    )
+
+    assert not result.parse_valid
+    assert result.error == "semantic_parse_failed"
     assert len(client.calls) == 2
 
 
@@ -245,6 +440,139 @@ def test_selector_skips_simple_knowledge_and_selects_operational_language():
     assert not QwenSemanticInterpreter.needs_semantic_pass("o que é overfitting?", context())
     assert QwenSemanticInterpreter.needs_semantic_pass("não manda pro Codex, explica", context())
     assert QwenSemanticInterpreter.needs_semantic_pass("abre ele", context(focused_file="x.py"))
+
+
+def test_selector_skips_unambiguous_previous_url_shorthand():
+    value = context(last_user_text="abra https://xvideos.com")
+    assert not QwenSemanticInterpreter.needs_semantic_pass("abra o xvideos", value)
+    assert not QwenSemanticInterpreter.needs_semantic_pass("então abra", value)
+
+
+@pytest.mark.parametrize("text", ["abra xvideos", "abra o pornhub", "abra a amazon"])
+def test_selector_skips_known_site_alias(text):
+    assert not QwenSemanticInterpreter.needs_semantic_pass(text, context())
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "bota pra tocar a musica trust bothbirds",
+        "toque Trust Bothbirds no Spotify",
+        "abra a música Trust do Bothbirds no YouTube",
+        "põe Trust Bothbirds no yt",
+        "quero ouvir Trust Bothbirds",
+        "solta o som Trust Bothbirds",
+    ],
+)
+def test_selector_skips_deterministic_music_commands(text):
+    assert not QwenSemanticInterpreter.needs_semantic_pass(text, context())
+
+
+def test_selector_leaves_explicit_browser_requests_to_deterministic_policy():
+    assert not QwenSemanticInterpreter.needs_semantic_pass(
+        "abre ai no meu navegador cara",
+        context(last_user_text="abra https://example.com"),
+    )
+
+
+def test_web_open_rejects_local_read_only_constraint_before_policy_routing():
+    with pytest.raises(SemanticValidationError, match="WEB_OPEN conflicts with READ_ONLY"):
+        validate_semantic_decision(
+            raw_frame(
+                speech_act="COMMAND",
+                primary_intent="WEB_OPEN",
+                operation="open_url",
+                execution_requested=True,
+                agent="web",
+                target={"type": "url", "reference": "https://example.com"},
+                constraints=["READ_ONLY"],
+            )
+        )
+
+
+def test_semantic_open_verb_launches_visible_browser_fast_path():
+    semantic = validate_semantic_decision(
+        raw_frame(
+            speech_act="COMMAND",
+            primary_intent="WEB_OPEN",
+            operation="open_url",
+            execution_requested=True,
+            agent="web",
+            target={"type": "url", "reference": "https://example.com"},
+            confidence=0.99,
+        )
+    )
+    policy = AgentDecisionPolicy()
+    ctx = context()
+    decision = policy.decide(
+        "abra o example",
+        context=ctx,
+        semantic_decision=semantic,
+    )
+    fast_path = policy.fast_path(decision, ctx, "abra o example")
+    assert fast_path is not None
+    assert decision.reason_code == "qwen_semantic_browser_open"
+    assert fast_path.tool == "web_open_browser"
+    assert fast_path.arguments == {"url": "https://example.com"}
+    assert fast_path.reason_code == "explicit_browser_url_launch"
+
+
+def test_semantic_read_without_open_verb_keeps_http_read_tool():
+    semantic = validate_semantic_decision(
+        raw_frame(
+            speech_act="COMMAND",
+            primary_intent="WEB_OPEN",
+            operation="open_url",
+            execution_requested=True,
+            agent="web",
+            target={"type": "url", "reference": "https://example.com"},
+            confidence=0.99,
+        )
+    )
+    policy = AgentDecisionPolicy()
+    ctx = context()
+
+    decision = policy.decide(
+        "leia o conteúdo desse site",
+        context=ctx,
+        semantic_decision=semantic,
+    )
+
+    assert decision.tools == ("web_open",)
+    assert decision.reason_code == "qwen_semantic_frame"
+
+
+def test_semantic_gov_site_request_launches_browser():
+    semantic = validate_semantic_decision(
+        raw_frame(
+            speech_act="COMMAND",
+            primary_intent="WEB_OPEN",
+            operation="open_url",
+            execution_requested=True,
+            agent="web",
+            target={"type": "url", "reference": "https://www.gov.br/pt-br"},
+            confidence=0.99,
+        )
+    )
+    policy = AgentDecisionPolicy()
+    ctx = context()
+
+    decision = policy.decide(
+        "abra o site .gov do governo brasileiro",
+        context=ctx,
+        semantic_decision=semantic,
+    )
+    fast_path = policy.fast_path(
+        decision,
+        ctx,
+        "abra o site .gov do governo brasileiro",
+    )
+
+    assert decision.tools == ("web_open_browser",)
+    assert decision.target == "https://www.gov.br/pt-br"
+    assert fast_path is not None
+    assert fast_path.tool == "web_open_browser"
+    assert fast_path.arguments == {"url": "https://www.gov.br/pt-br"}
 
 
 @pytest.mark.parametrize(

@@ -10,7 +10,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .codex import CodexRunner
+from .applications import ApplicationManager
 from .deepseek import DeepSeekSessionManager
+from .hardware import HardwareMonitor
 from .pending_actions import PendingActionStore
 from .projects import ProjectRegistry
 from .schema import SchemaError, validate
@@ -96,6 +98,8 @@ class ToolRegistry:
         web: WebClient | None = None,
         projects: ProjectRegistry | None = None,
         deepseek: DeepSeekSessionManager | None = None,
+        hardware: HardwareMonitor | None = None,
+        applications: ApplicationManager | None = None,
     ):
         self.policy = policy
         self.logger = logger
@@ -113,6 +117,8 @@ class ToolRegistry:
             codex=codex,
         )
         self.deepseek = deepseek
+        self.hardware = hardware or HardwareMonitor()
+        self.applications = applications or ApplicationManager()
         self._execution = threading.local()
         self._tools: dict[str, Tool] = {}
         self._register_defaults()
@@ -261,6 +267,8 @@ class ToolRegistry:
         arguments: dict[str, Any],
         user_text: str,
     ) -> str | None:
+        if name == "schedule_application":
+            return "schedule_task"
         if name == "filesystem_delete":
             return "delete"
         if name == "filesystem_write_text":
@@ -325,6 +333,13 @@ class ToolRegistry:
             validate(arguments, tool.schema)
             normalized = self._normalize_arguments(name, arguments, context)
             validate(normalized, tool.schema)
+            if name == "delegate_to_codex":
+                normalized["_conversation_id"] = str(
+                    context.get("conversation_id") or ""
+                )
+                normalized["_focused_codex_thread_id"] = str(
+                    context.get("focused_codex_thread_id") or ""
+                )
         except SchemaError as exc:
             result = {"ok": False, "error": "invalid_arguments", "message": str(exc)}
         except Exception as exc:
@@ -626,6 +641,66 @@ class ToolRegistry:
             ]
         }
         self._add(
+            "get_hardware_telemetry",
+            (
+                "Lê telemetria real e atual do computador: temperatura da CPU "
+                "quando um sensor compatível está disponível e quantidade de "
+                "dispositivos USB físicos conectados. Nunca simula valores."
+            ),
+            _object({}, []),
+            self._get_hardware_telemetry,
+            20,
+        )
+        self._add(
+            "list_installed_applications",
+            "Lista aplicativos instalados no menu Iniciar. Não abre nem altera aplicativos.",
+            _object(
+                {
+                    "query": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 200},
+                            {"type": "null"},
+                        ]
+                    },
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+                },
+                [],
+            ),
+            self._list_installed_applications,
+            20,
+        )
+        self._add(
+            "open_application",
+            (
+                "Abre aplicativo instalado resolvido pelo menu Iniciar. "
+                "Não aceita caminho, comando ou executável arbitrário."
+            ),
+            _object(
+                {"application_name": {"type": "string", "minLength": 1, "maxLength": 200}},
+                ["application_name"],
+            ),
+            self._open_application,
+            20,
+        )
+        self._add(
+            "schedule_application",
+            (
+                "Agenda abertura de aplicativo instalado pelo Agendador de Tarefas do Windows. "
+                "start_at deve ser data local ISO, por exemplo 2026-08-14T09:30. "
+                "Sempre exige confirmação do usuário."
+            ),
+            _object(
+                {
+                    "application_name": {"type": "string", "minLength": 1, "maxLength": 200},
+                    "start_at": {"type": "string", "minLength": 16, "maxLength": 40},
+                    "recurrence": {"type": "string", "enum": ["once", "daily"]},
+                },
+                ["application_name", "start_at", "recurrence"],
+            ),
+            self._schedule_application,
+            35,
+        )
+        self._add(
             "resolve_project",
             (
                 "Resolve projeto por caminho, nome, alias, thread Codex ou "
@@ -752,13 +827,20 @@ class ToolRegistry:
             (
                 "Envia tarefa real ao Codex App Server compartilhado e aguarda "
                 "resultado. Retorna tambem intervencoes humanas e cancelamento. "
-                "Use para codigo, testes, repositorio, bugs e recursos."
+                "Use para codigo, testes, repositorio, bugs e recursos. Aceita "
+                "thread_id somente quando uma identidade exata foi fornecida."
             ),
             _object(
                 {
                     "task": {"type": "string", "minLength": 1, "maxLength": 20000},
                     "project_path": path,
                     "continue_current_thread": {"type": "boolean"},
+                    "thread_id": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 100},
+                            {"type": "null"},
+                        ]
+                    },
                     "wait": {"type": "boolean"},
                 },
                 ["task", "project_path"],
@@ -946,6 +1028,26 @@ class ToolRegistry:
             self.web.config.timeout,
         )
         self._add(
+            "web_open_browser",
+            (
+                "Abre uma URL HTTP/HTTPS em nova guia do navegador ja aberto; "
+                "se nenhum existir, usa o navegador padrao do usuario. Faz isso "
+                "somente apos validar DNS/IP, redirects e ameacas web."
+            ),
+            _object(
+                {
+                    "url": {
+                        "type": "string",
+                        "minLength": 8,
+                        "maxLength": 8192,
+                    },
+                },
+                ["url"],
+            ),
+            self._web_open_browser,
+            self.web.config.timeout,
+        )
+        self._add(
             "web_extract",
             "Abre uma fonte e retorna passagens relevantes para uma consulta, mantendo URL e titulo verificaveis.",
             _object(
@@ -1103,10 +1205,34 @@ class ToolRegistry:
             continue_current_thread=arguments.get(
                 "continue_current_thread", True
             ),
+            thread_id=arguments.get("thread_id"),
+            focused_thread_id=(
+                arguments.get("_focused_codex_thread_id") or None
+            ),
+            conversation_id=arguments.get("_conversation_id") or None,
             wait=arguments.get("wait", True),
             origin="qwen",
             event_callback=event_callback,
         ).as_dict()
+
+    def _get_hardware_telemetry(self, _arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.hardware.read()
+
+    def _list_installed_applications(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.applications.list(
+            query=arguments.get("query"),
+            limit=arguments.get("limit", 50),
+        )
+
+    def _open_application(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.applications.open(arguments["application_name"])
+
+    def _schedule_application(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.applications.schedule(
+            arguments["application_name"],
+            start_at=arguments["start_at"],
+            recurrence=arguments["recurrence"],
+        )
 
     def _delegate_to_deepseek(self, arguments: dict[str, Any]) -> dict[str, Any]:
         assert self.deepseek is not None
@@ -1199,6 +1325,9 @@ class ToolRegistry:
             page_start=arguments.get("page_start"),
             page_end=arguments.get("page_end"),
         )
+
+    def _web_open_browser(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.web.open_in_browser(url=arguments["url"])
 
     def _web_extract(self, arguments: dict[str, Any]) -> dict[str, Any]:
         return self.web.extract(

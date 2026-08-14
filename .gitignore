@@ -62,16 +62,3 @@ runtime/
 # Local agent/plugin installations and preserved recovery metadata
 .agents/
 .git-corrupt-*/
-
-# IDE and editor settings
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# OS junk
-Desktop.ini
-$RECYCLE.BIN/

@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import os
 import re
 import socket
 import ssl
+import subprocess
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import webbrowser
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Callable, Iterable
 
 from .research import (
@@ -24,6 +28,7 @@ from .research import (
     score_result,
     validate_opened_source,
 )
+from .web_threats import AdaptiveWebThreatAnalyzer
 
 
 class WebError(RuntimeError):
@@ -76,6 +81,10 @@ class WebConfig:
     search_provider: str = "bing_rss"
     search_url: str = "https://www.bing.com/search"
     search_api_key: str | None = None
+    safe_search: str = "off"
+    threat_analysis_enabled: bool = True
+    threat_learning_enabled: bool = True
+    threat_memory_path: Path | None = None
     timeout: int = 20
     max_download_bytes: int = 10 * 1024 * 1024
     max_text_chars: int = 65536
@@ -106,8 +115,11 @@ class FetchResponse:
 
 Resolver = Callable[[str], Iterable[str]]
 Transport = Callable[[str], FetchResponse]
+TraceCallback = Callable[[str, dict[str, Any]], None]
+BrowserOpener = Callable[[str], bool]
 
 _LANGUAGE_RE = re.compile(r"^[a-zA-Z]{2,3}(?:-[a-zA-Z]{2})?$")
+_SAFE_SEARCH_LEVELS = {"off", "moderate", "strict"}
 _TOKEN_RE = re.compile(r"[\wÀ-ÿ]{2,}", re.UNICODE)
 _STOPWORDS = {
     "a",
@@ -135,6 +147,142 @@ _STOPWORDS = {
     "for",
     "with",
 }
+
+
+def _windows_default_browser_executable() -> str | None:
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice",
+        ) as key:
+            prog_id = str(winreg.QueryValueEx(key, "ProgId")[0])
+        with winreg.OpenKey(
+            winreg.HKEY_CLASSES_ROOT,
+            rf"{prog_id}\shell\open\command",
+        ) as key:
+            command = str(winreg.QueryValueEx(key, "")[0])
+    except (OSError, ImportError, ValueError):
+        return None
+    quoted = re.match(r'^\s*"([^"]+\.exe)"', command, re.IGNORECASE)
+    bare = re.match(r"^\s*([^\s]+\.exe)", command, re.IGNORECASE)
+    executable = quoted or bare
+    return executable.group(1) if executable else None
+
+
+_BROWSER_EXECUTABLE_NAMES = frozenset(
+    {
+        "brave.exe",
+        "chrome.exe",
+        "chromium.exe",
+        "firefox.exe",
+        "msedge.exe",
+        "opera.exe",
+        "opera_gx.exe",
+        "vivaldi.exe",
+        "waterfox.exe",
+    }
+)
+
+
+def _windows_running_browser_executable() -> str | None:
+    """Return executable for the topmost visible browser window, if any."""
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        user32.IsWindowVisible.argtypes = [wintypes.HWND]
+        user32.IsWindowVisible.restype = wintypes.BOOL
+        user32.GetWindowThreadProcessId.argtypes = [
+            wintypes.HWND,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.QueryFullProcessImageNameW.argtypes = [
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        found: list[str] = []
+        process_query_limited_information = 0x1000
+
+        @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        def inspect_window(window: int, _parameter: int) -> bool:
+            if not user32.IsWindowVisible(window):
+                return True
+            process_id = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(window, ctypes.byref(process_id))
+            handle = kernel32.OpenProcess(
+                process_query_limited_information,
+                False,
+                process_id.value,
+            )
+            if not handle:
+                return True
+            try:
+                buffer = ctypes.create_unicode_buffer(32768)
+                size = wintypes.DWORD(len(buffer))
+                if not kernel32.QueryFullProcessImageNameW(
+                    handle,
+                    0,
+                    buffer,
+                    ctypes.byref(size),
+                ):
+                    return True
+                executable = buffer.value
+                if Path(executable).name.casefold() in _BROWSER_EXECUTABLE_NAMES:
+                    found.append(executable)
+                    return False
+            finally:
+                kernel32.CloseHandle(handle)
+            return True
+
+        user32.EnumWindows(inspect_window, 0)
+        return found[0] if found else None
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def _open_system_browser(url: str) -> bool:
+    """Open the requested URL in a new tab of the existing browser session."""
+    executable = (
+        _windows_running_browser_executable()
+        or _windows_default_browser_executable()
+    )
+    if executable:
+        browser_name = Path(executable).name.casefold()
+        arguments = (
+            [executable, "-new-tab", url]
+            if browser_name in {"firefox.exe", "waterfox.exe"}
+            else [executable, url]
+        )
+        try:
+            subprocess.Popen(
+                arguments,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                close_fds=True,
+            )
+            return True
+        except OSError:
+            pass
+    return bool(webbrowser.open(url, new=2, autoraise=True))
 
 
 def _now() -> str:
@@ -300,8 +448,21 @@ class WebClient:
         *,
         resolver: Resolver | None = None,
         transport: Transport | None = None,
+        browser_opener: BrowserOpener | None = None,
     ):
+        if config.safe_search not in _SAFE_SEARCH_LEVELS:
+            raise WebError(
+                "safe_search deve ser off, moderate ou strict"
+            )
         self.config = config
+        self.threat_analyzer = (
+            AdaptiveWebThreatAnalyzer(
+                config.threat_memory_path,
+                learning_enabled=config.threat_learning_enabled,
+            )
+            if config.threat_analysis_enabled
+            else None
+        )
         self.policy = NetworkPolicy(
             config.allowed_domains,
             config.blocked_domains,
@@ -309,6 +470,7 @@ class WebClient:
         )
         self.search_policy = NetworkPolicy((), config.blocked_domains, resolver)
         self.transport = transport
+        self.browser_opener = browser_opener or _open_system_browser
         self._request_text = ""
         self._classification: ResearchIntent | None = None
         self._generated_queries: list[str] = []
@@ -318,6 +480,14 @@ class WebClient:
         self._open_count = 0
         self._correction_count = 0
         self._accepted_urls: set[str] = set()
+        self._trace_callback: TraceCallback | None = None
+
+    def set_trace_callback(self, callback: TraceCallback | None) -> None:
+        self._trace_callback = callback
+
+    def _trace(self, stage: str, **values: Any) -> None:
+        if self._trace_callback is not None:
+            self._trace_callback(stage, values)
 
     def begin_research(self, request_text: str) -> None:
         self._request_text = request_text.strip()
@@ -341,6 +511,11 @@ class WebClient:
             "opens": self._open_count,
             "corrections": self._correction_count,
             "accepted_sources": len(self._accepted_urls),
+            "threat_analysis": (
+                self.threat_analyzer.status()
+                if self.threat_analyzer is not None
+                else {"enabled": False}
+            ),
         }
 
     def search(
@@ -559,6 +734,7 @@ class WebClient:
                 "q": effective_query,
                 "format": "rss",
                 "setlang": language,
+                "adlt": self.config.safe_search,
             }
             headers["Accept"] = (
                 "application/rss+xml, application/xml, text/xml"
@@ -573,6 +749,7 @@ class WebClient:
                 "q": effective_query,
                 "count": max_results,
                 "search_lang": language.split("-", 1)[0].lower(),
+                "safesearch": self.config.safe_search,
             }
             if freshness_bucket:
                 parameters["freshness"] = {
@@ -587,6 +764,11 @@ class WebClient:
             parameters = {
                 "q": effective_query,
                 "kl": self._duckduckgo_region(language),
+                "kp": {
+                    "off": "-2",
+                    "moderate": "-1",
+                    "strict": "1",
+                }[self.config.safe_search],
             }
             if freshness_bucket:
                 parameters["df"] = freshness_bucket
@@ -859,21 +1041,75 @@ class WebClient:
         max_chars: int = 32768,
         page_start: int | None = None,
         page_end: int | None = None,
+        _operation: str = "open",
     ) -> dict[str, Any]:
         self._ensure_enabled()
+        if self.threat_analyzer is not None:
+            preflight = self.threat_analyzer.preflight(url)
+            if preflight.blocked:
+                self._trace(
+                    "WEB_THREAT_ANALYSIS",
+                    result="blocked_before_fetch",
+                    reason_code="KNOWN_MALICIOUS_HOST",
+                )
+                raise WebAccessDenied(
+                    "host bloqueado pela memoria local de ameacas",
+                    details=preflight.as_dict(),
+                )
         if self._open_count >= self.config.max_total_opens:
             raise WebError(
                 f"limite de {self.config.max_total_opens} fontes abertas atingido"
             )
         self._open_count += 1
         requested_candidate = self._result_by_url.get(self._result_key(url))
-        response = self._fetch(url)
+        response = self._fetch(url, operation=_operation)
         final_candidate = self._result_by_url.get(
             self._result_key(response.url)
         )
         search_candidate = final_candidate or requested_candidate
         content_type = response.headers.get("content-type", "").lower()
-        if response.data.startswith(b"%PDF-") or "application/pdf" in content_type:
+        if self.threat_analyzer is not None and (
+            "text/html" in content_type
+            or "application/xhtml+xml" in content_type
+            or not content_type
+        ):
+            assessment = self.threat_analyzer.inspect_html(
+                response.url, response.data
+            )
+            if assessment.blocked:
+                self._trace(
+                    "WEB_THREAT_ANALYSIS",
+                    result="blocked_after_fetch",
+                    reason_code=",".join(
+                        str(code) for code in assessment.as_dict()["codes"]
+                    ),
+                )
+                raise WebAccessDenied(
+                    "pagina bloqueada por referencias ativas a recursos locais",
+                    details=assessment.as_dict(),
+                )
+            self._trace(
+                "WEB_THREAT_ANALYSIS",
+                result="allowed",
+                reason_code="NO_HIGH_CONFIDENCE_SIGNAL",
+            )
+        browser_preflight_limited = (
+            _operation == "browser" and not 200 <= response.status < 300
+        )
+        if browser_preflight_limited:
+            document = {
+                "title": urllib.parse.urlsplit(response.url).hostname or response.url,
+                "text": "",
+                "links": [],
+                "published_at": None,
+                "document_type": "browser_preflight",
+            }
+            self._trace(
+                "BROWSER_PREFLIGHT",
+                result="limited",
+                reason_code=f"HTTP_{response.status}",
+            )
+        elif response.data.startswith(b"%PDF-") or "application/pdf" in content_type:
             document = self._extract_pdf(response, page_start, page_end)
         elif (
             not content_type
@@ -894,6 +1130,11 @@ class WebClient:
             raise WebError(
                 f"tipo de conteudo nao suportado: {content_type or 'desconhecido'}"
             )
+        self._trace(
+            "CONTENT_EXTRACTION",
+            result="completed",
+            reason_code=str(document.get("document_type") or "unknown"),
+        )
         full_text = document.pop("text")
         limit = min(max_chars, self.config.max_text_chars)
         text = full_text[:limit]
@@ -906,6 +1147,7 @@ class WebClient:
             "title": document["title"],
             "document_type": document["document_type"],
             "content_type": content_type.split(";", 1)[0] or None,
+            "http_status": response.status,
             "fetched_at": _now(),
             "published_at": published_at,
             "bytes": len(response.data),
@@ -919,8 +1161,9 @@ class WebClient:
                 if key
                 not in {"title", "document_type", "published_at", "links"}
             },
-            "citation": {"title": document["title"], "url": response.url},
         }
+        if not browser_preflight_limited:
+            result["citation"] = {"title": document["title"], "url": response.url}
         if self._classification is not None and (
             self._classification.intent == "news"
             or bool(self._result_by_url)
@@ -961,6 +1204,40 @@ class WebClient:
                         else None,
                     )
         return result
+
+    def open_in_browser(self, *, url: str) -> dict[str, Any]:
+        """Validate a URL, then launch it even when automation gets an HTTP error."""
+        inspected = self.open(url=url, max_chars=4096, _operation="browser")
+        final_url = str(inspected["url"])
+        preflight_status = int(inspected.get("http_status") or 0) or None
+        preflight_limited = bool(
+            preflight_status is not None and not 200 <= preflight_status < 300
+        )
+        self._trace(
+            "BROWSER_LAUNCH",
+            result="attempted",
+            normalized_host=(urllib.parse.urlsplit(final_url).hostname or ""),
+        )
+        if not self.browser_opener(final_url):
+            self._trace("BROWSER_LAUNCH", result="failed")
+            raise WebError("o navegador padrao recusou a abertura da URL")
+        self._trace("BROWSER_LAUNCH", result="opened")
+        return {
+            "ok": True,
+            "url": final_url,
+            "title": inspected.get("title"),
+            "browser_opened": True,
+            "preflight_status": preflight_status,
+            "preflight_limited": preflight_limited,
+            "threat_checked": self.threat_analyzer is not None,
+            "citation": inspected.get("citation"),
+            "notice": (
+                "O acesso HTTP automatizado recebeu erro, mas isso não prova "
+                "indisponibilidade no navegador; a URL segura foi aberta."
+                if preflight_limited
+                else None
+            ),
+        }
 
     def extract(
         self,
@@ -1017,7 +1294,56 @@ class WebClient:
         operation: str = "open",
     ) -> FetchResponse:
         active_policy = policy or self.policy
-        safe_url = active_policy.validate_url(raw_url)
+        try:
+            parsed_input = urllib.parse.urlsplit(raw_url.strip())
+            normalized_host = (parsed_input.hostname or "").casefold() or None
+            self._trace(
+                "URL_NORMALIZATION",
+                result="parsed",
+                normalized_host=normalized_host,
+            )
+        except (AttributeError, ValueError):
+            self._trace(
+                "URL_NORMALIZATION",
+                result="blocked",
+                reason_code="INVALID_URL",
+            )
+            raise
+        try:
+            active_policy.validate_url(raw_url, resolve_dns=False)
+        except WebError as exc:
+            self._trace(
+                "URL_POLICY_CHECK",
+                result="blocked",
+                reason_code=exc.code,
+                normalized_host=normalized_host,
+            )
+            raise
+        self._trace(
+            "URL_POLICY_CHECK",
+            result="allowed",
+            normalized_host=normalized_host,
+        )
+        try:
+            safe_url = active_policy.validate_url(raw_url)
+        except WebError as exc:
+            self._trace(
+                "DNS_IP_VALIDATION",
+                result="blocked",
+                reason_code=exc.code,
+                normalized_host=normalized_host,
+            )
+            raise
+        self._trace(
+            "DNS_IP_VALIDATION",
+            result="allowed",
+            normalized_host=normalized_host,
+        )
+        self._trace(
+            "HTTP_FETCH",
+            result="attempted",
+            normalized_host=normalized_host,
+        )
         if self.transport is not None:
             started = time.monotonic()
             try:
@@ -1054,7 +1380,22 @@ class WebClient:
                         },
                     ) from exc
                 raise WebError(f"falha de rede: {exc}") from exc
-            final_url = active_policy.validate_url(response.url)
+            try:
+                final_url = active_policy.validate_url(response.url)
+            except WebError as exc:
+                self._trace(
+                    "REDIRECT_VALIDATION",
+                    result="blocked",
+                    reason_code=exc.code,
+                )
+                raise
+            self._trace(
+                "REDIRECT_VALIDATION",
+                result="allowed",
+                normalized_host=(
+                    urllib.parse.urlsplit(final_url).hostname or ""
+                ).casefold(),
+            )
             if len(response.data) > self.config.max_download_bytes:
                 raise WebTooLarge(
                     f"download excede {self.config.max_download_bytes} bytes"
@@ -1068,12 +1409,20 @@ class WebClient:
             )
             self._validate_search_http(normalized, operation)
             return normalized
-        return self._urllib_fetch(
+        response = self._urllib_fetch(
             safe_url,
             active_policy,
             headers=headers,
             operation=operation,
         )
+        self._trace(
+            "REDIRECT_VALIDATION",
+            result="allowed",
+            normalized_host=(
+                urllib.parse.urlsplit(response.url).hostname or ""
+            ).casefold(),
+        )
+        return response
 
     def _urllib_fetch(
         self,
@@ -1138,6 +1487,15 @@ class WebClient:
                 "duration_ms": duration_ms,
                 "body_preview": self._sanitized_preview(data),
             }
+            if operation == "browser":
+                final_url = policy.validate_url(exc.geturl())
+                return FetchResponse(
+                    final_url,
+                    exc.code,
+                    {key.lower(): value for key, value in exc.headers.items()},
+                    data,
+                    duration_ms,
+                )
             if operation == "search" and exc.code in {401, 403}:
                 raise SearchAuthenticationFailed(
                     f"autenticacao recusada pelo provedor HTTP {exc.code}",
@@ -1148,8 +1506,11 @@ class WebClient:
                     f"provedor retornou HTTP {exc.code}",
                     details=details,
                 ) from exc
+            details["availability_unknown"] = True
             raise WebError(
-                f"HTTP {exc.code} ao abrir {safe_url}", details=details
+                f"acesso HTTP automatizado recebeu {exc.code}; "
+                "isso não comprova indisponibilidade no navegador",
+                details=details,
             ) from exc
         except urllib.error.URLError as exc:
             duration_ms = round((time.monotonic() - started) * 1000)

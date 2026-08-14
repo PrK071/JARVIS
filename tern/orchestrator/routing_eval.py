@@ -493,6 +493,7 @@ def evaluate_live_semantic_qwen(
                 "qwen_request_count": len(requests),
                 "retry_count": max(0, len(requests) - 1),
                 "semantic_repair_used": semantic.repair_used,
+                "semantic_canonicalization_reason": semantic.canonicalization_reason,
                 "semantic_cache_hit": semantic.cache_hit,
                 "policy_mapping_ms": policy_mapping_ms,
                 "prompt_tokens_estimate": sum(

@@ -60,6 +60,10 @@ def _web_client(settings) -> WebClient:
             search_provider=settings.web_search_provider,
             search_url=settings.web_search_url,
             search_api_key=settings.web_search_api_key,
+            safe_search=settings.web_safe_search,
+            threat_analysis_enabled=settings.web_threat_analysis_enabled,
+            threat_learning_enabled=settings.web_threat_learning_enabled,
+            threat_memory_path=settings.state_dir / "web-threat-patterns.json",
             timeout=settings.web_timeout,
             max_download_bytes=settings.web_max_download_bytes,
             max_text_chars=settings.web_max_text_chars,
@@ -138,6 +142,7 @@ def _registry(settings, *, approval=None) -> ToolRegistry:
         policy,
         settings.codex_timeout,
         endpoint=settings.codex_app_server_endpoint,
+        preferred_thread_id=settings.codex_current_thread_id,
         state_dir=settings.state_dir,
         quick_wait_timeout=settings.codex_quick_wait_timeout_seconds,
         hard_timeout=settings.codex_turn_hard_timeout_seconds,
@@ -367,6 +372,7 @@ def _codex_bridge_diagnose(settings, runtime: RuntimeManager, *, include_qwen: b
         timeout=settings.codex_timeout,
         executable=executable,
         state_dir=settings.state_dir,
+        preferred_thread_id=settings.codex_current_thread_id,
     )
     try:
         try:
@@ -735,6 +741,13 @@ def main(argv: list[str] | None = None) -> int:
                         "api_key_configured": bool(
                             settings.web_search_api_key
                         ),
+                        "safe_search": settings.web_safe_search,
+                        "threat_analysis_enabled": (
+                            settings.web_threat_analysis_enabled
+                        ),
+                        "threat_learning_enabled": (
+                            settings.web_threat_learning_enabled
+                        ),
                         "timeout": settings.web_timeout,
                         "max_download_bytes": settings.web_max_download_bytes,
                         "max_text_chars": settings.web_max_text_chars,
@@ -991,6 +1004,7 @@ def main(argv: list[str] | None = None) -> int:
                 endpoint=settings.codex_app_server_endpoint,
                 timeout=settings.codex_timeout,
                 state_dir=settings.state_dir,
+                preferred_thread_id=settings.codex_current_thread_id,
             )
             try:
                 _print(codex.shared_start())
@@ -1019,6 +1033,7 @@ def main(argv: list[str] | None = None) -> int:
                 endpoint=settings.codex_app_server_endpoint,
                 timeout=settings.codex_timeout,
                 state_dir=settings.state_dir,
+                preferred_thread_id=settings.codex_current_thread_id,
             )
             _print(codex.stop_server())
         elif args.command == "codex-shared-events":
@@ -1033,6 +1048,7 @@ def main(argv: list[str] | None = None) -> int:
                 endpoint=settings.codex_app_server_endpoint,
                 timeout=settings.codex_timeout,
                 state_dir=settings.state_dir,
+                preferred_thread_id=settings.codex_current_thread_id,
             )
             _print_codex_shared_status(codex.shared_status())
         elif args.command == "codex-steer":
@@ -1041,6 +1057,7 @@ def main(argv: list[str] | None = None) -> int:
                 endpoint=settings.codex_app_server_endpoint,
                 timeout=settings.codex_timeout,
                 state_dir=settings.state_dir,
+                preferred_thread_id=settings.codex_current_thread_id,
             )
             result = codex.steer(args.instruction, origin="human")
             print("Steer enviado")
@@ -1053,6 +1070,7 @@ def main(argv: list[str] | None = None) -> int:
                 endpoint=settings.codex_app_server_endpoint,
                 timeout=settings.codex_timeout,
                 state_dir=settings.state_dir,
+                preferred_thread_id=settings.codex_current_thread_id,
             )
             result = codex.cancel()
             if not result.get("cancelled"):

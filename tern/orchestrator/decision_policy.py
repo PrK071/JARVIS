@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import ipaddress
 import re
 import unicodedata
+import urllib.parse
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .explicit_agent_binding import ExplicitAgentBinding
 from .projects import normalize_technical_transcript
 from .intent_semantics import (
     Constraint,
@@ -25,6 +28,7 @@ class Intent(str, Enum):
     LOCAL_READ = "LOCAL_READ"
     LOCAL_SEARCH = "LOCAL_SEARCH"
     LOCAL_ACTION = "LOCAL_ACTION"
+    WEB_OPEN = "WEB_OPEN"
     CODEX_REVIEW = "CODEX_REVIEW"
     CODEX_STATUS = "CODEX_STATUS"
     CODEX_DELEGATE = "CODEX_DELEGATE"
@@ -33,6 +37,8 @@ class Intent(str, Enum):
     DEEPSEEK_REVIEW = "DEEPSEEK_REVIEW"
     DEEPSEEK_DELEGATE = "DEEPSEEK_DELEGATE"
     PROJECT_RESOLUTION = "PROJECT_RESOLUTION"
+    HARDWARE_STATUS = "HARDWARE_STATUS"
+    APPLICATION_CONTROL = "APPLICATION_CONTROL"
     CLARIFY = "CLARIFY"
     NO_ACTION = "NO_ACTION"
 
@@ -54,6 +60,7 @@ TOOL_EFFECTS: dict[str, SideEffect] = {
     "filesystem_delete": SideEffect.LOCAL_MUTATION,
     "web_search": SideEffect.REMOTE_READ,
     "web_open": SideEffect.REMOTE_READ,
+    "web_open_browser": SideEffect.REMOTE_READ,
     "web_extract": SideEffect.REMOTE_READ,
     "review_codex_session": SideEffect.READ_ONLY,
     "get_codex_job_status": SideEffect.READ_ONLY,
@@ -62,6 +69,10 @@ TOOL_EFFECTS: dict[str, SideEffect] = {
     "delegate_to_codex": SideEffect.CODE_EXECUTION,
     "review_deepseek_session": SideEffect.READ_ONLY,
     "delegate_to_deepseek": SideEffect.REMOTE_GENERATION,
+    "get_hardware_telemetry": SideEffect.READ_ONLY,
+    "list_installed_applications": SideEffect.READ_ONLY,
+    "open_application": SideEffect.CODE_EXECUTION,
+    "schedule_application": SideEffect.LOCAL_MUTATION,
 }
 
 
@@ -75,7 +86,307 @@ _STRICT_TOOL_INTENTS = {
     Intent.LOCAL_READ,
     Intent.LOCAL_SEARCH,
     Intent.PROJECT_RESOLUTION,
+    Intent.WEB_OPEN,
+    Intent.HARDWARE_STATUS,
+    Intent.APPLICATION_CONTROL,
 }
+
+
+def is_hardware_status_request(text: str) -> bool:
+    normalized = _plain(text)
+    cpu_temperature = bool(
+        re.search(r"\btemperatura\b", normalized)
+        and re.search(r"\b(?:cpu|processador|nucleo)\b", normalized)
+    )
+    usb_devices = bool(
+        re.search(r"\busb(?:s)?\b", normalized)
+        and re.search(
+            r"\b(?:quantos?|quantidade|numero|dispositivos?|conectad[oa]s?|plugad[oa]s?|status)\b",
+            normalized,
+        )
+    )
+    return cpu_temperature or usb_devices
+
+
+def is_codex_status_request(text: str) -> bool:
+    """Detecta consultas explícitas de estado sem confundir com histórico."""
+    normalized = _plain(text)
+    if "codex" not in normalized and "codigo ex" not in normalized:
+        return False
+    if "deepseek" in normalized and re.search(
+        r"\b(?:consulte|consulta|pergunte|pergunta|mande|manda|mostre|mostra)\b",
+        normalized,
+    ):
+        return False
+    if re.search(
+        r"\b(?:historico|revise|revisar|ultima atividade|o que (?:o )?codex fez|"
+        r"resultado|resposta)\b",
+        normalized,
+    ):
+        return False
+    return bool(
+        re.search(r"\b(?:status|estado)\b", normalized)
+        or re.search(r"\b(?:como esta|como ta)\b", normalized)
+    )
+
+
+def application_control_action(text: str) -> str | None:
+    normalized = _plain(text)
+    application_hint = bool(
+        re.search(r"\b(?:aplicativo|aplicativos|app|apps|programa|programas)\b", normalized)
+        or re.search(
+            r"\b(?:calculadora|bloco de notas|spotify|discord|steam|chrome|firefox|edge|word|excel|terminal|powershell)\b",
+            normalized,
+        )
+    )
+    if re.search(r"\b(?:liste|listar|mostre|mostrar|quais|procure|buscar)\b", normalized) and re.search(
+        r"\b(?:aplicativos|apps|programas)\b.*\binstalad[oa]s?\b|\binstalad[oa]s?\b.*\b(?:aplicativos|apps|programas)\b",
+        normalized,
+    ):
+        return "list_installed_applications"
+    if application_hint and re.search(r"\b(?:agende|agendar|programe|programar)\b", normalized):
+        return "schedule_application"
+    if application_hint and re.search(r"\b(?:abra|abrir|inicie|iniciar|execute|executar|rode|rodar)\b", normalized):
+        return "open_application"
+    return None
+
+
+_WEB_OPEN_REQUEST_RE = re.compile(
+    r"^\s*(?:por\s+favor[,;:]?\s+)?"
+    r"(?:abra|abre|abrir|acesse|visite)\s+"
+    r"(?:(?:o|a)\s+)?(?:site\s+)?(?P<target>\S+)\s*$",
+    re.IGNORECASE,
+)
+_CONTEXTUAL_WEB_OPEN_FOLLOWUP_RE = re.compile(
+    r"^\s*(?:(?:então|entao|agora)\s+)?"
+    r"(?:pode\s+)?"
+    r"(?:abra|abre|abrir|acesse|visite)"
+    r"(?:\s+(?:então|entao|agora|isso|ele|ela|o\s+site|a\s+página|a\s+pagina))?"
+    r"\s*[.!?]?\s*$",
+    re.IGNORECASE,
+)
+_KNOWN_WEB_SITE_ALIASES = {
+    "amazon": "https://www.amazon.com.br/",
+    "pornhub": "https://pt.pornhub.com/",
+    "xvideos": "https://www.xvideos.com/",
+}
+_LOCAL_FILE_SUFFIXES = {
+    ".c", ".cpp", ".csv", ".docx", ".env", ".go", ".ini",
+    ".java", ".js", ".json", ".md", ".pdf", ".ps1", ".py",
+    ".rs", ".toml", ".ts", ".txt", ".yaml", ".yml",
+}
+_MUSIC_COMMAND_RE = re.compile(
+    r"^\s*(?:por\s+favor[,;:]?\s+)?"
+    r"(?P<verb>"
+    r"bota|bote|botar|coloca|coloque|colocar|p[oõ]e|ponha|"
+    r"toque|toca|tocar|reproduz|reproduza|reproduzir|"
+    r"escuta|escute|ou[çc]a|abra|abre|abrir|"
+    r"(?:eu\s+)?(?:quero|queria)\s+(?:ouvir|escutar)|"
+    r"(?:vamos\s+)?(?:ouvir|escutar)|solta(?:\s+o)?\s+som"
+    r")\b(?:\s+(?:a[ií]))?"
+    r"(?P<body>.+?)\s*$",
+    re.IGNORECASE,
+)
+_MUSIC_NOUN_RE = re.compile(
+    r"^(?:(?:a|uma|essa|esse|tal)\s+)?(?:m[uú]sica|faixa|som)\s+",
+    re.IGNORECASE,
+)
+_MUSIC_PLAY_CLAUSE_RE = re.compile(
+    r"^(?:pra|para)\s+(?:tocar|ouvir|escutar|reproduzir)\s+",
+    re.IGNORECASE,
+)
+_MUSIC_PLATFORM_RE = re.compile(
+    r"\s+(?:(?:no|na|pelo|pela|em|usando(?:\s+o)?)\s+)?"
+    r"(?P<platform>youtube(?:\s+music)?|yt|spotify)\s*$",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class MusicOpenRequest:
+    query: str
+    platform: str
+    url: str
+
+
+def normalize_music_open_request(text: str) -> MusicOpenRequest | None:
+    """Resolve an explicit music command to a safe platform search URL."""
+    match = _MUSIC_COMMAND_RE.fullmatch(text)
+    if match is None:
+        return None
+    verb = match.group("verb").casefold()
+    body = match.group("body").strip()
+    play_clause = _MUSIC_PLAY_CLAUSE_RE.match(body)
+    if play_clause is not None:
+        body = body[play_clause.end():].strip()
+    music_noun = _MUSIC_NOUN_RE.match(body)
+    if music_noun is not None:
+        body = body[music_noun.end():].strip()
+    platform_match = _MUSIC_PLATFORM_RE.search(body)
+    platform_label = (
+        platform_match.group("platform").casefold()
+        if platform_match is not None
+        else "youtube"
+    )
+    platform = "spotify" if platform_label == "spotify" else "youtube"
+    if platform_match is not None:
+        body = body[:platform_match.start()].strip()
+    is_music_command = bool(
+        play_clause
+        or music_noun
+        or platform_match
+        or re.search(
+            r"(?:toc|reprodu|escut|ou[çc]|ouvir|solta)",
+            verb,
+            re.IGNORECASE,
+        )
+    )
+    query = re.sub(r"\s+", " ", body).strip(" .,!?:;\"'")
+    if not is_music_command or not query or len(query) > 300:
+        return None
+    if platform == "spotify":
+        url = "https://open.spotify.com/search/" + urllib.parse.quote(
+            query,
+            safe="",
+        )
+    else:
+        url = "https://www.youtube.com/results?" + urllib.parse.urlencode(
+            {"search_query": query}
+        )
+    return MusicOpenRequest(query=query, platform=platform, url=url)
+
+
+def normalize_explicit_web_open_request(text: str) -> str | None:
+    """Return one unambiguous URL target from an explicit open command."""
+    match = _WEB_OPEN_REQUEST_RE.fullmatch(text)
+    if match is None:
+        return None
+    target = match.group("target").strip("<>\"'").rstrip(".,")
+    if not target or "\\" in target or re.match(r"^[A-Za-z]:", target):
+        return None
+    if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", target):
+        return target
+    try:
+        parsed = urllib.parse.urlsplit(f"//{target}")
+        host = (parsed.hostname or "").casefold().rstrip(".")
+    except ValueError:
+        return None
+    if not host:
+        return None
+    try:
+        ipaddress.ip_address(host)
+        host_is_address = True
+    except ValueError:
+        host_is_address = False
+    if host != "localhost" and not host_is_address:
+        labels = host.split(".")
+        if len(labels) < 2 or any(
+            not label
+            or len(label) > 63
+            or label.startswith("-")
+            or label.endswith("-")
+            or not re.fullmatch(r"[A-Za-z0-9-]+", label)
+            for label in labels
+        ):
+            return None
+        if (
+            "/" not in target
+            and not host.startswith("www.")
+            and Path(host).suffix.casefold() in _LOCAL_FILE_SUFFIXES
+        ):
+            return None
+    return f"https://{target}"
+
+
+def normalize_known_site_open_request(text: str) -> str | None:
+    """Resolve an explicit open command through a reviewed site alias."""
+    match = _WEB_OPEN_REQUEST_RE.fullmatch(text)
+    if match is None:
+        return None
+    label = match.group("target").strip("<>\"'").rstrip(".,").casefold()
+    return _KNOWN_WEB_SITE_ALIASES.get(label)
+
+
+def normalize_contextual_web_open_request(
+    text: str,
+    context: Any,
+) -> str | None:
+    """Resolve an unambiguous reference to the immediately previous URL.
+
+    Accept either a bare site label naming the previous host or a targetless
+    open follow-up such as ``então abra``. Never guess a domain.
+    """
+    direct = normalize_explicit_web_open_request(text)
+    if direct is not None:
+        return direct
+    known_site = normalize_known_site_open_request(text)
+    if known_site is not None:
+        return known_site
+    previous_text = str(getattr(context, "last_user_text", "") or "")
+    previous_url = normalize_explicit_web_open_request(previous_text)
+    if previous_url is None:
+        return None
+    if _CONTEXTUAL_WEB_OPEN_FOLLOWUP_RE.fullmatch(text):
+        return previous_url
+    match = _WEB_OPEN_REQUEST_RE.fullmatch(text)
+    if match is None:
+        return None
+    label = match.group("target").strip("<>\"'").rstrip(".,").casefold()
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label):
+        return None
+    try:
+        previous_host = (urllib.parse.urlsplit(previous_url).hostname or "").casefold()
+    except ValueError:
+        return None
+    host_labels = previous_host.removeprefix("www.").split(".")
+    if len(host_labels) < 2 or label != host_labels[0]:
+        return None
+    return previous_url
+
+
+_BROWSER_OPEN_SIGNAL_RE = re.compile(
+    r"\b(?:navegador|browser|chrome|edge|firefox)\b",
+    re.IGNORECASE,
+)
+_OPEN_VERB_RE = re.compile(r"\b(?:abra|abre|abrir|acesse|visite)\b", re.IGNORECASE)
+
+
+def is_browser_open_request(text: str) -> bool:
+    """Return whether the user explicitly asked for a visible browser tab."""
+    return bool(
+        _BROWSER_OPEN_SIGNAL_RE.search(text)
+        and _OPEN_VERB_RE.search(text)
+    )
+
+
+def normalize_browser_open_request(text: str, context: Any) -> str | None:
+    """Resolve one explicit or previously validated URL for browser launch."""
+    if not is_browser_open_request(text):
+        return None
+    candidates: list[str] = []
+    for token in re.findall(r"\S+", text):
+        cleaned = token.strip("<>\"'()[]{}.,;:!?")
+        candidate = normalize_explicit_web_open_request(f"abra {cleaned}")
+        if candidate is not None and candidate not in candidates:
+            candidates.append(candidate)
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        return None
+    previous_text = str(getattr(context, "last_user_text", "") or "")
+    previous_url = normalize_explicit_web_open_request(previous_text)
+    if previous_url is not None:
+        return previous_url
+    recent_entities = tuple(getattr(context, "recent_entities", ()) or ())
+    validated_urls = [
+        str(item.get("id"))
+        for item in reversed(recent_entities)
+        if isinstance(item, dict)
+        and item.get("type") == "url"
+        and item.get("status") == "validated"
+        and item.get("id")
+    ]
+    return validated_urls[0] if validated_urls else None
 
 
 _RUNNING_STATES = {
@@ -236,6 +547,13 @@ class Decision:
     semantic_frame: dict[str, Any] | None = None
     semantic_confidence: float | None = None
     reference_confidence: float | None = None
+    requested_agent: str | None = None
+    requested_agent_source: str | None = None
+    requested_agent_evidence: str | None = None
+    tool_registered: bool | None = None
+    tool_available: bool | None = None
+    execution_allowed: bool | None = None
+    availability_reason: str | None = None
 
     @property
     def selected_action(self) -> str | None:
@@ -265,6 +583,15 @@ class Decision:
             "semantic_frame": self.semantic_frame,
             "semantic_confidence": self.semantic_confidence,
             "reference_confidence": self.reference_confidence,
+            "requested_agent": self.requested_agent,
+            "requested_agent_source": self.requested_agent_source,
+            "requested_agent_evidence": self.requested_agent_evidence,
+            "runtime_availability": {
+                "tool_registered": self.tool_registered,
+                "tool_available": self.tool_available,
+                "execution_allowed": self.execution_allowed,
+                "reason": self.availability_reason,
+            },
         }
 
 
@@ -338,6 +665,7 @@ class AgentDecisionPolicy:
         self._active_frame: IntentFrame | None = None
         self._active_reference: ResolvedReference | None = None
         self._active_semantic: Any | None = None
+        self._active_requested_agent: ExplicitAgentBinding | None = None
 
     def invalidate_context(self, reason: str) -> None:
         self._context_cache = None
@@ -535,6 +863,21 @@ class AgentDecisionPolicy:
             semantic_frame=(self._active_semantic.as_dict() if self._active_semantic else None),
             semantic_confidence=(float(self._active_semantic.confidence) if self._active_semantic else None),
             reference_confidence=(self._active_reference.confidence if self._active_reference else None),
+            requested_agent=(
+                self._active_requested_agent.requested_agent
+                if self._active_requested_agent
+                else None
+            ),
+            requested_agent_source=(
+                self._active_requested_agent.requested_agent_source
+                if self._active_requested_agent
+                else None
+            ),
+            requested_agent_evidence=(
+                self._active_requested_agent.evidence
+                if self._active_requested_agent
+                else None
+            ),
         )
         violation = check_decision_constraints(value)
         if violation and intent is not Intent.CLARIFY:
@@ -557,8 +900,49 @@ class AgentDecisionPolicy:
                 semantic_frame=(self._active_semantic.as_dict() if self._active_semantic else None),
                 semantic_confidence=(float(self._active_semantic.confidence) if self._active_semantic else None),
                 reference_confidence=(self._active_reference.confidence if self._active_reference else None),
+                requested_agent=value.requested_agent,
+                requested_agent_source=value.requested_agent_source,
+                requested_agent_evidence=value.requested_agent_evidence,
             )
         return value
+
+    def _decision_from_explicit_agent_binding(
+        self,
+        binding: ExplicitAgentBinding,
+        *,
+        text: str,
+        context: DecisionContext,
+        project: str | None,
+        root: str | None,
+    ) -> Decision:
+        """Route from an upstream executor binding, independent of availability."""
+
+        base_frame, reference = self.frame_builder.build(text, context)
+        self._active_reference = reference
+        self._active_frame = replace(
+            base_frame,
+            speech_act=SpeechAct.COMMAND,
+            operation="delegate",
+            agent=binding.requested_agent,
+            execution_requested=True,
+            confidence=1.0,
+            plan=(),
+        )
+        intent = (
+            Intent.DEEPSEEK_DELEGATE
+            if binding.requested_agent == "deepseek"
+            else Intent.CODEX_DELEGATE
+        )
+        return self._decision(
+            intent,
+            1.0,
+            project,
+            root,
+            (f"delegate_to_{binding.requested_agent}",),
+            "explicit_agent_binding",
+            target=reference.id,
+            override=f"{binding.requested_agent}_explicit",
+        )
 
     def _semantic_frame_from_qwen(self, semantic: Any) -> IntentFrame:
         return IntentFrame(
@@ -586,6 +970,7 @@ class AgentDecisionPolicy:
         self,
         semantic: Any,
         *,
+        user_text: str,
         context: DecisionContext,
         project: str | None,
         root: str | None,
@@ -610,6 +995,7 @@ class AgentDecisionPolicy:
                     root = str(item.get("root") or "") or root
                     break
 
+        visible_browser_open = bool(_OPEN_VERB_RE.search(user_text))
         tool_for_intent = {
             Intent.CODEX_STATUS: "get_codex_job_status",
             Intent.CODEX_REVIEW: "review_codex_session",
@@ -621,6 +1007,9 @@ class AgentDecisionPolicy:
             Intent.PROJECT_RESOLUTION: "resolve_project",
             Intent.LOCAL_SEARCH: "find_project_files",
             Intent.LOCAL_ACTION: "filesystem_write_text",
+            Intent.WEB_OPEN: (
+                "web_open_browser" if visible_browser_open else "web_open"
+            ),
         }
         tools: list[str] = []
         if semantic.compound_plan:
@@ -652,7 +1041,12 @@ class AgentDecisionPolicy:
             project,
             root,
             tuple(tools),
-            "qwen_semantic_frame",
+            (
+                "qwen_semantic_browser_open"
+                if semantic.primary_intent is Intent.WEB_OPEN
+                and visible_browser_open
+                else "qwen_semantic_frame"
+            ),
             target=target,
             override="semantic_first",
         )
@@ -880,11 +1274,228 @@ class AgentDecisionPolicy:
         context: DecisionContext | None = None,
         fixture_context: dict[str, Any] | None = None,
         semantic_decision: Any | None = None,
+        explicit_agent_binding: ExplicitAgentBinding | None = None,
     ) -> Decision:
         context = context or self.build_context(fixture_context=fixture_context)
         text = _plain(user_text)
+        self._active_requested_agent = explicit_agent_binding
         project, root, explicit_project = self._project(text, context)
+        if is_codex_status_request(user_text):
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.STATUS_QUERY,
+                operation="status",
+                agent="codex",
+                target="current_codex_session",
+                polarity="positive",
+                execution_requested=False,
+                continuation=False,
+                constraints=(),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "codex_job",
+                context.focused_job or context.codex_job_id,
+                1.0,
+                ("explicit_codex_status",),
+            )
+            return self._decision(
+                Intent.CODEX_STATUS,
+                1.0,
+                project,
+                root,
+                ("get_codex_job_status",),
+                "active_job_status_query",
+                target=context.focused_job or context.codex_job_id,
+            )
+        if is_hardware_status_request(user_text):
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.QUESTION,
+                operation="read",
+                agent="system",
+                target="hardware_telemetry",
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(Constraint.READ_ONLY,),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "hardware",
+                "local_system",
+                1.0,
+                ("live_hardware_query",),
+            )
+            return self._decision(
+                Intent.HARDWARE_STATUS,
+                1.0,
+                project,
+                root,
+                ("get_hardware_telemetry",),
+                "live_hardware_query",
+                target="local_system",
+            )
+        application_tool = application_control_action(user_text)
+        if application_tool is not None:
+            read_only = application_tool == "list_installed_applications"
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.QUESTION if read_only else SpeechAct.COMMAND,
+                operation="read" if read_only else "execute",
+                agent="system",
+                target="installed_applications",
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(Constraint.READ_ONLY,) if read_only else (),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "application",
+                "installed_applications",
+                1.0,
+                ("explicit_application_control",),
+            )
+            return self._decision(
+                Intent.APPLICATION_CONTROL,
+                1.0,
+                project,
+                root,
+                (application_tool,),
+                "explicit_application_control",
+                target="installed_applications",
+            )
+        music_request = normalize_music_open_request(user_text)
+        if music_request is not None:
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.COMMAND,
+                operation="open_url",
+                agent="web",
+                target=music_request.url,
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "url",
+                music_request.url,
+                1.0,
+                ("explicit_music_request", music_request.platform),
+            )
+            return self._decision(
+                Intent.WEB_OPEN,
+                1.0,
+                project,
+                root,
+                ("web_open_browser",),
+                "music_browser_search",
+                target=music_request.url,
+            )
+        browser_url = normalize_browser_open_request(user_text, context)
+        if is_browser_open_request(user_text):
+            if browser_url is None:
+                return self._decision(
+                    Intent.CLARIFY,
+                    1.0,
+                    project,
+                    root,
+                    (),
+                    "browser_url_missing_or_ambiguous",
+                )
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.COMMAND,
+                operation="open_url",
+                agent="web",
+                target=browser_url,
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(),
+                confidence=1.0,
+                followup_type=FollowupType.REFERENCE_FOLLOWUP,
+            )
+            self._active_reference = ResolvedReference(
+                "url",
+                browser_url,
+                1.0,
+                ("explicit_browser_request",),
+            )
+            return self._decision(
+                Intent.WEB_OPEN,
+                1.0,
+                project,
+                root,
+                ("web_open_browser",),
+                "explicit_browser_url",
+                target=browser_url,
+            )
+        requested_url = normalize_contextual_web_open_request(user_text, context)
+        if requested_url is not None:
+            explicit_url = normalize_explicit_web_open_request(user_text)
+            known_site_url = normalize_known_site_open_request(user_text)
+            reference_followup = explicit_url is None and known_site_url is None
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.COMMAND,
+                operation="open_url",
+                agent="web",
+                target=requested_url,
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(),
+                confidence=1.0,
+                followup_type=(
+                    FollowupType.REFERENCE_FOLLOWUP
+                    if reference_followup
+                    else FollowupType.NEW_REQUEST
+                ),
+            )
+            self._active_reference = ResolvedReference(
+                "url",
+                requested_url,
+                1.0,
+                (
+                    "previous_explicit_url"
+                    if reference_followup
+                    else "known_site_alias"
+                    if known_site_url is not None
+                    else "explicit_url_syntax",
+                ),
+            )
+            return self._decision(
+                Intent.WEB_OPEN,
+                1.0,
+                project,
+                root,
+                ("web_open_browser",),
+                (
+                    "contextual_browser_url"
+                    if reference_followup
+                    else "known_site_browser_url"
+                    if known_site_url is not None
+                    else "explicit_browser_url"
+                ),
+                target=requested_url,
+            )
         self._active_semantic = semantic_decision
+        if explicit_agent_binding is not None:
+            return self._decision_from_explicit_agent_binding(
+                explicit_agent_binding,
+                text=text,
+                context=context,
+                project=project,
+                root=root,
+            )
         if semantic_decision is not None:
             self._active_frame = self._semantic_frame_from_qwen(semantic_decision)
             self._active_reference = self.reference_resolver.resolve_typed(
@@ -894,6 +1505,7 @@ class AgentDecisionPolicy:
             )
             return self._decision_from_semantic(
                 semantic_decision,
+                user_text=user_text,
                 context=context,
                 project=project,
                 root=root,
@@ -1197,6 +1809,14 @@ class AgentDecisionPolicy:
     def safe_fallback_decision(self, decision: Decision) -> Decision:
         """Keep only unequivocal reads after two failed semantic parses."""
         if (
+            decision.requested_agent in {"codex", "deepseek"}
+            and decision.requested_agent_source == "explicit_user"
+        ):
+            return replace(
+                decision,
+                reason_code="explicit_agent_binding_semantic_parse_failed",
+            )
+        if (
             decision.tools
             and all(TOOL_EFFECTS.get(tool) is SideEffect.READ_ONLY for tool in decision.tools)
             and not (decision.resolved_reference and decision.resolved_reference.ambiguous)
@@ -1239,19 +1859,83 @@ class AgentDecisionPolicy:
         context: DecisionContext,
         user_text: str,
     ) -> FastPath | None:
-        """Return only deterministic, single-entity, read-only shortcuts."""
+        """Return deterministic shortcuts with fully known tool arguments."""
         if decision.confidence < 0.95 or len(decision.tools) != 1:
             return None
         tool = decision.tools[0]
         if constraint_violation_for_tool(tool, decision.intent_frame):
             return None
+        if (
+            decision.requested_agent_source == "explicit_user"
+            and decision.execution_allowed is not False
+            and tool in {"delegate_to_codex", "delegate_to_deepseek"}
+            and context.project_root
+        ):
+            arguments: dict[str, Any] = {
+                "task": user_text,
+                "project_path": context.project_root,
+            }
+            if tool == "delegate_to_codex":
+                arguments["continue_current_thread"] = True
+            else:
+                arguments["continue_current_session"] = True
+            return FastPath(
+                tool,
+                arguments,
+                "explicit_agent_direct_handoff",
+                TOOL_EFFECTS[tool],
+            )
+        if tool in {"web_open", "web_open_browser"} and decision.intent is Intent.WEB_OPEN:
+            requested_url = (
+                (
+                    normalize_music_open_request(user_text).url
+                    if normalize_music_open_request(user_text) is not None
+                    else
+                    normalize_browser_open_request(user_text, context)
+                    or normalize_contextual_web_open_request(user_text, context)
+                )
+                if tool == "web_open_browser"
+                else normalize_contextual_web_open_request(user_text, context)
+            )
+            if requested_url is None and (
+                decision.user_override == "semantic_first"
+                and decision.resolved_reference is not None
+                and decision.resolved_reference.type == "url"
+                and not decision.resolved_reference.ambiguous
+                and decision.reference_confidence is not None
+                and decision.reference_confidence >= 0.95
+                and isinstance(decision.target, str)
+                and normalize_explicit_web_open_request(
+                    f"abra {decision.target}"
+                ) == decision.target
+            ):
+                requested_url = decision.target
+            if requested_url is None or requested_url != decision.target:
+                return None
+            return FastPath(
+                tool,
+                {"url": requested_url},
+                (
+                    "explicit_browser_url_launch"
+                    if tool == "web_open_browser"
+                    else
+                    "explicit_web_url_read"
+                    if decision.user_override != "semantic_first"
+                    else "semantic_web_url_read"
+                ),
+                SideEffect.REMOTE_READ,
+            )
         if TOOL_EFFECTS.get(tool) is not SideEffect.READ_ONLY:
             return None
         if context.ambiguous_target:
             return None
         if tool == "get_codex_job_status":
             if context.codex_running_jobs != 1 or not context.codex_job_id:
-                return None
+                return FastPath(
+                    tool,
+                    {"job_id": None, "latest": True},
+                    "latest_codex_job_read",
+                )
             return FastPath(
                 tool,
                 {"job_id": context.codex_job_id, "latest": False},
@@ -1274,6 +1958,13 @@ class AgentDecisionPolicy:
                 tool,
                 {"project_path": context.project_root, "turn_limit": turn_limit},
                 "single_deepseek_session_read",
+            )
+        if tool == "get_hardware_telemetry":
+            return FastPath(
+                tool,
+                {},
+                "live_hardware_telemetry",
+                SideEffect.READ_ONLY,
             )
         if tool == "filesystem_read_text":
             if not context.focused_file:
@@ -1308,6 +1999,9 @@ class AgentDecisionPolicy:
         if result.get("error") == "action_pending":
             self.invalidate_context("pending_action_changed")
         self.focus.recent_tools = [*self.focus.recent_tools, name][-5:]
+        if name in {"web_open", "web_open_browser"} and result.get("ok"):
+            validated_url = str(result.get("url") or arguments.get("url") or "")
+            self.focus.remember_entity("url", validated_url, status="validated")
         project = arguments.get("project_path") or result.get("root")
         if project:
             self.focus.focused_project_root = str(project)

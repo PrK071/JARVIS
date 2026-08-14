@@ -23,6 +23,11 @@ class Runtime:
         return []
 
 
+class BridgeLog:
+    def write(self, *_args, **_kwargs):
+        return None
+
+
 class FakeManager:
     def __init__(self, *, blocked: bool = False, fail: bool = False):
         self.blocked = blocked
@@ -41,6 +46,31 @@ class FakeManager:
         self._serial = threading.Lock()
         self.active = 0
         self.max_active = 0
+        self.bridge_log = BridgeLog()
+        self.project: Path | None = None
+
+    def _session(self):
+        assert self.project is not None
+        return {
+            "thread_id": THREAD,
+            "session_id": THREAD,
+            "project": str(self.project),
+            "state": "idle",
+            "source": "cli",
+            "visible": True,
+            "recoverable": True,
+            "ephemeral": False,
+        }
+
+    def list_project_threads(self):
+        return [self._session()]
+
+    def adopt_thread(self, thread_id):
+        assert thread_id == THREAD
+        return self._session()
+
+    def create_thread(self):
+        return self._session()
 
     def run_turn(self, task, **kwargs):
         with self._serial:
@@ -110,6 +140,7 @@ def runner(tmp_path: Path, manager: FakeManager, **kwargs) -> CodexRunner:
         **kwargs,
     )
     value._managers[project.resolve()] = manager
+    manager.project = project.resolve()
     return value
 
 

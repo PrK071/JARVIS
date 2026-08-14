@@ -112,12 +112,12 @@ def response_value(content="resposta"):
     }
 
 
-def test_configuration_defaults_are_optional_and_manual():
+def test_configuration_defaults_enable_current_deepseek_model():
     settings = load_settings({})
     assert settings.deepseek_enabled
     assert settings.deepseek_api_key is None
     assert settings.deepseek_base_url == "https://api.deepseek.com"
-    assert settings.deepseek_model == ""
+    assert settings.deepseek_model == "deepseek-v4-flash"
     assert not settings.deepseek_auto_escalation
     assert settings.deepseek_session_max_recent_turns == 20
 

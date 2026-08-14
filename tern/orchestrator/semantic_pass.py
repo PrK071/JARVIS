@@ -6,9 +6,16 @@ import re
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
-from .decision_policy import Intent
+from .decision_policy import (
+    Intent,
+    is_browser_open_request,
+    normalize_contextual_web_open_request,
+    normalize_explicit_web_open_request,
+    normalize_music_open_request,
+)
 from .intent_semantics import Constraint, FollowupType, SpeechAct
 
 
@@ -23,8 +30,11 @@ TARGET_TYPES = {
     "tool_result",
     "task",
     "generation",
+    "url",
 }
-AGENTS = {None, "qwen", "codex", "deepseek", "filesystem", "project"}
+AGENTS = {
+    None, "qwen", "codex", "deepseek", "filesystem", "project", "web"
+}
 OPERATIONS = {
     "answer",
     "read",
@@ -38,6 +48,7 @@ OPERATIONS = {
     "resolve_project",
     "clarify",
     "no_action",
+    "open_url",
 }
 CONDITIONS = {None, "positive_recommendation"}
 
@@ -66,7 +77,40 @@ Principle examples:
 - In "Pergunta ao DeepSeek se não seria melhor X", the negation is question content,
   not a prohibition on DeepSeek.
 - "Pergunta ao DeepSeek e depois manda o Codex implementar" is an ORDERED two-step plan.
+- "Abra https://example.com" is WEB_OPEN, operation open_url, agent web,
+  target type url, and execution_requested=true.
+- READ_ONLY means strictly local reads. It conflicts with WEB_OPEN because network
+  access is REMOTE_READ; do not add READ_ONLY to a WEB_OPEN decision.
 """
+
+
+COMMAND_PRESERVATION_PROMPT_ADDITION = """
+Preserve the operational force of the user's request. If the user explicitly asks
+for an action to be performed, keep it as an execution request. Do not reinterpret
+that action as an informational request merely because the same action could be
+explained. ANSWER_DIRECTLY is for requested explanations or information, not for an
+action the user asked the assistant or a named agent to perform.
+
+execution_requested=true means the user asked for the action to be performed. It
+also applies to requested read-only actions. READ_ONLY limits effects; it does not
+mean execution_requested=false, and it must not be inferred merely because an
+operation reads data. Preserve an explicitly named agent. Do not invent a
+constraint that contradicts the requested action.
+
+Contrastive examples:
+- "O que faz pytest?" asks for information: no execution is requested.
+- "Execute pytest no projeto." asks for an action: preserve the command and the
+  execution request.
+- "Explique como ler um arquivo." asks for information; "Leia este arquivo." asks
+  for the read action to be performed.
+- "Explique como excluir um arquivo." asks for information; "Exclua este arquivo."
+  asks for the delete action to be performed.
+"""
+
+
+COMMAND_PRESERVATION_SYSTEM_PROMPT = (
+    SEMANTIC_SYSTEM_PROMPT + COMMAND_PRESERVATION_PROMPT_ADDITION
+)
 
 
 def semantic_json_schema() -> dict[str, Any]:
@@ -77,7 +121,7 @@ def semantic_json_schema() -> dict[str, Any]:
         "properties": {
             "intent": {"type": "string", "enum": [item.value for item in Intent]},
             "operation": {"type": "string", "enum": sorted(OPERATIONS)},
-            "agent": {"type": ["string", "null"], "enum": [None, "qwen", "codex", "deepseek", "filesystem", "project"]},
+            "agent": {"type": ["string", "null"], "enum": sorted(AGENTS, key=lambda value: value or "")},
             "target_type": {"type": "string", "enum": sorted(TARGET_TYPES)},
             "target_reference": {"type": ["string", "null"], "maxLength": 200},
             "condition": {"type": ["string", "null"], "enum": [None, "positive_recommendation"]},
@@ -96,7 +140,7 @@ def semantic_json_schema() -> dict[str, Any]:
             "primary_intent": {"type": "string", "enum": [item.value for item in Intent]},
             "operation": {"type": "string", "enum": sorted(OPERATIONS)},
             "execution_requested": {"type": "boolean"},
-            "agent": {"type": ["string", "null"], "enum": [None, "qwen", "codex", "deepseek", "filesystem", "project"]},
+            "agent": {"type": ["string", "null"], "enum": sorted(AGENTS, key=lambda value: value or "")},
             "target": {
                 "type": "object",
                 "additionalProperties": False,
@@ -199,6 +243,8 @@ class SemanticPassResult:
     repair_used: bool
     cache_hit: bool
     error: str | None = None
+    canonicalization_reason: str | None = None
+    validation_error_codes: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -208,12 +254,42 @@ class SemanticPassResult:
             "repair_used": self.repair_used,
             "cache_hit": self.cache_hit,
             "error": self.error,
+            "canonicalization_reason": self.canonicalization_reason,
+            "validation_error_codes": list(self.validation_error_codes),
             "semantic_frame": self.decision.as_dict() if self.decision else None,
         }
 
 
 class SemanticValidationError(ValueError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: SemanticValidationCode | None = None,
+    ):
+        super().__init__(message)
+        self.code = code
+
+
+class SemanticValidationCode(str, Enum):
+    READ_ONLY_TOOL_INTENT_CONFLICT = "READ_ONLY_TOOL_INTENT_CONFLICT"
+
+
+HARD_CROSS_FIELD_INVARIANTS = frozenset(SemanticValidationCode)
+
+
+class SafeCanonicalizationReason(str, Enum):
+    EXACT_CONSTRAINT_DEDUP = "EXACT_CONSTRAINT_DEDUP"
+
+
+@dataclass(frozen=True)
+class SemanticCanonicalizationResult:
+    value: Any
+    reason: SafeCanonicalizationReason | None = None
+
+    @property
+    def changed(self) -> bool:
+        return self.reason is not None
 
 
 def _enum(enum_type: Any, value: Any, field: str) -> Any:
@@ -233,7 +309,11 @@ def _validate_reference(value: Any) -> str | None:
     return value
 
 
-def validate_semantic_decision(raw: Any) -> SemanticDecision:
+def validate_semantic_decision(
+    raw: Any,
+    *,
+    cross_field_invariants: frozenset[SemanticValidationCode] = frozenset(),
+) -> SemanticDecision:
     if not isinstance(raw, dict):
         raise SemanticValidationError("root must be an object")
     required = {
@@ -340,7 +420,7 @@ def validate_semantic_decision(raw: Any) -> SemanticDecision:
         raise SemanticValidationError("confidence must be between 0 and 1")
     if not execution and intent in {
         Intent.CODEX_DELEGATE, Intent.CODEX_STEER, Intent.CODEX_CANCEL,
-        Intent.DEEPSEEK_DELEGATE, Intent.LOCAL_ACTION,
+        Intent.DEEPSEEK_DELEGATE, Intent.LOCAL_ACTION, Intent.WEB_OPEN,
     }:
         raise SemanticValidationError("side-effect intent requires execution_requested=true")
     if plan and not execution:
@@ -351,16 +431,40 @@ def validate_semantic_decision(raw: Any) -> SemanticDecision:
                 Intent.CODEX_CANCEL,
                 Intent.DEEPSEEK_DELEGATE,
                 Intent.LOCAL_ACTION,
+                Intent.WEB_OPEN,
             }
             for step in plan
         ):
             raise SemanticValidationError("side-effect compound plan requires execution_requested=true")
     forbidden = set(constraints)
+    if (
+        SemanticValidationCode.READ_ONLY_TOOL_INTENT_CONFLICT
+        in cross_field_invariants
+        and Constraint.READ_ONLY in forbidden
+        and intent
+        in {
+            Intent.CODEX_DELEGATE,
+            Intent.CODEX_STEER,
+            Intent.CODEX_CANCEL,
+            Intent.DEEPSEEK_DELEGATE,
+            Intent.LOCAL_ACTION,
+        }
+    ):
+        raise SemanticValidationError(
+            f"{intent.value} conflicts with READ_ONLY",
+            code=SemanticValidationCode.READ_ONLY_TOOL_INTENT_CONFLICT,
+        )
+    if intent is Intent.WEB_OPEN and Constraint.READ_ONLY in forbidden:
+        raise SemanticValidationError("WEB_OPEN conflicts with READ_ONLY")
     if intent in {Intent.CODEX_DELEGATE, Intent.CODEX_STEER, Intent.CODEX_CANCEL} and Constraint.FORBID_CODEX in forbidden:
         raise SemanticValidationError("Codex intent conflicts with FORBID_CODEX")
     if intent is Intent.DEEPSEEK_DELEGATE and Constraint.FORBID_DEEPSEEK in forbidden:
         raise SemanticValidationError("DeepSeek intent conflicts with FORBID_DEEPSEEK")
     for step in plan:
+        if step.intent is Intent.WEB_OPEN and Constraint.READ_ONLY in forbidden:
+            raise SemanticValidationError(
+                "compound WEB_OPEN step conflicts with READ_ONLY"
+            )
         if step.intent in {Intent.CODEX_DELEGATE, Intent.CODEX_STEER, Intent.CODEX_CANCEL} and Constraint.FORBID_CODEX in forbidden:
             raise SemanticValidationError("compound Codex step conflicts with FORBID_CODEX")
         if step.intent is Intent.DEEPSEEK_DELEGATE and Constraint.FORBID_DEEPSEEK in forbidden:
@@ -391,6 +495,68 @@ def _response_content(response: dict[str, Any]) -> str:
     if not isinstance(value, str):
         raise SemanticValidationError("semantic response content must be string")
     return value.strip()
+
+
+def canonicalize_semantic_decision(
+    raw: Any,
+    validation_error: SemanticValidationError,
+) -> SemanticCanonicalizationResult:
+    """Apply one allow-listed, representation-only transformation.
+
+    The validation error is part of each canonicalization's precondition.  This
+    keeps the allow-list explicit and makes repeated application idempotent.
+    Full post-validation remains the caller's responsibility.
+    """
+    if str(validation_error) != "constraints must not contain duplicates":
+        return SemanticCanonicalizationResult(raw)
+    if not isinstance(raw, dict):
+        return SemanticCanonicalizationResult(raw)
+    constraints = raw.get("constraints")
+    if not isinstance(constraints, list) or not all(
+        isinstance(item, str) for item in constraints
+    ):
+        return SemanticCanonicalizationResult(raw)
+    deduplicated = list(dict.fromkeys(constraints))
+    if len(deduplicated) == len(constraints):
+        return SemanticCanonicalizationResult(raw)
+    candidate = dict(raw)
+    candidate["constraints"] = deduplicated
+    return SemanticCanonicalizationResult(
+        candidate,
+        SafeCanonicalizationReason.EXACT_CONSTRAINT_DEDUP,
+    )
+
+
+def _validate_with_unambiguous_structural_repair(
+    raw: Any,
+    *,
+    cross_field_invariants: frozenset[SemanticValidationCode] = frozenset(),
+) -> tuple[SemanticDecision, str | None]:
+    """Accept only a schema-equivalent normalization with no inferred meaning.
+
+    Constraints are set-valued throughout the policy and the response schema
+    declares ``uniqueItems``.  Removing an exact duplicate therefore preserves
+    both order and meaning.  The candidate is accepted only when the complete
+    semantic validator succeeds; any remaining error keeps the original safe
+    retry path and its original diagnostic.
+    """
+    try:
+        return validate_semantic_decision(
+            raw,
+            cross_field_invariants=cross_field_invariants,
+        ), None
+    except SemanticValidationError as original_error:
+        canonical = canonicalize_semantic_decision(raw, original_error)
+        if not canonical.changed:
+            raise
+        try:
+            decision = validate_semantic_decision(
+                canonical.value,
+                cross_field_invariants=cross_field_invariants,
+            )
+        except SemanticValidationError:
+            raise original_error from None
+        return decision, canonical.reason.value
 
 
 def semantic_context_payload(context: Any) -> dict[str, Any]:
@@ -431,18 +597,33 @@ def semantic_context_payload(context: Any) -> dict[str, Any]:
 class QwenSemanticInterpreter:
     system_prompt = SEMANTIC_SYSTEM_PROMPT
 
-    def __init__(self, client: Any, *, cache_size: int = 64):
+    def __init__(
+        self,
+        client: Any,
+        *,
+        cache_size: int = 64,
+        cross_field_invariants: frozenset[SemanticValidationCode] = frozenset(),
+        system_prompt: str | None = None,
+    ):
         self.client = client
         self.cache_size = max(1, cache_size)
+        self.cross_field_invariants = cross_field_invariants
+        self.system_prompt = system_prompt or SEMANTIC_SYSTEM_PROMPT
         self._cache: OrderedDict[str, SemanticDecision] = OrderedDict()
 
     @staticmethod
     def needs_semantic_pass(text: str, context: Any) -> bool:
+        if normalize_music_open_request(text) is not None:
+            return False
+        if is_browser_open_request(text):
+            return False
+        if normalize_contextual_web_open_request(text, context) is not None:
+            return False
         normalized = text.casefold()
         if re.search(
             r"\b(?:codex|deepseek|arquivo|projeto|sess[aã]o|job|tarefa|turn|"
             r"n[aã]o|sem|ele|ela|isso|esse|essa|aquilo|anterior|outro|"
-            r"manda|fa[çc]a|pergunta|consulta|cancela|para|abre|leia|procura|"
+            r"manda|fa[çc]a|pergunta|consulta|cancela|para|abra|abre|leia|procura|"
             r"corrige|implementa|revisa|continua|depois|ent[aã]o|mas|por[eé]m)\b",
             normalized,
         ):
@@ -488,11 +669,13 @@ class QwenSemanticInterpreter:
             "decision_context": semantic_context_payload(context),
         }
         messages = [
-            {"role": "system", "content": SEMANTIC_SYSTEM_PROMPT},
+            {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": json.dumps(input_payload, ensure_ascii=False)},
         ]
         invalid_content = ""
         error = "semantic_parse_failed"
+        canonicalization_reason = None
+        validation_error_codes: list[str] = []
         for attempt in range(2):
             try:
                 response = self.client.chat(
@@ -504,9 +687,19 @@ class QwenSemanticInterpreter:
                 )
                 invalid_content = _response_content(response)
                 raw = json.loads(invalid_content)
-                decision = validate_semantic_decision(raw)
+                decision, canonicalization_reason = (
+                    _validate_with_unambiguous_structural_repair(
+                        raw,
+                        cross_field_invariants=self.cross_field_invariants,
+                    )
+                )
             except (SemanticValidationError, json.JSONDecodeError, TypeError, ValueError) as exc:
                 error = str(exc)[:1000]
+                if (
+                    isinstance(exc, SemanticValidationError)
+                    and exc.code is not None
+                ):
+                    validation_error_codes.append(exc.code.value)
                 if attempt == 0:
                     messages = [
                         {"role": "system", "content": "Repair one invalid semantic JSON object. Return only valid JSON matching the supplied schema."},
@@ -531,6 +724,7 @@ class QwenSemanticInterpreter:
                     True,
                     False,
                     "semantic_parse_failed",
+                    validation_error_codes=tuple(validation_error_codes),
                 )
             self._cache[key] = decision
             self._cache.move_to_end(key)
@@ -543,8 +737,19 @@ class QwenSemanticInterpreter:
                 True,
                 attempt == 1,
                 False,
+                canonicalization_reason=canonicalization_reason,
+                validation_error_codes=tuple(validation_error_codes),
             )
-        return SemanticPassResult(True, None, (time.perf_counter() - started) * 1000, False, True, False, error)
+        return SemanticPassResult(
+            True,
+            None,
+            (time.perf_counter() - started) * 1000,
+            False,
+            True,
+            False,
+            error,
+            validation_error_codes=tuple(validation_error_codes),
+        )
 
     @staticmethod
     def skipped() -> SemanticPassResult:

@@ -26,6 +26,12 @@ delegate_to_codex(task, project_path, continue_current_thread=true, wait=true)
 O retorno inclui `accepted`, `thread_id`, `turn_id`, `status`,
 `final_response` e `error`.
 
+Quando o Jarvis e iniciado dentro de uma sessao Codex, ele herda
+`CODEX_THREAD_ID`. Essa thread visivel tem prioridade sobre a thread antiga do
+bridge: o manager valida `thread/read`, executa `thread/resume` e persiste o
+mesmo ID antes do proximo `turn/start`. Se a thread visivel nao puder ser
+retomada, a delegacao falha sem criar uma sessao alternativa invisivel.
+
 ## Jobs assincronos
 
 Delegacoes curtas usam `wait=true`. O bridge aguarda por
@@ -63,18 +69,22 @@ Set-Location D:\tern
 python -m tern.orchestrator codex-shared-start
 ```
 
-O comando mostra endpoint, `thread_id` e dois comandos de terminal. O primeiro
-conecta ao servidor e abre a navegacao normal:
+Abra diretamente a TUI na thread persistida, sem copiar o UUID:
 
 ```powershell
-codex --remote ws://127.0.0.1:4500
+python -m tern.orchestrator codex-shared-tui
+# ou
+jarvis codex
 ```
 
-O segundo retoma explicitamente a mesma thread e evita depender da selecao da
-TUI:
+Se a mesma thread ainda estiver aberta por um `codex` standalone, feche essa
+TUI antes de executar `jarvis codex`. O processo standalone mantem o escritor
+da thread; o bridge preserva o UUID e falha sem abrir uma sessao alternativa.
+
+Internamente, o comando valida `thread/read` e executa a sintaxe do CLI 0.146.0:
 
 ```powershell
-codex --remote ws://127.0.0.1:4500 -C "D:\tern" resume THREAD_ID
+codex resume --remote ws://127.0.0.1:4500 --dangerously-bypass-approvals-and-sandbox -C "D:\tern" THREAD_ID
 ```
 
 Para acompanhar os eventos sem TUI:

@@ -16,6 +16,7 @@ from tern.orchestrator.decision_policy import (
     Intent,
     SideEffect,
 )
+from tern.orchestrator.explicit_agent_binding import ExplicitAgentBinding
 from tern.orchestrator.routing_eval import evaluate
 
 
@@ -149,6 +150,17 @@ def test_fast_path_codex_status_is_read_only():
     assert shortcut.arguments["job_id"] == "job-1"
 
 
+def test_fast_path_codex_status_uses_latest_when_no_job_is_focused():
+    policy, context, decision = fixture_policy(
+        "qual o status atual da sessão do Codex?",
+        active_project="tern",
+    )
+    shortcut = policy.fast_path(decision, context, "qual o status atual da sessão do Codex?")
+    assert shortcut is not None
+    assert shortcut.tool == "get_codex_job_status"
+    assert shortcut.arguments == {"job_id": None, "latest": True}
+
+
 def test_fast_path_reads_only_single_focused_file():
     policy, context, decision = fixture_policy(
         "abre ele",
@@ -165,6 +177,29 @@ def test_fast_path_reads_only_single_focused_file():
         ambiguous_target=True,
     )
     assert _policy.fast_path(value, ambiguous, "abre ele") is None
+
+
+def test_explicit_codex_binding_has_direct_handoff_arguments():
+    policy = AgentDecisionPolicy()
+    context = policy.build_context(fixture_context={"active_project": "tern"})
+    prompt = "delegue essa tarefa ao Codex\nRevise o projeto sem ampliar o escopo."
+    decision = policy.decide(
+        prompt,
+        context=context,
+        explicit_agent_binding=ExplicitAgentBinding("codex"),
+    )
+
+    shortcut = policy.fast_path(decision, context, prompt)
+
+    assert shortcut is not None
+    assert shortcut.tool == "delegate_to_codex"
+    assert shortcut.reason_code == "explicit_agent_direct_handoff"
+    assert shortcut.side_effect == SideEffect.CODE_EXECUTION
+    assert shortcut.arguments == {
+        "task": prompt,
+        "project_path": r"D:\tern",
+        "continue_current_thread": True,
+    }
 
 
 def test_fast_path_never_mutates_cancels_or_generates():

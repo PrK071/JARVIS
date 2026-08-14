@@ -5,7 +5,10 @@ import os
 import re
 import time
 import unicodedata
+import urllib.parse
 import uuid
+from dataclasses import replace
+from datetime import datetime
 from typing import Any, Callable
 
 from .client import LlamaClient, ServerError
@@ -20,6 +23,10 @@ from .decision_observability import (
     AgentDecisionObserver,
     DecisionTiming,
     estimate_tokens,
+)
+from .explicit_agent_binding import (
+    availability_for_requested_agent,
+    detect_explicit_agent_binding,
 )
 from .prompt import SYSTEM_PROMPT
 from .projects import normalize_technical_transcript
@@ -37,8 +44,68 @@ _SINGLE_CALL_TOOLS = frozenset(
         "steer_codex_job",
         "delegate_to_deepseek",
         "review_deepseek_session",
+        "get_hardware_telemetry",
     }
 )
+
+
+_WEB_THREAT_EXPLANATIONS = {
+    "ACTIVE_LOCAL_NETWORK_REFERENCE": (
+        "a página tentou carregar ou contatar recurso de rede local/reservada"
+    ),
+    "ACTIVE_FILE_SCHEME_REFERENCE": (
+        "a página tentou acessar recurso local pelo protocolo file:"
+    ),
+    "KNOWN_MALICIOUS_HOST": (
+        "o host já foi bloqueado por uma detecção determinística anterior"
+    ),
+}
+
+
+def _display_web_target(value: object) -> str:
+    """Show a useful destination without credentials, query data, or fragments."""
+    raw = str(value or "")
+    try:
+        parsed = urllib.parse.urlsplit(raw)
+        host = parsed.hostname or ""
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        port = f":{parsed.port}" if parsed.port is not None else ""
+        return urllib.parse.urlunsplit(
+            (parsed.scheme, f"{host}{port}", parsed.path, "", "")
+        )
+    except ValueError:
+        return "destino solicitado"
+
+
+def _web_safety_report(
+    tool: str,
+    arguments: dict[str, Any],
+    result: dict[str, Any],
+) -> str | None:
+    """Create a deterministic user report when browser launch is denied."""
+    if tool != "web_open_browser" or result.get("error") != "web_access_denied":
+        return None
+    details = result.get("details")
+    codes = details.get("codes", []) if isinstance(details, dict) else []
+    explanations = [
+        _WEB_THREAT_EXPLANATIONS[str(code)]
+        for code in codes
+        if str(code) in _WEB_THREAT_EXPLANATIONS
+    ]
+    reason = "; ".join(explanations) or str(
+        result.get("message") or "destino reprovado pela política de segurança"
+    )
+    return (
+        "Não abri o site.\n\n"
+        "Relatório de segurança:\n"
+        f"- Destino: `{_display_web_target(arguments.get('url'))}`\n"
+        "- Resultado: bloqueado antes da abertura da guia.\n"
+        f"- Motivo: {reason}.\n"
+        "- Controles: protocolo, domínio, DNS/IP, redirecionamentos e "
+        "ameaças ativas.\n"
+        "- Guia aberta: não."
+    )
 
 
 def _condition_satisfied(condition: str | None, result: dict[str, Any]) -> bool | None:
@@ -148,6 +215,46 @@ def _project_lookup_only(value: str) -> bool:
     )
 
 
+def _hardware_answer(result: dict[str, Any]) -> str:
+    parts: list[str] = []
+    if result.get("cpu_temperature_available"):
+        parts.append(f"Temperatura da CPU: {float(result['cpu_temperature_c']):.1f} °C.")
+    else:
+        parts.append(
+            "Temperatura da CPU: indisponível. O Windows não expôs um sensor "
+            "compatível; nenhum valor foi simulado."
+        )
+    if result.get("usb_available"):
+        parts.append(f"Dispositivos USB conectados: {int(result['usb_devices'])}.")
+    else:
+        parts.append("Contagem de dispositivos USB: indisponível.")
+    return "\n".join(parts)
+
+
+def _codex_status_answer(result: dict[str, Any]) -> str:
+    """Traduz estado interno do Codex sem vazar IDs ou metadados técnicos."""
+    if not result.get("ok"):
+        if result.get("error") == "codex_job_not_found":
+            return "Nenhuma tarefa do Codex foi encontrada nesta sessão."
+        return "Não consegui consultar a sessão do Codex agora."
+
+    status = str(result.get("status") or "").casefold()
+    task = str(result.get("task_summary") or "").strip()
+    if status in {"queued", "starting", "running", "reconnecting"}:
+        answer = "O Codex está trabalhando na tarefa atual."
+    elif status == "completed":
+        answer = "A última tarefa do Codex foi concluída. A sessão está pronta para novas instruções."
+    elif status in {"cancelled", "canceled", "interrupted"}:
+        answer = "A última tarefa do Codex foi interrompida. A sessão está pronta para novas instruções."
+    elif status in {"failed", "error", "timed_out", "timeout"}:
+        answer = "A última tarefa do Codex falhou. A sessão está pronta para uma nova tentativa."
+    else:
+        answer = "A sessão do Codex está disponível."
+    if task and status in {"queued", "starting", "running", "reconnecting"}:
+        answer += f" Tarefa: {task}"
+    return answer
+
+
 class Supervisor:
     def __init__(self, settings: Settings, client: LlamaClient, tools: ToolRegistry):
         self.settings = settings
@@ -162,12 +269,45 @@ class Supervisor:
             enabled=settings.agent_decision_shadow,
         )
         self.semantic_interpreter = QwenSemanticInterpreter(client)
+        self.conversation_id = f"jarvis-{uuid.uuid4()}"
 
     def run(
         self,
         user_text: str,
         event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> dict[str, Any]:
+        trace_id = f"pipeline-{uuid.uuid4()}"
+        pipeline_trace: list[dict[str, Any]] = []
+
+        def trace(stage: str, values: dict[str, Any] | None = None, **extra: Any) -> None:
+            safe_values = {
+                key: value
+                for key, value in {**(values or {}), **extra}.items()
+                if key
+                in {
+                    "result",
+                    "reason_code",
+                    "tool_name",
+                    "normalized_host",
+                    "decision_type",
+                    "registered",
+                    "exposed",
+                    "web_enabled",
+                    "ambiguity_present",
+                    "requested_agent",
+                    "requested_agent_source",
+                    "tool_available",
+                    "execution_allowed",
+                }
+            }
+            record = {"stage": stage, **safe_values}
+            pipeline_trace.append(record)
+            self.tools.logger.write_event(
+                "agent_pipeline_trace",
+                trace_id=trace_id,
+                **record,
+            )
+
         def emit(event: str, **values: Any) -> None:
             if event_callback is not None:
                 event_callback(event, values)
@@ -175,8 +315,27 @@ class Supervisor:
         timing = DecisionTiming()
         timing.mark("input_received")
         emit("input_received")
+        trace("USER_INPUT", result="received")
+        set_web_trace = getattr(self.tools.web, "set_trace_callback", None)
+        if callable(set_web_trace):
+            set_web_trace(trace)
         original_user_text = user_text
         routing_text = normalize_technical_transcript(user_text)
+        explicit_agent_binding = detect_explicit_agent_binding(routing_text)
+        trace(
+            "EXPLICIT_AGENT_BINDING",
+            result="bound" if explicit_agent_binding else "not_bound",
+            requested_agent=(
+                explicit_agent_binding.requested_agent
+                if explicit_agent_binding
+                else None
+            ),
+            requested_agent_source=(
+                explicit_agent_binding.requested_agent_source
+                if explicit_agent_binding
+                else None
+            ),
+        )
         begin_research = getattr(self.tools.web, "begin_research", None)
         if callable(begin_research):
             begin_research(routing_text)
@@ -188,6 +347,7 @@ class Supervisor:
         semantic_result = QwenSemanticInterpreter.skipped()
         semantic_enabled = (
             self.settings.agent_decision_semantic_first
+            and explicit_agent_binding is None
             and (
                 isinstance(self.client, LlamaClient)
                 or bool(getattr(self.client, "supports_structured_output", False))
@@ -211,13 +371,86 @@ class Supervisor:
                 repair_used=semantic_result.repair_used,
                 latency_ms=semantic_result.latency_ms,
             )
+        semantic_decision = semantic_result.decision
+        trace(
+            "SEMANTIC_DECISION",
+            result=(
+                "valid"
+                if semantic_result.parse_valid and semantic_decision is not None
+                else "skipped"
+                if not semantic_result.used
+                else "invalid"
+            ),
+            reason_code=semantic_result.error,
+            decision_type=(
+                semantic_decision.primary_intent.value
+                if semantic_decision is not None
+                else None
+            ),
+            ambiguity_present=(
+                semantic_decision.ambiguity_present
+                if semantic_decision is not None
+                else None
+            ),
+        )
         decision = self.decision_policy.decide(
             original_user_text,
             context=decision_context,
             semantic_decision=semantic_result.decision,
+            explicit_agent_binding=explicit_agent_binding,
         )
         if semantic_result.used and not semantic_result.parse_valid:
             decision = self.decision_policy.safe_fallback_decision(decision)
+        all_tool_specs = self.tools.specs()
+        registered_tool_names = {
+            str(item.get("function", {}).get("name") or "")
+            for item in all_tool_specs
+        }
+        if explicit_agent_binding is not None:
+            availability = availability_for_requested_agent(
+                explicit_agent_binding,
+                decision_context,
+                registered_tool_names,
+            )
+            decision = replace(
+                decision,
+                tool_registered=availability.tool_registered,
+                tool_available=availability.tool_available,
+                execution_allowed=(
+                    availability.execution_allowed
+                    and decision.constraint_violation is None
+                ),
+                availability_reason=availability.reason,
+            )
+            trace(
+                "RUNTIME_AVAILABILITY",
+                result=("available" if availability.tool_available else "unavailable"),
+                tool_name=availability.tool,
+                requested_agent=explicit_agent_binding.requested_agent,
+                tool_available=availability.tool_available,
+                execution_allowed=decision.execution_allowed,
+                reason_code=availability.reason,
+            )
+        trace(
+            "DECISION_VALIDATION",
+            result="blocked" if decision.constraint_violation else "valid",
+            reason_code=decision.constraint_violation,
+            decision_type=decision.intent.value,
+        )
+        trace(
+            "ROUTE_SELECTED",
+            result="selected",
+            reason_code=decision.reason_code,
+            decision_type=decision.intent.value,
+        )
+        trace(
+            "TOOL_SELECTED",
+            result="selected" if decision.selected_action else "none",
+            tool_name=decision.selected_action,
+            reason_code=(
+                None if decision.selected_action else "ROUTE_HAS_NO_TOOL"
+            ),
+        )
         timing.mark("decision_ready")
         self.decision_policy.record_decision(decision, original_user_text)
         reusable_context = self.decision_policy.reusable_context_text()
@@ -226,6 +459,7 @@ class Supervisor:
             "\nContexto confiavel do runtime:\n"
             f"- working_directory: {os.getcwd()}\n"
             f"- backend: {self.settings.backend.name}\n"
+            f"- local_datetime: {datetime.now().astimezone().isoformat()}\n"
             f"- allowed_roots: {', '.join(str(root) for root in self.settings.allowed_roots)}\n"
             f"- max_tool_calls: {self.settings.max_tool_calls}\n"
             f"- max_attempts: {self.settings.max_attempts}\n"
@@ -304,7 +538,55 @@ class Supervisor:
         actual_tools: list[str] = []
         observed_outcome: str | None = None
         tools_disabled = False
-        tool_specs = tool_specs_for_decision(self.tools.specs(), decision)
+        tool_specs = tool_specs_for_decision(all_tool_specs, decision)
+        exposed_tool_names = {
+            str(item.get("function", {}).get("name") or "")
+            for item in tool_specs
+        }
+        web_enabled = bool(
+            getattr(getattr(self.tools.web, "config", None), "enabled", True)
+        )
+        trace(
+            "TOOL_AVAILABILITY",
+            result=(
+                "exposed"
+                if decision.selected_action in exposed_tool_names
+                else "not_exposed"
+                if decision.selected_action
+                else "not_selected"
+            ),
+            tool_name=decision.selected_action,
+            registered=(
+                decision.selected_action in registered_tool_names
+                if decision.selected_action
+                else "web_open" in registered_tool_names
+            ),
+            exposed=(
+                decision.selected_action in exposed_tool_names
+                if decision.selected_action
+                else "web_open" in exposed_tool_names
+            ),
+        )
+        trace(
+            "CAPABILITY_CHECK",
+            result=(
+                "allowed"
+                if decision.selected_action in {"web_open", "web_open_browser", "web_extract", "web_search"}
+                and web_enabled
+                else "blocked"
+                if decision.selected_action in {"web_open", "web_open_browser", "web_extract", "web_search"}
+                else "not_reached"
+            ),
+            reason_code=(
+                "WEB_DISABLED"
+                if decision.selected_action
+                in {"web_open", "web_open_browser", "web_extract", "web_search"}
+                and not web_enabled
+                else None
+            ),
+            tool_name=decision.selected_action,
+            web_enabled=web_enabled,
+        )
         semantic_plan = (
             tuple(semantic_result.decision.compound_plan)
             if semantic_result.decision is not None
@@ -366,7 +648,17 @@ class Supervisor:
             emit("agent_timing", **values)
             return values
 
-        def completed(answer: str, usage: dict[str, Any] | None) -> dict[str, Any]:
+        def completed(
+            answer: str,
+            usage: dict[str, Any] | None,
+            *,
+            response_stage: str = "MODEL_RESPONSE",
+        ) -> dict[str, Any]:
+            trace(
+                response_stage,
+                result="completed",
+                decision_type=decision.intent.value,
+            )
             research_status = getattr(
                 self.tools.web, "research_status", lambda: {}
             )()
@@ -416,6 +708,12 @@ class Supervisor:
                     "intent": decision.intent.value,
                     "confidence": decision.confidence,
                     "reason_code": decision.reason_code,
+                    "requested_agent": decision.requested_agent,
+                    "requested_agent_source": decision.requested_agent_source,
+                    "tool_registered": decision.tool_registered,
+                    "tool_available": decision.tool_available,
+                    "execution_allowed": decision.execution_allowed,
+                    "availability_reason": decision.availability_reason,
                     "semantic_pass": semantic_result.as_dict(),
                     "fast_path": bool(
                         self.settings.agent_decision_fast_path
@@ -430,7 +728,44 @@ class Supervisor:
                     "used": web_used,
                     "sources": web_sources,
                 },
+                "trace_id": trace_id,
+                "pipeline_trace": list(pipeline_trace),
             }
+
+        if (
+            decision.requested_agent_source == "explicit_user"
+            and decision.execution_allowed is False
+        ):
+            observed_outcome = "requested_agent_unavailable"
+            label = "DeepSeek" if decision.requested_agent == "deepseek" else "Codex"
+            if (
+                decision.requested_agent == "deepseek"
+                and decision.availability_reason == "agent_not_configured"
+            ):
+                unavailable = (
+                    "DeepSeek está integrado, mas falta configurar "
+                    "DEEPSEEK_API_KEY no arquivo .env do projeto. "
+                    "Nenhum outro modelo foi usado como substituto."
+                )
+            elif (
+                decision.requested_agent == "deepseek"
+                and decision.availability_reason == "agent_disabled"
+            ):
+                unavailable = (
+                    "DeepSeek está desativado. Defina DEEPSEEK_ENABLED=true "
+                    "no arquivo .env. Nenhum outro modelo foi usado como substituto."
+                )
+            else:
+                unavailable = (
+                    f"A solicitação continua vinculada ao {label}, mas o agente "
+                    "não está operacionalmente disponível neste runtime. "
+                    "Nenhum outro modelo foi usado como substituto."
+                )
+            return completed(
+                unavailable,
+                None,
+                response_stage="RUNTIME_UNAVAILABLE",
+            )
 
         fast_path = (
             self.decision_policy.fast_path(
@@ -492,6 +827,12 @@ class Supervisor:
                         fast_path.arguments,
                     ),
                     "fast_path": True,
+                    "conversation_id": self.conversation_id,
+                    "focused_codex_thread_id": (
+                        decision_context.focused_session
+                        if decision_context.focused_agent == "codex"
+                        else None
+                    ),
                 },
                 event_callback=lambda event, values: emit(event, **values),
             )
@@ -506,6 +847,18 @@ class Supervisor:
             )
             actual_tools.append(fast_path.tool)
             calls = 1
+            if fast_path.tool.startswith("web_"):
+                web_used = True
+            if (
+                fast_path.tool in {"web_open", "web_open_browser", "web_extract"}
+                and fast_result.get("ok")
+                and isinstance(fast_result.get("citation"), dict)
+            ):
+                citation = fast_result["citation"]
+                title = citation.get("title")
+                url = citation.get("url")
+                if isinstance(title, str) and isinstance(url, str):
+                    web_sources.append({"title": title, "url": url})
             progress.record(fast_path.tool, fast_path.arguments, fast_result)
             self.decision_policy.record_tool_result(
                 fast_path.tool,
@@ -525,6 +878,61 @@ class Supervisor:
                 }
             )
             tools_disabled = True
+            safety_report = _web_safety_report(
+                fast_path.tool,
+                fast_path.arguments,
+                fast_result,
+            )
+            if safety_report is not None:
+                return completed(
+                    safety_report,
+                    None,
+                    response_stage="WEB_SAFETY_REPORT",
+                )
+            if fast_path.reason_code == "explicit_agent_direct_handoff":
+                if not fast_result.get("ok"):
+                    detail = str(
+                        fast_result.get("message")
+                        or fast_result.get("error")
+                        or "falha desconhecida"
+                    )
+                    answer = (
+                        "Não foi possível enviar a tarefa diretamente ao agente "
+                        f"solicitado: {detail}"
+                    )
+                elif fast_path.tool == "delegate_to_codex":
+                    answer = str(fast_result.get("final_response") or "").strip()
+                    if not answer:
+                        status = str(fast_result.get("status") or "iniciada")
+                        job_id = str(fast_result.get("job_id") or "").strip()
+                        answer = f"Tarefa enviada diretamente ao Codex ({status})."
+                        if job_id:
+                            answer += f" Job: {job_id}."
+                else:
+                    answer = str(fast_result.get("response") or "").strip()
+                    if not answer:
+                        answer = "Tarefa enviada diretamente ao DeepSeek."
+                return completed(
+                    answer,
+                    fast_result.get("usage") if isinstance(fast_result.get("usage"), dict) else None,
+                    response_stage=(
+                        "EXPLICIT_AGENT_DIRECT_HANDOFF"
+                        if fast_result.get("ok")
+                        else "EXPLICIT_AGENT_HANDOFF_FAILED"
+                    ),
+                )
+            if fast_path.tool == "get_hardware_telemetry":
+                return completed(
+                    _hardware_answer(fast_result),
+                    None,
+                    response_stage="HARDWARE_TELEMETRY",
+                )
+            if fast_path.tool == "get_codex_job_status":
+                return completed(
+                    _codex_status_answer(fast_result),
+                    None,
+                    response_stage="CODEX_STATUS",
+                )
 
         while calls < self.settings.max_tool_calls:
             emit("thinking")
@@ -760,6 +1168,12 @@ class Supervisor:
                                 "user_text": routing_text,
                                 "original_user_text": original_user_text,
                                 "request_fingerprint": fingerprint,
+                                "conversation_id": self.conversation_id,
+                                "focused_codex_thread_id": (
+                                    decision_context.focused_session
+                                    if decision_context.focused_agent == "codex"
+                                    else None
+                                ),
                             },
                             event_callback=lambda event, values: emit(
                                 event, **values
@@ -884,7 +1298,7 @@ class Supervisor:
                     if name.startswith("web_"):
                         web_used = True
                     if (
-                        name in {"web_open", "web_extract"}
+                        name in {"web_open", "web_open_browser", "web_extract"}
                         and result.get("ok")
                         and isinstance(result.get("citation"), dict)
                     ):
@@ -910,6 +1324,14 @@ class Supervisor:
                         "content": json.dumps(result, ensure_ascii=False),
                     }
                 )
+                safety_report = _web_safety_report(name, arguments, result)
+                if safety_report is not None:
+                    observed_outcome = "tool_error"
+                    return completed(
+                        safety_report,
+                        None,
+                        response_stage="WEB_SAFETY_REPORT",
+                    )
                 if (
                     not tools_disabled
                     and "arguments" in locals()

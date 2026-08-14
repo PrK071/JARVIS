@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Conheça o JARVIS, o assistente local que reúne IA, pesquisa, voz e automação sob seu controle.">
+    <title>JARVIS — Assistente local, sob seu controle</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="JARVIS, início">
+        <span class="brand-mark" aria-hidden="true">J</span>
+        <span>JARVIS</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a href="#recursos">Recursos</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a class="nav-cta" href="#cadastro">Criar acesso</a>
+      </nav>
+    </header>
+
+    <main id="conteudo">
+      <section class="hero" id="inicio" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> IA local, pronta para trabalhar</p>
+          <h1 id="hero-title">Seu computador ficou <span>mais inteligente.</span></h1>
+          <p class="hero-description">
+            Converse, pesquise e construa com um assistente que coordena Qwen, Codex,
+            voz e ferramentas locais — mantendo você no controle de cada ação.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#cadastro">Começar agora</a>
+            <a class="button button-secondary" href="#recursos">Explorar recursos</a>
+          </div>
+
+          <ul class="trust-list" aria-label="Diferenciais do JARVIS">
+            <li>Execução local</li>
+            <li>Permissões explícitas</li>
+            <li>Fluxos integrados</li>
+          </ul>
+        </div>
+
+        <div class="assistant-window" aria-label="Prévia de uma conversa com o JARVIS">
+          <div class="window-bar">
+            <div class="window-brand">
+              <span class="assistant-orb" aria-hidden="true"></span>
+              <div>
+                <strong>JARVIS</strong>
+                <span>online e local</span>
+              </div>
+            </div>
+            <span class="window-status">PRONTO</span>
+          </div>
+
+          <div class="conversation">
+            <div class="message message-user">
+              <span>VOCÊ</span>
+              <p>Organize minhas ideias e prepare a primeira versão do projeto.</p>
+            </div>
+            <div class="message message-jarvis">
+              <span>JARVIS</span>
+              <p>Plano definido. Vou usar o contexto local e pedir sua confirmação antes de qualquer ação sensível.</p>
+            </div>
+            <div class="task-card">
+              <div class="task-heading">
+                <span class="task-icon" aria-hidden="true">✓</span>
+                <div>
+                  <strong>Contexto analisado</strong>
+                  <span>3 etapas preparadas</span>
+                </div>
+              </div>
+              <span class="task-time">agora</span>
+            </div>
+          </div>
+
+          <div class="prompt-bar" aria-hidden="true">
+            <span>Fale ou escreva uma tarefa...</span>
+            <span class="prompt-action">↗</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="features section" id="recursos" aria-labelledby="features-title">
+        <div class="section-heading">
+          <p class="eyebrow">Uma central, múltiplas capacidades</p>
+          <h2 id="features-title">Tudo o que você precisa, no mesmo fluxo.</h2>
+          <p>O JARVIS escolhe a ferramenta adequada sem perder o contexto da conversa.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card feature-highlight">
+            <span class="feature-number">01</span>
+            <h3>Raciocínio local</h3>
+            <p>Use modelos locais para conversar, analisar e planejar com mais privacidade.</p>
+            <span class="feature-tag">Qwen</span>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">02</span>
+            <h3>Construção assistida</h3>
+            <p>Delegue tarefas técnicas ao Codex e acompanhe a execução na mesma thread.</p>
+            <span class="feature-tag">Codex</span>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">03</span>
+            <h3>Pesquisa conectada</h3>
+            <p>Encontre fontes atuais e transforme resultados em respostas acionáveis.</p>
+            <span class="feature-tag">Web</span>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">04</span>
+            <h3>Interação natural</h3>
+            <p>Converse por voz e receba atualizações sem interromper o seu ritmo.</p>
+            <span class="feature-tag">Voz</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="workflow section" id="como-funciona" aria-labelledby="workflow-title">
+        <div class="section-heading section-heading-left">
+          <p class="eyebrow">Simples por fora, coordenado por dentro</p>
+          <h2 id="workflow-title">Da intenção ao resultado em três passos.</h2>
+        </div>
+
+        <ol class="workflow-list">
+          <li>
+            <span>1</span>
+            <div>
+              <h3>Você descreve</h3>
+              <p>Fale naturalmente, sem decorar comandos ou alternar entre aplicativos.</p>
+            </div>
+          </li>
+          <li>
+            <span>2</span>
+            <div>
+              <h3>O JARVIS coordena</h3>
+              <p>Contexto, escopo e permissões seguem juntos até a ferramenta certa.</p>
+            </div>
+          </li>
+          <li>
+            <span>3</span>
+            <div>
+              <h3>Você acompanha</h3>
+              <p>Receba o resultado e mantenha a conversa ativa para o próximo passo.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="signup section" id="cadastro" aria-labelledby="signup-title">
+        <div class="signup-copy">
+          <p class="eyebrow">Seu espaço de trabalho começa aqui</p>
+          <h2 id="signup-title">Crie seu acesso ao JARVIS.</h2>
+          <p>
+            Configure seu perfil para preparar uma experiência personalizada. Seus dados
+            são validados localmente nesta demonstração e não são enviados pela página.
+          </p>
+          <div class="privacy-note">
+            <span aria-hidden="true">◎</span>
+            <div>
+              <strong>Privacidade desde o primeiro passo</strong>
+              <p>Nenhuma informação deste formulário sai do navegador.</p>
+            </div>
+          </div>
+        </div>
+
+        <form class="signup-form" id="signup-form" novalidate>
+          <div class="form-header">
+            <span>Cadastro</span>
+            <small>Todos os campos são obrigatórios</small>
+          </div>
+
+          <div class="field">
+            <label for="name">Nome completo</label>
+            <input id="name" name="name" type="text" autocomplete="name" minlength="3" required aria-describedby="name-error">
+            <p class="field-error" id="name-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="email-error">
+            <p class="field-error" id="email-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="password">Senha</label>
+            <div class="password-control">
+              <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="password-hint password-error">
+              <button type="button" class="password-toggle" data-toggle-password="password" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </div>
+            <p class="field-hint" id="password-hint">Use 8 ou mais caracteres, com maiúscula, minúscula e número.</p>
+            <p class="field-error" id="password-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="password-confirmation">Confirmar senha</label>
+            <div class="password-control">
+              <input id="password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required aria-describedby="password-confirmation-error">
+              <button type="button" class="password-toggle" data-toggle-password="password-confirmation" aria-label="Mostrar confirmação de senha" aria-pressed="false">Mostrar</button>
+            </div>
+            <p class="field-error" id="password-confirmation-error"></p>
+          </div>
+
+          <div class="field checkbox-field">
+            <input id="terms" name="terms" type="checkbox" required aria-describedby="terms-error">
+            <label for="terms">Li e concordo com os termos de uso e a política de privacidade.</label>
+            <p class="field-error" id="terms-error"></p>
+          </div>
+
+          <button class="button button-primary submit-button" type="submit">Criar meu acesso</button>
+          <div class="form-status" id="form-status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand" href="#inicio" aria-label="JARVIS, voltar ao início">
+        <span class="brand-mark" aria-hidden="true">J</span>
+        <span>JARVIS</span>
+      </a>
+      <p>Assistência local. Decisões sob seu controle.</p>
+      <a href="#inicio">Voltar ao topo ↑</a>
+    </footer>
+  </body>
+</html>

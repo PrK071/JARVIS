@@ -1,0 +1,12 @@
+{"id":"C1","case":"single_existing","expected":"reuse","new_session":false}
+{"id":"C2","case":"focused_session","expected":"focused","new_session":false}
+{"id":"C3","case":"ambiguous_sessions","expected":"ambiguous","new_session":false}
+{"id":"C4","case":"different_project","expected":"no_cross_project_reuse"}
+{"id":"C5","case":"no_session","expected":"create_register_recoverable"}
+{"id":"C6","case":"stale_session","expected":"do_not_reuse_stale"}
+{"id":"C7","case":"busy_session","expected":"queue_only_owned_job"}
+{"id":"C8","case":"restart","expected":"reconcile_reuse"}
+{"id":"C9","case":"new_visibility","expected":"registered_recoverable"}
+{"id":"C10","case":"registration_failure","expected":"no_user_work"}
+{"id":"C11","case":"concurrent_delegation","expected":"at_most_one_create"}
+{"id":"C12","case":"user_created_session","expected":"reuse_no_destructive_ownership"}

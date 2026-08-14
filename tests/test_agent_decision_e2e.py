@@ -77,7 +77,7 @@ class Codex:
 
 class DeepSeek:
     def status(self, **_kwargs):
-        return {"enabled": True, "configured": False, "active_session": "ds-1"}
+        return {"enabled": True, "configured": True, "active_session": "ds-1"}
 
 
 class DryTools:
@@ -332,9 +332,37 @@ def test_e2e_read_only_fast_path_executes_before_qwen(tmp_path):
     assert tools.calls == [
         ("get_codex_job_status", {"job_id": "job-1", "latest": False})
     ]
-    assert client.available == [[]]
+    assert client.available == []
+    assert result["answer"] == (
+        "A última tarefa do Codex foi concluída. "
+        "A sessão está pronta para novas instruções."
+    )
+    assert "job-1" not in result["answer"]
     assert result["decision"]["fast_path"] is True
     assert result["timing"]["first_tool_ms"] < result["timing"]["response_ms"]
+
+
+def test_e2e_current_codex_session_status_never_prints_tool_json(tmp_path):
+    tools = DryTools(running=False)
+    client = ToolThenAnswer()
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+    result = agent.run("qual o status atual da sessão do Codex?")
+    assert result["ok"]
+    assert tools.calls == [
+        ("get_codex_job_status", {"job_id": None, "latest": True})
+    ]
+    assert client.available == []
+    assert "```json" not in result["answer"]
+    assert "job-1" not in result["answer"]
 
 
 def test_e2e_shadow_records_final_outcome_without_changing_answer(tmp_path):
@@ -580,3 +608,235 @@ def test_e2e_conditional_plan_never_runs_unverified_second_step():
     assert result["ok"]
     assert [name for name, _ in tools.calls] == ["delegate_to_deepseek"]
     assert client.available == [["delegate_to_deepseek"], []]
+
+
+def test_e2e_explicit_deepseek_binding_precedes_wrong_direct_semantic_frame():
+    tools = DryTools()
+    client = SemanticScriptedClient(
+        semantic_frame(constraints=["READ_ONLY"]),
+        [("delegate_to_deepseek", {"task": "revise isso"})],
+    )
+
+    result = supervisor(tools, client).run("peça ao DeepSeek para revisar isso")
+
+    assert result["ok"]
+    assert [name for name, _ in tools.calls] == ["delegate_to_deepseek"]
+    assert result["decision"]["intent"] == "DEEPSEEK_DELEGATE"
+    assert result["decision"]["requested_agent"] == "deepseek"
+    assert result["decision"]["requested_agent_source"] == "explicit_user"
+    assert result["decision"]["tool_available"] is True
+    assert result["decision"]["execution_allowed"] is True
+
+
+def test_e2e_disabled_deepseek_preserves_route_and_uses_no_substitute():
+    tools = DryTools()
+    tools.deepseek.status = lambda **_kwargs: {
+        "enabled": False,
+        "configured": True,
+        "active_session": None,
+    }
+    client = SemanticScriptedClient(semantic_frame(), [])
+
+    result = supervisor(tools, client).run("mande esta tarefa para o DeepSeek")
+
+    assert result["ok"]
+    assert tools.calls == []
+    assert client.semantic_calls == 0
+    assert client.action_calls == 0
+    assert result["decision"]["intent"] == "DEEPSEEK_DELEGATE"
+    assert result["decision"]["requested_agent"] == "deepseek"
+    assert result["decision"]["tool_registered"] is True
+    assert result["decision"]["tool_available"] is False
+    assert result["decision"]["execution_allowed"] is False
+    assert result["decision"]["availability_reason"] == "agent_disabled"
+    assert "Nenhum outro modelo" in result["answer"]
+
+
+def test_e2e_unconfigured_deepseek_explains_required_key():
+    tools = DryTools()
+    tools.deepseek.status = lambda **_kwargs: {
+        "enabled": True,
+        "configured": False,
+        "active_session": None,
+    }
+    client = SemanticScriptedClient(semantic_frame(), [])
+
+    result = supervisor(tools, client).run("mande esta tarefa para o DeepSeek")
+
+    assert result["ok"]
+    assert tools.calls == []
+    assert result["decision"]["availability_reason"] == "agent_not_configured"
+    assert "DEEPSEEK_API_KEY" in result["answer"]
+    assert "Nenhum outro modelo" in result["answer"]
+
+
+def test_e2e_explicit_codex_binding_precedes_wrong_deepseek_frame():
+    tools = DryTools()
+    frame = semantic_frame(
+        speech_act="COMMAND",
+        primary_intent="DEEPSEEK_DELEGATE",
+        operation="delegate",
+        execution_requested=True,
+        agent="deepseek",
+    )
+    client = SemanticScriptedClient(
+        frame,
+        [("delegate_to_codex", {"task": "trabalhe nisso", "project_path": r"D:\tern"})],
+    )
+
+    result = supervisor(tools, client).run("peça ao Codex para trabalhar nisso")
+
+    assert result["ok"]
+    assert [name for name, _ in tools.calls] == ["delegate_to_codex"]
+    assert result["decision"]["intent"] == "CODEX_DELEGATE"
+    assert result["decision"]["requested_agent"] == "codex"
+
+
+def test_e2e_explicit_codex_direct_handoff_skips_all_qwen_inference(tmp_path):
+    tools = DryTools()
+    client = SemanticScriptedClient(semantic_frame(), [])
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+                "AGENT_DECISION_SEMANTIC_FIRST": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+    prompt = (
+        "delegue essa tarefa ao Codex\n"
+        "Audite o payload inteiro e preserve todas as restrições.\n"
+        "Compare exemplos de Codex e DeepSeek sem trocar o executor pedido."
+    )
+
+    result = agent.run(prompt)
+
+    assert result["ok"]
+    assert client.semantic_calls == 0
+    assert client.action_calls == 0
+    assert client.available == []
+    assert tools.calls == [
+        (
+            "delegate_to_codex",
+            {
+                "task": prompt,
+                "project_path": r"D:\tern",
+                "continue_current_thread": True,
+            },
+        )
+    ]
+    assert result["decision"]["fast_path"] is True
+    assert result["decision"]["semantic_pass"]["used"] is False
+    assert "enviada diretamente ao Codex" in result["answer"]
+
+
+def test_e2e_fala_pro_codex_starts_new_job_without_semantic_or_steer(tmp_path):
+    tools = DryTools()
+    client = SemanticScriptedClient(semantic_frame(), [])
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+                "AGENT_DECISION_SEMANTIC_FIRST": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+    prompt = "fala pro codex criar uma landing page junto com uma pagina de login"
+
+    result = agent.run(prompt)
+
+    assert result["ok"]
+    assert client.semantic_calls == 0
+    assert client.action_calls == 0
+    assert client.available == []
+    assert [name for name, _arguments in tools.calls] == ["delegate_to_codex"]
+    assert tools.calls[0][1]["task"] == prompt
+    assert "steer_codex_job" not in [name for name, _arguments in tools.calls]
+    assert result["decision"]["intent"] == "CODEX_DELEGATE"
+    assert result["decision"]["semantic_pass"]["used"] is False
+
+
+def test_e2e_open_codex_session_and_pronoun_continues_thread_directly(tmp_path):
+    tools = DryTools()
+    client = SemanticScriptedClient(semantic_frame(), [])
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+                "AGENT_DECISION_SEMANTIC_FIRST": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+    prompt = (
+        "ja tem uma sessão aberta do codex, fala pra ele criar uma landing "
+        "page junto com uma tela de cadastro"
+    )
+
+    result = agent.run(prompt)
+
+    assert result["ok"]
+    assert client.semantic_calls == 0
+    assert client.action_calls == 0
+    assert client.available == []
+    assert tools.calls == [
+        (
+            "delegate_to_codex",
+            {
+                "task": prompt,
+                "project_path": r"D:\tern",
+                "continue_current_thread": True,
+            },
+        )
+    ]
+    assert result["decision"]["intent"] == "CODEX_DELEGATE"
+    assert result["decision"]["requested_agent"] == "codex"
+    assert result["decision"]["semantic_pass"]["used"] is False
+
+
+def test_e2e_explicit_handoff_failure_is_not_reported_as_sent(tmp_path):
+    tools = DryTools()
+    tools.execute = lambda name, arguments, **_kwargs: {
+        "ok": False,
+        "error": "CodexError",
+        "message": "sessão atual possui outro escritor",
+    }
+    client = SemanticScriptedClient(semantic_frame(), [])
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+
+    result = agent.run("fala pro Codex criar uma landing page")
+
+    assert "Não foi possível enviar" in result["answer"]
+    assert "outro escritor" in result["answer"]
+    assert "Tarefa enviada" not in result["answer"]
+    assert client.semantic_calls == 0
+    assert client.action_calls == 0
+
+
+def test_e2e_informational_agent_mention_has_no_binding_or_tool():
+    tools = DryTools()
+    client = SemanticScriptedClient(semantic_frame(), [])
+
+    result = supervisor(tools, client).run("qual a diferença entre Codex e DeepSeek?")
+
+    assert result["ok"]
+    assert tools.calls == []
+    assert result["decision"]["intent"] == "ANSWER_DIRECTLY"
+    assert result["decision"]["requested_agent"] is None

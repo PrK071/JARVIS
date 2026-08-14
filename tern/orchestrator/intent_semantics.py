@@ -352,6 +352,10 @@ class ConversationReferenceResolver:
         """Resolve an LLM-supplied semantic type to a concrete local entity."""
         if target_type == "none":
             return ResolvedReference(None, None, 1.0)
+        if target_type == "url" and reference:
+            return ResolvedReference(
+                "url", reference, 1.0, ("semantic_url",)
+            )
         cue = {
             "codex_job": "a tarefa terminou status",
             "codex_session": "o que o codex fez na sessao",

@@ -23,6 +23,12 @@ from .schema import validate
 from .security import PathPolicy
 from .codex_state import SharedCodexState, utc_now
 from .codex_jobs import ACTIVE_JOB_STATES, TERMINAL_JOB_STATES, CodexJobStore
+from .codex_sessions import (
+    CodexSessionRegistry,
+    CodexSessionResolution,
+    CodexSessionResolver,
+    normalize_project_path,
+)
 
 
 class CodexError(RuntimeError):
@@ -51,6 +57,7 @@ class CodexResult:
     result_discarded: bool = False
     job_id: str | None = None
     wait_timed_out: bool = False
+    session_resolution: dict[str, Any] | None = None
 
     @property
     def ok(self) -> bool:
@@ -90,6 +97,7 @@ class CodexResult:
             "result_discarded": self.result_discarded,
             "job_id": self.job_id,
             "wait_timed_out": self.wait_timed_out,
+            "session_resolution": self.session_resolution,
             # Compatibility for existing Jarvis callers.
             "ok": self.ok,
             "session_id": self.thread_id,
@@ -425,12 +433,16 @@ class CodexSessionManager:
         timeout: int = 1800,
         executable: str | None = None,
         state_dir: Path | None = None,
+        preferred_thread_id: str | None = None,
     ):
         self.project = project.resolve(strict=True)
         self.endpoint = endpoint
         self.timeout = timeout
         self.executable = executable or shutil.which("codex") or "codex"
         self.state_dir = (state_dir or self.project / ".orchestrator").resolve()
+        self.preferred_thread_id = (
+            str(preferred_thread_id).strip() if preferred_thread_id else None
+        )
         self.session_path = self.state_dir / "codex-session.json"
         self.server_path = self.state_dir / "codex-app-server.json"
         self.server_log_path = self.state_dir / "codex-app-server.log"
@@ -657,8 +669,251 @@ class CodexSessionManager:
         self.bridge_log.write("reconnected", endpoint=self.endpoint, thread_id=thread_id)
         return client
 
-    def ensure_thread(self, *, continue_current_thread: bool = True) -> str:
+    @staticmethod
+    def _provider_session_record(
+        thread: dict[str, Any],
+        *,
+        project: Path,
+        endpoint: str,
+        visible_thread_ids: set[str] | None = None,
+    ) -> dict[str, Any]:
+        thread_id = str(thread.get("id") or "").strip()
+        status = thread.get("status")
+        state = (
+            str(status.get("type") or "unknown")
+            if isinstance(status, dict)
+            else "unknown"
+        )
+        source = str(thread.get("source") or "unknown")
+        # appServer threads are surfaced by the Jarvis UI through the canonical
+        # project binding; cli/vscode threads are also visible in Codex history.
+        visible = source in {"cli", "vscode", "appServer"} or (
+            visible_thread_ids is not None and thread_id in visible_thread_ids
+        )
+        return {
+            "thread_id": thread_id,
+            "session_id": str(thread.get("sessionId") or thread_id),
+            "project": str(project),
+            "project_key": normalize_project_path(project),
+            "endpoint": endpoint,
+            "state": state,
+            "source": source,
+            "visible": visible,
+            "recoverable": bool(thread_id) and not bool(thread.get("ephemeral")),
+            "ephemeral": bool(thread.get("ephemeral")),
+            "created_at": thread.get("createdAt"),
+            "updated_at": thread.get("updatedAt"),
+            "name": thread.get("name"),
+        }
+
+    def list_project_threads(self) -> list[dict[str, Any]]:
+        """Discover provider-native, interactive threads for this exact project."""
         client = self.connect()
+        cursor: str | None = None
+        values: list[dict[str, Any]] = []
+        visible_values = self._known_tui_thread_ids()
+        visible_thread_ids = (
+            set(visible_values) if isinstance(visible_values, list) else None
+        )
+        while True:
+            params: dict[str, Any] = {
+                "limit": 100,
+                "sortKey": "updated_at",
+                "sortDirection": "desc",
+                "sourceKinds": ["cli", "vscode", "appServer"],
+                "archived": False,
+                "cwd": str(self.project),
+            }
+            if cursor:
+                params["cursor"] = cursor
+            result = client.request("thread/list", params)
+            data = result.get("data")
+            if not isinstance(data, list):
+                raise CodexProtocolError("thread/list nao retornou data")
+            for thread in data:
+                if not isinstance(thread, dict):
+                    continue
+                cwd = thread.get("cwd")
+                if isinstance(cwd, str) and normalize_project_path(cwd) != normalize_project_path(
+                    self.project
+                ):
+                    continue
+                record = self._provider_session_record(
+                    thread,
+                    project=self.project,
+                    endpoint=self.endpoint,
+                    visible_thread_ids=visible_thread_ids,
+                )
+                if record["thread_id"]:
+                    values.append(record)
+            next_cursor = result.get("nextCursor")
+            if not isinstance(next_cursor, str) or not next_cursor:
+                break
+            cursor = next_cursor
+        return values
+
+    def read_session_record(
+        self,
+        thread_id: str,
+        *,
+        require_project_match: bool = True,
+    ) -> dict[str, Any]:
+        client = self.connect()
+        result = client.request(
+            "thread/read",
+            {"threadId": thread_id, "includeTurns": False},
+        )
+        thread = result.get("thread")
+        if not isinstance(thread, dict) or thread.get("id") != thread_id:
+            raise CodexProtocolError("thread/read nao retornou a thread solicitada")
+        cwd = thread.get("cwd")
+        if (
+            require_project_match
+            and isinstance(cwd, str)
+            and normalize_project_path(cwd) != normalize_project_path(self.project)
+        ):
+            raise CodexError(
+                "thread Codex pertence a outro project_path",
+                layer="cross_project_session",
+            )
+        visible_values = self._known_tui_thread_ids()
+        return self._provider_session_record(
+            thread,
+            project=self.project,
+            endpoint=self.endpoint,
+            visible_thread_ids=(
+                set(visible_values) if isinstance(visible_values, list) else None
+            ),
+        )
+
+    def adopt_thread(self, thread_id: str) -> dict[str, Any]:
+        record = self.read_session_record(thread_id)
+        client = self.connect()
+        result = client.request(
+            "thread/resume",
+            {"threadId": thread_id, "cwd": str(self.project)},
+        )
+        thread = result.get("thread")
+        if not isinstance(thread, dict) or thread.get("id") != thread_id:
+            raise CodexProtocolError("thread/resume nao retomou a thread solicitada")
+        self._known_thread_id = thread_id
+        self._thread_created = False
+        self._persist_session(thread_id)
+        self.runtime.update(thread_id=thread_id)
+        return record
+
+    def create_thread(self) -> dict[str, Any]:
+        client = self.connect()
+        result = client.request(
+            "thread/start",
+            {
+                "cwd": str(self.project),
+                "approvalPolicy": "never",
+                "sandbox": "workspace-write",
+                "ephemeral": False,
+                "serviceName": "jarvis",
+            },
+        )
+        thread = result.get("thread")
+        thread_id = thread.get("id") if isinstance(thread, dict) else None
+        if not isinstance(thread_id, str) or not thread_id:
+            raise CodexProtocolError("thread/start nao retornou thread.id")
+        self._known_thread_id = thread_id
+        self._thread_created = True
+        self._persist_session(thread_id)
+        self.runtime.update(thread_id=thread_id, turn_id=None, state="idle")
+        record = self.read_session_record(thread_id)
+        self.bridge_log.write(
+            "thread_started",
+            project=str(self.project),
+            thread_id=thread_id,
+        )
+        return record
+
+    def ensure_thread(
+        self,
+        *,
+        continue_current_thread: bool = True,
+        target_thread_id: str | None = None,
+    ) -> str:
+        client = self.connect()
+        if target_thread_id:
+            if self._known_thread_id != target_thread_id:
+                self.adopt_thread(target_thread_id)
+            return target_thread_id
+        preferred_thread_id = (
+            self.preferred_thread_id if continue_current_thread else None
+        )
+        if preferred_thread_id and self._known_thread_id == preferred_thread_id:
+            return preferred_thread_id
+        if preferred_thread_id:
+            previous = self._load_session() or {}
+            previous_thread_id = previous.get("thread_id")
+            try:
+                read_result = client.request(
+                    "thread/read",
+                    {"threadId": preferred_thread_id, "includeTurns": False},
+                )
+                read_thread = read_result.get("thread")
+                if (
+                    not isinstance(read_thread, dict)
+                    or read_thread.get("id") != preferred_thread_id
+                ):
+                    raise CodexProtocolError(
+                        "thread/read nao retornou a thread visivel solicitada"
+                    )
+                resume_result = client.request(
+                    "thread/resume",
+                    {"threadId": preferred_thread_id, "cwd": str(self.project)},
+                )
+                resumed_thread = resume_result.get("thread")
+                if (
+                    not isinstance(resumed_thread, dict)
+                    or resumed_thread.get("id") != preferred_thread_id
+                ):
+                    raise CodexProtocolError(
+                        "thread/resume nao retomou a thread visivel solicitada"
+                    )
+            except CodexError as exc:
+                # Remember the user-visible target for the next startup even
+                # when its current standalone owner still holds the writer lock.
+                self._persist_session(preferred_thread_id)
+                active_writer = "active writer" in str(exc).casefold()
+                failure_event = (
+                    "preferred_thread_active_writer"
+                    if active_writer
+                    else "preferred_thread_unavailable"
+                )
+                self.bridge_log.write(
+                    failure_event,
+                    project=str(self.project),
+                    thread_id=preferred_thread_id,
+                    error=str(exc),
+                )
+                if active_writer:
+                    raise CodexError(
+                        "a sessao atual do Codex ainda esta aberta em modo "
+                        "standalone. Feche esta tela e execute `jarvis codex` "
+                        "para reabri-la no modo compartilhado; depois envie a "
+                        "tarefa novamente. Nenhuma sessao alternativa foi criada",
+                        layer="preferred_thread_active_writer",
+                    ) from exc
+                raise CodexError(
+                    "nao foi possivel acessar a sessao atual do Codex; "
+                    "nenhuma sessao alternativa foi criada",
+                    layer="preferred_thread_unavailable",
+                ) from exc
+            self._known_thread_id = preferred_thread_id
+            self._thread_created = False
+            self._persist_session(preferred_thread_id)
+            self.runtime.update(thread_id=preferred_thread_id)
+            self.bridge_log.write(
+                "preferred_thread_adopted",
+                project=str(self.project),
+                previous_thread_id=previous_thread_id,
+                thread_id=preferred_thread_id,
+            )
+            return preferred_thread_id
         if continue_current_thread and self._known_thread_id:
             return self._known_thread_id
         state = self._load_session() if continue_current_thread else None
@@ -726,6 +981,7 @@ class CodexSessionManager:
         *,
         origin: str = "qwen",
         continue_current_thread: bool = True,
+        target_thread_id: str | None = None,
         event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> CodexResult:
         if origin not in {"human", "qwen", "system"}:
@@ -753,9 +1009,12 @@ class CodexSessionManager:
                             error="queue_cleared",
                             result_discarded=True,
                         )
-                    thread_id = self.ensure_thread(
-                        continue_current_thread=continue_current_thread
-                    )
+                    ensure_arguments: dict[str, Any] = {
+                        "continue_current_thread": continue_current_thread
+                    }
+                    if target_thread_id is not None:
+                        ensure_arguments["target_thread_id"] = target_thread_id
+                    thread_id = self.ensure_thread(**ensure_arguments)
                     existing_turn_id = (
                         None
                         if self._thread_created
@@ -2437,6 +2696,7 @@ class CodexRunner:
         *,
         endpoint: str = "ws://127.0.0.1:4500",
         state_dir: Path | None = None,
+        preferred_thread_id: str | None = None,
         quick_wait_timeout: int = 60,
         hard_timeout: int = 0,
         job_retention_days: int = 7,
@@ -2446,6 +2706,9 @@ class CodexRunner:
         self.executable = executable or shutil.which("codex") or "codex"
         self.endpoint = endpoint
         self.state_dir = state_dir
+        self.preferred_thread_id = (
+            str(preferred_thread_id).strip() if preferred_thread_id else None
+        )
         default_job_state = (
             policy.roots[0] / ".orchestrator"
             if policy.roots
@@ -2458,6 +2721,15 @@ class CodexRunner:
             job_state_dir,
             retention_days=job_retention_days,
         )
+        self.sessions = CodexSessionRegistry(job_state_dir)
+        self.session_resolver = CodexSessionResolver(self.sessions)
+        legacy_session = CodexSessionManager._read_json(
+            job_state_dir / "codex-session.json"
+        )
+        self.sessions.import_legacy(
+            session=legacy_session,
+            jobs=self.jobs.list(),
+        )
         self._managers: dict[Path, CodexSessionManager] = {}
         self._job_lock = threading.Lock()
         self._job_threads: dict[str, threading.Thread] = {}
@@ -2467,13 +2739,22 @@ class CodexRunner:
         resolved = project.resolve(strict=True)
         manager = self._managers.get(resolved)
         if manager is None:
-            state_dir = self.state_dir if resolved == Path(__file__).resolve().parents[2] else resolved / ".orchestrator"
+            shared_project = Path(__file__).resolve().parents[2]
+            uses_shared_state = resolved == shared_project
+            state_dir = (
+                self.state_dir
+                if uses_shared_state
+                else resolved / ".orchestrator"
+            )
             manager = CodexSessionManager(
                 resolved,
                 endpoint=self.endpoint,
                 timeout=self.timeout,
                 executable=self.executable,
                 state_dir=state_dir,
+                preferred_thread_id=(
+                    self.preferred_thread_id if uses_shared_state else None
+                ),
             )
             self._managers[resolved] = manager
         return manager
@@ -2497,6 +2778,10 @@ class CodexRunner:
         task: str,
         project_path: str,
         continue_current_thread: bool = True,
+        thread_id: str | None = None,
+        focused_thread_id: str | None = None,
+        conversation_id: str | None = None,
+        allow_create: bool = True,
         origin: str = "qwen",
         wait: bool = True,
         event_callback: Callable[[str, dict[str, Any]], None] | None = None,
@@ -2504,11 +2789,66 @@ class CodexRunner:
         project = self.policy.resolve(project_path)
         if not project.is_dir():
             raise CodexError("project_path nao e diretorio", layer="validation")
+        request_id = str(uuid.uuid4())
+        resolution = self.resolve_session(
+            project,
+            request_id=request_id,
+            explicit_thread_id=thread_id,
+            focused_thread_id=focused_thread_id or self.preferred_thread_id,
+            conversation_id=conversation_id,
+            # Session identity is resolved independently from turn-continuation
+            # preference. A new thread is allowed only after proving that no
+            # reusable session exists.
+            force_new=False,
+            allow_create=allow_create,
+        )
+        if not resolution.ok:
+            return CodexResult(
+                accepted=False,
+                thread_id=resolution.thread_id,
+                turn_id=None,
+                status="failed",
+                final_response="",
+                error=resolution.reason_code,
+                session_resolution=resolution.as_dict(),
+            )
         job = self.jobs.create(
             project=str(project),
             task_summary=_safe_summary(task),
             source=origin,
             wait=wait,
+            thread_id=resolution.thread_id,
+            session_resolution=resolution.as_dict(),
+            request_id=request_id,
+        )
+        self.manager_for(project).bridge_log.write(
+            "codex_delegation_started",
+            request_id=request_id,
+            requested_agent="codex",
+            project_path=str(project),
+            session_resolution_attempted=True,
+            candidate_session_count=resolution.candidate_count,
+            reusable_candidate_session_count=(
+                resolution.reusable_candidate_count
+            ),
+            selected_session_id=resolution.session_id,
+            selected_thread_id=resolution.thread_id,
+            session_binding_source=resolution.binding_source,
+            session_state=resolution.state,
+            session_reused=resolution.reused,
+            session_created=resolution.created,
+            session_registered=resolution.registered,
+            session_recoverable=resolution.recoverable,
+            session_visible=resolution.visible,
+            active_job_id=resolution.active_job_id,
+            delegation_started=True,
+            delegation_job_id=job["job_id"],
+            resolution_reason_code=resolution.reason_code,
+        )
+        self.sessions.update(
+            str(resolution.thread_id),
+            active_job_id=job["job_id"],
+            last_used_at=utc_now(),
         )
         start_event, done_event = self._start_job_worker(
             job,
@@ -2531,6 +2871,7 @@ class CodexRunner:
                 error=None,
                 job_id=job["job_id"],
                 wait_timed_out=True,
+                session_resolution=resolution.as_dict(),
             )
         start_event.wait(min(10, self.quick_wait_timeout))
         value = self.jobs.get(job["job_id"]) or job
@@ -2546,7 +2887,190 @@ class CodexRunner:
             final_response="",
             error=None,
             job_id=job["job_id"],
+            session_resolution=resolution.as_dict(),
         )
+
+    def resolve_session(
+        self,
+        project: Path,
+        *,
+        request_id: str,
+        explicit_thread_id: str | None = None,
+        focused_thread_id: str | None = None,
+        conversation_id: str | None = None,
+        force_new: bool = False,
+        allow_create: bool = True,
+    ) -> CodexSessionResolution:
+        manager = self.manager_for(project)
+        started = time.perf_counter()
+        with self.sessions.resolution_mutex(project, timeout=min(self.timeout, 60)):
+            try:
+                provider_threads = manager.list_project_threads()
+            except CodexError as exc:
+                resolution = CodexSessionResolution(
+                    "UNAVAILABLE", "SESSION_UNAVAILABLE"
+                )
+                manager.bridge_log.write(
+                    "codex_session_resolution",
+                    request_id=request_id,
+                    requested_agent="codex",
+                    project_path=str(project),
+                    session_resolution_attempted=True,
+                    candidate_session_count=0,
+                    reusable_candidate_session_count=0,
+                    selected_session_id=None,
+                    selected_thread_id=None,
+                    session_binding_source=None,
+                    session_state="unavailable",
+                    session_reused=False,
+                    session_created=False,
+                    session_registered=False,
+                    session_recoverable=False,
+                    session_visible=False,
+                    active_job_id=None,
+                    delegation_started=False,
+                    delegation_job_id=None,
+                    resolution_reason_code=resolution.reason_code,
+                    resolution_latency_ms=round(
+                        (time.perf_counter() - started) * 1000, 3
+                    ),
+                    error=str(exc),
+                )
+                return resolution
+            candidates = self.sessions.reconcile(project, provider_threads)
+            resolution = self.session_resolver.resolve(
+                project=project,
+                candidates=candidates,
+                explicit_thread_id=explicit_thread_id,
+                focused_thread_id=focused_thread_id,
+                conversation_id=conversation_id,
+                force_new=force_new,
+            )
+            if resolution.status == "NONE" and allow_create:
+                try:
+                    provider = manager.create_thread()
+                    registered = self.sessions.register(
+                        {
+                            **provider,
+                            "origin": "jarvis_created",
+                            "recoverable": bool(provider.get("recoverable")),
+                        }
+                    )
+                except Exception as exc:
+                    resolution = CodexSessionResolution(
+                        "UNAVAILABLE",
+                        "SESSION_REGISTRATION_FAILED",
+                        candidate_count=len(candidates),
+                        reusable_candidate_count=(
+                            resolution.reusable_candidate_count
+                        ),
+                    )
+                    manager.bridge_log.write(
+                        "codex_session_registration_failed",
+                        request_id=request_id,
+                        project_path=str(project),
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                else:
+                    if not registered.get("recoverable"):
+                        resolution = CodexSessionResolution(
+                            "UNAVAILABLE",
+                            "SESSION_NOT_RECOVERABLE",
+                            thread_id=registered.get("thread_id"),
+                            candidate_count=len(candidates),
+                            reusable_candidate_count=(
+                                resolution.reusable_candidate_count
+                            ),
+                            created=True,
+                            registered=True,
+                        )
+                    else:
+                        resolution = CodexSessionResolution(
+                            "RESOLVED",
+                            "NEW_SESSION_CREATED",
+                            thread_id=str(registered["thread_id"]),
+                            session_id=str(
+                                registered.get("session_id")
+                                or registered["thread_id"]
+                            ),
+                            binding_source="newly_created",
+                            state=str(registered.get("state") or "idle"),
+                            candidate_count=len(candidates),
+                            reusable_candidate_count=(
+                                resolution.reusable_candidate_count
+                            ),
+                            created=True,
+                            registered=True,
+                            recoverable=True,
+                            visible=bool(registered.get("visible")),
+                        )
+            elif resolution.ok:
+                try:
+                    provider = manager.adopt_thread(str(resolution.thread_id))
+                    previous = self.sessions.get(str(resolution.thread_id)) or {}
+                    self.sessions.register(
+                        {
+                            **previous,
+                            **provider,
+                            "origin": previous.get("origin") or "user_existing",
+                            "active_job_id": previous.get("active_job_id"),
+                        }
+                    )
+                except CodexError as exc:
+                    reason = (
+                        "SESSION_BUSY"
+                        if "active writer" in str(exc).casefold()
+                        else "SESSION_UNAVAILABLE"
+                    )
+                    resolution = CodexSessionResolution(
+                        "UNAVAILABLE",
+                        reason,
+                        thread_id=resolution.thread_id,
+                        session_id=resolution.session_id,
+                        binding_source=resolution.binding_source,
+                        state=resolution.state,
+                        candidate_count=resolution.candidate_count,
+                        reusable_candidate_count=(
+                            resolution.reusable_candidate_count
+                        ),
+                        registered=True,
+                        recoverable=resolution.recoverable,
+                        visible=resolution.visible,
+                        active_job_id=resolution.active_job_id,
+                    )
+            if resolution.ok:
+                self.sessions.bind_project(project, str(resolution.thread_id))
+                self.sessions.bind_conversation(
+                    conversation_id or "", str(resolution.thread_id), project
+                )
+            manager.bridge_log.write(
+                "codex_session_resolution",
+                request_id=request_id,
+                requested_agent="codex",
+                project_path=str(project),
+                session_resolution_attempted=True,
+                candidate_session_count=resolution.candidate_count,
+                reusable_candidate_session_count=(
+                    resolution.reusable_candidate_count
+                ),
+                selected_session_id=resolution.session_id,
+                selected_thread_id=resolution.thread_id,
+                session_binding_source=resolution.binding_source,
+                session_state=resolution.state,
+                session_reused=resolution.reused,
+                session_created=resolution.created,
+                session_registered=resolution.registered,
+                session_recoverable=resolution.recoverable,
+                session_visible=resolution.visible,
+                active_job_id=resolution.active_job_id,
+                delegation_started=False,
+                delegation_job_id=None,
+                resolution_reason_code=resolution.reason_code,
+                resolution_latency_ms=round(
+                    (time.perf_counter() - started) * 1000, 3
+                ),
+            )
+            return resolution
 
     def _start_job_worker(
         self,
@@ -2665,6 +3189,7 @@ class CodexRunner:
                     task,
                     origin=str(job.get("source") or "qwen"),
                     continue_current_thread=continue_current_thread,
+                    target_thread_id=str(job["thread_id"]),
                     event_callback=observed,
                 )
             self._finish_job(job_id, result, event_callback=event_callback)
@@ -2728,6 +3253,15 @@ class CodexRunner:
             monitor_pid=None,
             monitor_token=None,
         )
+        if result.thread_id:
+            record = self.sessions.get(result.thread_id)
+            if record is not None and record.get("active_job_id") == job_id:
+                self.sessions.update(
+                    result.thread_id,
+                    active_job_id=None,
+                    state=("idle" if status in TERMINAL_JOB_STATES else status),
+                    last_used_at=utc_now(),
+                )
         if event_callback is not None:
             payload = {
                 "job_id": job_id,
@@ -2763,6 +3297,11 @@ class CodexRunner:
                 result_discarded=bool(stored.get("result_discarded")),
                 job_id=job_id,
                 wait_timed_out=bool(job.get("wait_timed_out")),
+                session_resolution=(
+                    dict(job.get("session_resolution"))
+                    if isinstance(job.get("session_resolution"), dict)
+                    else None
+                ),
             )
         return CodexResult(
             accepted=True,
@@ -2773,6 +3312,11 @@ class CodexRunner:
             error=job.get("error"),
             job_id=job_id,
             wait_timed_out=bool(job.get("wait_timed_out")),
+            session_resolution=(
+                dict(job.get("session_resolution"))
+                if isinstance(job.get("session_resolution"), dict)
+                else None
+            ),
         )
 
     def reconcile_jobs(self) -> list[dict[str, Any]]:
@@ -2854,11 +3398,13 @@ class CodexRunner:
         return {
             "ok": True,
             "job_id": job.get("job_id"),
+            "request_id": job.get("request_id"),
             "status": job.get("status"),
             "task_summary": job.get("task_summary"),
             "duration_seconds": max(0.0, (ended - started).total_seconds()),
             "thread_id": job.get("thread_id"),
             "turn_id": job.get("turn_id"),
+            "session_resolution": job.get("session_resolution"),
             "human_interventions": len(job.get("human_interventions") or []),
             "result_available": bool(job.get("result_available")),
             "result_delivered": bool(job.get("result_delivered")),
@@ -2870,6 +3416,85 @@ class CodexRunner:
     def list_jobs(self) -> list[dict[str, Any]]:
         self.reconcile_jobs()
         return self.jobs.list()
+
+    def list_sessions(self, *, project_path: str | None = None) -> list[dict[str, Any]]:
+        project = self.policy.resolve(project_path) if project_path else None
+        return self.sessions.list(project=project)
+
+    def session_metrics(self) -> dict[str, Any]:
+        jobs = self.jobs.list()
+        delegated = [item for item in jobs if item.get("thread_id")]
+        resolutions = [
+            item.get("session_resolution")
+            for item in delegated
+            if isinstance(item.get("session_resolution"), dict)
+        ]
+        measured = [
+            item
+            for item in delegated
+            if isinstance(item.get("session_resolution"), dict)
+        ]
+        correct = [
+            item
+            for item in measured
+            if item["session_resolution"].get("thread_id") == item.get("thread_id")
+        ]
+        reused = [item for item in resolutions if item.get("reused")]
+        unnecessary_created = [
+            item
+            for item in resolutions
+            if item.get("created")
+            and int(item.get("reusable_candidate_count") or 0) > 0
+        ]
+        recoverable = [item for item in resolutions if item.get("recoverable")]
+        visible = [item for item in resolutions if item.get("visible")]
+        ghosts = [
+            item
+            for item in delegated
+            if not (
+                (record := self.sessions.get(str(item.get("thread_id"))))
+                and record.get("recoverable")
+            )
+        ]
+
+        def rate(numerator: int, denominator: int) -> float:
+            return round(numerator / denominator, 4) if denominator else 0.0
+
+        return {
+            "delegations": len(delegated),
+            "measured_delegations": len(measured),
+            "correct_session_rate": rate(len(correct), len(measured)),
+            "existing_session_reuse_rate": rate(len(reused), len(resolutions)),
+            "unnecessary_new_session_rate": rate(
+                len(unnecessary_created), len(resolutions)
+            ),
+            "new_codex_session_created_when_reusable_session_exists": len(
+                unnecessary_created
+            ),
+            "ghost_session_rate": rate(len(ghosts), len(delegated)),
+            "ghost_sessions": len(ghosts),
+            "session_recoverability_rate": rate(
+                len(recoverable), len(resolutions)
+            ),
+            "session_visibility_rate": rate(len(visible), len(resolutions)),
+            "session_resolution_success_rate": rate(
+                len(
+                    [
+                        item
+                        for item in resolutions
+                        if item.get("status") == "RESOLVED"
+                    ]
+                ),
+                len(resolutions),
+            ),
+            "historical_resolution_coverage_rate": rate(
+                len(resolutions), len(jobs)
+            ),
+            "delegation_success_rate": rate(
+                len([item for item in measured if item.get("status") == "completed"]),
+                len(measured),
+            ),
+        }
 
     def cancel_job(self, *, job_id: str | None = None, latest: bool = False) -> dict[str, Any]:
         job = self.jobs.get(job_id, latest=latest or job_id is None, active_only=True)
@@ -2963,4 +3588,5 @@ class CodexRunner:
             task=task,
             project_path=working_directory,
             continue_current_thread=True,
+            thread_id=session_id,
         )

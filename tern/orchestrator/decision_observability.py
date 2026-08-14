@@ -161,6 +161,12 @@ class AgentDecisionObserver:
             semantic_latency_ms=float(getattr(semantic_result, "latency_ms", 0.0)),
             semantic_parse_valid=bool(getattr(semantic_result, "parse_valid", True)),
             semantic_repair_used=bool(getattr(semantic_result, "repair_used", False)),
+            semantic_canonicalization_reason=getattr(
+                semantic_result, "canonicalization_reason", None
+            ),
+            semantic_validation_error_codes=list(
+                getattr(semantic_result, "validation_error_codes", ())
+            ),
             semantic_cache_hit=bool(getattr(semantic_result, "cache_hit", False)),
             semantic_frame=(semantic.as_dict() if semantic else None),
             tool_catalog=tool_catalog or {"allowed": [], "rejected": []},

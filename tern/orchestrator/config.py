@@ -91,6 +91,7 @@ class Settings:
     agent_decision_semantic_first: bool
     codex_timeout: int
     codex_app_server_endpoint: str
+    codex_current_thread_id: str | None
     codex_app_server_start_timeout: int
     codex_quick_wait_timeout_seconds: int
     codex_turn_hard_timeout_seconds: int
@@ -111,6 +112,9 @@ class Settings:
     web_search_provider: str
     web_search_url: str
     web_search_api_key: str | None
+    web_safe_search: str
+    web_threat_analysis_enabled: bool
+    web_threat_learning_enabled: bool
     web_timeout: int
     web_max_download_bytes: int
     web_max_text_chars: int
@@ -304,6 +308,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         codex_app_server_endpoint=values.get(
             "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
         ).strip(),
+        codex_current_thread_id=(
+            values.get("CODEX_THREAD_ID", "").strip() or None
+        ),
         codex_app_server_start_timeout=int(
             values.get("CODEX_APP_SERVER_START_TIMEOUT", "30")
         ),
@@ -324,7 +331,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         deepseek_base_url=values.get(
             "DEEPSEEK_BASE_URL", "https://api.deepseek.com"
         ).strip(),
-        deepseek_model=values.get("DEEPSEEK_MODEL", "").strip(),
+        deepseek_model=values.get("DEEPSEEK_MODEL", "deepseek-v4-flash").strip(),
         deepseek_auto_escalation=_bool(
             values.get("DEEPSEEK_AUTO_ESCALATION", "false")
         ),
@@ -343,6 +350,13 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         web_search_url=values.get("WEB_SEARCH_URL", provider_url),
         web_search_api_key=values.get("WEB_SEARCH_API_KEY")
         or values.get("BRAVE_SEARCH_API_KEY"),
+        web_safe_search=values.get("WEB_SAFE_SEARCH", "off").strip().lower(),
+        web_threat_analysis_enabled=_bool(
+            values.get("WEB_THREAT_ANALYSIS_ENABLED", "true")
+        ),
+        web_threat_learning_enabled=_bool(
+            values.get("WEB_THREAT_LEARNING_ENABLED", "true")
+        ),
         web_timeout=int(values.get("WEB_TIMEOUT", "20")),
         web_max_download_bytes=int(
             values.get("WEB_MAX_DOWNLOAD_BYTES", str(10 * 1024 * 1024))
@@ -572,6 +586,10 @@ def _validate(settings: Settings) -> None:
         )
     if not settings.web_search_url.startswith("https://"):
         raise ValueError("WEB_SEARCH_URL deve usar HTTPS")
+    if settings.web_safe_search not in {"off", "moderate", "strict"}:
+        raise ValueError(
+            "WEB_SAFE_SEARCH deve ser off, moderate ou strict"
+        )
     if (
         settings.web_timeout < 1
         or settings.web_max_download_bytes < 1024

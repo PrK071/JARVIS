@@ -459,6 +459,89 @@ def test_restart_resumes_same_thread_and_no_old_result_duplication(
     assert "old" not in values["result"].final_response
 
 
+def test_preferred_visible_thread_replaces_persisted_bridge_thread(
+    tmp_path, protocol_client
+):
+    manager = CodexSessionManager(
+        tmp_path,
+        timeout=10,
+        state_dir=tmp_path / ".orchestrator",
+        preferred_thread_id=THREAD_ID,
+    )
+    manager.start_server = lambda wait_seconds=30: {
+        "started": False,
+        "ready": True,
+    }
+    manager._persist_session("old-hidden-thread")
+
+    assert manager.ensure_thread() == THREAD_ID
+    assert manager._load_session()["thread_id"] == THREAD_ID
+    assert protocol_client.request_calls == [
+        ("thread/read", {"threadId": THREAD_ID, "includeTurns": False}),
+        (
+            "thread/resume",
+            {"threadId": THREAD_ID, "cwd": str(tmp_path.resolve())},
+        ),
+    ]
+
+
+def test_missing_preferred_visible_thread_fails_without_creating_replacement(
+    tmp_path, protocol_client
+):
+    manager = CodexSessionManager(
+        tmp_path,
+        timeout=10,
+        state_dir=tmp_path / ".orchestrator",
+        preferred_thread_id=THREAD_ID,
+    )
+    manager.start_server = lambda wait_seconds=30: {
+        "started": False,
+        "ready": True,
+    }
+    protocol_client.thread_exists = False
+
+    with pytest.raises(CodexError) as captured:
+        manager.ensure_thread()
+
+    assert captured.value.layer == "preferred_thread_unavailable"
+    assert manager._load_session()["thread_id"] == THREAD_ID
+    assert not any(
+        method == "thread/start"
+        for method, _params in protocol_client.request_calls
+    )
+
+
+def test_preferred_visible_thread_with_active_writer_explains_shared_reopen(
+    tmp_path, protocol_client
+):
+    manager = CodexSessionManager(
+        tmp_path,
+        timeout=10,
+        state_dir=tmp_path / ".orchestrator",
+        preferred_thread_id=THREAD_ID,
+    )
+    manager.start_server = lambda wait_seconds=30: {
+        "started": False,
+        "ready": True,
+    }
+
+    def active_writer():
+        raise CodexProtocolError(f"thread {THREAD_ID} already has an active writer")
+
+    protocol_client.read_thread = active_writer
+
+    with pytest.raises(CodexError) as captured:
+        manager.ensure_thread()
+
+    assert captured.value.layer == "preferred_thread_active_writer"
+    assert "jarvis codex" in str(captured.value)
+    assert manager._load_session()["thread_id"] == THREAD_ID
+    assert not any(
+        method == "thread/start"
+        for method, _params in protocol_client.request_calls
+    )
+
+
 def test_shared_status_repairs_stale_running_state(tmp_path, protocol_client):
     manager = RunManager(tmp_path, protocol_client)
     manager.ensure_thread()
