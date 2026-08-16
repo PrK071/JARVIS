@@ -244,18 +244,31 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     values = os.environ if env is None else env
     provider = values.get("WEB_SEARCH_PROVIDER", "bing_rss").strip().lower()
     provider_url = SEARCH_PROVIDER_URLS.get(provider, "")
-    backend_name = values.get("MODEL_BACKEND", "qwen35")
+    backend_name = values.get(
+        "LOCAL_MODEL_PROVIDER",
+        values.get("MODEL_BACKEND", "qwen35"),
+    )
     try:
         backend = BACKENDS[backend_name]
     except KeyError as exc:
         allowed = ", ".join(BACKENDS)
         raise ValueError(f"MODEL_BACKEND invalido: {backend_name!r}; use {allowed}") from exc
 
-    model_path = Path(values.get("MODEL_PATH", str(backend.default_model))).expanduser().resolve()
+    model_path = Path(
+        values.get(
+            "LOCAL_MODEL_PATH",
+            values.get("MODEL_PATH", str(backend.default_model)),
+        )
+    ).expanduser().resolve()
     stock_runtime = PROJECT_ROOT / "runtime" / "llama-b10173-vulkan" / "llama-server.exe"
     sasori_runtime = PROJECT_ROOT.parent / "llama.cpp" / "build" / "bin" / "llama-server.exe"
     runtime_default = stock_runtime if backend.runtime == "stock" else sasori_runtime
-    executable = Path(values.get("MODEL_SERVER_EXECUTABLE", str(runtime_default))).expanduser().resolve()
+    executable = Path(
+        values.get(
+            "LOCAL_MODEL_RUNTIME",
+            values.get("MODEL_SERVER_EXECUTABLE", str(runtime_default)),
+        )
+    ).expanduser().resolve()
     allowed_default = os.pathsep.join(
         str(path) for path in (PROJECT_ROOT, PROJECT_ROOT.parent / "llama.cpp", PROJECT_ROOT.parent / "sasori_review")
     )

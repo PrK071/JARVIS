@@ -101,7 +101,7 @@ class RuntimeManager:
             }.items()
             if value is not None
         }
-        mismatches = self._configuration_mismatches(model, parameters)
+        mismatches = self._configuration_mismatches(model, parameters, executable)
         running = bool((pid and self._pid_exists(pid)) or healthy)
         occupied = bool(running or endpoint_pid)
         return {
@@ -317,12 +317,15 @@ class RuntimeManager:
         self,
         model: str | None,
         parameters: dict[str, Any],
+        executable: str | None = None,
     ) -> list[str]:
         mismatches: list[str] = []
         if not model:
             mismatches.append("running_model=unknown")
         elif not self._same_path(model, self.settings.model_path):
             mismatches.append("model")
+        if executable and not self._same_path(executable, self.settings.server_executable):
+            mismatches.append("runtime_executable")
         desired = {
             "context_size": self.settings.context_size,
             "parallel_slots": self.settings.parallel_slots,

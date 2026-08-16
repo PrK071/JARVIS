@@ -7,7 +7,7 @@ name = "tern"
 version = "0.1.0"
 description = "Local ternary LLM inference — quantize any model to {-1,0,+1} planes, run CPU-only via llama.cpp/ollama"
 requires-python = ">=3.9"
-dependencies = ["numpy", "torch", "tqdm", "beautifulsoup4>=4.12", "pymupdf>=1.24", "python-dotenv>=1.0", "websocket-client>=1.8,<2", "prompt-toolkit>=3.0,<4"]
+dependencies = ["numpy", "torch", "tqdm", "beautifulsoup4>=4.12", "pymupdf>=1.24", "python-dotenv>=1.0", "websocket-client>=1.8,<2", "prompt-toolkit>=3.0,<4", "jsonschema>=4.20,<5"]
 
 [project.optional-dependencies]
 gguf = ["gguf", "aenum"]

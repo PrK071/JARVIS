@@ -92,6 +92,21 @@ def test_backends_are_explicit(backend):
     assert settings.backend.name == backend
 
 
+def test_local_model_aliases_are_model_agnostic(tmp_path):
+    model = tmp_path / "candidate.gguf"
+    runtime = tmp_path / "llama-server.exe"
+    settings = load_settings(
+        {
+            "LOCAL_MODEL_PROVIDER": "qwen35",
+            "LOCAL_MODEL_PATH": str(model),
+            "LOCAL_MODEL_RUNTIME": str(runtime),
+        }
+    )
+    assert settings.backend.name == "qwen35"
+    assert settings.model_path == model.resolve()
+    assert settings.server_executable == runtime.resolve()
+
+
 def test_invalid_backend_is_rejected():
     with pytest.raises(ValueError, match="MODEL_BACKEND"):
         load_settings({"MODEL_BACKEND": "automatic"})

@@ -306,3 +306,26 @@ def test_expected_model_is_identified_from_props(tmp_path, monkeypatch):
     result = manager.inspect_llama_server()
     assert result["model"] == str(settings.model_path)
     assert result["mismatches"] == []
+
+
+def test_runtime_executable_mismatch_is_not_silently_reused(tmp_path, monkeypatch):
+    settings = configured(tmp_path)
+    install_healthy_client(monkeypatch, settings.model_path)
+    manager = RuntimeManager(settings)
+    monkeypatch.setattr(manager, "_endpoint_pid", lambda: 89)
+    monkeypatch.setattr(manager, "_pid_exists", lambda _pid: True)
+    monkeypatch.setattr(
+        manager,
+        "_process_info",
+        lambda _pid: {
+            "executable": str(tmp_path / "older-llama-server.exe"),
+            "command_line": (
+                f'"{tmp_path / "older-llama-server.exe"}" '
+                f'-m "{settings.model_path}" -c 16384 -np 1 -fa on '
+                '-ctk q8_0 -ctv q8_0 -ngl 99 --reasoning off'
+            ),
+        },
+    )
+    result = manager.inspect_llama_server()
+    assert not result["compatible"]
+    assert result["mismatches"] == ["runtime_executable"]
