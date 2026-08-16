@@ -2,27 +2,48 @@ from __future__ import annotations
 
 import queue
 import re
+import sys
 import threading
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable
 
 import tkinter as tk
 from tkinter import messagebox
 
-from hudkit.animations import CoreReactor, TernaryGrid, WaveformDisplay
-from hudkit.base import HUDApplication
-from hudkit.theme import HUDTheme
-from hudkit.widgets import (
-    DecisionBars,
-    HUDCommandBar,
-    HUDFooter,
-    HUDHeader,
-    HUDLogTerminal,
-    HUDMetric,
-    HUDPanel,
-    InferenceHistory,
-)
+try:
+    from hudkit.animations import CoreReactor, TernaryGrid, WaveformDisplay
+    from hudkit.base import HUDApplication
+    from hudkit.theme import HUDTheme
+    from hudkit.widgets import (
+        DecisionBars,
+        HUDCommandBar,
+        HUDFooter,
+        HUDHeader,
+        HUDLogTerminal,
+        HUDMetric,
+        HUDPanel,
+        InferenceHistory,
+    )
+except ModuleNotFoundError as exc:
+    if exc.name != "hudkit":
+        raise
+    interface_root = Path(__file__).resolve().parents[2] / "interface"
+    sys.path.insert(0, str(interface_root))
+    from hudkit.animations import CoreReactor, TernaryGrid, WaveformDisplay
+    from hudkit.base import HUDApplication
+    from hudkit.theme import HUDTheme
+    from hudkit.widgets import (
+        DecisionBars,
+        HUDCommandBar,
+        HUDFooter,
+        HUDHeader,
+        HUDLogTerminal,
+        HUDMetric,
+        HUDPanel,
+        InferenceHistory,
+    )
 
 from .agent import Supervisor
 from .client import LlamaClient

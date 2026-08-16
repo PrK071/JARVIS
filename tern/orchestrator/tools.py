@@ -211,6 +211,27 @@ class ToolRegistry:
             )
             if resolution.get("ok"):
                 project = self.policy.resolve(str(resolution["root"]))
+        if project is None and not explicit_paths:
+            shared_project = getattr(self.codex, "shared_project", None)
+            if callable(shared_project):
+                try:
+                    shared = shared_project()
+                    if shared:
+                        try:
+                            project = self.policy.resolve(str(shared))
+                        except (OSError, PermissionError):
+                            candidate = Path(shared).expanduser().resolve(strict=False)
+                            allowed_roots = [
+                                root.expanduser().resolve(strict=False)
+                                for root in self.policy.roots
+                            ]
+                            if any(
+                                candidate == root or root in candidate.parents
+                                for root in allowed_roots
+                            ):
+                                project = candidate
+                except Exception:
+                    project = None
         if project is None:
             raise ValueError("nao foi possivel identificar um projeto permitido")
         normalized["project_path"] = str(project)

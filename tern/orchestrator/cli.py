@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -221,13 +222,14 @@ def _run_deepseek_tui(
 
 
 def _run_jarvis_ui(settings, runtime: RuntimeManager) -> int:
-    from .jarvis_ui import run_jarvis_ui
-
-    return run_jarvis_ui(
-        settings=settings,
-        runtime=runtime,
-        registry=_registry(settings),
-    )
+    server_path = PROJECT_ROOT / "interface" / "web_server.py"
+    spec = importlib.util.spec_from_file_location("jarvis_interface_web_server", server_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Nao foi possivel carregar a interface web: {server_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.main(open_browser=True)
+    return 0
 
 
 def _show_codex_events(path: Path, *, lines: int, follow: bool) -> None:

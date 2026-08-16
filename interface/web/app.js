@@ -1,22 +1,24 @@
 /**
- * T.R.I.A.D.E — Ternary Reasoning & Intelligent Adaptive Decision Engine
- * Interface estilo JARVIS com simulação de modelo ternário (−1, 0, +1)
+ * JARVIS — interface com simulação de modelo ternário (−1, 0, +1)
  */
 
 const TERNARY = { NEG: -1, NEU: 0, POS: 1 };
 
 const AVATAR_FRAMES = [
-  { src: 'assets/synth-alpha/head/synth-alpha-head-00.png', label: 'Cabeça, vista frontal' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-01.png', label: 'Cabeça, frente direita' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-02.png', label: 'Cabeça, perfil direito' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-03.png', label: 'Cabeça, traseira direita' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-04.png', label: 'Cabeça, vista traseira' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-05.png', label: 'Cabeça, traseira esquerda' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-06.png', label: 'Cabeça, perfil esquerdo' },
-  { src: 'assets/synth-alpha/head/synth-alpha-head-07.png', label: 'Cabeça, frente esquerda' },
+  { src: 'assets/black-visor/head/black-visor-head-00.png', label: 'Vista frontal' },
+  { src: 'assets/black-visor/head/black-visor-head-01.png', label: 'Três quartos direito' },
+  { src: 'assets/black-visor/head/black-visor-head-06.png', label: 'Perfil direito' },
+  { src: 'assets/black-visor/head/black-visor-head-03.png', label: 'Três quartos traseiro direito' },
+  { src: 'assets/black-visor/head/black-visor-head-04.png', label: 'Vista traseira' },
+  { src: 'assets/black-visor/head/black-visor-head-05.png', label: 'Três quartos traseiro esquerdo' },
+  { src: 'assets/black-visor/head/black-visor-head-02.png', label: 'Perfil esquerdo' },
+  { src: 'assets/black-visor/head/black-visor-head-07.png', label: 'Três quartos esquerdo' },
 ];
 
 const FRONT_FRAME = 0;
+const TURN_PIXELS_PER_FRAME = 52;
+const TURN_KEY_DURATION = 280;
+const TURN_SETTLE_DURATION = 180;
 const MAX_CHAT_HISTORY = 16;
 const MAX_INPUT_LENGTH = 4000;
 
@@ -53,9 +55,11 @@ const state = {
   },
   turntable: {
     frame: FRONT_FRAME,
+    angle: FRONT_FRAME,
+    targetAngle: null,
+    animationFrame: null,
     pointerId: null,
     lastX: 0,
-    remainderX: 0,
   },
 };
 
@@ -146,7 +150,7 @@ function initAvatar() {
 
   AVATAR_FRAMES.forEach((frame, index) => {
     const image = document.createElement('img');
-    image.className = `turntable-frame${index === FRONT_FRAME ? ' is-active' : ''}`;
+    image.className = 'turntable-frame';
     image.src = frame.src;
     image.alt = '';
     image.draggable = false;
@@ -167,16 +171,99 @@ function syncAvatarView() {
   returnCoreBtn.disabled = state.processing;
 }
 
-function updateTurntableFrame(frameIndex, turning = true) {
-  const normalized = ((frameIndex % AVATAR_FRAMES.length) + AVATAR_FRAMES.length) % AVATAR_FRAMES.length;
-  state.turntable.frame = normalized;
+function normalizeTurntableAngle(angle) {
+  return ((angle % AVATAR_FRAMES.length) + AVATAR_FRAMES.length) % AVATAR_FRAMES.length;
+}
+
+function cancelTurntableAnimation() {
+  if (state.turntable.animationFrame !== null) cancelAnimationFrame(state.turntable.animationFrame);
+  state.turntable.animationFrame = null;
+  state.turntable.targetAngle = null;
+}
+
+function renderTurntableAngle(angle) {
+  const normalized = normalizeTurntableAngle(angle);
+  const lowerFrame = Math.floor(normalized);
+  const upperFrame = (lowerFrame + 1) % AVATAR_FRAMES.length;
+  const progress = normalized - lowerFrame;
+  const blend = progress * progress * (3 - 2 * progress);
+  const lowerOpacity = Math.cos(blend * Math.PI / 2);
+  const upperOpacity = Math.sin(blend * Math.PI / 2);
+  const primaryFrame = progress < 0.5 ? lowerFrame : upperFrame;
+  const degrees = Math.round(normalized * (360 / AVATAR_FRAMES.length)) % 360;
+
+  state.turntable.angle = angle;
+  state.turntable.frame = primaryFrame;
+
   turntableFrames.querySelectorAll('.turntable-frame').forEach((frame, index) => {
-    frame.classList.toggle('is-active', index === normalized);
+    const isLower = index === lowerFrame;
+    const isUpper = index === upperFrame && progress > 0.0001;
+    const opacity = isLower ? lowerOpacity : (isUpper ? upperOpacity : 0);
+    frame.style.opacity = opacity.toFixed(4);
+    frame.classList.toggle('is-primary', index === primaryFrame);
+    frame.classList.toggle('is-secondary', (isLower || isUpper) && index !== primaryFrame);
   });
-  avatarTurntable.classList.toggle('is-turning', turning || normalized !== FRONT_FRAME);
-  if (normalized !== FRONT_FRAME && state.gestures.active) stopSpeechGestures();
-  avatarTurntable.setAttribute('aria-valuenow', String(normalized));
-  avatarTurntable.setAttribute('aria-valuetext', AVATAR_FRAMES[normalized].label);
+
+  avatarTurntable.classList.toggle('is-turning', normalized > 0.0001 && normalized < AVATAR_FRAMES.length - 0.0001);
+  avatarTurntable.dataset.angle = String(degrees);
+  avatarTurntable.setAttribute('aria-valuenow', String(primaryFrame));
+  avatarTurntable.setAttribute('aria-valuetext', `${AVATAR_FRAMES[primaryFrame].label}, ${degrees} graus`);
+
+  if (primaryFrame !== FRONT_FRAME && state.gestures.active) stopSpeechGestures();
+}
+
+function animateTurntableTo(targetAngle, duration = TURN_KEY_DURATION) {
+  const startAngle = state.turntable.angle;
+  const delta = targetAngle - startAngle;
+  cancelTurntableAnimation();
+
+  if (reducedMotion.matches || Math.abs(delta) < 0.0001) {
+    renderTurntableAngle(targetAngle);
+    return;
+  }
+
+  const startedAt = performance.now();
+  state.turntable.targetAngle = targetAngle;
+
+  const tick = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = progress * progress * (3 - 2 * progress);
+    renderTurntableAngle(startAngle + delta * eased);
+
+    if (progress < 1) {
+      state.turntable.animationFrame = requestAnimationFrame(tick);
+      return;
+    }
+
+    state.turntable.animationFrame = null;
+    state.turntable.targetAngle = null;
+    renderTurntableAngle(targetAngle);
+  };
+
+  state.turntable.animationFrame = requestAnimationFrame(tick);
+}
+
+function nearestAngleForFrame(frameIndex) {
+  const targetFrame = normalizeTurntableAngle(frameIndex);
+  const currentFrame = normalizeTurntableAngle(state.turntable.angle);
+  let delta = targetFrame - currentFrame;
+  if (delta > AVATAR_FRAMES.length / 2) delta -= AVATAR_FRAMES.length;
+  if (delta < -AVATAR_FRAMES.length / 2) delta += AVATAR_FRAMES.length;
+  return state.turntable.angle + delta;
+}
+
+function updateTurntableFrame(frameIndex, animated = true) {
+  const targetAngle = nearestAngleForFrame(frameIndex);
+  if (animated) animateTurntableTo(targetAngle);
+  else {
+    cancelTurntableAnimation();
+    renderTurntableAngle(targetAngle);
+  }
+}
+
+function turnTurntableBy(frameDelta) {
+  const baseAngle = state.turntable.targetAngle ?? state.turntable.angle;
+  animateTurntableTo(baseAngle + frameDelta);
 }
 
 function resetTurntableToFront() {
@@ -195,7 +282,7 @@ async function openAvatarManually() {
   coreConfidence.textContent = '';
   syncAvatarView();
 
-  await wait(reducedMotion.matches ? 140 : 620);
+  await wait(reducedMotion.matches ? 140 : 760);
   if (revision !== state.viewRevision || state.avatarMode !== 'manual' || state.processing) return;
   setVisualPhase('present');
 }
@@ -218,8 +305,6 @@ async function returnToCore() {
 }
 
 function initTurntableControls() {
-  const turnThreshold = 26;
-
   const finishDrag = (event) => {
     if (state.turntable.pointerId === null) return;
     if (event?.pointerId !== undefined && event.pointerId !== state.turntable.pointerId) return;
@@ -233,8 +318,8 @@ function initTurntableControls() {
     }
 
     state.turntable.pointerId = null;
-    state.turntable.remainderX = 0;
     avatarTurntable.classList.remove('is-dragging');
+    animateTurntableTo(Math.round(state.turntable.angle), TURN_SETTLE_DURATION);
   };
 
   avatarTurntable.addEventListener('pointerdown', (event) => {
@@ -242,9 +327,9 @@ function initTurntableControls() {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     if (state.turntable.pointerId !== null) return;
 
+    cancelTurntableAnimation();
     state.turntable.pointerId = event.pointerId;
     state.turntable.lastX = event.clientX;
-    state.turntable.remainderX = 0;
     avatarTurntable.setPointerCapture(event.pointerId);
     avatarTurntable.classList.add('is-dragging');
   });
@@ -253,12 +338,7 @@ function initTurntableControls() {
     if (event.pointerId !== state.turntable.pointerId) return;
     const deltaX = event.clientX - state.turntable.lastX;
     state.turntable.lastX = event.clientX;
-    state.turntable.remainderX += deltaX;
-
-    if (Math.abs(state.turntable.remainderX) < turnThreshold) return;
-    const steps = Math.trunc(state.turntable.remainderX / turnThreshold);
-    state.turntable.remainderX -= steps * turnThreshold;
-    updateTurntableFrame(state.turntable.frame + steps, true);
+    renderTurntableAngle(state.turntable.angle + deltaX / TURN_PIXELS_PER_FRAME);
   });
 
   avatarTurntable.addEventListener('pointerup', finishDrag);
@@ -270,10 +350,10 @@ function initTurntableControls() {
     if (state.avatarMode === 'core' || state.processing) return;
     if (event.key === 'ArrowRight') {
       event.preventDefault();
-      updateTurntableFrame(state.turntable.frame + 1, true);
+      turnTurntableBy(1);
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      updateTurntableFrame(state.turntable.frame - 1, true);
+      turnTurntableBy(-1);
     } else if (event.key === 'Home') {
       event.preventDefault();
       resetTurntableToFront();
@@ -342,7 +422,7 @@ function currentTelemetry() {
 
 function helpResponse() {
   return [
-    'Comandos do T.R.I.A.D.E:',
+    'Comandos do JARVIS:',
     '• status, diagnóstico, análise, distribuição e telemetria',
     '• temperatura, latência, convergência, neurônios e estados ternários',
     '• histórico, limpar terminal, limpar histórico e reiniciar núcleo',
@@ -498,7 +578,7 @@ function resolveLocalCommand(input, inference) {
     const entries = [...inferenceHistory.querySelectorAll('.query')].slice(0, 5).map((item) => `• ${item.textContent}`);
     return { reply: entries.length ? `Últimas inferências:\n${entries.join('\n')}` : 'O histórico de inferências está vazio.', updateInference: false };
   }
-  if (/\b(versao|sobre o sistema)\b/.test(command)) return { reply: 'T.R.I.A.D.E v2.4.1-TER — interface Synth-Alpha e motor ternário experimental.', updateInference: false };
+  if (/\b(versao|sobre o sistema)\b/.test(command)) return { reply: 'JARVIS v2.4.1-TER — interface Synth-Alpha e motor ternário experimental.', updateInference: false };
   if (/\b(horas|hora atual|que horas)\b/.test(command)) return { reply: `Hora atual: ${$('#clock').textContent}.`, updateInference: false };
   if (/\b(analise|analisar|inferir|inferencia)\b/.test(command)) {
     return {
@@ -554,7 +634,7 @@ function rememberGestureAnimation(animation) {
 
 function animateGesturePart(element, keyframes, options) {
   if (!element || reducedMotion.matches) return null;
-  element.getAnimations().forEach((animation) => animation.cancel());
+  if (element.getAnimations().some((animation) => animation.playState === 'running')) return null;
   return rememberGestureAnimation(element.animate(keyframes, {
     duration: options.duration,
     easing: options.easing || 'cubic-bezier(0.22, 0.75, 0.2, 1)',
@@ -566,49 +646,44 @@ function performSpeechGesture(intensity = 0.55, spontaneous = false) {
   if (!state.gestures.active || reducedMotion.matches || state.turntable.frame !== FRONT_FRAME) return;
 
   const direction = Math.random() < 0.5 ? -1 : 1;
-  const tilt = (1.1 + intensity * 1.65) * direction;
-  const lift = 0.8 + intensity * 1.9;
-  const duration = 650 + Math.random() * 300;
-  const gesture = Math.floor(Math.random() * 4);
+  const tilt = (0.45 + intensity * 0.75) * direction;
+  const lift = 0.55 + intensity * 0.9;
+  const duration = 820 + Math.random() * 280;
+  const gesture = Math.floor(Math.random() * 3);
   const patterns = [
     [
       { transform: 'none' },
-      { transform: `translateY(${lift}px) scale(1.006)`, offset: 0.3 },
-      { transform: `translateY(${-lift * 0.45}px) scale(1.012)`, offset: 0.68 },
+      { transform: `translateY(${-lift}px) rotate(${tilt * 0.18}deg)`, offset: 0.38 },
+      { transform: `translateY(0.2px) rotate(${-tilt * 0.08}deg)`, offset: 0.76 },
       { transform: 'none' },
     ],
     [
       { transform: 'none' },
-      { transform: `rotate(${tilt}deg) translateX(${direction * 1.8}px)`, offset: 0.36 },
-      { transform: `rotate(${-tilt * 0.24}deg) translateY(-1px)`, offset: 0.74 },
+      { transform: `rotate(${tilt}deg) translateX(${direction * 0.65}px)`, offset: 0.4 },
+      { transform: `rotate(${tilt * 0.2}deg) translateY(-0.35px)`, offset: 0.78 },
       { transform: 'none' },
     ],
     [
       { transform: 'none' },
-      { transform: `translateY(${-lift}px) scale(${1.012 + intensity * 0.011})`, offset: 0.42 },
-      { transform: 'translateY(-0.5px) scale(1.004)', offset: 0.76 },
-      { transform: 'none' },
-    ],
-    [
-      { transform: 'none' },
-      { transform: `translateX(${direction * 2.2}px) scaleX(${1 - intensity * 0.018}) rotate(${tilt * 0.45}deg)`, offset: 0.4 },
-      { transform: `translateX(${-direction * 0.7}px) scaleX(1.003)`, offset: 0.76 },
+      { transform: `translateY(${-lift * 0.72}px) rotate(${-tilt * 0.38}deg)`, offset: 0.42 },
+      { transform: `translateY(-0.15px) rotate(${tilt * 0.12}deg)`, offset: 0.78 },
       { transform: 'none' },
     ],
   ];
 
-  animateGesturePart(avatarHead, patterns[gesture], {
-    duration: spontaneous ? duration + 120 : duration,
-    easing: 'cubic-bezier(0.2, 0.7, 0.22, 1)',
+  const gestureTarget = turntableFrames.querySelector('.turntable-frame.is-primary');
+  animateGesturePart(gestureTarget, patterns[gesture], {
+    duration: spontaneous ? duration + 180 : duration,
+    easing: 'cubic-bezier(0.25, 0.68, 0.24, 1)',
   });
 }
 
 function scheduleSpontaneousGesture(generation) {
   if (!state.gestures.active || generation !== state.gestures.generation) return;
-  const delay = 1200 + Math.random() * 1000;
+  const delay = 1800 + Math.random() * 1500;
   state.gestures.timer = setTimeout(() => {
     if (!state.gestures.active || generation !== state.gestures.generation) return;
-    if (performance.now() - state.gestures.boundaryAt > 700) {
+    if (performance.now() - state.gestures.boundaryAt > 900) {
       performSpeechGesture(0.42 + Math.random() * 0.34, true);
     }
     scheduleSpontaneousGesture(generation);
@@ -630,7 +705,7 @@ function pulseSpeechGesture(intensity) {
   if (!state.gestures.active) return;
   const now = performance.now();
   state.gestures.boundaryAt = now;
-  if (now - state.gestures.lastAt < 270) return;
+  if (now - state.gestures.lastAt < 440) return;
   state.gestures.lastAt = now;
   performSpeechGesture(intensity, false);
 }
@@ -644,7 +719,7 @@ function stopSpeechGestures(settle = true) {
   state.gestures.animations.forEach((animation) => animation.cancel());
   state.gestures.animations = [];
   if (settle) {
-    [avatarHead].forEach((element) => {
+    [turntableFrames.querySelector('.turntable-frame.is-primary')].forEach((element) => {
       if (!element || reducedMotion.matches) return;
       element.animate([
         { transform: getComputedStyle(element).transform },

@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import urllib.error
 import urllib.request
+import webbrowser
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -22,13 +24,13 @@ MAX_MESSAGE_LENGTH = 4_000
 MAX_HISTORY_ITEMS = 16
 MAX_HISTORY_CHARS = 18_000
 
-SYSTEM_INSTRUCTIONS = """Você é o SYNTH-ALPHA, assistente do sistema T.R.I.A.D.E.
+SYSTEM_INSTRUCTIONS = """Você é o SYNTH-ALPHA, assistente do sistema JARVIS.
 Responda sempre em português do Brasil, com clareza e objetividade.
 Você conversa livremente, explica assuntos, ajuda com estudos, escrita, ideias e programação.
 Mantenha respostas adequadas para leitura em um painel estreito; use texto simples e listas curtas quando ajudarem.
 Não afirme ter executado comandos, alterado arquivos, acessado o computador ou consultado dados externos.
 O painel chamado Terminal de Resposta é apenas o histórico visual da conversa, não um terminal do sistema operacional.
-Quando a pergunta tratar da telemetria do T.R.I.A.D.E., considere que as métricas mostradas pela interface são simuladas.
+Quando a pergunta tratar da telemetria do JARVIS, considere que as métricas mostradas pela interface são simuladas.
 """
 
 
@@ -191,11 +193,32 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
         self._send_json(HTTPStatus.OK, {"reply": reply, "model": MODEL})
 
 
-def main() -> None:
+def _interface_is_running(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(f"{url}/api/health", timeout=1) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False
+    return response.status == HTTPStatus.OK.value and payload.get("ok") is True
+
+
+def main(*, open_browser: bool = False) -> None:
+    browser_host = "127.0.0.1" if HOST in {"0.0.0.0", "::"} else HOST
+    url = f"http://{browser_host}:{PORT}"
+    if _interface_is_running(url):
+        print(f"JARVIS web já está disponível em {url}")
+        if open_browser:
+            webbrowser.open(url)
+        return
+
     server = ThreadingHTTPServer((HOST, PORT), TRIADEWebHandler)
-    print(f"T.R.I.A.D.E web disponível em http://{HOST}:{PORT}")
+    print(f"JARVIS web disponível em http://{HOST}:{PORT}")
     if not os.environ.get("OPENAI_API_KEY", "").strip():
         print("Aviso: OPENAI_API_KEY não configurada; comandos locais funcionam, conversa livre exige a chave.")
+    if open_browser:
+        opener = threading.Timer(0.35, webbrowser.open, args=(url,))
+        opener.daemon = True
+        opener.start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
