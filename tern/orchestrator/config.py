@@ -89,6 +89,7 @@ class Settings:
     agent_decision_fast_path: bool
     agent_decision_context_cache: bool
     agent_decision_semantic_first: bool
+    execution_gate_shadow: bool
     codex_timeout: int
     codex_app_server_endpoint: str
     codex_current_thread_id: str | None
@@ -317,6 +318,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         agent_decision_semantic_first=_bool(
             values.get("AGENT_DECISION_SEMANTIC_FIRST", "true")
         ),
+        execution_gate_shadow=_bool(values.get("EXECUTION_GATE_SHADOW", "true")),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
         codex_app_server_endpoint=values.get(
             "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"

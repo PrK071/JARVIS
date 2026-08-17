@@ -11,6 +11,11 @@ from dataclasses import replace
 from datetime import datetime
 from typing import Any, Callable
 
+from .agent_selection import (
+    OperationalFacts,
+    SelectionPolicy,
+    SelectionProjectContext,
+)
 from .client import LlamaClient, ServerError
 from .config import Settings
 from .decision_policy import (
@@ -23,6 +28,11 @@ from .decision_observability import (
     AgentDecisionObserver,
     DecisionTiming,
     estimate_tokens,
+)
+from .execution_gate_shadow import (
+    ShadowExecutionObserver,
+    capability_baseline_from_registry,
+    legacy_facts_from_decision,
 )
 from .explicit_agent_binding import (
     availability_for_requested_agent,
@@ -269,7 +279,67 @@ class Supervisor:
             enabled=settings.agent_decision_shadow,
         )
         self.semantic_interpreter = QwenSemanticInterpreter(client)
+        self.shadow_observer = (
+            ShadowExecutionObserver(
+                policy=SelectionPolicy(
+                    deepseek_auto_escalation=settings.deepseek_auto_escalation
+                )
+            )
+            if settings.execution_gate_shadow
+            else None
+        )
         self.conversation_id = f"jarvis-{uuid.uuid4()}"
+
+    def _observe_execution_gate_shadow(
+        self,
+        routing_text: str,
+        decision: Any,
+        context: Any,
+    ) -> dict[str, Any] | None:
+        """Shadow observation only: no tool, no delegation, no session, no job.
+
+        Any failure here is swallowed on purpose: the legacy pipeline keeps full
+        authority and must never change behaviour because of an observer.
+        """
+
+        observer = self.shadow_observer
+        if observer is None:
+            return None
+        try:
+            baseline = capability_baseline_from_registry(
+                self.tools,
+                local_model_available=True,
+                codex_available=True,
+            )
+            frame = getattr(decision, "intent_frame", None)
+            project_id = getattr(context, "active_project", None)
+            reusable_session = bool(getattr(context, "codex_thread_available", False))
+            observation = observer.observe(
+                routing_text,
+                baseline=baseline,
+                execution_requested=bool(getattr(frame, "execution_requested", False)),
+                intent_frame=frame,
+                legacy=legacy_facts_from_decision(decision),
+                operational=OperationalFacts(
+                    reusable_codex_session=reusable_session,
+                    codex_project_affinity=bool(project_id) and reusable_session,
+                    deepseek_project_session=bool(
+                        getattr(context, "deepseek_active_session", None)
+                    ),
+                    project_id=project_id,
+                ),
+                project_context=SelectionProjectContext(project_id=project_id),
+                constraint_violation=getattr(decision, "constraint_violation", None),
+            )
+            record = observation.provenance_record()
+            self.tools.logger.write_event("execution_gate_shadow", **record)
+            return record
+        except Exception as exc:
+            self.tools.logger.write_event(
+                "execution_gate_shadow_error",
+                error=type(exc).__name__,
+            )
+            return None
 
     def run(
         self,
@@ -453,6 +523,21 @@ class Supervisor:
         )
         timing.mark("decision_ready")
         self.decision_policy.record_decision(decision, original_user_text)
+        shadow_record = self._observe_execution_gate_shadow(
+            routing_text,
+            decision,
+            decision_context,
+        )
+        if shadow_record is not None:
+            trace(
+                "EXECUTION_GATE_SHADOW",
+                result=(
+                    "allowed" if shadow_record["execution_allowed_shadow"] else "blocked"
+                ),
+                reason_code=shadow_record["block_reason"],
+                requested_agent=shadow_record["candidate_agent"],
+                execution_allowed=shadow_record["execution_allowed_shadow"],
+            )
         reusable_context = self.decision_policy.reusable_context_text()
 
         trusted_runtime_context = (
