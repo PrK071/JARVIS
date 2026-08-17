@@ -16,6 +16,7 @@ from .agent_selection import (
     SelectionPolicy,
     SelectionProjectContext,
 )
+from .autonomy_foundation import Agent
 from .client import LlamaClient, ServerError
 from .config import Settings
 from .decision_policy import (
@@ -28,6 +29,15 @@ from .decision_observability import (
     AgentDecisionObserver,
     DecisionTiming,
     estimate_tokens,
+)
+from .execution_authority import (
+    AuthorityBlockReason,
+    AuthorityScope,
+    AuthoritativeExecutionDecision,
+    ExecutionAuthorityController,
+    ExecutionAuthorityMode,
+    availability_sample_from_gate,
+    probe_agent_availability,
 )
 from .execution_gate_shadow import (
     ShadowExecutionObserver,
@@ -279,13 +289,20 @@ class Supervisor:
             enabled=settings.agent_decision_shadow,
         )
         self.semantic_interpreter = QwenSemanticInterpreter(client)
+        self.authority_mode = ExecutionAuthorityMode.parse(
+            settings.execution_gate_authority
+        )
+        self.authority = ExecutionAuthorityController(self.authority_mode)
         self.shadow_observer = (
             ShadowExecutionObserver(
                 policy=SelectionPolicy(
                     deepseek_auto_escalation=settings.deepseek_auto_escalation
                 )
             )
-            if settings.execution_gate_shadow
+            if (
+                settings.execution_gate_shadow
+                or self.authority_mode is ExecutionAuthorityMode.EXPLICIT_USER
+            )
             else None
         )
         self.conversation_id = f"jarvis-{uuid.uuid4()}"
@@ -295,16 +312,16 @@ class Supervisor:
         routing_text: str,
         decision: Any,
         context: Any,
-    ) -> dict[str, Any] | None:
-        """Shadow observation only: no tool, no delegation, no session, no job.
+    ) -> tuple[dict[str, Any] | None, AuthoritativeExecutionDecision | None]:
+        """Evaluate the gate. Authority is granted only for explicit user agents.
 
-        Any failure here is swallowed on purpose: the legacy pipeline keeps full
-        authority and must never change behaviour because of an observer.
+        Outside that scope the result is observation only, exactly as before. Any
+        failure here is swallowed: an observer must never change live behaviour.
         """
 
         observer = self.shadow_observer
         if observer is None:
-            return None
+            return None, None
         try:
             baseline = capability_baseline_from_registry(
                 self.tools,
@@ -333,13 +350,122 @@ class Supervisor:
             )
             record = observation.provenance_record()
             self.tools.logger.write_event("execution_gate_shadow", **record)
-            return record
+            authority = self.authority.decide(
+                observation.decision,
+                requested_agent=observation.decision.requested_agent,
+                requested_agent_source=getattr(
+                    decision, "requested_agent_source", None
+                ),
+                availability_at_selection=availability_sample_from_gate(
+                    observation.decision
+                ),
+            )
+            self.tools.logger.write_event(
+                "execution_gate_authority",
+                **authority.provenance_record(),
+            )
+            return record, authority
         except Exception as exc:
             self.tools.logger.write_event(
                 "execution_gate_shadow_error",
                 error=type(exc).__name__,
             )
-            return None
+            return None, None
+
+    def _authority_block_answer(
+        self,
+        authority: AuthoritativeExecutionDecision,
+    ) -> tuple[str, str]:
+        """Explain a terminal block. No other agent is offered as a substitute."""
+
+        agent = authority.candidate_agent
+        label = "DeepSeek" if agent is Agent.DEEPSEEK else "Codex"
+        reason = authority.block_reason or "EXECUTION_BLOCKED"
+        stage = (
+            "AVAILABILITY_CHANGED_BEFORE_DISPATCH"
+            if reason == AuthorityBlockReason.AVAILABILITY_CHANGED_BEFORE_DISPATCH.value
+            else "EXECUTION_GATE_BLOCKED"
+        )
+        details = {
+            "EXECUTION_NOT_REQUESTED": (
+                "Nenhuma execucao foi solicitada nesta mensagem, apenas a "
+                f"mencao ao {label}."
+            ),
+            "REQUESTED_AGENT_UNAVAILABLE": (
+                f"A solicitacao continua vinculada ao {label}, que nao esta "
+                "operacionalmente disponivel agora."
+            ),
+            "REQUESTED_AGENT_INELIGIBLE": (
+                f"O {label} nao satisfaz os requisitos desta tarefa, entao a "
+                "execucao foi bloqueada."
+            ),
+            "AVAILABILITY_CHANGED_BEFORE_DISPATCH": (
+                f"O {label} ficou indisponivel entre a decisao e o envio, "
+                "portanto nada foi despachado."
+            ),
+            "EXECUTION_SAFETY_UNRESOLVED": (
+                "Os requisitos de mutacao desta tarefa ficaram indefinidos ou "
+                "contraditorios, entao a execucao foi bloqueada por seguranca."
+            ),
+            "CONSTRAINT_VIOLATION": (
+                "Uma restricao explicita da propria mensagem proibe esta "
+                "execucao."
+            ),
+            "READ_ONLY_ENFORCEMENT_UNAVAILABLE": (
+                "Nao foi possivel garantir modo somente leitura no executor, "
+                "entao a execucao foi bloqueada."
+            ),
+        }
+        answer = details.get(
+            reason,
+            f"Execucao bloqueada pelo gate de execucao ({reason}).",
+        )
+        return (
+            f"{answer} Nenhum outro modelo foi usado como substituto.",
+            stage,
+        )
+
+    def _authority_dispatch_check(
+        self,
+        authority: AuthoritativeExecutionDecision | None,
+        tool: str,
+    ) -> tuple[AuthoritativeExecutionDecision | None, dict[str, Any] | None, str | None]:
+        """Immediate availability recheck for an authoritative delegation.
+
+        Returns the updated decision, the extra execution context and a block
+        reason. A block is terminal: the legacy path must not delegate instead.
+        """
+
+        if authority is None or not authority.authoritative:
+            return authority, None, None
+        if not tool.startswith("delegate_to_"):
+            return authority, None, None
+        expected = (
+            f"delegate_to_{authority.candidate_agent.value}"
+            if authority.candidate_agent
+            else None
+        )
+        if expected is None or tool != expected:
+            blocked = replace(
+                authority,
+                authority_block_reason=AuthorityBlockReason.AGENT_OUTSIDE_AUTHORITY_SCOPE,
+            )
+            return (
+                blocked,
+                None,
+                AuthorityBlockReason.AGENT_OUTSIDE_AUTHORITY_SCOPE.value,
+            )
+        rechecked = self.authority.recheck(
+            authority,
+            probe_agent_availability(self.tools, authority.candidate_agent),
+        )
+        self.tools.logger.write_event(
+            "execution_authority_recheck",
+            **rechecked.provenance_record(),
+        )
+        if not rechecked.dispatch_allowed:
+            return rechecked, None, rechecked.block_reason
+        return rechecked, rechecked.dispatch_context(), None
 
     def run(
         self,
@@ -523,7 +649,7 @@ class Supervisor:
         )
         timing.mark("decision_ready")
         self.decision_policy.record_decision(decision, original_user_text)
-        shadow_record = self._observe_execution_gate_shadow(
+        shadow_record, authority_decision = self._observe_execution_gate_shadow(
             routing_text,
             decision,
             decision_context,
@@ -537,6 +663,20 @@ class Supervisor:
                 reason_code=shadow_record["block_reason"],
                 requested_agent=shadow_record["candidate_agent"],
                 execution_allowed=shadow_record["execution_allowed_shadow"],
+            )
+        if authority_decision is not None and authority_decision.authoritative:
+            trace(
+                "EXECUTION_GATE_AUTHORITY",
+                result=(
+                    "allowed" if authority_decision.execution_allowed else "blocked"
+                ),
+                reason_code=authority_decision.block_reason,
+                requested_agent=(
+                    authority_decision.candidate_agent.value
+                    if authority_decision.candidate_agent
+                    else None
+                ),
+                execution_allowed=authority_decision.execution_allowed,
             )
         reusable_context = self.decision_policy.reusable_context_text()
 
@@ -818,6 +958,23 @@ class Supervisor:
             }
 
         if (
+            authority_decision is not None
+            and authority_decision.authoritative
+            and not authority_decision.execution_allowed
+        ):
+            # Inside the authoritative scope a block is terminal: the legacy
+            # fast path must not delegate the same request afterwards.
+            observed_outcome = "execution_gate_blocked"
+            blocked_answer, blocked_stage = self._authority_block_answer(
+                authority_decision
+            )
+            self.tools.logger.write_event(
+                "execution_authority_blocked",
+                **authority_decision.provenance_record(),
+            )
+            return completed(blocked_answer, None, response_stage=blocked_stage)
+
+        if (
             decision.requested_agent_source == "explicit_user"
             and decision.execution_allowed is False
         ):
@@ -900,10 +1057,26 @@ class Supervisor:
             emit("tool_start", name=fast_path.tool, fast_path=True)
             timing.mark("tool_started")
             tool_started = time.perf_counter()
+            (
+                authority_decision,
+                authority_context,
+                authority_block,
+            ) = self._authority_dispatch_check(authority_decision, fast_path.tool)
+            if authority_block is not None:
+                observed_outcome = "execution_gate_blocked"
+                blocked_answer, blocked_stage = self._authority_block_answer(
+                    authority_decision
+                )
+                self.tools.logger.write_event(
+                    "execution_authority_blocked",
+                    **authority_decision.provenance_record(),
+                )
+                return completed(blocked_answer, None, response_stage=blocked_stage)
             fast_result = self.tools.execute(
                 fast_path.tool,
                 fast_path.arguments,
                 context={
+                    **(authority_context or {}),
                     "turn_id": agent_turn_id,
                     "user_text": routing_text,
                     "original_user_text": original_user_text,
@@ -924,6 +1097,17 @@ class Supervisor:
             elapsed_tool = (time.perf_counter() - tool_started) * 1000
             timing.tool_execution_ms += elapsed_tool
             timing.mark("tool_completed")
+            if authority_context is not None and authority_decision is not None:
+                authority_decision = self.authority.mark_dispatched(authority_decision)
+                self.tools.logger.write_event(
+                    "execution_authority_dispatch",
+                    tool=fast_path.tool,
+                    ok=bool(fast_result.get("ok")),
+                    job_id=fast_result.get("job_id"),
+                    thread_id=fast_result.get("thread_id"),
+                    session_resolution=fast_result.get("session_resolution"),
+                    **authority_decision.provenance_record(),
+                )
             emit(
                 "tool_end",
                 name=fast_path.tool,
@@ -1228,6 +1412,26 @@ class Supervisor:
                         }
                     else:
                         tool_call_counts[name] = tool_call_counts.get(name, 0) + 1
+                        (
+                            authority_decision,
+                            authority_context,
+                            authority_block,
+                        ) = self._authority_dispatch_check(authority_decision, name)
+                        if authority_block is not None:
+                            observed_outcome = "execution_gate_blocked"
+                            blocked_answer, blocked_stage = (
+                                self._authority_block_answer(authority_decision)
+                            )
+                            self.tools.logger.write_event(
+                                "execution_authority_blocked",
+                                tool=name,
+                                **authority_decision.provenance_record(),
+                            )
+                            return completed(
+                                blocked_answer,
+                                None,
+                                response_stage=blocked_stage,
+                            )
                         self.tools.logger.write_event(
                             "tool_dispatched",
                             agent_turn_id=agent_turn_id,
@@ -1249,6 +1453,7 @@ class Supervisor:
                             name,
                             arguments,
                             context={
+                                **(authority_context or {}),
                                 "turn_id": agent_turn_id,
                                 "user_text": routing_text,
                                 "original_user_text": original_user_text,
@@ -1264,6 +1469,19 @@ class Supervisor:
                                 event, **values
                             ),
                         )
+                        if authority_context is not None and authority_decision is not None:
+                            authority_decision = self.authority.mark_dispatched(
+                                authority_decision
+                            )
+                            self.tools.logger.write_event(
+                                "execution_authority_dispatch",
+                                tool=name,
+                                ok=bool(result.get("ok")),
+                                job_id=result.get("job_id"),
+                                thread_id=result.get("thread_id"),
+                                session_resolution=result.get("session_resolution"),
+                                **authority_decision.provenance_record(),
+                            )
                         timing.tool_execution_ms += (
                             time.perf_counter() - tool_started
                         ) * 1000

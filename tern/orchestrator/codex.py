@@ -31,6 +31,23 @@ from .codex_sessions import (
 )
 
 
+def _sandbox_policy(project: Any, *, read_only: bool) -> dict[str, Any]:
+    """Structural execution envelope for one turn.
+
+    A read-only turn gets the read-only sandbox, so an authorized read-only
+    request cannot gain write capability downstream. This is enforcement by the
+    sandbox, not by instructions inside the task text.
+    """
+
+    if read_only:
+        return {"type": "readOnly"}
+    return {
+        "type": "workspaceWrite",
+        "writableRoots": [str(project)],
+        "networkAccess": False,
+    }
+
+
 class CodexError(RuntimeError):
     def __init__(self, message: str, *, layer: str = "bridge"):
         super().__init__(message)
@@ -983,6 +1000,7 @@ class CodexSessionManager:
         continue_current_thread: bool = True,
         target_thread_id: str | None = None,
         event_callback: Callable[[str, dict[str, Any]], None] | None = None,
+        read_only: bool = False,
     ) -> CodexResult:
         if origin not in {"human", "qwen", "system"}:
             raise CodexError("origem deve ser human, qwen ou system", layer="queue")
@@ -1059,11 +1077,10 @@ class CodexSessionManager:
                             "clientUserMessageId": client_message_id,
                             "cwd": str(self.project),
                             "approvalPolicy": "never",
-                            "sandboxPolicy": {
-                                "type": "workspaceWrite",
-                                "writableRoots": [str(self.project)],
-                                "networkAccess": False,
-                            },
+                            "sandboxPolicy": _sandbox_policy(
+                                self.project,
+                                read_only=read_only,
+                            ),
                         },
                     )
                     turn = response.get("turn")
@@ -2784,6 +2801,7 @@ class CodexRunner:
         allow_create: bool = True,
         origin: str = "qwen",
         wait: bool = True,
+        execution_mode: str | None = None,
         event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> CodexResult:
         project = self.policy.resolve(project_path)
@@ -2820,6 +2838,7 @@ class CodexRunner:
             thread_id=resolution.thread_id,
             session_resolution=resolution.as_dict(),
             request_id=request_id,
+            execution_mode=execution_mode,
         )
         self.manager_for(project).bridge_log.write(
             "codex_delegation_started",
@@ -3191,6 +3210,7 @@ class CodexRunner:
                     continue_current_thread=continue_current_thread,
                     target_thread_id=str(job["thread_id"]),
                     event_callback=observed,
+                    read_only=str(job.get("execution_mode") or "") == "READ_ONLY",
                 )
             self._finish_job(job_id, result, event_callback=event_callback)
         except Exception as exc:

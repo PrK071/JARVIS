@@ -361,6 +361,9 @@ class ToolRegistry:
                 normalized["_focused_codex_thread_id"] = str(
                     context.get("focused_codex_thread_id") or ""
                 )
+                normalized["_execution_mode"] = str(
+                    context.get("execution_mode") or ""
+                )
         except SchemaError as exc:
             result = {"ok": False, "error": "invalid_arguments", "message": str(exc)}
         except Exception as exc:
@@ -1233,6 +1236,7 @@ class ToolRegistry:
             conversation_id=arguments.get("_conversation_id") or None,
             wait=arguments.get("wait", True),
             origin="qwen",
+            execution_mode=arguments.get("_execution_mode") or None,
             event_callback=event_callback,
         ).as_dict()
 

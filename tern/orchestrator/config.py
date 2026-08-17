@@ -90,6 +90,7 @@ class Settings:
     agent_decision_context_cache: bool
     agent_decision_semantic_first: bool
     execution_gate_shadow: bool
+    execution_gate_authority: str
     codex_timeout: int
     codex_app_server_endpoint: str
     codex_current_thread_id: str | None
@@ -319,6 +320,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
             values.get("AGENT_DECISION_SEMANTIC_FIRST", "true")
         ),
         execution_gate_shadow=_bool(values.get("EXECUTION_GATE_SHADOW", "true")),
+        execution_gate_authority=values.get(
+            "EXECUTION_GATE_AUTHORITY", "shadow"
+        ).strip().lower(),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
         codex_app_server_endpoint=values.get(
             "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
@@ -559,6 +563,10 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
 
 
 def _validate(settings: Settings) -> None:
+    if settings.execution_gate_authority not in {"shadow", "explicit_user"}:
+        raise ValueError(
+            "EXECUTION_GATE_AUTHORITY deve ser shadow ou explicit_user"
+        )
     if settings.server_host not in {"127.0.0.1", "localhost", "::1"}:
         raise ValueError("MODEL_SERVER_HOST deve permanecer local")
     if settings.context_size <= 0 or settings.parallel_slots != 1:

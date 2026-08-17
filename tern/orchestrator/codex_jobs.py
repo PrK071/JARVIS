@@ -67,6 +67,7 @@ class CodexJobStore:
         thread_id: str | None = None,
         session_resolution: dict[str, Any] | None = None,
         request_id: str | None = None,
+        execution_mode: str | None = None,
     ) -> dict[str, Any]:
         now = utc_now()
         job = {
@@ -96,6 +97,7 @@ class CodexJobStore:
             "failure_notified": False,
             "progress_notified_at": None,
             "session_resolution": dict(session_resolution or {}),
+            "execution_mode": execution_mode or None,
         }
         with FileMutex(self.lock_path):
             state = self._read_unlocked()
