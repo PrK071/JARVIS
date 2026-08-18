@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import webbrowser
 from http import HTTPStatus
@@ -408,7 +409,7 @@ def _request_openai(message: str, history: list[dict[str, str]]) -> str:
             "input": model_input,
             "reasoning": {"effort": "low"},
             "text": {"verbosity": "medium"},
-            "max_output_tokens": 1_200,
+            "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
         }
         if tools:
             request_body["tools"] = tools
@@ -453,6 +454,10 @@ PROVIDERS_PATH = Path(
 )
 PROVIDERS_LOCK = threading.Lock()
 MAX_PROVIDERS = 20
+# Modelos de raciocínio (deepseek-v4-pro, o-series) gastam parte do orçamento em
+# reasoning_content. Com 1200 o texto final chegava vazio e virava
+# EMPTY_MODEL_RESPONSE sem explicação.
+MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "4000"))
 
 # Formatos cobrem, na prática, qualquer API de IA relevante:
 # - openai-chat     : /chat/completions — OpenAI, DeepSeek, Groq, OpenRouter,
@@ -476,6 +481,74 @@ PROVIDER_FORMATS = {
         "path": "/messages",
     },
 }
+
+# Presets de provedores conhecidos: o erro mais comum é salvar a chave de um
+# provedor com o endpoint de outro, que responde 401 sem dizer o motivo.
+PROVIDER_PRESETS = (
+    {
+        "id": "openai",
+        "label": "OpenAI",
+        "format": "openai-chat",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-4o-mini",
+    },
+    {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "format": "openai-chat",
+        "base_url": "https://api.deepseek.com/v1",
+        "model": "deepseek-v4-flash",
+    },
+    {
+        "id": "anthropic",
+        "label": "Anthropic (Claude)",
+        "format": "anthropic",
+        "base_url": "https://api.anthropic.com/v1",
+        "model": "claude-sonnet-4-5",
+    },
+    {
+        "id": "groq",
+        "label": "Groq",
+        "format": "openai-chat",
+        "base_url": "https://api.groq.com/openai/v1",
+        "model": "llama-3.3-70b-versatile",
+    },
+    {
+        "id": "openrouter",
+        "label": "OpenRouter",
+        "format": "openai-chat",
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "deepseek/deepseek-chat",
+    },
+    {
+        "id": "mistral",
+        "label": "Mistral",
+        "format": "openai-chat",
+        "base_url": "https://api.mistral.ai/v1",
+        "model": "mistral-large-latest",
+    },
+    {
+        "id": "gemini",
+        "label": "Google Gemini",
+        "format": "openai-chat",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "model": "gemini-2.5-flash",
+    },
+    {
+        "id": "ollama",
+        "label": "Ollama (local)",
+        "format": "openai-chat",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "model": "qwen2.5:7b",
+    },
+    {
+        "id": "lmstudio",
+        "label": "LM Studio (local)",
+        "format": "openai-chat",
+        "base_url": "http://127.0.0.1:1234/v1",
+        "model": "local-model",
+    },
+)
 
 
 def _slug(value: str) -> str:
@@ -706,25 +779,51 @@ def _reply_from_anthropic(payload: dict[str, Any]) -> str:
     return "\n".join(chunk for chunk in chunks if chunk).strip()
 
 
-def _provider_error_message(code: str) -> str:
+def _provider_error_message(code: str, *, host: str | None = None) -> str:
     """Turn a provider failure into something readable in the narrow panel."""
+    onde = f" por {host}" if host else " pelo provedor"
     if code.startswith("API_KEY_MISSING"):
         return "Essa conexão exige uma chave de API."
     if code.startswith("UNREACHABLE"):
         return "Endpoint inacessível. Confira a URL e a conexão."
     if code.startswith("HTTP_401") or code.startswith("HTTP_403"):
-        return "Chave recusada pelo provedor."
+        # Nomear quem recusou evita o erro mais comum: chave de um provedor
+        # enviada para o endpoint de outro, que responde 401 sem explicar.
+        return (
+            f"Chave recusada{onde}. Confira se o endpoint corresponde ao provedor "
+            "dessa chave."
+        )
     if code.startswith("HTTP_404"):
         return "Endpoint não encontrado. Confira a URL base e o formato."
     if code.startswith("HTTP_429"):
         return "Limite de uso atingido no provedor."
+    if code.startswith("HTTP_400") and "model" in code.lower():
+        return "Modelo inválido para esse provedor. Confira o nome do modelo."
     if code.startswith("HTTP_"):
         return f"O provedor recusou a requisição ({code.split(':')[0]})."
     if code.startswith("EMPTY_MODEL_RESPONSE"):
         return "O modelo respondeu vazio."
+    if code.startswith("TRUNCATED_BY_TOKEN_LIMIT"):
+        return (
+            "O modelo gastou o orçamento de tokens no raciocínio e não sobrou "
+            f"texto final (limite atual: {MAX_PROVIDER_OUTPUT_TOKENS}). Aumente "
+            "TRIADE_PROVIDER_MAX_TOKENS ou use um modelo sem raciocínio longo."
+        )
     if code.startswith("INVALID_JSON_RESPONSE"):
         return "Resposta do provedor não é JSON válido."
     return "Não foi possível falar com o provedor."
+
+
+def _provider_host(provider: dict[str, Any] | None) -> str | None:
+    if not provider:
+        return None
+    fmt = provider.get("format", "openai-chat")
+    spec = PROVIDER_FORMATS.get(fmt, {})
+    base_url = str(provider.get("base_url") or spec.get("base_url") or "")
+    try:
+        return urllib.parse.urlparse(base_url).hostname
+    except ValueError:
+        return None
 
 
 def _request_provider(
@@ -754,7 +853,7 @@ def _request_provider(
                 "model": model,
                 "system": SYSTEM_INSTRUCTIONS,
                 "messages": turns,
-                "max_tokens": 1_200,
+                "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
             },
         )
         reply = _reply_from_anthropic(payload)
@@ -770,7 +869,7 @@ def _request_provider(
                 "input": turns,
                 "reasoning": {"effort": "low"},
                 "text": {"verbosity": "medium"},
-                "max_output_tokens": 1_200,
+                "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
             },
         )
         reply = _extract_output_text(payload)
@@ -787,14 +886,32 @@ def _request_provider(
                     {"role": "system", "content": SYSTEM_INSTRUCTIONS},
                     *turns,
                 ],
-                "max_tokens": 1_200,
+                "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
             },
         )
         reply = _reply_from_openai_chat(payload)
 
     if not reply:
-        raise RuntimeError("EMPTY_MODEL_RESPONSE")
+        raise RuntimeError(_empty_reply_reason(payload))
     return reply
+
+
+def _empty_reply_reason(payload: dict[str, Any]) -> str:
+    """Distingue resposta vazia de resposta cortada pelo limite de tokens."""
+    escolhas = payload.get("choices")
+    if isinstance(escolhas, list):
+        for escolha in escolhas:
+            if not isinstance(escolha, dict):
+                continue
+            if escolha.get("finish_reason") == "length":
+                return "TRUNCATED_BY_TOKEN_LIMIT"
+            mensagem = escolha.get("message")
+            if isinstance(mensagem, dict) and str(mensagem.get("reasoning_content") or "").strip():
+                # Raciocinou e não sobrou orçamento para o texto final.
+                return "TRUNCATED_BY_TOKEN_LIMIT"
+    if payload.get("status") == "incomplete":
+        return "TRUNCATED_BY_TOKEN_LIMIT"
+    return "EMPTY_MODEL_RESPONSE"
 
 
 class TRIADEWebHandler(SimpleHTTPRequestHandler):
@@ -872,6 +989,7 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
                         {"id": key, "label": spec["label"], "base_url": spec["base_url"]}
                         for key, spec in PROVIDER_FORMATS.items()
                     ],
+                    "presets": list(PROVIDER_PRESETS),
                 },
             )
             return
@@ -1014,7 +1132,12 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             except RuntimeError as error:
                 self._send_json(
                     HTTPStatus.BAD_GATEWAY,
-                    {"error": _provider_error_message(str(error)), "code": str(error)[:120]},
+                    {
+                        "error": _provider_error_message(
+                            str(error), host=_provider_host(provider)
+                        ),
+                        "code": str(error)[:120],
+                    },
                 )
                 return
             self._send_json(HTTPStatus.OK, {"ok": True, "sample": reply[:200]})
@@ -1110,7 +1233,10 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             )
             self._send_json(
                 status,
-                {"error": _provider_error_message(code), "code": code[:120]},
+                {
+                    "error": _provider_error_message(code, host=_provider_host(provider)),
+                    "code": code[:120],
+                },
             )
             return
 

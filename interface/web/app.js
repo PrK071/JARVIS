@@ -44,7 +44,7 @@ const state = {
   messages: [],
   lastResponse: '',
   voiceEnabled: true,
-  providers: { list: [], formats: [], active: null, selected: null },
+  providers: { list: [], formats: [], presets: [], active: null, selected: null },
   mic: {
     available: false,
     status: 'idle',      // idle | recording | transcribing
@@ -426,6 +426,7 @@ function initProvidersModal() {
   if (!providersModal || !providersOpenBtn) return;
 
   providersOpenBtn.addEventListener('click', openProvidersModal);
+  if (providerPreset) providerPreset.addEventListener('change', applyPreset);
 
   providersModal.addEventListener('click', (event) => {
     if (event.target.closest('[data-close-providers]')) closeProvidersModal();
@@ -503,6 +504,7 @@ const providersList = $('#providers-list');
 const providerNewBtn = $('#provider-new');
 const providerForm = $('#provider-form');
 const providerLabel = $('#provider-label');
+const providerPreset = $('#provider-preset');
 const providerFormat = $('#provider-format');
 const providerBase = $('#provider-base');
 const providerModel = $('#provider-model');
@@ -555,6 +557,7 @@ async function loadProviders() {
     const data = await response.json();
     state.providers.list = Array.isArray(data.providers) ? data.providers : [];
     state.providers.formats = Array.isArray(data.formats) ? data.formats : [];
+  state.providers.presets = Array.isArray(data.presets) ? data.presets : [];
     state.providers.active = data.active || null;
   } catch {
     setProviderStatus('Não foi possível carregar as conexões.', 'error');
@@ -562,8 +565,37 @@ async function loadProviders() {
   }
 
   renderFormatOptions();
+  renderPresetOptions();
   fillProviderForm(state.providers.active);
   renderProviderList();
+}
+
+function renderPresetOptions() {
+  if (!providerPreset) return;
+  const opcoes = [
+    { id: '', label: 'Escolha um provedor conhecido…' },
+    ...state.providers.presets,
+  ];
+  providerPreset.replaceChildren(
+    ...opcoes.map((preset) => {
+      const option = document.createElement('option');
+      option.value = preset.id;
+      option.textContent = preset.label;
+      return option;
+    }),
+  );
+}
+
+function applyPreset() {
+  // Preencher endpoint e modelo pelo provedor escolhido evita o erro silencioso
+  // de mandar a chave de um provedor para o endpoint de outro (HTTP 401).
+  const preset = state.providers.presets.find((item) => item.id === providerPreset.value);
+  if (!preset) return;
+  providerFormat.value = preset.format;
+  providerBase.value = preset.base_url;
+  if (!providerModel.value.trim()) providerModel.value = preset.model;
+  if (!providerLabel.value.trim()) providerLabel.value = preset.label;
+  setProviderStatus(`Endpoint de ${preset.label} preenchido. Cole a chave e salve.`, 'info');
 }
 
 function renderFormatOptions() {

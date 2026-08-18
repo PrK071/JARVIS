@@ -332,5 +332,83 @@ class ProviderRequestTest(unittest.TestCase):
                 web_server._request_provider(provider, "oi", [])
 
 
+class ProviderErrorMessageTest(unittest.TestCase):
+    def test_rejected_key_names_the_host_that_refused(self) -> None:
+        """401 sem o host escondia a causa real: chave certa, endpoint errado."""
+        mensagem = web_server._provider_error_message(
+            "HTTP_401: incorrect api key", host="api.openai.com"
+        )
+
+        self.assertIn("api.openai.com", mensagem)
+        self.assertIn("endpoint", mensagem.lower())
+
+    def test_provider_host_comes_from_base_url(self) -> None:
+        provider = {"format": "openai-chat", "base_url": "https://api.deepseek.com/v1"}
+
+        self.assertEqual(web_server._provider_host(provider), "api.deepseek.com")
+
+    def test_provider_host_falls_back_to_format_default(self) -> None:
+        self.assertEqual(
+            web_server._provider_host({"format": "anthropic"}), "api.anthropic.com"
+        )
+
+    def test_invalid_model_is_reported_as_model_problem(self) -> None:
+        mensagem = web_server._provider_error_message('HTTP_400: {"error":"model not found"}')
+
+        self.assertIn("Modelo inválido", mensagem)
+
+
+class ProviderPresetsTest(unittest.TestCase):
+    def test_presets_cover_known_vendors_with_their_own_endpoints(self) -> None:
+        presets = {preset["id"]: preset for preset in web_server.PROVIDER_PRESETS}
+
+        self.assertIn("deepseek", presets)
+        self.assertEqual(presets["deepseek"]["base_url"], "https://api.deepseek.com/v1")
+        self.assertEqual(presets["openai"]["base_url"], "https://api.openai.com/v1")
+        self.assertEqual(presets["anthropic"]["format"], "anthropic")
+
+    def test_every_preset_declares_a_known_format(self) -> None:
+        for preset in web_server.PROVIDER_PRESETS:
+            self.assertIn(preset["format"], web_server.PROVIDER_FORMATS, preset["id"])
+
+    def test_no_preset_points_to_another_vendor_endpoint(self) -> None:
+        for preset in web_server.PROVIDER_PRESETS:
+            host = web_server._provider_host(preset) or ""
+            if preset["id"] in {"ollama", "lmstudio", "openrouter", "gemini"}:
+                continue
+            self.assertIn(preset["id"], host, f"{preset['id']} aponta para {host}")
+
+
+class EmptyReplyDiagnosisTest(unittest.TestCase):
+    def test_finish_reason_length_is_reported_as_token_limit(self) -> None:
+        payload = {"choices": [{"finish_reason": "length", "message": {"content": ""}}]}
+
+        self.assertEqual(web_server._empty_reply_reason(payload), "TRUNCATED_BY_TOKEN_LIMIT")
+
+    def test_reasoning_without_content_is_token_limit(self) -> None:
+        """Modelo de raciocinio gastou o orcamento antes do texto final."""
+        payload = {
+            "choices": [
+                {"finish_reason": "stop", "message": {"content": "", "reasoning_content": "pensando"}}
+            ]
+        }
+
+        self.assertEqual(web_server._empty_reply_reason(payload), "TRUNCATED_BY_TOKEN_LIMIT")
+
+    def test_plain_empty_stays_empty(self) -> None:
+        payload = {"choices": [{"finish_reason": "stop", "message": {"content": ""}}]}
+
+        self.assertEqual(web_server._empty_reply_reason(payload), "EMPTY_MODEL_RESPONSE")
+
+    def test_token_limit_message_tells_the_user_what_to_change(self) -> None:
+        mensagem = web_server._provider_error_message("TRUNCATED_BY_TOKEN_LIMIT")
+
+        self.assertIn("TRIADE_PROVIDER_MAX_TOKENS", mensagem)
+        self.assertIn(str(web_server.MAX_PROVIDER_OUTPUT_TOKENS), mensagem)
+
+    def test_output_budget_is_generous_enough_for_reasoning_models(self) -> None:
+        self.assertGreaterEqual(web_server.MAX_PROVIDER_OUTPUT_TOKENS, 4_000)
+
+
 if __name__ == "__main__":
     unittest.main()
