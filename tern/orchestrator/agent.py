@@ -467,6 +467,36 @@ class Supervisor:
             return rechecked, None, rechecked.block_reason
         return rechecked, rechecked.dispatch_context(), None
 
+    def _available_agents_summary(self) -> str:
+        """Inventário curto de agentes, medido no ambiente, para o prompt.
+
+        Mantém o modelo honesto sem gastar uma chamada de ferramenta: ele vê quem
+        existe e com qual ferramenta delegar.
+        """
+        partes = ["qwen(local)"]
+        nomes = getattr(self.tools, "names", None)
+        registradas = set(nomes()) if callable(nomes) else set()
+        if "delegate_to_codex" in registradas:
+            partes.append("codex(delegate_to_codex)")
+        if "delegate_to_deepseek" in registradas:
+            partes.append("deepseek(delegate_to_deepseek)")
+
+        descoberta = getattr(self.tools, "agent_discovery", None)
+        if descoberta is not None:
+            try:
+                for agente in descoberta.discover():
+                    if agente.spec.native_integration:
+                        continue
+                    if agente.usable and agente.delegation_tool in registradas:
+                        partes.append(
+                            f"{agente.spec.id}({agente.delegation_tool}, {agente.availability.value})"
+                        )
+                    else:
+                        partes.append(f"{agente.spec.id}(indisponivel: {agente.availability.value})")
+            except Exception:  # noqa: BLE001 - inventário é informativo
+                partes.append("descoberta_externa_indisponivel")
+        return "; ".join(partes)
+
     def run(
         self,
         user_text: str,
@@ -688,6 +718,7 @@ class Supervisor:
             f"- allowed_roots: {', '.join(str(root) for root in self.settings.allowed_roots)}\n"
             f"- max_tool_calls: {self.settings.max_tool_calls}\n"
             f"- max_attempts: {self.settings.max_attempts}\n"
+            f"- agentes_disponiveis: {self._available_agents_summary()}\n"
             "\nProject context:\n"
             f"{project_context}\n"
             "\n"

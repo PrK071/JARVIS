@@ -39,6 +39,8 @@ class Intent(str, Enum):
     PROJECT_RESOLUTION = "PROJECT_RESOLUTION"
     HARDWARE_STATUS = "HARDWARE_STATUS"
     APPLICATION_CONTROL = "APPLICATION_CONTROL"
+    AGENT_DISCOVERY = "AGENT_DISCOVERY"
+    EXTERNAL_AGENT_DELEGATE = "EXTERNAL_AGENT_DELEGATE"
     CLARIFY = "CLARIFY"
     NO_ACTION = "NO_ACTION"
 
@@ -71,9 +73,25 @@ TOOL_EFFECTS: dict[str, SideEffect] = {
     "delegate_to_deepseek": SideEffect.REMOTE_GENERATION,
     "get_hardware_telemetry": SideEffect.READ_ONLY,
     "list_installed_applications": SideEffect.READ_ONLY,
+    "list_available_agents": SideEffect.READ_ONLY,
     "open_application": SideEffect.CODE_EXECUTION,
     "schedule_application": SideEffect.LOCAL_MUTATION,
 }
+
+
+def tool_effect(tool: str) -> SideEffect | None:
+    """Efeito de uma ferramenta, inclusive as registradas em tempo de execução.
+
+    Ferramentas `delegate_to_<agente>` são criadas conforme os agentes externos
+    detectados na máquina, então não podem estar no dicionário estático. Um agente
+    externo executa comandos e edita arquivos: CODE_EXECUTION é o piso correto.
+    """
+    efeito = TOOL_EFFECTS.get(tool)
+    if efeito is not None:
+        return efeito
+    if tool.startswith("delegate_to_"):
+        return SideEffect.CODE_EXECUTION
+    return None
 
 
 _STRICT_TOOL_INTENTS = {
@@ -89,7 +107,30 @@ _STRICT_TOOL_INTENTS = {
     Intent.WEB_OPEN,
     Intent.HARDWARE_STATUS,
     Intent.APPLICATION_CONTROL,
+    Intent.AGENT_DISCOVERY,
+    Intent.EXTERNAL_AGENT_DELEGATE,
 }
+
+
+_AGENT_DELEGATION_VERB = re.compile(
+    r"\b(?:deleg(?:a|ue|ar|ando)|encaminh(?:a|e|ar|ando)|acion(?:a|e|ar)|"
+    r"mand(?:a|e)|peca|pede|pergunt(?:a|e)|consult(?:a|e)|us(?:a|e)|manda)\b"
+)
+_AGENT_CAPABILITY_QUESTION = re.compile(
+    r"\b(?:consegue|pode|poderia|da pra|d[áa] para|e possivel|é possível|sabe)\b"
+)
+_AGENT_DISCOVERY_QUESTION = re.compile(
+    r"\b(?:quais|que|quantos|lista|liste|listar)\b[^?]{0,60}"
+    r"\b(?:agentes?|ias?|modelos?|assistentes?|clis?)\b"
+    r"|\b(?:agentes?|ias?|modelos?)\b[^?]{0,40}"
+    r"\b(?:disponiveis|disponíveis|instalad[oa]s|detectad[oa]s|ativos)\b"
+)
+
+
+def is_agent_discovery_request(text: str) -> bool:
+    """Pergunta sobre quais agentes existem, não ordem para delegar."""
+    normalizado = _plain(text)
+    return bool(_AGENT_DISCOVERY_QUESTION.search(normalizado))
 
 
 def is_hardware_status_request(text: str) -> bool:
@@ -611,7 +652,7 @@ def constraint_violation_for_tool(
     if frame is None:
         return None
     constraints = set(frame.constraints)
-    effect = TOOL_EFFECTS.get(tool)
+    effect = tool_effect(tool)
     if Constraint.FORBID_CODEX in constraints and "codex" in tool:
         return Constraint.FORBID_CODEX.value
     if Constraint.FORBID_DEEPSEEK in constraints and "deepseek" in tool:
@@ -853,7 +894,11 @@ class AgentDecisionPolicy:
             target=target,
             tools=tools,
             reason_code=reason,
-            side_effects=tuple(TOOL_EFFECTS[tool] for tool in tools if tool in TOOL_EFFECTS),
+            side_effects=tuple(
+                efeito
+                for efeito in (tool_effect(tool) for tool in tools)
+                if efeito is not None
+            ),
             alternatives=alternatives,
             max_tool_calls=len(tools),
             new_codex_turn="delegate_to_codex" in tools,
@@ -943,6 +988,83 @@ class AgentDecisionPolicy:
             target=reference.id,
             override=f"{binding.requested_agent}_explicit",
         )
+
+    def _agent_routing(
+        self,
+        user_text: str,
+    ) -> tuple[Intent, tuple[str, ...], str, str | None] | None:
+        """Roteia perguntas e ordens sobre agentes de IA disponíveis.
+
+        Pergunta de capacidade ("consegue delegar pro kiro?") vai para
+        list_available_agents, porque a resposta precisa vir do estado medido.
+        Ordem explícita ("delegue pro kiro") vai para a ferramenta do agente,
+        se e somente se ela estiver registrada.
+        """
+        texto = _plain(user_text)
+
+        agente = self._mentioned_external_agent(texto)
+        pergunta_inventario = agente is None and is_agent_discovery_request(texto)
+        if agente is None and not pergunta_inventario:
+            # Sem menção a agente externo e sem pergunta de inventário, nada aqui
+            # se aplica. Retornar antes evita inspecionar o registro de ferramentas
+            # em turnos que não têm relação com agentes.
+            return None
+
+        registradas = set(self._registered_tool_names())
+
+        if agente is not None:
+            ferramenta = agente.delegation_tool
+            disponivel = ferramenta in registradas
+            if _AGENT_CAPABILITY_QUESTION.search(texto) or not disponivel:
+                if "list_available_agents" in registradas:
+                    return (
+                        Intent.AGENT_DISCOVERY,
+                        ("list_available_agents",),
+                        "agent_capability_question",
+                        agente.id,
+                    )
+                return None
+            if _AGENT_DELEGATION_VERB.search(texto):
+                return (
+                    Intent.EXTERNAL_AGENT_DELEGATE,
+                    (ferramenta,),
+                    "explicit_external_agent_request",
+                    agente.id,
+                )
+            return None
+
+        if is_agent_discovery_request(texto) and "list_available_agents" in registradas:            return (
+                Intent.AGENT_DISCOVERY,
+                ("list_available_agents",),
+                "agent_discovery_request",
+                None,
+            )
+        return None
+
+    def _registered_tool_names(self) -> tuple[str, ...]:
+        nomes = getattr(self.tools, "names", None)
+        if not callable(nomes):
+            return ()
+        try:
+            return tuple(nomes())
+        except Exception:  # noqa: BLE001 - registro indisponível não deve quebrar a rota
+            return ()
+
+    def _mentioned_external_agent(self, texto: str) -> Any | None:
+        discovery = getattr(self.tools, "agent_discovery", None)
+        if discovery is None:
+            return None
+        try:
+            descobertos = discovery.discover()
+        except Exception:  # noqa: BLE001 - descoberta é best-effort
+            return None
+        for agente in descobertos:
+            if agente.spec.native_integration:
+                continue
+            for alias in agente.spec.aliases:
+                if re.search(rf"(?<![\w-]){re.escape(alias)}(?![\w-])", texto):
+                    return agente
+        return None
 
     def _semantic_frame_from_qwen(self, semantic: Any) -> IntentFrame:
         return IntentFrame(
@@ -1308,6 +1430,38 @@ class AgentDecisionPolicy:
                 ("get_codex_job_status",),
                 "active_job_status_query",
                 target=context.focused_job or context.codex_job_id,
+            )
+        agent_route = self._agent_routing(user_text)
+        if agent_route is not None:
+            intencao, ferramentas, motivo, identificador = agent_route
+            somente_leitura = intencao is Intent.AGENT_DISCOVERY
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.QUESTION if somente_leitura else SpeechAct.COMMAND,
+                operation="read" if somente_leitura else "delegate",
+                agent=identificador or "system",
+                target="agent_inventory" if somente_leitura else identificador,
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(Constraint.READ_ONLY,) if somente_leitura else (),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "agent",
+                identificador or "agent_inventory",
+                1.0,
+                (motivo,),
+            )
+            return self._decision(
+                intencao,
+                0.99,
+                project,
+                root,
+                ferramentas,
+                motivo,
+                target=identificador or "agent_inventory",
             )
         if is_hardware_status_request(user_text):
             self._active_semantic = semantic_decision
@@ -1818,7 +1972,7 @@ class AgentDecisionPolicy:
             )
         if (
             decision.tools
-            and all(TOOL_EFFECTS.get(tool) is SideEffect.READ_ONLY for tool in decision.tools)
+            and all(tool_effect(tool) is SideEffect.READ_ONLY for tool in decision.tools)
             and not (decision.resolved_reference and decision.resolved_reference.ambiguous)
             and decision.confidence >= 0.95
         ):
@@ -1883,7 +2037,7 @@ class AgentDecisionPolicy:
                 tool,
                 arguments,
                 "explicit_agent_direct_handoff",
-                TOOL_EFFECTS[tool],
+                tool_effect(tool) or SideEffect.CODE_EXECUTION,
             )
         if tool in {"web_open", "web_open_browser"} and decision.intent is Intent.WEB_OPEN:
             requested_url = (

@@ -26,7 +26,7 @@ Jarvis antiga `019fbbb0-7ba1-7631-835c-229147e9316c`. Ela não era a sessão
 Codex atualmente focada pelo usuário e não estava bem exposta pela UI.
 
 A sessão standalone atual `019ff619-1e8e-7e31-8d8f-a224df6ae550` tinha cwd
-`C:\Users\User`, enquanto a tarefa apontava para `D:\tern`, e ainda possuía
+`C:\Users\User`, enquanto a tarefa apontava para `D:\JARVIS`, e ainda possuía
 writer ativo. Reutilizá-la seria cross-project e dual-writer; foi corretamente
 rejeitada. Uma sessão aberta por `jarvis codex` usa o mesmo App Server e pode
 ser reutilizada com segurança.
@@ -164,7 +164,7 @@ Baseline histórico relevante, duas solicitações reais do usuário:
 
 ## 10. Replay real: sessão existente
 
-Projeto `D:\tern`. IDs provider antes:
+Projeto `D:\JARVIS`. IDs provider antes:
 
 ```text
 019fbbb0-7ba1-7631-835c-229147e9316c
@@ -192,7 +192,7 @@ IDs depois: exatamente os mesmos dois. Delta de threads: zero.
 ## 11. Replay real: criação, visibility e segundo reuse
 
 Projeto isolado sem candidata:
-`D:\tern\.orchestrator\session-affinity-live-project`.
+`D:\JARVIS\.orchestrator\session-affinity-live-project`.
 
 ```text
 before=[]

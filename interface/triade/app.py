@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import random
+import sys
 from datetime import datetime
+from pathlib import Path
 
 import tkinter as tk
 
@@ -21,6 +23,18 @@ from hudkit.widgets import (
 )
 from hudkit.animations import CoreReactor, WaveformDisplay, TernaryGrid
 from triade.engine import TernaryEngine, STATE_LABELS
+
+
+def _hardware_monitor():
+    """Real CPU sensor; returns None when the orchestrator package is unavailable."""
+    project_root = Path(__file__).resolve().parents[2]
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    try:
+        from tern.orchestrator.hardware import HardwareMonitor
+    except ImportError:
+        return None
+    return HardwareMonitor()
 
 
 class JARVISApp(HUDApplication):
@@ -117,7 +131,7 @@ class JARVISApp(HUDApplication):
         )
         header.pack(fill="both", expand=True)
         header.add_status("system", "SISTEMA", "ONLINE", t.green)
-        header.add_status("core", "NÚCLEO", "37.2°C")
+        header.add_status("core", "NÚCLEO", "--,-°C")
         header.add_status("clock", "HORA", "--:--:--")
         self.header_widget = header
 
@@ -138,13 +152,27 @@ class JARVISApp(HUDApplication):
         self.schedule(1000, self._tick_clock)
 
     def _tick_telemetry(self) -> None:
-        temp = f"{36.5 + random.random() * 2:.1f}°C"
+        self.header_widget.set_status("core", self._cpu_temperature())
         conv = f"{95 + random.random() * 4.9:.1f}%"
-        self.header_widget.set_status("core", temp)
         self.metrics["convergence"].set(conv)
         self._latency = f"{random.randint(8, 22)}ms"
         self._update_footer()
         self.schedule(2000, self._tick_telemetry)
+
+    def _cpu_temperature(self) -> str:
+        """Real CPU package temperature; explicit placeholder when unavailable."""
+        if not hasattr(self, "_hardware"):
+            self._hardware = _hardware_monitor()
+        if self._hardware is None:
+            return "--,-°C"
+        try:
+            leitura = self._hardware.read()
+        except Exception:  # noqa: BLE001 - sensor failure must not break the HUD
+            return "--,-°C"
+        valor = leitura.get("cpu_temperature_c")
+        if not leitura.get("cpu_temperature_available") or not isinstance(valor, (int, float)):
+            return "--,-°C"
+        return f"{float(valor):.1f}°C"
 
     def _tick_grid(self) -> None:
         if not self.processing:

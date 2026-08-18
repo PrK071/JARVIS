@@ -38,6 +38,10 @@ jarvis = "tern.orchestrator.jarvis:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
+# Only the real Python package ships. Without this, discovery maps every root
+# directory (models, runtime, _arquivo, hf-cache) as an importable namespace and
+# a stale top-level "hudkit" shadows the real one in interface/hudkit.
+include = ["tern*"]
 
 [tool.setuptools.package-data]
 "tern.orchestrator.voice" = ["pronunciation_ptbr.json"]

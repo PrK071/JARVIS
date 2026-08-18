@@ -12,6 +12,7 @@ from typing import Any, Callable
 from .codex import CodexRunner
 from .applications import ApplicationManager
 from .deepseek import DeepSeekSessionManager
+from .external_agents import AgentDiscovery, ExternalAgentRunner
 from .hardware import HardwareMonitor
 from .pending_actions import PendingActionStore
 from .projects import ProjectRegistry
@@ -100,6 +101,7 @@ class ToolRegistry:
         deepseek: DeepSeekSessionManager | None = None,
         hardware: HardwareMonitor | None = None,
         applications: ApplicationManager | None = None,
+        agent_discovery: AgentDiscovery | None = None,
     ):
         self.policy = policy
         self.logger = logger
@@ -119,9 +121,75 @@ class ToolRegistry:
         self.deepseek = deepseek
         self.hardware = hardware or HardwareMonitor()
         self.applications = applications or ApplicationManager()
+        self.agent_discovery = agent_discovery or AgentDiscovery()
+        self.external_agents = ExternalAgentRunner(
+            policy=policy,
+            discovery=self.agent_discovery,
+            logger=logger,
+        )
         self._execution = threading.local()
         self._tools: dict[str, Tool] = {}
+        self._external_agent_tools: tuple[str, ...] = ()
         self._register_defaults()
+        self.refresh_external_agents()
+
+    def refresh_external_agents(self, *, force: bool = False) -> tuple[str, ...]:
+        """Registra uma ferramenta de delegação por agente externo utilizável.
+
+        Chamado na construção e sob demanda: se o usuário abrir uma sessão nova
+        (Kiro, Claude, GLM), a ferramenta aparece sem reiniciar o orquestrador.
+        Agente ausente não ganha ferramenta, então o modelo não promete o que
+        não existe.
+        """
+        descobertos = self.agent_discovery.discover(force=force)
+        desejados = {
+            agent.delegation_tool: agent
+            for agent in descobertos
+            if agent.usable and not agent.spec.native_integration
+        }
+
+        for nome in self._external_agent_tools:
+            if nome not in desejados:
+                self._tools.pop(nome, None)
+
+        for nome, agent in desejados.items():
+            if nome in self._tools:
+                continue
+            self._add_external_agent_tool(nome, agent)
+
+        self._external_agent_tools = tuple(sorted(desejados))
+        return self._external_agent_tools
+
+    def _add_external_agent_tool(self, nome: str, agent: Any) -> None:
+        identificador = agent.spec.id
+        capacidades = ", ".join(sorted(c.value for c in agent.spec.capabilities)) or "nao declaradas"
+        self._add(
+            nome,
+            (
+                f"Delega uma tarefa ao agente externo {agent.spec.display_name} "
+                f"(detectado nesta máquina, estado {agent.availability.value}). "
+                f"Capacidades: {capacidades}. {agent.spec.notes} "
+                "Informe task auto-contida e project_path quando a tarefa for de projeto."
+            ),
+            _object(
+                {
+                    "task": {"type": "string", "minLength": 1, "maxLength": 8000},
+                    "project_path": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 4096},
+                            {"type": "null"},
+                        ]
+                    },
+                },
+                ["task"],
+            ),
+            lambda arguments, _agente=identificador: self.external_agents.run(
+                _agente,
+                str(arguments.get("task") or ""),
+                project_path=arguments.get("project_path") or None,
+            ),
+            self.external_agents.default_timeout,
+        )
 
     def specs(self) -> list[dict[str, Any]]:
         return [tool.openai() for tool in self._tools.values()]
@@ -653,11 +721,67 @@ class ToolRegistry:
                 "message": str(exc),
             }
 
+    def _available_agents_result(self) -> dict[str, Any]:
+        """Estado medido dos agentes externos, mais os agentes nativos."""
+        self.refresh_external_agents(force=True)
+        descobertos = self.agent_discovery.discover()
+        nativos = [
+            {
+                "id": "qwen",
+                "name": "Qwen local",
+                "availability": "session_active",
+                "usable": True,
+                "role": "conversa, roteamento e coordenação",
+                "delegation_tool": None,
+            },
+            {
+                "id": "codex",
+                "name": "Codex",
+                "availability": "installed",
+                "usable": "delegate_to_codex" in self._tools,
+                "role": "programa, edita, testa e executa localmente",
+                "delegation_tool": "delegate_to_codex",
+            },
+            {
+                "id": "deepseek",
+                "name": "DeepSeek",
+                "availability": "api_key_only" if self.deepseek is not None else "absent",
+                "usable": "delegate_to_deepseek" in self._tools,
+                "role": "consultor: analise, revisao e segunda opiniao",
+                "delegation_tool": "delegate_to_deepseek",
+            },
+        ]
+        externos = [
+            agent.as_dict()
+            for agent in descobertos
+            if not agent.spec.native_integration
+        ]
+        return {
+            "ok": True,
+            "native_agents": nativos,
+            "external_agents": externos,
+            "delegation_tools": sorted(
+                nome for nome in self._tools if nome.startswith("delegate_to_")
+            ),
+        }
+
     def _add(self, name: str, description: str, schema: dict[str, Any], handler: ToolHandler, timeout: int) -> None:
         self._tools[name] = Tool(name, description, schema, handler, timeout)
 
     def _register_defaults(self) -> None:
         path = {"type": "string", "minLength": 1, "maxLength": 4096}
+        self._add(
+            "list_available_agents",
+            (
+                "Lista os agentes de IA detectados nesta máquina agora, com estado real "
+                "(session_active, installed, configured_not_installed, api_key_only, absent), "
+                "versão, capacidades e o nome da ferramenta de delegação de cada um. "
+                "Use antes de afirmar que pode ou não delegar a um agente."
+            ),
+            _object({}, []),
+            lambda _arguments: self._available_agents_result(),
+            30,
+        )
         nullable_text = {
             "anyOf": [
                 {"type": "string", "minLength": 1, "maxLength": 4096},

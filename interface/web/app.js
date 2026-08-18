@@ -21,6 +21,12 @@ const TURN_KEY_DURATION = 280;
 const TURN_SETTLE_DURATION = 180;
 const MAX_CHAT_HISTORY = 16;
 const MAX_INPUT_LENGTH = 4000;
+const SPEECH_RATE = 0.95;
+const SPEECH_CHARS_PER_SECOND = 13;
+const SPEECH_CHUNK_MAX_CHARS = 180;
+const SPEECH_STALL_TIMEOUT = 6000;
+const SPEECH_START_TIMEOUT = 4000;
+const CHAT_REQUEST_TIMEOUT = 900_000;
 
 const state = {
   processing: false,
@@ -32,6 +38,7 @@ const state = {
   interactionId: 0,
   avatarReady: false,
   utterance: null,
+  processingEntry: null,
   speechWatchdog: null,
   voices: [],
   messages: [],
@@ -97,6 +104,8 @@ function init() {
   updateClock();
   setInterval(updateClock, 1000);
   setInterval(updateTelemetry, 2000);
+  updateCoreTemperature();
+  setInterval(updateCoreTemperature, 3000);
   setInterval(randomizeGrid, 1500);
 
   sendBtn.addEventListener('click', handleSubmit);
@@ -561,9 +570,9 @@ function resolveLocalCommand(input, inference) {
     return { reply: `Diagnóstico completo: 12 camadas neurais OK. Memória ternária: 98% livre. Latência média: ${telemetry.latency}. Nenhuma falha detectada.` };
   }
   if (/\b(telemetria|metricas)\b/.test(command)) {
-    return { reply: `Telemetria: núcleo ${telemetry.temperature}; convergência ${telemetry.convergence}; latência ${telemetry.latency}; 12 de 12 camadas e 4.096 neurônios ativos.` };
+    return { reply: `Telemetria: CPU ${telemetry.temperature}; convergência ${telemetry.convergence}; latência ${telemetry.latency}; 12 de 12 camadas e 4.096 neurônios ativos.` };
   }
-  if (/\btemperatura\b/.test(command)) return { reply: `Temperatura atual do núcleo: ${telemetry.temperature}.`, updateInference: false };
+  if (/\btemperatura\b/.test(command)) return { reply: `Temperatura atual da CPU: ${telemetry.temperature}, lida do sensor do processador.`, updateInference: false };
   if (/\blatencia\b/.test(command)) return { reply: `Latência atual: ${telemetry.latency}.`, updateInference: false };
   if (/\bconvergencia\b/.test(command)) return { reply: `Taxa de convergência atual: ${telemetry.convergence}.`, updateInference: false };
   if (/\b(neuronios|camadas)\b/.test(command)) return { reply: 'Telemetria neural: 4.096 neurônios ternários ativos em 12 de 12 camadas.', updateInference: false };
@@ -591,7 +600,15 @@ function resolveLocalCommand(input, inference) {
 
 async function requestModelResponse(message) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 50_000);
+  // O modelo local pode levar minutos numa resposta longa ou com uso de ferramentas.
+  // Abortar em 50s cancelava resposta que estava a caminho.
+  const timeout = setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT);
+  const startedAt = performance.now();
+  const progress = setInterval(() => {
+    const seconds = Math.round((performance.now() - startedAt) / 1000);
+    const node = state.processingEntry?.querySelector('.message');
+    if (node) node.textContent = `Modelo processando há ${seconds}s. Aguardando resposta...`;
+  }, 5000);
 
   try {
     const response = await fetch('/api/chat', {
@@ -605,13 +622,17 @@ async function requestModelResponse(message) {
     if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('O modelo retornou uma resposta vazia.');
     return data.reply.trim();
   } catch (error) {
-    if (error.name === 'AbortError') throw new Error('O modelo demorou demais para responder.');
+    if (error.name === 'AbortError') {
+      const minutes = Math.round(CHAT_REQUEST_TIMEOUT / 60000);
+      throw new Error(`Sem resposta do modelo após ${minutes} minutos. O llama-server pode estar travado.`);
+    }
     if (location.protocol === 'file:') {
       throw new Error('Conversa livre requer o servidor web. Execute python web_server.py e abra http://localhost:8000.');
     }
     throw error;
   } finally {
     clearTimeout(timeout);
+    clearInterval(progress);
   }
 }
 
@@ -619,9 +640,83 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function formatDecimal(value, casas = 1) {
+  const numero = typeof value === 'number' ? value : Number.parseFloat(value);
+  if (!Number.isFinite(numero)) return String(value);
+  // "46,0" é ruído: mostra e fala "46". Decimal real, como 78,6, é preservado.
+  return numero.toFixed(casas).replace(/\.0+$/, '').replace('.', ',');
+}
+
+// Vozes pt-BR leem "78.6%" como duas frases: "setenta e oito" ... "seis por cento".
+// Escrever o decimal por extenso resolve, e ainda evita que o ponto crie fim de frase.
+function normalizeSpeechText(text) {
+  let texto = String(text);
+
+  // Repete até estabilizar: "0.1.0" tem decimais encadeados e uma única passada
+  // converteria só o primeiro par, deixando "0 vírgula 1.0".
+  let anterior;
+  do {
+    anterior = texto;
+    texto = texto.replace(/(\d)[.,](\d)/g, '$1 vírgula $2');
+  } while (texto !== anterior);
+
+  return texto
+    // "46 vírgula 0 graus" soa errado; a casa decimal nula não acrescenta nada.
+    .replace(/(\d+) vírgula 0(?!\s*\d)/g, '$1')
+    .replace(/(\d)\s*%/g, '$1 por cento')
+    .replace(/(\d)\s*°\s*C\b/gi, '$1 graus Celsius')
+    .replace(/(\d)\s*ms\b/gi, '$1 milissegundos')
+    .replace(/(\d)\s*GB\b/g, '$1 gigabytes')
+    .replace(/(\d)\s*MB\b/g, '$1 megabytes')
+    .replace(/[−–—]\s*(\d)/g, 'menos $1')
+    .replace(/\+\s*(\d)/g, 'mais $1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function estimateSpeechDuration(text) {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(2200, Math.min(11500, words * 380));
+  // Baseado em caracteres e na taxa real da voz. O cálculo antigo tinha teto de
+  // 11,5 s, e o watchdog cortava qualquer fala mais longa no meio da frase.
+  const chars = text.trim().length;
+  return Math.max(2200, Math.round(((chars / SPEECH_CHARS_PER_SECOND) * 1000) / SPEECH_RATE));
+}
+
+function splitSpeechChunks(text) {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (!clean) return [];
+
+  const sentences = clean.match(/[^.!?…;]+[.!?…;]+|[^.!?…;]+$/g) || [clean];
+  const chunks = [];
+  let current = '';
+
+  const push = () => {
+    if (current.trim()) chunks.push(current.trim());
+    current = '';
+  };
+
+  for (const sentence of sentences) {
+    let piece = sentence.trim();
+    if (!piece) continue;
+
+    while (piece.length > SPEECH_CHUNK_MAX_CHARS) {
+      push();
+      let cut = piece.lastIndexOf(', ', SPEECH_CHUNK_MAX_CHARS);
+      if (cut < 40) cut = piece.lastIndexOf(' ', SPEECH_CHUNK_MAX_CHARS);
+      if (cut < 40) cut = SPEECH_CHUNK_MAX_CHARS;
+      chunks.push(piece.slice(0, cut).trim());
+      piece = piece.slice(cut).trim();
+    }
+
+    if (!current) current = piece;
+    else if (current.length + piece.length + 1 <= SPEECH_CHUNK_MAX_CHARS) current += ` ${piece}`;
+    else {
+      push();
+      current = piece;
+    }
+  }
+  push();
+
+  return chunks;
 }
 
 function rememberGestureAnimation(animation) {
@@ -768,35 +863,60 @@ function stopActiveSpeech() {
   if (speechSupported) window.speechSynthesis.cancel();
 }
 
-function speakResponse(text, interactionId) {
-  const estimatedDuration = estimateSpeechDuration(text);
+async function speakResponse(text, interactionId) {
+  const chunks = splitSpeechChunks(normalizeSpeechText(text));
 
+  if (!speechSupported || chunks.length === 0) {
+    startSpeechWave();
+    startSpeechGestures();
+    await wait(estimateSpeechDuration(text));
+    stopSpeechWave();
+    stopSpeechGestures();
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  startSpeechWave();
+  startSpeechGestures();
+
+  // A fala vai em blocos curtos: navegadores truncam locuções longas, e cada
+  // bloco reinicia o watchdog, então a resposta inteira é pronunciada.
+  for (const chunk of chunks) {
+    if (interactionId !== state.interactionId) break;
+    await speakChunk(chunk, interactionId);
+  }
+
+  state.utterance = null;
+  stopSpeechWave();
+  stopSpeechGestures();
+}
+
+function speakChunk(chunk, interactionId) {
   return new Promise((resolve) => {
     let settled = false;
+
     const settle = () => {
       if (settled) return;
       settled = true;
       if (state.speechWatchdog) clearTimeout(state.speechWatchdog);
       state.speechWatchdog = null;
-      stopSpeechWave();
-      stopSpeechGestures();
-      state.utterance = null;
       resolve();
     };
 
-    if (!speechSupported) {
-      startSpeechWave();
-      startSpeechGestures();
-      state.speechWatchdog = setTimeout(settle, estimatedDuration);
-      return;
-    }
+    // O watchdog só dispara por falta de progresso, nunca por duração total.
+    const armWatchdog = (delay) => {
+      if (state.speechWatchdog) clearTimeout(state.speechWatchdog);
+      state.speechWatchdog = setTimeout(() => {
+        window.speechSynthesis.cancel();
+        settle();
+      }, delay);
+    };
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(chunk);
     const voice = selectPortugueseVoice();
     if (voice) utterance.voice = voice;
     utterance.lang = voice?.lang || 'pt-BR';
-    utterance.rate = 0.95;
+    utterance.rate = SPEECH_RATE;
     utterance.pitch = 0.88;
     utterance.volume = 1;
 
@@ -806,39 +926,26 @@ function speakResponse(text, interactionId) {
         settle();
         return;
       }
-      startSpeechWave();
-      startSpeechGestures();
+      armWatchdog(estimateSpeechDuration(chunk) + SPEECH_STALL_TIMEOUT);
     };
     utterance.onboundary = (event) => {
       if (state.utterance !== utterance || interactionId !== state.interactionId) return;
-      const nearbyWord = text.slice(event.charIndex, event.charIndex + 18).match(/^\S+/)?.[0] || '';
+      armWatchdog(SPEECH_STALL_TIMEOUT);
+      const nearbyWord = chunk.slice(event.charIndex, event.charIndex + 18).match(/^\S+/)?.[0] || '';
       const intensity = 0.45 + Math.min(0.5, nearbyWord.length * 0.04);
       pulseSpeechWave(0.58 + Math.min(0.38, nearbyWord.length * 0.035));
       pulseSpeechGesture(intensity);
     };
-    utterance.onpause = () => {
-      stopSpeechWave();
-      stopSpeechGestures();
-    };
-    utterance.onresume = () => {
-      startSpeechWave();
-      startSpeechGestures();
-    };
     utterance.onend = settle;
     utterance.onerror = settle;
+
     state.utterance = utterance;
-    state.speechWatchdog = setTimeout(() => {
-      window.speechSynthesis.cancel();
-      settle();
-    }, estimatedDuration + 3500);
+    armWatchdog(estimateSpeechDuration(chunk) + SPEECH_START_TIMEOUT + SPEECH_STALL_TIMEOUT);
 
     try {
       window.speechSynthesis.speak(utterance);
     } catch (_error) {
-      clearTimeout(state.speechWatchdog);
-      startSpeechWave();
-      startSpeechGestures();
-      state.speechWatchdog = setTimeout(settle, estimatedDuration);
+      settle();
     }
   });
 }
@@ -850,10 +957,27 @@ function updateClock() {
 }
 
 function updateTelemetry() {
-  const temp = (36.5 + Math.random() * 2).toFixed(1);
-  $('#core-temp').textContent = `${temp}°C`;
-  $('#convergence').textContent = `${(95 + Math.random() * 4.9).toFixed(1)}%`;
+  // Convergência e latência seguem sendo métricas simuladas do modelo ternário.
+  $('#convergence').textContent = `${formatDecimal(95 + Math.random() * 4.9)}%`;
   $('#latency').textContent = `${Math.floor(8 + Math.random() * 15)}ms`;
+}
+
+async function updateCoreTemperature() {
+  try {
+    const response = await fetch('/api/telemetry', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    if (payload.ok && typeof payload.cpu_temperature_c === 'number') {
+      $('#core-temp').textContent = `${formatDecimal(payload.cpu_temperature_c)}°C`;
+      $('#core-temp').title = `CPU real — fonte: ${payload.source || 'sensor'}`;
+      return;
+    }
+    $('#core-temp').textContent = '--,-°C';
+    $('#core-temp').title = `Sensor indisponível${payload.error ? `: ${payload.error}` : ''}`;
+  } catch (error) {
+    $('#core-temp').textContent = '--,-°C';
+    $('#core-temp').title = `Sensor inacessível: ${error.message}`;
+  }
 }
 
 // ─── Ternary grid ───
@@ -1051,7 +1175,7 @@ function inferTernary(input) {
 
   return {
     result,
-    confidence: confidence.toFixed(1),
+    confidence: formatDecimal(confidence),
     distribution: { ...state.distribution },
   };
 }
@@ -1141,6 +1265,7 @@ async function handleSubmit() {
 
   addLog('user', input);
   const processingEntry = addLog('processing', 'Interpretando comando e consultando o modelo...');
+  state.processingEntry = processingEntry;
 
   try {
     await wait(reducedMotion.matches ? 140 : 560);

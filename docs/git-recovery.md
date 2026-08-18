@@ -4,15 +4,15 @@ Data: 2026-07-30
 
 ## Problema e decisão
 
-`D:\tern\.git` existia, mas estava completamente vazio: não havia `HEAD`,
+`D:\JARVIS\.git` existia, mas estava completamente vazio: não havia `HEAD`,
 `config`, índice, objetos, referências, logs, locks ou informação de remote.
 Sem commits ou remote comprovável, não foi possível recuperar histórico real.
 
 Foi usado o cenário de novo repositório local:
 
-- backup externo: `D:\tern-git-recovery-20260730-160616`;
+- backup externo: `D:\JARVIS-git-recovery-20260730-160616`;
 - metadado vazio preservado também em
-  `D:\tern\.git-corrupt-20260730-160616`;
+  `D:\JARVIS\.git-corrupt-20260730-160616`;
 - branch principal: `main`;
 - commit baseline: `Initial stable baseline: Qwen, Codex, web search and Piper`;
 - tag local: `stable-piper-baseline-20260730`;
@@ -39,7 +39,7 @@ versionáveis; os pesos ficam ignorados.
 ## Verificação
 
 ```powershell
-Set-Location D:\tern
+Set-Location D:\JARVIS
 git status
 git branch -vv
 git log --oneline --decorate -n 5

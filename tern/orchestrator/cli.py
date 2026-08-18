@@ -469,7 +469,7 @@ def _codex_bridge_diagnose(settings, runtime: RuntimeManager, *, include_qwen: b
                 )
                 qwen = supervisor.run(
                     (
-                        "Peça explicitamente ao Codex para ler o README de D:\\tern "
+                        "Peça explicitamente ao Codex para ler o README de D:\\JARVIS "
                         "e responder apenas com o nome do projeto. Use a ferramenta "
                         "delegate_to_codex e mantenha a thread atual."
                     )

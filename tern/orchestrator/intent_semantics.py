@@ -156,6 +156,22 @@ _META_PREFIXES = (
     "me explica como", "explique como",
 )
 
+# Short interrogatives only signal meta-discussion when they open the sentence.
+# "como funciona a delegacao" is meta; "peca ao deepseek para ver como esta o
+# firebase" carries "como" inside the delegated content and stays a command.
+_META_OPENERS = ("como ", "por que ", "porque ")
+_META_ANYWHERE = tuple(value for value in _META_PREFIXES if value not in _META_OPENERS)
+# "quero entender como se cancela" is meta; the interrogative belongs to an
+# explanation request, not to the content of a task delegated to an agent.
+_META_EXPLANATION = re.compile(
+    r"\b(?:entender|compreender|saber|aprender|explic\w+|duvida|curiosidade)\b"
+    r"(?:\s+\w+){0,3}\s+(?:como|por que|porque)\b"
+)
+_DELEGATION_VERBS = re.compile(
+    r"\b(?:peca|pede|pergunte|pergunta|manda|mande|consulte|consulta|"
+    r"deleg(?:a|ue|ar|ando)|encaminh(?:a|e|ar|ando)|acion(?:a|e|ar|ando))\b"
+)
+
 _ACTION_VERBS = (
     "manda", "mande", "peca", "pede", "pergunta", "pergunte", "consulta", "consulte",
     "cancela", "cancele", "para ", "pare ", "faz ", "faca ", "poe ",
@@ -163,12 +179,33 @@ _ACTION_VERBS = (
     "roda", "rode", "adiciona", "adicione", "verifica", "verifique", "revisar",
     "abre", "abra", "leia", "ler ", "procura", "procure", "localiza",
     "mostra", "mostre", "veja", "revisa", "revise", "avisa", "avise", "fala", "fale",
+    "delega", "delegue", "delegar", "encaminha", "encaminhe", "encaminhar",
+    "aciona", "acione", "acionar",
 )
 
 
 def _contains(text: str, values: Iterable[str]) -> bool:
     padded = f" {text} "
     return any(value in text or value in padded for value in values)
+
+
+def _meta_signal(text: str) -> bool:
+    """Detect meta-discussion about capabilities, not content of a delegated task."""
+    if text.lstrip().startswith(_META_OPENERS):
+        return True
+    if _META_EXPLANATION.search(text):
+        return True
+    return _contains(text, _META_ANYWHERE)
+
+
+_NEGATED_AGENT_CLAUSE = re.compile(
+    r"\b(?:sem|nao)\s+(?:\w+\s+){0,4}?(?:codex|deepseek|consultor)\b"
+)
+
+
+def _without_negated_clauses(text: str) -> str:
+    """A verb inside 'sem/nao ... <agente>' is a prohibition, not an action request."""
+    return _NEGATED_AGENT_CLAUSE.sub(" ", text)
 
 
 def _negated_action(text: str, action: str, agent: str | None = None) -> bool:
@@ -419,17 +456,21 @@ class IntentFrameBuilder:
             status_signal = True
         history_signal = _contains(text, _HISTORY_TERMS)
         correction = bool(re.search(r"^(?:nao[,;]?\s+)?(?:o outro|a outra|nao era|quis dizer|eu (?:tava|estava) falando)", text))
-        meta = _contains(text, _META_PREFIXES)
+        meta = _meta_signal(text)
         question = "?" in text or meta or bool(re.match(r"^(?:como|por que|porque|qual|quais|o que|oq|ele|ela|ja|ainda)\b", text))
-        action_signal = _contains(text, _ACTION_VERBS)
+        action_signal = _contains(_without_negated_clauses(text), _ACTION_VERBS)
 
         constraints: set[Constraint] = set()
-        if _negated_action(text, r"(?:pergunt|consult|cham|us)", "deepseek") or re.search(
-            r"\bsem\s+(?:consultar|usar|perguntar\s+(?:ao|pro))\s+(?:o\s+)?deepseek\b", text
+        if _negated_action(text, r"(?:pergunt|consult|cham|us|deleg|encaminh|acion)", "deepseek") or re.search(
+            r"\bsem\s+(?:consultar|usar|delegar|encaminhar|perguntar)\s+"
+            r"(?:(?:ao?|pro|para)\s+)?(?:o\s+)?deepseek\b",
+            text,
         ):
             constraints.add(Constraint.FORBID_DEEPSEEK)
         if _negated_action(text, r"(?:mand|encaminh|us|deleg|acion)", "codex") or re.search(
-            r"\bsem\s+(?:mandar|usar|delegar\s+(?:ao|pro))\s+(?:o\s+)?codex\b", text
+            r"\bsem\s+(?:mandar|usar|delegar|encaminhar)\s+"
+            r"(?:(?:ao?|pro|para)\s+)?(?:o\s+)?codex\b",
+            text,
         ):
             constraints.add(Constraint.FORBID_CODEX)
         if re.search(r"\bnao\s+(?:cancela|cancele|cancelar|para|pare)\b", text) or re.search(
@@ -456,10 +497,16 @@ class IntentFrameBuilder:
         explicit_generation = bool(
             explicit_deepseek
             and (
-                re.search(r"\b(?:pergunta|pergunte|peca|pede|consulta|consulte|manda|mande|mostra|mostre|veja|ve)\b", text)
+                re.search(
+                    r"\b(?:pergunta|pergunte|peca|pede|consulta|consulte|manda|mande|"
+                    r"mostra|mostre|veja|ve|deleg(?:a|ue|ar|ando)|"
+                    r"encaminh(?:a|e|ar|ando)|acion(?:a|e|ar|ando))\b",
+                    text,
+                )
                 or "segunda opiniao" in text
             )
-            and not _negated_action(text, r"(?:pergunt|consult|cham|us)", "deepseek")
+            and not _negated_action(text, r"(?:pergunt|consult|cham|us|deleg|encaminh|acion)", "deepseek")
+            and Constraint.FORBID_DEEPSEEK not in constraints
             and not re.search(r"\ba pergunta\s+(?:e|era|foi)\b", text)
         )
         if explicit_generation and re.search(

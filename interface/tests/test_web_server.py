@@ -52,5 +52,52 @@ class WebServerHelpersTest(unittest.TestCase):
                 web_server._request_openai("Olá", [])
 
 
+class HardwareTelemetryTest(unittest.TestCase):
+    def setUp(self) -> None:
+        web_server._hardware_cache = None
+        web_server._hardware_monitor = None
+
+    def tearDown(self) -> None:
+        web_server._hardware_cache = None
+        web_server._hardware_monitor = None
+
+    def test_telemetry_reports_real_sensor_reading(self) -> None:
+        leitura = {
+            "ok": True,
+            "cpu_temperature_c": 48.0,
+            "cpu_temperature_available": True,
+            "cpu_temperature_source": "LibreHardwareMonitor/CPU Package",
+        }
+        web_server._hardware_monitor = type("Fake", (), {"read": lambda self: leitura})()
+
+        self.assertEqual(web_server._hardware_telemetry(), leitura)
+
+    def test_telemetry_is_throttled_between_reads(self) -> None:
+        chamadas = []
+
+        class Contador:
+            def read(self) -> dict[str, object]:
+                chamadas.append(1)
+                return {"ok": True, "cpu_temperature_c": 50.0, "cpu_temperature_available": True}
+
+        web_server._hardware_monitor = Contador()
+        web_server._hardware_telemetry()
+        web_server._hardware_telemetry()
+
+        self.assertEqual(len(chamadas), 1)
+
+    def test_sensor_failure_is_reported_as_unavailable(self) -> None:
+        class Quebrado:
+            def read(self) -> dict[str, object]:
+                raise OSError("sensor offline")
+
+        web_server._hardware_monitor = Quebrado()
+        resultado = web_server._hardware_telemetry()
+
+        self.assertFalse(resultado["cpu_temperature_available"])
+        self.assertIsNone(resultado["cpu_temperature_c"])
+        self.assertIn("sensor offline", resultado["error"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -34,7 +34,7 @@ from .autonomy_foundation import (
     CapabilityProfileBuilder,
     RiskLevel,
 )
-from .decision_policy import SideEffect, TOOL_EFFECTS
+from .decision_policy import SideEffect, tool_effect
 from .execution_gate import (
     ExecutionAuthority,
     ExecutionGate,
@@ -148,7 +148,7 @@ class LegacyDecisionFacts:
 
 def legacy_facts_from_decision(decision: Any) -> LegacyDecisionFacts:
     tool = getattr(decision, "selected_action", None)
-    effect = TOOL_EFFECTS.get(tool) if tool else None
+    effect = tool_effect(tool) if tool else None
     requested = getattr(decision, "requested_agent", None)
     explicit_allowed = getattr(decision, "execution_allowed", None)
     constraint = getattr(decision, "constraint_violation", None)
