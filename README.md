@@ -92,6 +92,11 @@ A interface HUD do JARVIS está em [`interface/`](interface/README.md). Ela incl
 as versões web e desktop, o avatar Synth-Alpha, o Terminal de Resposta e os
 comandos locais do painel.
 
+A versão web tem entrada por voz: o botão de microfone grava a fala e transcreve
+com o mesmo faster-whisper do orquestrador, na própria máquina. O texto
+reconhecido é enviado automaticamente, então os comandos do painel funcionam
+falando. Sem o modelo em `models/voice/`, o botão fica oculto.
+
 Para iniciar a versão web no Windows:
 
 ```powershell

@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+interface/providers.json
 
 # Python environments and generated files
 .venv/

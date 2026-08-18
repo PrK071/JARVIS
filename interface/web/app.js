@@ -44,6 +44,23 @@ const state = {
   messages: [],
   lastResponse: '',
   voiceEnabled: true,
+  providers: { list: [], formats: [], active: null, selected: null },
+  mic: {
+    available: false,
+    status: 'idle',      // idle | recording | transcribing
+    recorder: null,
+    stream: null,
+    chunks: [],
+    cancelled: false,
+    startedAt: 0,
+    timer: null,
+    maxTimeout: null,
+    starting: false,
+    locked: false,
+    pointerHeld: false,
+    pressedAt: 0,
+    pendingRelease: null,
+  },
   speechWave: {
     active: false,
     energy: 0,
@@ -75,6 +92,8 @@ const $ = (sel) => document.querySelector(sel);
 const logContainer = $('#log-container');
 const userInput = $('#user-input');
 const sendBtn = $('#send-btn');
+const micBtn = $('#mic-btn');
+const micStatus = $('#mic-status');
 const coreContainer = document.querySelector('.core-container');
 const coreState = $('#core-state');
 const coreConfidence = $('#core-confidence');
@@ -92,6 +111,13 @@ const waveform = $('#waveform');
 const quickButtons = [...document.querySelectorAll('.quick-btn')];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const speechSupported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+const recordingSupported = Boolean(
+  navigator.mediaDevices?.getUserMedia && typeof window.MediaRecorder === 'function',
+);
+const MIN_RECORDING_MS = 400;
+const MAX_RECORDING_MS = 120_000;
+// Abaixo disso o toque conta como "travar" a gravacao, e nao como segurar.
+const TAP_LOCK_MS = 350;
 
 // ─── Init ───
 function init() {
@@ -101,6 +127,9 @@ function init() {
   initCoreCanvas();
   initAvatar();
   initVoices();
+  initMic();
+  initProviders();
+  initProvidersModal();
   updateClock();
   setInterval(updateClock, 1000);
   setInterval(updateTelemetry, 2000);
@@ -132,7 +161,10 @@ function init() {
 
   animateWaveform();
   animateCore();
-  window.addEventListener('pagehide', stopActiveSpeech);
+  window.addEventListener('pagehide', () => {
+    stopActiveSpeech();
+    cancelRecording();
+  });
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) stopSpeechGestures(false);
   });
@@ -287,7 +319,7 @@ async function openAvatarManually() {
   state.avatarMode = 'manual';
   resetTurntableToFront();
   setVisualPhase('summoning');
-  coreState.textContent = 'SYNTH-ALPHA';
+  coreState.textContent = 'JARVIS';
   coreConfidence.textContent = '';
   syncAvatarView();
 
@@ -384,6 +416,654 @@ function initVoices() {
   window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
 }
 
+// ─── Janela de Conexões de IA ───
+// O losango do cabeçalho abre o mesmo formulário de sempre; aqui só cuidamos de
+// abrir, fechar e devolver o foco. A lógica das conexões não muda.
+const providersModal = $('#providers-modal');
+const providersOpenBtn = $('#providers-open');
+
+function initProvidersModal() {
+  if (!providersModal || !providersOpenBtn) return;
+
+  providersOpenBtn.addEventListener('click', openProvidersModal);
+
+  providersModal.addEventListener('click', (event) => {
+    if (event.target.closest('[data-close-providers]')) closeProvidersModal();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !providersModal.hidden) {
+      event.preventDefault();
+      closeProvidersModal();
+    }
+    if (event.key === 'Tab' && !providersModal.hidden) trapProvidersFocus(event);
+  });
+}
+
+function providersFocusable() {
+  return [...providersModal.querySelectorAll('button, input, select, textarea, a[href]')]
+    .filter((element) => !element.disabled && element.offsetParent !== null);
+}
+
+function trapProvidersFocus(event) {
+  const items = providersFocusable();
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+async function openProvidersModal() {
+  if (!providersModal.hidden) return;
+
+  providersModal.hidden = false;
+  providersOpenBtn.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+
+  // Ler offsetWidth aplica o estado inicial antes da classe que anima a entrada.
+  // (requestAnimationFrame nao serve: congela com a aba em segundo plano.)
+  void providersModal.offsetWidth;
+  providersModal.classList.add('is-open');
+
+  // Recarrega para refletir o que o servidor tem agora.
+  await loadProviders();
+  setProviderStatus('');
+  const first = providersList.querySelector('.provider-item');
+  (first || providerLabel).focus();
+}
+
+function closeProvidersModal() {
+  if (providersModal.hidden) return;
+
+  providersModal.classList.remove('is-open');
+  document.body.style.overflow = '';
+  providersOpenBtn.setAttribute('aria-expanded', 'false');
+
+  const finish = () => { providersModal.hidden = true; };
+  if (reducedMotion.matches) finish();
+  else setTimeout(finish, 220);
+
+  providersOpenBtn.focus();
+}
+
+// ─── Conexões de IA ───
+// Cadastra qualquer API de IA pela própria interface. A chave viaja uma única
+// vez até o servidor local, que a grava fora do git; as listagens só devolvem
+// um resumo mascarado, então a chave nunca fica no front-end.
+const NEW_PROVIDER = '__new__';
+
+const providersList = $('#providers-list');
+const providerNewBtn = $('#provider-new');
+const providerForm = $('#provider-form');
+const providerLabel = $('#provider-label');
+const providerFormat = $('#provider-format');
+const providerBase = $('#provider-base');
+const providerModel = $('#provider-model');
+const providerKey = $('#provider-key');
+const providerKeyHint = $('#provider-key-hint');
+const providerStatus = $('#provider-status');
+const providerTestBtn = $('#provider-test');
+const providerDeleteBtn = $('#provider-delete');
+
+async function initProviders() {
+  if (!providerForm) return;
+
+  providerForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveProvider();
+  });
+  providerTestBtn.addEventListener('click', testProvider);
+  providerDeleteBtn.addEventListener('click', deleteProvider);
+  providerNewBtn.addEventListener('click', () => {
+    state.providers.selected = NEW_PROVIDER;
+    fillProviderForm(null);
+    renderProviderList();
+    setProviderStatus('');
+    providerLabel.focus();
+  });
+  providersList.addEventListener('click', (event) => {
+    const item = event.target.closest('.provider-item');
+    if (item) selectProvider(item.dataset.id);
+  });
+  providerFormat.addEventListener('change', applyFormatDefaults);
+
+  await loadProviders();
+}
+
+function setProviderStatus(text, tone = '') {
+  providerStatus.textContent = text;
+  if (tone) providerStatus.dataset.tone = tone;
+  else delete providerStatus.dataset.tone;
+}
+
+function setProviderBusy(busy) {
+  [...providerForm.querySelectorAll('button')].forEach((button) => {
+    button.disabled = busy;
+  });
+}
+
+async function loadProviders() {
+  try {
+    const response = await fetch('/api/providers');
+    const data = await response.json();
+    state.providers.list = Array.isArray(data.providers) ? data.providers : [];
+    state.providers.formats = Array.isArray(data.formats) ? data.formats : [];
+    state.providers.active = data.active || null;
+  } catch {
+    setProviderStatus('Não foi possível carregar as conexões.', 'error');
+    return;
+  }
+
+  renderFormatOptions();
+  fillProviderForm(state.providers.active);
+  renderProviderList();
+}
+
+function renderFormatOptions() {
+  if (providerFormat.options.length === state.providers.formats.length) return;
+  providerFormat.replaceChildren(
+    ...state.providers.formats.map((format) => {
+      const option = document.createElement('option');
+      option.value = format.id;
+      option.textContent = format.label;
+      return option;
+    }),
+  );
+}
+
+function renderProviderList() {
+  if (!state.providers.list.length) {
+    const empty = document.createElement('li');
+    empty.className = 'providers-list__empty';
+    empty.textContent = 'Nenhuma conexão salva ainda.';
+    providersList.replaceChildren(empty);
+    return;
+  }
+
+  providersList.replaceChildren(
+    ...state.providers.list.map((provider) => {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'provider-item';
+      button.dataset.id = provider.id;
+      // "ativa" = em uso pela conversa; "selecionada" = aberta no formulário.
+      button.classList.toggle('is-active', provider.id === state.providers.active);
+      button.classList.toggle('is-selected', provider.id === state.providers.selected);
+      button.setAttribute('aria-current', String(provider.id === state.providers.active));
+
+      const name = document.createElement('span');
+      name.className = 'provider-item__name';
+      name.textContent = provider.label;
+
+      const model = document.createElement('span');
+      model.className = 'provider-item__model';
+      model.textContent = provider.model;
+
+      button.append(name, model);
+      item.append(button);
+      return item;
+    }),
+  );
+}
+
+function currentProvider() {
+  return (
+    state.providers.list.find((item) => item.id === state.providers.selected) || null
+  );
+}
+
+function formatSpec(id) {
+  return state.providers.formats.find((format) => format.id === id) || null;
+}
+
+function applyFormatDefaults() {
+  const spec = formatSpec(providerFormat.value);
+  // Só preenche a URL quando o campo está vazio ou ainda traz o padrão de
+  // outro formato, para nunca sobrescrever um endpoint digitado à mão.
+  const isDefault = state.providers.formats.some(
+    (format) => format.base_url === providerBase.value.trim(),
+  );
+  if (spec && (!providerBase.value.trim() || isDefault)) {
+    providerBase.value = spec.base_url;
+  }
+}
+
+function fillProviderForm(providerId) {
+  const provider = state.providers.list.find((item) => item.id === providerId);
+  state.providers.selected = provider ? provider.id : NEW_PROVIDER;
+
+  if (!provider) {
+    providerLabel.value = '';
+    providerModel.value = '';
+    providerKey.value = '';
+    providerKeyHint.textContent = '';
+    providerFormat.value = state.providers.formats[0]?.id || '';
+    providerBase.value = formatSpec(providerFormat.value)?.base_url || '';
+    providerDeleteBtn.disabled = true;
+    providerTestBtn.disabled = true;
+    return;
+  }
+
+  providerLabel.value = provider.label || '';
+  providerFormat.value = provider.format || '';
+  providerBase.value = provider.base_url || '';
+  providerModel.value = provider.model || '';
+  providerKey.value = '';
+  providerKeyHint.textContent = provider.has_key
+    ? `Chave salva: ${provider.key_hint}. Deixe em branco para manter.`
+    : 'Sem chave salva.';
+  providerDeleteBtn.disabled = provider.id === 'env';
+  providerTestBtn.disabled = false;
+}
+
+async function selectProvider(providerId) {
+  if (!providerId || providerId === state.providers.selected) return;
+
+  setProviderBusy(true);
+  try {
+    const data = await providerAction({ action: 'activate', id: providerId });
+    state.providers.active = data.active;
+    fillProviderForm(providerId);
+    renderProviderList();
+    const provider = currentProvider();
+    setProviderStatus(`Ativa: ${provider ? provider.label : providerId}.`, 'ok');
+  } catch (error) {
+    setProviderStatus(error.message, 'error');
+  } finally {
+    setProviderBusy(false);
+  }
+}
+
+async function providerAction(payload) {
+  const response = await fetch('/api/providers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Falha HTTP ${response.status}.`);
+  return data;
+}
+
+async function saveProvider() {
+  const provider = {
+    id: state.providers.selected === NEW_PROVIDER ? '' : state.providers.selected,
+    label: providerLabel.value.trim(),
+    format: providerFormat.value,
+    base_url: providerBase.value.trim(),
+    model: providerModel.value.trim(),
+    api_key: providerKey.value,
+  };
+
+  setProviderBusy(true);
+  setProviderStatus('Salvando...', 'working');
+  try {
+    const data = await providerAction({ action: 'save', provider });
+    providerKey.value = '';
+    await loadProviders();
+    fillProviderForm(data.active);
+    setProviderStatus(`Conexão salva e ativada: ${data.provider.label}.`, 'ok');
+    addLog('system', `Conexão de IA ativa: ${data.provider.label} (${data.provider.model}).`);
+  } catch (error) {
+    setProviderStatus(error.message, 'error');
+  } finally {
+    setProviderBusy(false);
+  }
+}
+
+async function testProvider() {
+  const provider = currentProvider();
+  if (!provider) {
+    setProviderStatus('Salve a conexão antes de testar.', 'error');
+    return;
+  }
+
+  setProviderBusy(true);
+  setProviderStatus('Testando conexão...', 'working');
+  try {
+    const data = await providerAction({ action: 'test', id: provider.id });
+    setProviderStatus(`Respondeu: ${data.sample || 'ok'}`, 'ok');
+  } catch (error) {
+    setProviderStatus(error.message, 'error');
+  } finally {
+    setProviderBusy(false);
+  }
+}
+
+async function deleteProvider() {
+  const provider = currentProvider();
+  if (!provider) return;
+
+  setProviderBusy(true);
+  setProviderStatus('Removendo...', 'working');
+  try {
+    await providerAction({ action: 'delete', id: provider.id });
+    await loadProviders();
+    fillProviderForm(state.providers.active);
+    setProviderStatus(`Conexão removida: ${provider.label}.`, '');
+  } catch (error) {
+    setProviderStatus(error.message, 'error');
+  } finally {
+    setProviderBusy(false);
+  }
+}
+
+// ─── Microfone (fala → texto, transcrito localmente) ───
+// Funciona como áudio de WhatsApp: segure o botão para falar e solte para
+// enviar. Um toque rápido trava a gravação (mãos livres) até o próximo clique.
+// O áudio vai para /api/transcribe, que roda faster-whisper na própria máquina.
+async function initMic() {
+  if (!recordingSupported) {
+    micBtn.hidden = true;
+    return;
+  }
+
+  setMicState('idle');
+
+  // O botão aparece sempre. Se a transcrição local não estiver de pé, ele
+  // explica o motivo ao ser acionado, em vez de sumir sem dizer nada.
+  try {
+    const response = await fetch('/api/health');
+    const data = await response.json();
+    state.mic.available = Boolean(data?.stt_available);
+  } catch {
+    state.mic.available = false;
+  }
+
+  if (!state.mic.available) micBtn.classList.add('is-unavailable');
+
+  micBtn.addEventListener('pointerdown', onMicPointerDown);
+  micBtn.addEventListener('pointerup', onMicPointerUp);
+  micBtn.addEventListener('pointercancel', onMicPointerUp);
+  micBtn.addEventListener('pointerleave', onMicPointerUp);
+  // Sem isso o clique sintético do pointer dispararia a ação uma segunda vez.
+  micBtn.addEventListener('click', (event) => event.preventDefault());
+  // Teclado não tem "segurar": Enter/Espaço alternam gravar e enviar.
+  micBtn.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    if (state.mic.status === 'recording') stopRecording();
+    else if (state.mic.available) beginMicCapture(true);
+    else reportMicUnavailable();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.mic.status === 'recording') {
+      event.preventDefault();
+      cancelRecording();
+      setMicStatus('Gravação cancelada.', '');
+    }
+  });
+}
+
+function reportMicUnavailable() {
+  const message = location.protocol === 'file:'
+    ? 'Abra pelo servidor (http://localhost:8000) para usar o microfone.'
+    : 'Transcrição local indisponível. Inicie pelo run_web.bat, que usa o .venv do projeto.';
+  setMicStatus(message, 'error');
+  addLog('error', message);
+}
+
+function onMicPointerDown(event) {
+  if (typeof event.button === 'number' && event.button !== 0) return;
+  event.preventDefault();
+
+  if (!state.mic.available) {
+    reportMicUnavailable();
+    return;
+  }
+  // Gravação travada por toque rápido: o próximo toque envia.
+  if (state.mic.status === 'recording') {
+    stopRecording();
+    return;
+  }
+  if (state.mic.status !== 'idle' || state.processing) return;
+
+  // Manter o ponteiro capturado garante o pointerup mesmo se o dedo escorregar
+  // para fora do botao. Falha quando o id nao esta ativo, e nesse caso a
+  // gravacao segue normalmente pelo pointerleave.
+  try {
+    micBtn.setPointerCapture?.(event.pointerId);
+  } catch {
+    /* sem captura: o pointerleave cobre a saida do botao */
+  }
+  state.mic.pressedAt = Date.now();
+  state.mic.pointerHeld = true;
+  beginMicCapture(false);
+}
+
+function onMicPointerUp() {
+  if (!state.mic.pointerHeld) return;
+  state.mic.pointerHeld = false;
+
+  const held = Date.now() - state.mic.pressedAt;
+  // Soltou antes de o microfone abrir: decide assim que a gravação começar.
+  if (state.mic.starting) {
+    state.mic.pendingRelease = held;
+    return;
+  }
+  if (state.mic.status !== 'recording') return;
+  resolveMicRelease(held);
+}
+
+function resolveMicRelease(held) {
+  if (held < TAP_LOCK_MS) {
+    state.mic.locked = true;
+    return;
+  }
+  stopRecording();
+}
+
+function beginMicCapture(locked) {
+  state.mic.locked = locked;
+  state.mic.pendingRelease = null;
+  startRecording();
+}
+
+function setMicState(status) {
+  state.mic.status = status;
+  micBtn.dataset.state = status;
+  micBtn.setAttribute('aria-pressed', String(status === 'recording'));
+  micBtn.disabled = status === 'transcribing';
+
+  const labels = {
+    idle: 'Segure para falar com o JARVIS',
+    recording: 'Solte para enviar',
+    transcribing: 'Transcrevendo...',
+  };
+  micBtn.setAttribute('aria-label', labels[status]);
+  micBtn.title = labels[status];
+}
+
+function setMicStatus(text, tone = '') {
+  micStatus.textContent = text;
+  if (tone) micStatus.dataset.tone = tone;
+  else delete micStatus.dataset.tone;
+}
+
+function startRecordingTimer() {
+  stopRecordingTimer();
+  const tick = () => {
+    if (state.mic.status !== 'recording') return;
+    const seconds = Math.floor((Date.now() - state.mic.startedAt) / 1000);
+    const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const ss = String(seconds % 60).padStart(2, '0');
+    const hint = state.mic.locked ? 'clique para enviar' : 'solte para enviar';
+    setMicStatus(`● ${mm}:${ss} — ${hint} (Esc cancela)`, 'recording');
+  };
+  tick();
+  state.mic.timer = setInterval(tick, 250);
+}
+
+function stopRecordingTimer() {
+  clearInterval(state.mic.timer);
+  state.mic.timer = null;
+}
+
+async function startRecording() {
+  if (state.processing || state.mic.status !== 'idle' || state.mic.starting) return;
+
+  // Cala o JARVIS antes de abrir o microfone, senão ele se escuta.
+  stopActiveSpeech();
+  state.mic.starting = true;
+  setMicStatus('Abrindo o microfone...', 'working');
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (error) {
+    state.mic.starting = false;
+    state.mic.pendingRelease = null;
+    const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
+    const message = denied
+      ? 'Permissão de microfone negada. Libere o acesso no navegador.'
+      : 'Nenhum microfone disponível.';
+    setMicStatus(message, 'error');
+    addLog('error', message);
+    return;
+  }
+
+  let recorder;
+  try {
+    recorder = new MediaRecorder(stream, pickRecorderOptions());
+  } catch {
+    state.mic.starting = false;
+    state.mic.pendingRelease = null;
+    stream.getTracks().forEach((track) => track.stop());
+    setMicStatus('Este navegador não conseguiu iniciar a gravação.', 'error');
+    return;
+  }
+
+  state.mic.stream = stream;
+  state.mic.recorder = recorder;
+  state.mic.chunks = [];
+  state.mic.cancelled = false;
+  state.mic.startedAt = Date.now();
+
+  recorder.addEventListener('dataavailable', (event) => {
+    if (event.data && event.data.size > 0) state.mic.chunks.push(event.data);
+  });
+  recorder.addEventListener('stop', handleRecordingStop);
+
+  recorder.start();
+  state.mic.starting = false;
+  setMicState('recording');
+  startRecordingTimer();
+
+  // Trava de segurança: não deixa o microfone aberto indefinidamente.
+  state.mic.maxTimeout = setTimeout(() => {
+    if (state.mic.status === 'recording') stopRecording();
+  }, MAX_RECORDING_MS);
+
+  // Soltou o botão enquanto o microfone ainda abria.
+  if (state.mic.pendingRelease !== null) {
+    const held = state.mic.pendingRelease;
+    state.mic.pendingRelease = null;
+    resolveMicRelease(held);
+  }
+}
+
+function pickRecorderOptions() {
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+  const supported = candidates.find(
+    (type) => window.MediaRecorder.isTypeSupported?.(type),
+  );
+  return supported ? { mimeType: supported } : {};
+}
+
+function stopRecording() {
+  const { recorder } = state.mic;
+  if (!recorder || recorder.state === 'inactive') return;
+  clearTimeout(state.mic.maxTimeout);
+  stopRecordingTimer();
+  recorder.stop();
+}
+
+function cancelRecording() {
+  if (state.mic.status !== 'recording') return;
+  state.mic.cancelled = true;
+  stopRecording();
+}
+
+function releaseMicStream() {
+  state.mic.stream?.getTracks().forEach((track) => track.stop());
+  state.mic.stream = null;
+  state.mic.recorder = null;
+}
+
+async function handleRecordingStop() {
+  const elapsed = Date.now() - state.mic.startedAt;
+  const chunks = state.mic.chunks;
+  const type = chunks[0]?.type || 'audio/webm';
+  state.mic.chunks = [];
+  state.mic.locked = false;
+  stopRecordingTimer();
+  releaseMicStream();
+
+  if (state.mic.cancelled) {
+    state.mic.cancelled = false;
+    setMicState('idle');
+    return;
+  }
+
+  if (!chunks.length || elapsed < MIN_RECORDING_MS) {
+    setMicState('idle');
+    setMicStatus('Gravação curta demais. Segure o botão e fale.', 'error');
+    return;
+  }
+
+  setMicState('transcribing');
+  setMicStatus('Transcrevendo localmente...', 'working');
+
+  try {
+    const text = await transcribeAudio(new Blob(chunks, { type }));
+    setMicState('idle');
+    setMicStatus('');
+    userInput.value = text;
+    userInput.focus();
+    handleSubmit();
+  } catch (error) {
+    setMicState('idle');
+    const message = error instanceof Error ? error.message : 'Não foi possível transcrever o áudio.';
+    setMicStatus(message, 'error');
+    addLog('error', message);
+  }
+}
+
+async function transcribeAudio(blob) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+
+  try {
+    const response = await fetch('/api/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': blob.type || 'audio/webm' },
+      body: blob,
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Falha HTTP ${response.status}.`);
+    const text = typeof data.text === 'string' ? data.text.trim() : '';
+    if (!text) throw new Error('Não identifiquei fala na gravação.');
+    return text.slice(0, MAX_INPUT_LENGTH);
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('A transcrição demorou demais.');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function selectPortugueseVoice() {
   return state.voices.find((voice) => voice.lang.toLowerCase() === 'pt-br')
     || state.voices.find((voice) => voice.lang.toLowerCase().startsWith('pt'))
@@ -409,6 +1089,9 @@ function setControlsEnabled(enabled) {
   userInput.disabled = !enabled;
   sendBtn.disabled = !enabled;
   quickButtons.forEach((button) => { button.disabled = !enabled; });
+  // O microfone segue os demais controles, mas nunca reabilita no meio de uma
+  // gravacao ou transcricao ja em andamento.
+  if (state.mic.available && state.mic.status === 'idle') micBtn.disabled = !enabled;
 }
 
 function normalizeCommand(value) {
@@ -436,7 +1119,7 @@ function helpResponse() {
     '• temperatura, latência, convergência, neurônios e estados ternários',
     '• histórico, limpar terminal, limpar histórico e reiniciar núcleo',
     '• ativar voz, desativar voz, repetir resposta e parar fala',
-    '• mostrar Synth-Alpha, voltar ao círculo, olhar à direita/esquerda, mostrar costas ou frente',
+    '• mostrar JARVIS, voltar ao círculo, olhar à direita/esquerda, mostrar costas ou frente',
     'Você também pode escrever perguntas livres para conversar com o modelo.',
   ].join('\n');
 }
@@ -522,9 +1205,9 @@ function resolveLocalCommand(input, inference) {
     };
   }
 
-  if (/\b(mostrar|aparecer|apareca)\b.*\b(synth|robo|cabeca|avatar)\b/.test(command)) {
+  if (/\b(mostrar|aparecer|apareca)\b.*\b(jarvis|synth|robo|cabeca|avatar)\b/.test(command)) {
     return {
-      reply: 'Synth-Alpha em exibição.',
+      reply: 'JARVIS em exibição.',
       finalAvatarMode: 'manual',
       afterLog() {
         state.avatarMode = 'manual';
@@ -536,7 +1219,7 @@ function resolveLocalCommand(input, inference) {
     };
   }
 
-  if (/\b(voltar|ocultar|esconder|desaparecer)\b.*\b(circulo|nucleo|synth|robo|avatar)\b/.test(command)) {
+  if (/\b(voltar|ocultar|esconder|desaparecer)\b.*\b(circulo|nucleo|jarvis|synth|robo|avatar)\b/.test(command)) {
     return {
       reply: 'Retornando ao núcleo ternário.',
       finalAvatarMode: 'core',
@@ -587,7 +1270,7 @@ function resolveLocalCommand(input, inference) {
     const entries = [...inferenceHistory.querySelectorAll('.query')].slice(0, 5).map((item) => `• ${item.textContent}`);
     return { reply: entries.length ? `Últimas inferências:\n${entries.join('\n')}` : 'O histórico de inferências está vazio.', updateInference: false };
   }
-  if (/\b(versao|sobre o sistema)\b/.test(command)) return { reply: 'JARVIS v2.4.1-TER — interface Synth-Alpha e motor ternário experimental.', updateInference: false };
+  if (/\b(versao|sobre o sistema)\b/.test(command)) return { reply: 'JARVIS v2.4.1-TER — interface JARVIS e motor ternário experimental.', updateInference: false };
   if (/\b(horas|hora atual|que horas)\b/.test(command)) return { reply: `Hora atual: ${$('#clock').textContent}.`, updateInference: false };
   if (/\b(analise|analisar|inferir|inferencia)\b/.test(command)) {
     return {

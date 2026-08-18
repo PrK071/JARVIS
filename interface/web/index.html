@@ -16,7 +16,16 @@
 
   <header class="hud-header">
     <div class="brand">
-      <span class="brand-icon">◈</span>
+      <button
+        class="brand-icon"
+        id="providers-open"
+        type="button"
+        aria-label="Conexões de IA"
+        title="Conexões de IA"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="providers-modal"
+      >◈</button>
       <h1>JARVIS</h1>
     </div>
     <div class="status-bar">
@@ -95,7 +104,7 @@
           class="core-trigger"
           id="show-avatar-btn"
           type="button"
-          aria-label="Mostrar o robô Synth-Alpha"
+          aria-label="Mostrar o robô JARVIS"
           aria-controls="avatar-view"
           aria-expanded="false"
         ><span aria-hidden="true">◈</span></button>
@@ -108,7 +117,7 @@
             id="avatar-turntable"
             role="slider"
             tabindex="-1"
-            aria-label="Ângulo da cabeça Synth-Alpha"
+            aria-label="Ângulo da cabeça JARVIS"
             aria-valuemin="0"
             aria-valuemax="7"
             aria-valuenow="0"
@@ -147,12 +156,27 @@
             autocomplete="off"
             spellcheck="false"
           />
+          <button
+            id="mic-btn"
+            type="button"
+            aria-label="Segure para falar com o JARVIS"
+            title="Segure para falar com o JARVIS"
+            aria-pressed="false"
+          >
+            <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <path d="M12 19v3"/>
+            </svg>
+            <span class="mic-pulse" aria-hidden="true"></span>
+          </button>
           <button id="send-btn" aria-label="Enviar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
             </svg>
           </button>
         </div>
+        <p class="mic-status" id="mic-status" role="status" aria-live="polite"></p>
         <div class="quick-actions">
           <button class="quick-btn" data-cmd="status">Status</button>
           <button class="quick-btn" data-cmd="diagnóstico">Diagnóstico</button>
@@ -211,11 +235,66 @@
     <span class="footer-divider">|</span>
     <span>Latência: <strong id="latency">12ms</strong></span>
     <span class="footer-divider">|</span>
-    <span>Modo: <strong id="mode">AUTÔNOMO</strong></span>
+    <span>Modo: <strong id="mode">AURA</strong></span>
     <span class="footer-divider">|</span>
     <span>JARVIS HUD · MIT</span>
   </footer>
 
-  <script src="app.js?v=6"></script>
+
+  <!-- Conexões de IA: abre pelo losango ◈ do cabeçalho -->
+  <div class="hud-modal" id="providers-modal" hidden>
+    <div class="hud-modal__backdrop" data-close-providers></div>
+
+    <div class="hud-modal__card" role="dialog" aria-modal="true" aria-labelledby="providers-modal-title">
+      <header class="hud-modal__head">
+        <h2 class="hud-modal__title" id="providers-modal-title">◆ Conexões de IA</h2>
+        <button class="hud-modal__close" id="providers-close" type="button"
+                aria-label="Fechar" data-close-providers>×</button>
+      </header>
+
+      <div class="hud-modal__body providers-layout">
+
+        <aside class="providers-side">
+          <h3 class="providers-side__title">Salvas</h3>
+          <ul class="providers-list" id="providers-list"></ul>
+          <button type="button" class="providers-new" id="provider-new">+ nova conexão</button>
+        </aside>
+
+        <div class="providers-main">
+          <form id="provider-form" class="provider-form" autocomplete="off">
+            <label class="field-label" for="provider-label">Nome</label>
+            <input id="provider-label" class="provider-input" type="text"
+                   maxlength="60" placeholder="Ex.: DeepSeek" />
+
+            <label class="field-label" for="provider-format">Formato da API</label>
+            <select id="provider-format" class="provider-input"></select>
+
+            <label class="field-label" for="provider-base">Endpoint</label>
+            <input id="provider-base" class="provider-input" type="url"
+                   placeholder="https://api.exemplo.com/v1" spellcheck="false" />
+
+            <label class="field-label" for="provider-model">Modelo</label>
+            <input id="provider-model" class="provider-input" type="text"
+                   maxlength="120" placeholder="Ex.: deepseek-chat" spellcheck="false" />
+
+            <label class="field-label" for="provider-key">Chave de API</label>
+            <input id="provider-key" class="provider-input" type="password"
+                   maxlength="400" placeholder="Fica salva no servidor" autocomplete="new-password" />
+            <p class="provider-hint" id="provider-key-hint"></p>
+
+            <div class="provider-actions">
+              <button type="submit" class="provider-btn provider-btn--primary">Salvar</button>
+              <button type="button" class="provider-btn" id="provider-test">Testar</button>
+              <button type="button" class="provider-btn provider-btn--danger" id="provider-delete">Remover</button>
+            </div>
+          </form>
+
+          <p class="provider-status" id="provider-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=7"></script>
 </body>
 </html>
