@@ -37,6 +37,12 @@ TOOLS_ENABLED = os.environ.get("TRIADE_TOOLS", "1").strip().lower() not in {
 }
 MAX_TOOL_ITERATIONS = int(os.environ.get("TRIADE_MAX_TOOL_ITERATIONS", "8"))
 MAX_TOOL_OUTPUT_CHARS = 12_000
+# Cobrado quando o modelo esgota as rodadas de ferramentas sem concluir: pedir
+# texto final com o material já coletado vale mais que devolver painel vazio.
+TOOL_BUDGET_PROMPT = (
+    "O limite de chamadas de ferramenta desta pergunta acabou. Responda agora, "
+    "em texto, com o que você já apurou, e diga o que ficou sem verificar."
+)
 # Transcricao local: o audio do microfone nunca sai da maquina. Usa o mesmo
 # FasterWhisperSTT do orquestrador (tern), com o modelo ja baixado em
 # models/voice/. Sem faster-whisper ou sem modelo, o botao de microfone some
@@ -456,8 +462,9 @@ PROVIDERS_LOCK = threading.Lock()
 MAX_PROVIDERS = 20
 # Modelos de raciocínio (deepseek-v4-pro, o-series) gastam parte do orçamento em
 # reasoning_content. Com 1200 o texto final chegava vazio e virava
-# EMPTY_MODEL_RESPONSE sem explicação.
-MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "4000"))
+# EMPTY_MODEL_RESPONSE sem explicação; com 4000 ainda estourava em perguntas que
+# encadeiam ferramentas. 8000 fica abaixo do teto de saída da DeepSeek (8192).
+MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "8000"))
 
 # Formatos cobrem, na prática, qualquer API de IA relevante:
 # - openai-chat     : /chat/completions — OpenAI, DeepSeek, Groq, OpenRouter,
@@ -827,6 +834,12 @@ def _provider_error_message(code: str, *, host: str | None = None) -> str:
             f"texto final (limite atual: {MAX_PROVIDER_OUTPUT_TOKENS}). Aumente "
             "TRIADE_PROVIDER_MAX_TOKENS ou use um modelo sem raciocínio longo."
         )
+    if code.startswith("TOOL_LOOP_LIMIT"):
+        return (
+            "O modelo encadeou ferramentas além do limite da pergunta "
+            f"({MAX_TOOL_ITERATIONS} rodadas) e não fechou uma resposta. Peça algo "
+            "mais específico ou aumente TRIADE_MAX_TOOL_ITERATIONS."
+        )
     if code.startswith("INVALID_JSON_RESPONSE"):
         return "Resposta do provedor não é JSON válido."
     return "Não foi possível falar com o provedor."
@@ -933,7 +946,25 @@ def _request_provider_chat(
                 }
             )
 
-    return "", payload
+    if registry is None:
+        return "", payload
+
+    # Orçamento de ferramentas esgotado: o modelo pediria mais chamadas para
+    # sempre. Uma última rodada sem ferramentas força texto com o que já foi
+    # coletado, em vez de devolver resposta vazia ao painel.
+    payload = _post_json(
+        url,
+        headers,
+        {
+            "model": model,
+            "messages": [
+                *mensagens,
+                {"role": "user", "content": TOOL_BUDGET_PROMPT},
+            ],
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        },
+    )
+    return _reply_from_openai_chat(payload), payload
 
 
 def _request_provider_anthropic(
@@ -1098,6 +1129,10 @@ def _empty_reply_reason(payload: dict[str, Any]) -> str:
                 continue
             if escolha.get("finish_reason") == "length":
                 return "TRUNCATED_BY_TOKEN_LIMIT"
+            if escolha.get("finish_reason") == "tool_calls":
+                # Parou pedindo ferramenta, não por falta de orçamento: culpar o
+                # limite de tokens mandava o usuário mexer na variável errada.
+                return "TOOL_LOOP_LIMIT"
             mensagem = escolha.get("message")
             if isinstance(mensagem, dict) and str(mensagem.get("reasoning_content") or "").strip():
                 # Raciocinou e não sobrou orçamento para o texto final.

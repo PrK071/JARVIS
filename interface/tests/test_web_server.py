@@ -1,4 +1,4 @@
-"""Testes do servidor web, da validação do chat e da transcrição local."""
+﻿"""Testes do servidor web, da validação do chat e da transcrição local."""
 
 from __future__ import annotations
 
@@ -409,6 +409,99 @@ class EmptyReplyDiagnosisTest(unittest.TestCase):
     def test_output_budget_is_generous_enough_for_reasoning_models(self) -> None:
         self.assertGreaterEqual(web_server.MAX_PROVIDER_OUTPUT_TOKENS, 4_000)
 
+    def test_tool_calls_finish_is_not_blamed_on_token_limit(self) -> None:
+        """Parou pedindo ferramenta: o limite de tokens nao tem culpa nenhuma."""
+        payload = {
+            "choices": [
+                {
+                    "finish_reason": "tool_calls",
+                    "message": {"content": "", "reasoning_content": "pensando", "tool_calls": [{}]},
+                }
+            ]
+        }
+
+        self.assertEqual(web_server._empty_reply_reason(payload), "TOOL_LOOP_LIMIT")
+
+    def test_tool_loop_message_points_at_the_iteration_budget(self) -> None:
+        mensagem = web_server._provider_error_message("TOOL_LOOP_LIMIT")
+
+        self.assertIn("TRIADE_MAX_TOOL_ITERATIONS", mensagem)
+        self.assertIn(str(web_server.MAX_TOOL_ITERATIONS), mensagem)
+        self.assertNotIn("TRIADE_PROVIDER_MAX_TOKENS", mensagem)
+
+
+class ToolBudgetFallbackTest(unittest.TestCase):
+    """Rodadas de ferramenta esgotadas devem virar texto, nao painel vazio."""
+
+    def _tool_call_payload(self) -> dict[str, object]:
+        return {
+            "choices": [
+                {
+                    "finish_reason": "tool_calls",
+                    "message": {
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": "c1",
+                                "function": {"name": "filesystem_list", "arguments": "{}"},
+                            }
+                        ],
+                    },
+                }
+            ]
+        }
+
+    def test_last_round_drops_tools_and_asks_for_text(self) -> None:
+        chamadas: list[dict[str, object]] = []
+
+        class Registry:
+            def specs(self) -> list[dict[str, object]]:
+                return [{"type": "function", "function": {"name": "filesystem_list"}}]
+
+            def run(self, name: str, arguments: object) -> str:
+                return "ok"
+
+        def fake_post(url: str, headers: dict[str, str], body: dict[str, object]) -> dict[str, object]:
+            chamadas.append(body)
+            if "tools" not in body:
+                return {"choices": [{"finish_reason": "stop", "message": {"content": "parcial"}}]}
+            return self._tool_call_payload()
+
+        with patch.object(web_server, "_post_json", fake_post), patch.object(
+            web_server, "_run_tool", lambda registry, call: "ok"
+        ):
+            reply, _ = web_server._request_provider_chat(
+                "https://api.deepseek.com/v1/chat/completions",
+                {},
+                "deepseek-v4-pro",
+                [{"role": "user", "content": "e o firebase?"}],
+                Registry(),
+            )
+
+        self.assertEqual(reply, "parcial")
+        self.assertEqual(len(chamadas), web_server.MAX_TOOL_ITERATIONS + 2)
+        ultima = chamadas[-1]
+        self.assertNotIn("tools", ultima)
+        mensagens = ultima["messages"]
+        assert isinstance(mensagens, list)
+        self.assertEqual(mensagens[-1]["content"], web_server.TOOL_BUDGET_PROMPT)
+
+    def test_without_registry_nothing_is_forced(self) -> None:
+        def fake_post(url: str, headers: dict[str, str], body: dict[str, object]) -> dict[str, object]:
+            return self._tool_call_payload()
+
+        with patch.object(web_server, "_post_json", fake_post):
+            reply, payload = web_server._request_provider_chat(
+                "https://api.deepseek.com/v1/chat/completions",
+                {},
+                "deepseek-v4-pro",
+                [{"role": "user", "content": "oi"}],
+                None,
+            )
+
+        self.assertEqual(reply, "")
+        self.assertEqual(web_server._empty_reply_reason(payload), "TOOL_LOOP_LIMIT")
+
 
 class ProviderFormatLabelsTest(unittest.TestCase):
     def test_chat_format_names_deepseek_among_compatible_vendors(self) -> None:
@@ -607,7 +700,9 @@ class ProviderToolCallingTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 web_server._request_provider(provider, "loop", [])
 
-        self.assertLessEqual(len(chamadas), web_server.MAX_TOOL_ITERATIONS + 1)
+        # +2: as rodadas com ferramenta mais a última rodada forçada em texto.
+        self.assertLessEqual(len(chamadas), web_server.MAX_TOOL_ITERATIONS + 2)
+        self.assertNotIn("tools", chamadas[-1])
 
     def test_without_registry_conversation_still_works(self) -> None:
         with patch.object(web_server, "_tool_registry", lambda: None):
