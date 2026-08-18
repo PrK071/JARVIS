@@ -505,6 +505,7 @@ const providerNewBtn = $('#provider-new');
 const providerForm = $('#provider-form');
 const providerLabel = $('#provider-label');
 const providerPreset = $('#provider-preset');
+const providerFormatHint = $('#provider-format-hint');
 const providerFormat = $('#provider-format');
 const providerBase = $('#provider-base');
 const providerModel = $('#provider-model');
@@ -593,6 +594,7 @@ function applyPreset() {
   if (!preset) return;
   providerFormat.value = preset.format;
   providerBase.value = preset.base_url;
+  renderFormatHint(formatSpec(preset.format));
   if (!providerModel.value.trim()) providerModel.value = preset.model;
   if (!providerLabel.value.trim()) providerLabel.value = preset.label;
   setProviderStatus(`Endpoint de ${preset.label} preenchido. Cole a chave e salve.`, 'info');
@@ -658,6 +660,7 @@ function formatSpec(id) {
 
 function applyFormatDefaults() {
   const spec = formatSpec(providerFormat.value);
+  renderFormatHint(spec);
   // Só preenche a URL quando o campo está vazio ou ainda traz o padrão de
   // outro formato, para nunca sobrescrever um endpoint digitado à mão.
   const isDefault = state.providers.formats.some(
@@ -666,6 +669,16 @@ function applyFormatDefaults() {
   if (spec && (!providerBase.value.trim() || isDefault)) {
     providerBase.value = spec.base_url;
   }
+}
+
+function renderFormatHint(spec) {
+  // O campo descreve o protocolo, não a marca: sem isso o usuário procura
+  // "DeepSeek" na lista e conclui que não é suportada.
+  if (!providerFormatHint) return;
+  const vendors = spec?.vendors || [];
+  providerFormatHint.textContent = vendors.length
+    ? `Compatível com: ${vendors.join(', ')}.`
+    : '';
 }
 
 function fillProviderForm(providerId) {
@@ -679,6 +692,7 @@ function fillProviderForm(providerId) {
     providerKeyHint.textContent = '';
     providerFormat.value = state.providers.formats[0]?.id || '';
     providerBase.value = formatSpec(providerFormat.value)?.base_url || '';
+    renderFormatHint(formatSpec(providerFormat.value));
     providerDeleteBtn.disabled = true;
     providerTestBtn.disabled = true;
     return;
@@ -687,6 +701,7 @@ function fillProviderForm(providerId) {
   providerLabel.value = provider.label || '';
   providerFormat.value = provider.format || '';
   providerBase.value = provider.base_url || '';
+  renderFormatHint(formatSpec(provider.format));
   providerModel.value = provider.model || '';
   providerKey.value = '';
   providerKeyHint.textContent = provider.has_key

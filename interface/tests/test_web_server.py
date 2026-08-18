@@ -410,5 +410,215 @@ class EmptyReplyDiagnosisTest(unittest.TestCase):
         self.assertGreaterEqual(web_server.MAX_PROVIDER_OUTPUT_TOKENS, 4_000)
 
 
+class ProviderFormatLabelsTest(unittest.TestCase):
+    def test_chat_format_names_deepseek_among_compatible_vendors(self) -> None:
+        """Sem citar os provedores, o usuario procura DeepSeek e nao encontra."""
+        spec = web_server.PROVIDER_FORMATS["openai-chat"]
+
+        self.assertIn("DeepSeek", spec["label"])
+        self.assertIn("DeepSeek", spec["vendors"])
+
+    def test_every_format_declares_vendors(self) -> None:
+        for identificador, spec in web_server.PROVIDER_FORMATS.items():
+            self.assertTrue(spec.get("vendors"), identificador)
+
+    def test_labels_do_not_claim_exclusivity_for_openai(self) -> None:
+        self.assertNotEqual(
+            web_server.PROVIDER_FORMATS["openai-chat"]["label"],
+            "OpenAI-compatível (chat/completions)",
+        )
+
+    def test_anthropic_format_is_restricted_to_claude(self) -> None:
+        self.assertEqual(
+            web_server.PROVIDER_FORMATS["anthropic"]["vendors"], ("Anthropic (Claude)",)
+        )
+
+
+class FakeRegistry:
+    """Registro minimo: expoe uma ferramenta e grava as execucoes."""
+
+    def __init__(self, resultado: str = '{"ok": true, "cpu_temperature_c": 46.0}'):
+        self.resultado = resultado
+        self.execucoes: list[tuple[str, dict]] = []
+
+    def specs(self) -> list[dict]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_hardware_telemetry",
+                    "description": "le sensores",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+
+    def names(self) -> tuple[str, ...]:
+        return ("get_hardware_telemetry",)
+
+    def execute(self, nome: str, argumentos: dict, **_kwargs) -> dict:
+        self.execucoes.append((nome, argumentos))
+        return json.loads(self.resultado)
+
+
+class ProviderToolCallingTest(unittest.TestCase):
+    """A conexao de provedor precisa das mesmas ferramentas do orquestrador."""
+
+    def setUp(self) -> None:
+        self.registry = FakeRegistry()
+        self._patch = patch.object(web_server, "_tool_registry", lambda: self.registry)
+        self._patch.start()
+
+    def tearDown(self) -> None:
+        self._patch.stop()
+
+    def test_chat_format_sends_tools_and_executes_them(self) -> None:
+        chamadas: list[dict] = []
+
+        def falso_post(url, headers, body):
+            chamadas.append(body)
+            if len(chamadas) == 1:
+                return {
+                    "choices": [
+                        {
+                            "finish_reason": "tool_calls",
+                            "message": {
+                                "content": "",
+                                "tool_calls": [
+                                    {
+                                        "id": "call_1",
+                                        "type": "function",
+                                        "function": {
+                                            "name": "get_hardware_telemetry",
+                                            "arguments": "{}",
+                                        },
+                                    }
+                                ],
+                            },
+                        }
+                    ]
+                }
+            return {"choices": [{"message": {"content": "A CPU está em 46 graus."}}]}
+
+        provider = {
+            "format": "openai-chat",
+            "base_url": "https://api.deepseek.com/v1",
+            "model": "deepseek-v4-pro",
+            "api_key": "k",
+        }
+        with patch.object(web_server, "_post_json", falso_post):
+            resposta = web_server._request_provider(provider, "temperatura da CPU?", [])
+
+        self.assertEqual(resposta, "A CPU está em 46 graus.")
+        self.assertEqual(self.registry.execucoes, [("get_hardware_telemetry", {})])
+        self.assertIn("tools", chamadas[0])
+        self.assertEqual(chamadas[0]["tool_choice"], "auto")
+        papeis = [m["role"] for m in chamadas[1]["messages"]]
+        self.assertEqual(papeis[-2:], ["assistant", "tool"])
+        self.assertIn("46.0", chamadas[1]["messages"][-1]["content"])
+
+    def test_anthropic_format_executes_tool_use_blocks(self) -> None:
+        chamadas: list[dict] = []
+
+        def falso_post(url, headers, body):
+            chamadas.append(body)
+            if len(chamadas) == 1:
+                return {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_1",
+                            "name": "get_hardware_telemetry",
+                            "input": {},
+                        }
+                    ]
+                }
+            return {"content": [{"type": "text", "text": "46 graus."}]}
+
+        provider = {"format": "anthropic", "model": "claude-sonnet-4-5", "api_key": "k"}
+        with patch.object(web_server, "_post_json", falso_post):
+            resposta = web_server._request_provider(provider, "temperatura?", [])
+
+        self.assertEqual(resposta, "46 graus.")
+        self.assertEqual(self.registry.execucoes, [("get_hardware_telemetry", {})])
+        self.assertEqual(chamadas[0]["tools"][0]["name"], "get_hardware_telemetry")
+        self.assertIn("input_schema", chamadas[0]["tools"][0])
+        ultimo = chamadas[1]["messages"][-1]
+        self.assertEqual(ultimo["content"][0]["type"], "tool_result")
+        self.assertEqual(ultimo["content"][0]["tool_use_id"], "toolu_1")
+
+    def test_responses_format_executes_function_calls(self) -> None:
+        chamadas: list[dict] = []
+
+        def falso_post(url, headers, body):
+            chamadas.append(body)
+            if len(chamadas) == 1:
+                return {
+                    "id": "resp_1",
+                    "output": [
+                        {
+                            "type": "function_call",
+                            "call_id": "call_9",
+                            "name": "get_hardware_telemetry",
+                            "arguments": "{}",
+                        }
+                    ],
+                }
+            return {
+                "id": "resp_2",
+                "output": [
+                    {"type": "message", "content": [{"type": "output_text", "text": "46 graus."}]}
+                ],
+            }
+
+        provider = {"format": "openai-responses", "model": "gpt-4o", "api_key": "k"}
+        with patch.object(web_server, "_post_json", falso_post):
+            resposta = web_server._request_provider(provider, "temperatura?", [])
+
+        self.assertEqual(resposta, "46 graus.")
+        self.assertEqual(self.registry.execucoes, [("get_hardware_telemetry", {})])
+        self.assertEqual(chamadas[1]["previous_response_id"], "resp_1")
+        self.assertEqual(chamadas[1]["input"][0]["type"], "function_call_output")
+
+    def test_tool_loop_is_bounded(self) -> None:
+        """Modelo insistindo em ferramenta nao pode gerar laco infinito."""
+        chamadas: list[dict] = []
+
+        def falso_post(url, headers, body):
+            chamadas.append(body)
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": "",
+                            "tool_calls": [
+                                {
+                                    "id": f"call_{len(chamadas)}",
+                                    "function": {"name": "get_hardware_telemetry", "arguments": "{}"},
+                                }
+                            ],
+                        }
+                    }
+                ]
+            }
+
+        provider = {"format": "openai-chat", "model": "m", "api_key": "k"}
+        with patch.object(web_server, "_post_json", falso_post):
+            with self.assertRaises(RuntimeError):
+                web_server._request_provider(provider, "loop", [])
+
+        self.assertLessEqual(len(chamadas), web_server.MAX_TOOL_ITERATIONS + 1)
+
+    def test_without_registry_conversation_still_works(self) -> None:
+        with patch.object(web_server, "_tool_registry", lambda: None):
+            with patch.object(
+                web_server,
+                "_post_json",
+                lambda url, headers, body: {"choices": [{"message": {"content": "oi"}}]},
+            ):
+                provider = {"format": "openai-chat", "model": "m", "api_key": "k"}
+                self.assertEqual(web_server._request_provider(provider, "oi", []), "oi")
+
+
 if __name__ == "__main__":
     unittest.main()

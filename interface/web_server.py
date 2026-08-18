@@ -464,21 +464,39 @@ MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "4
 #                     Together, Mistral, Ollama, LM Studio, vLLM, llama.cpp
 # - openai-responses: /responses — a Responses API da OpenAI
 # - anthropic       : /messages — Claude
+# O rótulo cita os provedores conhecidos porque o campo descreve o protocolo, não
+# a marca: quem escolhe "DeepSeek" no seletor de provedor precisa reconhecer que
+# o protocolo dela é o chat/completions.
 PROVIDER_FORMATS = {
     "openai-chat": {
-        "label": "OpenAI-compatível (chat/completions)",
+        "label": "Chat Completions — DeepSeek, OpenAI, Groq, Mistral, Ollama, LM Studio",
         "base_url": "https://api.openai.com/v1",
         "path": "/chat/completions",
+        "vendors": (
+            "DeepSeek",
+            "OpenAI",
+            "Groq",
+            "OpenRouter",
+            "Mistral",
+            "Together",
+            "Gemini (modo OpenAI)",
+            "Ollama",
+            "LM Studio",
+            "vLLM",
+            "llama.cpp",
+        ),
     },
     "openai-responses": {
-        "label": "OpenAI Responses",
+        "label": "OpenAI Responses — só OpenAI",
         "base_url": "https://api.openai.com/v1",
         "path": "/responses",
+        "vendors": ("OpenAI",),
     },
     "anthropic": {
-        "label": "Anthropic (Claude)",
+        "label": "Anthropic Messages — Claude",
         "base_url": "https://api.anthropic.com/v1",
         "path": "/messages",
+        "vendors": ("Anthropic (Claude)",),
     },
 }
 
@@ -826,12 +844,159 @@ def _provider_host(provider: dict[str, Any] | None) -> str | None:
         return None
 
 
+def _chat_tools(registry: Any) -> list[dict[str, Any]]:
+    """Especificações no formato chat/completions, aceito por DeepSeek e afins."""
+    return list(registry.specs()) if registry is not None else []
+
+
+def _anthropic_tools(registry: Any) -> list[dict[str, Any]]:
+    """Anthropic usa input_schema em vez de parameters."""
+    if registry is None:
+        return []
+    ferramentas = []
+    for spec in registry.specs():
+        funcao = spec.get("function") if isinstance(spec, dict) else None
+        funcao = funcao if isinstance(funcao, dict) else spec
+        nome = funcao.get("name")
+        if not isinstance(nome, str) or not nome:
+            continue
+        ferramentas.append(
+            {
+                "name": nome,
+                "description": str(funcao.get("description") or ""),
+                "input_schema": funcao.get("parameters") or {"type": "object", "properties": {}},
+            }
+        )
+    return ferramentas
+
+
+def _request_provider_chat(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa em chat/completions, executando ferramentas quando pedidas."""
+    ferramentas = _chat_tools(registry)
+    mensagens: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM_INSTRUCTIONS},
+        *turns,
+    ]
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "messages": mensagens,
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+            corpo["tool_choice"] = "auto"
+
+        payload = _post_json(url, headers, corpo)
+        escolha = next(
+            (item for item in payload.get("choices", []) if isinstance(item, dict)),
+            {},
+        )
+        mensagem = escolha.get("message") if isinstance(escolha.get("message"), dict) else {}
+        chamadas = [
+            item
+            for item in (mensagem.get("tool_calls") or [])
+            if isinstance(item, dict)
+        ]
+
+        if not chamadas:
+            return _reply_from_openai_chat(payload), payload
+
+        if registry is None:
+            break
+
+        mensagens.append(
+            {
+                "role": "assistant",
+                "content": mensagem.get("content") or "",
+                "tool_calls": chamadas,
+            }
+        )
+        for chamada in chamadas:
+            funcao = chamada.get("function") if isinstance(chamada.get("function"), dict) else {}
+            mensagens.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": str(chamada.get("id") or ""),
+                    "content": _run_tool(
+                        registry,
+                        {"name": funcao.get("name"), "arguments": funcao.get("arguments")},
+                    ),
+                }
+            )
+
+    return "", payload
+
+
+def _request_provider_anthropic(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa em /messages, executando ferramentas via blocos tool_use."""
+    ferramentas = _anthropic_tools(registry)
+    mensagens: list[dict[str, Any]] = list(turns)
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "system": SYSTEM_INSTRUCTIONS,
+            "messages": mensagens,
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+
+        payload = _post_json(url, headers, corpo)
+        blocos = [item for item in payload.get("content", []) if isinstance(item, dict)]
+        usos = [item for item in blocos if item.get("type") == "tool_use"]
+
+        if not usos:
+            return _reply_from_anthropic(payload), payload
+
+        if registry is None:
+            break
+
+        mensagens.append({"role": "assistant", "content": blocos})
+        resultados = []
+        for uso in usos:
+            resultados.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": str(uso.get("id") or ""),
+                    "content": _run_tool(
+                        registry,
+                        {"name": uso.get("name"), "arguments": uso.get("input") or {}},
+                    ),
+                }
+            )
+        mensagens.append({"role": "user", "content": resultados})
+
+    return "", payload
+
+
 def _request_provider(
     provider: dict[str, Any],
     message: str,
     history: list[dict[str, str]],
 ) -> str:
-    """Send the conversation to the active connection and return the reply."""
+    """Send the conversation to the active connection and return the reply.
+
+    A conexão recebe as mesmas ferramentas do orquestrador. Sem isso o modelo
+    remoto respondia que não tinha acesso ao computador, o que era verdade
+    apenas porque nenhuma ferramenta era oferecida a ele.
+    """
     api_key = str(provider.get("api_key") or "").strip()
     fmt = provider.get("format", "openai-chat")
     spec = PROVIDER_FORMATS.get(fmt)
@@ -841,59 +1006,87 @@ def _request_provider(
     base_url = str(provider.get("base_url") or spec["base_url"]).rstrip("/")
     url = f"{base_url}{spec['path']}"
     model = str(provider.get("model") or "")
-    turns = [*history, {"role": "user", "content": message}]
+    turns: list[dict[str, Any]] = [*history, {"role": "user", "content": message}]
+    registry = _tool_registry()
 
     if fmt == "anthropic":
         if not api_key:
             raise RuntimeError("API_KEY_MISSING")
-        payload = _post_json(
+        reply, payload = _request_provider_anthropic(
             url,
             {"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-            {
-                "model": model,
-                "system": SYSTEM_INSTRUCTIONS,
-                "messages": turns,
-                "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
-            },
+            model,
+            turns,
+            registry,
         )
-        reply = _reply_from_anthropic(payload)
     elif fmt == "openai-responses":
         if not api_key:
             raise RuntimeError("API_KEY_MISSING")
-        payload = _post_json(
+        reply, payload = _request_provider_responses(
             url,
             {"Authorization": f"Bearer {api_key}"},
-            {
-                "model": model,
-                "instructions": SYSTEM_INSTRUCTIONS,
-                "input": turns,
-                "reasoning": {"effort": "low"},
-                "text": {"verbosity": "medium"},
-                "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
-            },
+            model,
+            turns,
+            registry,
         )
-        reply = _extract_output_text(payload)
     else:
         # Servidores locais (Ollama, LM Studio, llama.cpp) costumam dispensar a
         # chave, entao ela e opcional neste formato.
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        payload = _post_json(
-            url,
-            headers,
-            {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_INSTRUCTIONS},
-                    *turns,
-                ],
-                "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
-            },
-        )
-        reply = _reply_from_openai_chat(payload)
+        reply, payload = _request_provider_chat(url, headers, model, turns, registry)
 
     if not reply:
         raise RuntimeError(_empty_reply_reason(payload))
     return reply
+
+
+def _request_provider_responses(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa na Responses API, executando ferramentas quando pedidas."""
+    ferramentas = _responses_tools(registry) if registry is not None else []
+    entrada: list[dict[str, Any]] = list(turns)
+    anterior: str | None = None
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "instructions": SYSTEM_INSTRUCTIONS,
+            "input": entrada,
+            "reasoning": {"effort": "low"},
+            "text": {"verbosity": "medium"},
+            "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+            corpo["tool_choice"] = "auto"
+        if anterior:
+            corpo["previous_response_id"] = anterior
+
+        payload = _post_json(url, headers, corpo)
+        chamadas = _extract_function_calls(payload)
+        if not chamadas:
+            return _extract_output_text(payload), payload
+        if registry is None:
+            break
+
+        identificador = payload.get("id")
+        anterior = identificador if isinstance(identificador, str) else None
+        entrada = [
+            {
+                "type": "function_call_output",
+                "call_id": str(chamada.get("call_id") or ""),
+                "output": _run_tool(registry, chamada),
+            }
+            for chamada in chamadas
+        ]
+
+    return "", payload
 
 
 def _empty_reply_reason(payload: dict[str, Any]) -> str:
@@ -986,7 +1179,12 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
                     "providers": [_public_provider(p) for p in _all_providers()],
                     "active": active.get("id") if active else None,
                     "formats": [
-                        {"id": key, "label": spec["label"], "base_url": spec["base_url"]}
+                        {
+                            "id": key,
+                            "label": spec["label"],
+                            "base_url": spec["base_url"],
+                            "vendors": list(spec.get("vendors", ())),
+                        }
                         for key, spec in PROVIDER_FORMATS.items()
                     ],
                     "presets": list(PROVIDER_PRESETS),
