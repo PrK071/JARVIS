@@ -4,6 +4,16 @@ Assistente Windows local: Qwen3.5-4B na GPU, arquivos controlados, Codex,
 pesquisa web citada e STT faster-whisper. Microsoft Daniel pt-BR é o TTS
 principal; Piper permanece como fallback local.
 
+## Apresentação
+
+<p align="center">
+  <img src="docs/images/jarvis-hud-principal.png" alt="Interface HUD principal do JARVIS" width="100%" />
+</p>
+
+<p align="center">
+  <img src="docs/images/jarvis-conexoes-ia.png" alt="Painel de conexões de IA do JARVIS" width="100%" />
+</p>
+
 ## Uso rápido
 
 ```powershell
