@@ -464,7 +464,7 @@ MAX_PROVIDERS = 20
 # reasoning_content. Com 1200 o texto final chegava vazio e virava
 # EMPTY_MODEL_RESPONSE sem explicação; com 4000 ainda estourava em perguntas que
 # encadeiam ferramentas. 8000 fica abaixo do teto de saída da DeepSeek (8192).
-MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "8000"))
+MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "16000"))
 
 # Formatos cobrem, na prática, qualquer API de IA relevante:
 # - openai-chat     : /chat/completions — OpenAI, DeepSeek, Groq, OpenRouter,
