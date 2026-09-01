@@ -2,4 +2,3 @@
 
 Isolated, low-risk project used to verify bounded-live diagnosis, authorized mutation,
 test execution, and post-action verification.
-
