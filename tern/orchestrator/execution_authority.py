@@ -26,6 +26,14 @@ from .execution_gate import (
     ExecutionMode,
     ShadowExecutionDecision,
 )
+from .orchestration_contracts import (
+    NextAction,
+    NextActionType,
+    ObservationStatus,
+    UserGoal,
+    WorldState,
+)
+from .task_requirement_grounding import RequirementValue
 
 
 EXPLICIT_USER_SOURCE = "explicit_user"
@@ -57,6 +65,252 @@ class AuthorityBlockReason(str, Enum):
     AVAILABILITY_CHANGED_BEFORE_DISPATCH = "AVAILABILITY_CHANGED_BEFORE_DISPATCH"
     READ_ONLY_ENFORCEMENT_UNAVAILABLE = "READ_ONLY_ENFORCEMENT_UNAVAILABLE"
     AGENT_OUTSIDE_AUTHORITY_SCOPE = "AGENT_OUTSIDE_AUTHORITY_SCOPE"
+
+
+class OrchestrationMode(str, Enum):
+    SHADOW = "shadow"
+    BOUNDED_LIVE = "bounded_live"
+
+    @classmethod
+    def parse(cls, value: str | None) -> "OrchestrationMode":
+        normalized = (value or cls.SHADOW.value).strip().lower()
+        try:
+            return cls(normalized)
+        except ValueError as exc:
+            raise ValueError(
+                "ORCHESTRATION_MODE deve ser shadow ou bounded_live"
+            ) from exc
+
+
+class EffectRisk(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class RiskDisposition(str, Enum):
+    AUTO = "AUTO"
+    AUTHORITY = "AUTHORITY"
+    CONFIRM = "CONFIRM"
+    RESTRICTED = "RESTRICTED"
+
+
+@dataclass(frozen=True)
+class LiveActionPolicy:
+    risk: EffectRisk
+    disposition: RiskDisposition
+    mutation: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "risk": self.risk.value,
+            "disposition": self.disposition.value,
+            "mutation": self.mutation,
+        }
+
+
+class BoundedLiveRiskMatrix:
+    """One auditable action matrix; strategy remains outside this class."""
+
+    TOOL_POLICIES: Mapping[str, LiveActionPolicy] = {
+        "list_available_agents": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "get_hardware_telemetry": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "list_installed_applications": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "resolve_project": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "find_project_files": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "filesystem_list": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "filesystem_read_text": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "review_codex_session": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "review_deepseek_session": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "get_codex_job_status": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "web_search": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "web_open": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "web_extract": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "get_project_git_state": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "run_project_tests": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "filesystem_write_text": LiveActionPolicy(
+            EffectRisk.MEDIUM, RiskDisposition.AUTHORITY, mutation=True
+        ),
+        "filesystem_delete": LiveActionPolicy(
+            EffectRisk.HIGH, RiskDisposition.CONFIRM, mutation=True
+        ),
+        "open_application": LiveActionPolicy(EffectRisk.MEDIUM, RiskDisposition.CONFIRM),
+        "schedule_application": LiveActionPolicy(EffectRisk.HIGH, RiskDisposition.CONFIRM),
+        "web_open_browser": LiveActionPolicy(EffectRisk.MEDIUM, RiskDisposition.CONFIRM),
+        "cancel_codex_job": LiveActionPolicy(EffectRisk.MEDIUM, RiskDisposition.CONFIRM),
+        "steer_codex_job": LiveActionPolicy(EffectRisk.MEDIUM, RiskDisposition.CONFIRM),
+    }
+
+    @classmethod
+    def tool_policy(cls, tool_name: str | None) -> LiveActionPolicy:
+        if not tool_name:
+            return LiveActionPolicy(EffectRisk.HIGH, RiskDisposition.RESTRICTED)
+        return cls.TOOL_POLICIES.get(
+            tool_name,
+            LiveActionPolicy(EffectRisk.HIGH, RiskDisposition.RESTRICTED),
+        )
+
+    @staticmethod
+    def delegation_policy(
+        agent: Agent | None, execution_mode: ExecutionMode | None
+    ) -> LiveActionPolicy:
+        if agent is Agent.DEEPSEEK and execution_mode is ExecutionMode.READ_ONLY:
+            return LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO)
+        if agent is Agent.CODEX and execution_mode is ExecutionMode.READ_ONLY:
+            return LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO)
+        if agent is Agent.CODEX and execution_mode is ExecutionMode.MUTATION:
+            return LiveActionPolicy(
+                EffectRisk.MEDIUM, RiskDisposition.AUTHORITY, mutation=True
+            )
+        return LiveActionPolicy(EffectRisk.HIGH, RiskDisposition.RESTRICTED)
+
+
+class BoundedAuthorityBlockReason(str, Enum):
+    MODE_IS_SHADOW = "MODE_IS_SHADOW"
+    STRUCTURAL_VALIDATION_FAILED = "STRUCTURAL_VALIDATION_FAILED"
+    ACTION_NOT_IN_LIVE_MATRIX = "ACTION_NOT_IN_LIVE_MATRIX"
+    TOOL_UNAVAILABLE = "TOOL_UNAVAILABLE"
+    PATH_POLICY_BLOCKED = "PATH_POLICY_BLOCKED"
+    DUPLICATE_ACTION = "DUPLICATE_ACTION"
+    EXECUTION_NOT_REQUESTED = "EXECUTION_NOT_REQUESTED"
+    MUTATION_NOT_AUTHORIZED = "MUTATION_NOT_AUTHORIZED"
+    READ_ONLY_CONSTRAINT = "READ_ONLY_CONSTRAINT"
+    FORBIDDEN_AGENT = "FORBIDDEN_AGENT"
+    EXPLICIT_AGENT_MISMATCH = "EXPLICIT_AGENT_MISMATCH"
+    EXPLICIT_AGENT_NOT_USED = "EXPLICIT_AGENT_NOT_USED"
+    AGENT_UNAVAILABLE = "AGENT_UNAVAILABLE"
+    AGENT_INELIGIBLE = "AGENT_INELIGIBLE"
+    EXECUTION_MODE_UNSUPPORTED = "EXECUTION_MODE_UNSUPPORTED"
+    USER_CONFIRMATION_REQUIRED = "USER_CONFIRMATION_REQUIRED"
+    PREMATURE_RESPONSE = "PREMATURE_RESPONSE"
+    GOAL_NOT_VERIFIED = "GOAL_NOT_VERIFIED"
+
+
+@dataclass(frozen=True)
+class BoundedAuthorityFacts:
+    structural_valid: bool
+    tool_available: bool = True
+    path_allowed: bool = True
+    duplicate_action: bool = False
+    goal_evidence_sufficient: bool = False
+    goal_verified: bool = False
+
+
+@dataclass(frozen=True)
+class BoundedAuthorityDecision:
+    action_id: str
+    mode: OrchestrationMode
+    allowed: bool
+    policy: LiveActionPolicy
+    block_reason: BoundedAuthorityBlockReason | None
+    confirmation_required: bool
+    requires_availability_recheck: bool
+    mutation_authorized: bool
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "action_id": self.action_id,
+            "mode": self.mode.value,
+            "allowed": self.allowed,
+            "policy": self.policy.as_dict(),
+            "block_reason": self.block_reason.value if self.block_reason else None,
+            "confirmation_required": self.confirmation_required,
+            "requires_availability_recheck": self.requires_availability_recheck,
+            "mutation_authorized": self.mutation_authorized,
+        }
+
+
+class BoundedLiveExecutionAuthority:
+    """Deterministic permission boundary for orchestration proposals."""
+
+    def __init__(
+        self,
+        mode: OrchestrationMode,
+        *,
+        risk_matrix: type[BoundedLiveRiskMatrix] = BoundedLiveRiskMatrix,
+    ):
+        self.mode = mode
+        self.risk_matrix = risk_matrix
+
+    def evaluate(
+        self,
+        action: NextAction,
+        goal: UserGoal,
+        state: WorldState,
+        facts: BoundedAuthorityFacts,
+    ) -> BoundedAuthorityDecision:
+        policy = (
+            self.risk_matrix.delegation_policy(
+                action.target_agent, action.execution_mode
+            )
+            if action.action is NextActionType.DELEGATE
+            else self.risk_matrix.tool_policy(action.tool_name)
+            if action.action in {NextActionType.INSPECT, NextActionType.EXECUTE}
+            else LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO)
+        )
+        block: BoundedAuthorityBlockReason | None = None
+        if self.mode is not OrchestrationMode.BOUNDED_LIVE:
+            block = BoundedAuthorityBlockReason.MODE_IS_SHADOW
+        elif not facts.structural_valid:
+            block = BoundedAuthorityBlockReason.STRUCTURAL_VALIDATION_FAILED
+        elif facts.duplicate_action:
+            block = BoundedAuthorityBlockReason.DUPLICATE_ACTION
+        elif policy.disposition is RiskDisposition.RESTRICTED:
+            block = BoundedAuthorityBlockReason.ACTION_NOT_IN_LIVE_MATRIX
+        elif action.action in {NextActionType.INSPECT, NextActionType.EXECUTE}:
+            if not facts.tool_available:
+                block = BoundedAuthorityBlockReason.TOOL_UNAVAILABLE
+            elif not facts.path_allowed:
+                block = BoundedAuthorityBlockReason.PATH_POLICY_BLOCKED
+        if block is None and action.action is NextActionType.DELEGATE:
+            agent = action.target_agent
+            agent_state = state.agents.get(agent) if agent else None
+            if agent in goal.forbidden_agents:
+                block = BoundedAuthorityBlockReason.FORBIDDEN_AGENT
+            elif goal.explicit_agent and agent is not goal.explicit_agent:
+                block = BoundedAuthorityBlockReason.EXPLICIT_AGENT_MISMATCH
+            elif agent_state is None or not agent_state.availability_known or not agent_state.available:
+                block = BoundedAuthorityBlockReason.AGENT_UNAVAILABLE
+            elif agent_state.eligible is False:
+                block = BoundedAuthorityBlockReason.AGENT_INELIGIBLE
+            elif action.execution_mode not in agent_state.execution_modes:
+                block = BoundedAuthorityBlockReason.EXECUTION_MODE_UNSUPPORTED
+        if block is None and policy.mutation:
+            if goal.mutation_forbidden:
+                block = BoundedAuthorityBlockReason.READ_ONLY_CONSTRAINT
+            elif not goal.execution_requested:
+                block = BoundedAuthorityBlockReason.EXECUTION_NOT_REQUESTED
+            elif goal.mutation_required is not RequirementValue.TRUE:
+                block = BoundedAuthorityBlockReason.USER_CONFIRMATION_REQUIRED
+        if block is None and policy.disposition is RiskDisposition.CONFIRM:
+            block = BoundedAuthorityBlockReason.USER_CONFIRMATION_REQUIRED
+        if block is None and action.action is NextActionType.RESPOND:
+            explicit_agent_used = any(
+                observation.agent is goal.explicit_agent
+                and observation.status is ObservationStatus.SUCCESS
+                for observation in state.observations
+            )
+            mutation_happened = any(
+                observation.state_changes for observation in state.observations
+            )
+            if goal.explicit_agent is not None and not explicit_agent_used:
+                block = BoundedAuthorityBlockReason.EXPLICIT_AGENT_NOT_USED
+            elif mutation_happened and not facts.goal_verified:
+                block = BoundedAuthorityBlockReason.GOAL_NOT_VERIFIED
+            elif goal.execution_requested and not facts.goal_evidence_sufficient:
+                block = BoundedAuthorityBlockReason.PREMATURE_RESPONSE
+        return BoundedAuthorityDecision(
+            action_id=action.action_id,
+            mode=self.mode,
+            allowed=block is None,
+            policy=policy,
+            block_reason=block,
+            confirmation_required=(
+                block is BoundedAuthorityBlockReason.USER_CONFIRMATION_REQUIRED
+            ),
+            requires_availability_recheck=action.action is NextActionType.DELEGATE,
+            mutation_authorized=bool(policy.mutation and block is None),
+        )
 
 
 # Phase 1 only transfers authority for agents the user can name explicitly.

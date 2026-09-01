@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from tern.orchestrator.external_agents import (
     ExternalAgentSpec,
 )
 from tern.orchestrator.security import ActionLogger, PathPolicy
+from tern.orchestrator.tools import ToolRegistry
 
 
 def spec(**overrides) -> ExternalAgentSpec:
@@ -177,6 +179,45 @@ def test_runner_executes_inside_allowlist(tmp_path: Path, executavel: Path):
     ultima = runner.chamadas[-1]
     assert ultima["args"][1:] == ["run", "revisar arquivo"]
     assert ultima["cwd"] == str(tmp_path.resolve())
+
+
+def test_external_tool_receives_preserved_delegation_request(
+    tmp_path: Path,
+    executavel: Path,
+):
+    runner = FakeRunner()
+    discovery = AgentDiscovery(specs=(spec(),), runner=runner, environment={})
+
+    class UnusedCodex:
+        timeout = 1
+
+    tools = ToolRegistry(
+        policy=PathPolicy((tmp_path,)),
+        logger=ActionLogger(tmp_path / "actions.jsonl"),
+        codex=UnusedCodex(),
+        max_output_bytes=131072,
+        agent_discovery=discovery,
+    )
+    tools.external_agents._runner = runner
+    original = "Revise somente auth.py; não edite arquivos."
+
+    result = tools.execute(
+        "delegate_to_fake",
+        {"task": "edite tudo", "project_path": str(tmp_path)},
+        context={
+            "original_user_text": original,
+            "delegation_constraints": ["read_only"],
+            "turn_id": "turn-preservation",
+        },
+    )
+
+    assert result["ok"], result
+    payload = json.loads(runner.chamadas[-1]["args"][-1])
+    assert payload["schema"] == "jarvis.delegation_request.v1"
+    assert payload["requested_agent"] == "fake"
+    assert payload["task"] == original
+    assert payload["constraints"] == ["read_only"]
+    assert "edite tudo" not in runner.chamadas[-1]["args"][-1]
 
 
 def test_runner_blocks_path_outside_allowlist(tmp_path: Path, executavel: Path):

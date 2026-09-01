@@ -36,6 +36,7 @@ from .execution_authority import (
     AuthoritativeExecutionDecision,
     ExecutionAuthorityController,
     ExecutionAuthorityMode,
+    OrchestrationMode,
     availability_sample_from_gate,
     probe_agent_availability,
 )
@@ -44,6 +45,9 @@ from .execution_gate_shadow import (
     capability_baseline_from_registry,
     legacy_facts_from_decision,
 )
+from .orchestration_contracts import OrchestrationBudget
+from .orchestration_live import BoundedLiveOrchestrationRunner
+from .orchestration_shadow import ShadowOrchestrationObserver
 from .explicit_agent_binding import (
     availability_for_requested_agent,
     detect_explicit_agent_binding,
@@ -66,6 +70,16 @@ _SINGLE_CALL_TOOLS = frozenset(
         "review_deepseek_session",
         "get_hardware_telemetry",
     }
+)
+
+# Garantia de resposta nao vazia: quando o modelo local fecha a rodada sem
+# texto (geracao cortada por timeout, recusa de responder ou insistencia em
+# ferramentas ja desativadas), o painel recebe este texto em vez do erro
+# "O modelo respondeu vazio." sem explicacao.
+_EMPTY_FINAL_ANSWER_FALLBACK = (
+    "O modelo local encerrou esta rodada sem produzir resposta de texto. "
+    "As ferramentas foram executadas, mas a geracao final veio vazia. "
+    "Tente reenviar o pedido com uma instrucao mais curta e direta."
 )
 
 
@@ -293,6 +307,9 @@ class Supervisor:
             settings.execution_gate_authority
         )
         self.authority = ExecutionAuthorityController(self.authority_mode)
+        self.orchestration_mode = OrchestrationMode.parse(
+            settings.orchestration_mode
+        )
         self.shadow_observer = (
             ShadowExecutionObserver(
                 policy=SelectionPolicy(
@@ -303,6 +320,44 @@ class Supervisor:
                 settings.execution_gate_shadow
                 or self.authority_mode is ExecutionAuthorityMode.EXPLICIT_USER
             )
+            else None
+        )
+        orchestration_budget = OrchestrationBudget(
+            max_steps=settings.orchestration_shadow_max_steps,
+            max_observations=settings.orchestration_shadow_max_observations,
+            max_action_history=settings.orchestration_shadow_max_action_history,
+            max_context_items=settings.orchestration_shadow_max_context_items,
+            max_repeated_action=settings.orchestration_shadow_max_repeated_action,
+            max_same_observation=settings.orchestration_shadow_max_same_observation,
+            max_failures=settings.orchestration_shadow_max_failures,
+            max_model_calls=settings.orchestration_max_model_calls,
+            max_tool_calls=settings.orchestration_max_tool_calls,
+            max_delegations=settings.orchestration_max_delegations,
+            max_elapsed_seconds=settings.orchestration_max_elapsed_seconds,
+        )
+        self.orchestration_shadow_observer = (
+            ShadowOrchestrationObserver(
+                client,
+                budget=orchestration_budget,
+            )
+            if (
+                self.orchestration_mode is OrchestrationMode.SHADOW
+                and settings.orchestration_shadow_enabled
+            )
+            else None
+        )
+        self.orchestration_live_runner = (
+            BoundedLiveOrchestrationRunner(
+                client,
+                tools,
+                budget=orchestration_budget,
+                fast_path_enabled=settings.orchestration_fast_path_enabled,
+                decision_cache_enabled=settings.orchestration_decision_cache_enabled,
+                decision_cache_max_entries=(
+                    settings.orchestration_decision_cache_max_entries
+                ),
+            )
+            if self.orchestration_mode is OrchestrationMode.BOUNDED_LIVE
             else None
         )
         self.conversation_id = f"jarvis-{uuid.uuid4()}"
@@ -371,6 +426,88 @@ class Supervisor:
                 error=type(exc).__name__,
             )
             return None, None
+
+    def _observe_orchestration_shadow(
+        self,
+        routing_text: str,
+        decision: Any,
+        context: Any,
+        execution_gate_record: dict[str, Any] | None,
+    ) -> None:
+        """Run one isolated policy step; output can never rewrite live state."""
+
+        observer = self.orchestration_shadow_observer
+        if observer is None:
+            return
+        try:
+            codex_sample = probe_agent_availability(
+                self.tools,
+                Agent.CODEX,
+                source="orchestration_shadow_snapshot",
+            )
+            baseline = capability_baseline_from_registry(
+                self.tools,
+                local_model_available=True,
+                codex_available=codex_sample.available,
+            )
+            eligible_values = set(
+                (execution_gate_record or {}).get("eligible_agents") or ()
+            )
+            eligibility_overrides = (
+                {agent: agent.value in eligible_values for agent in Agent}
+                if execution_gate_record is not None
+                else None
+            )
+            project_root = getattr(context, "project_root", None)
+            project_snapshot = (
+                {
+                    "project_path": project_root,
+                    "git_status": "unknown",
+                    "known_test_state": "unknown",
+                }
+                if project_root
+                else None
+            )
+            job_id = getattr(context, "codex_job_id", None)
+            jobs = (
+                (
+                    {
+                        "job_id": job_id,
+                        "agent": "codex",
+                        "status": getattr(context, "codex_job_status", None)
+                        or "unknown",
+                    },
+                )
+                if job_id
+                else ()
+            )
+            record = observer.observe_once(
+                routing_text,
+                baseline=baseline,
+                eligibility_overrides=eligibility_overrides,
+                intent_frame=getattr(decision, "intent_frame", None),
+                project_snapshot=project_snapshot,
+                tool_names=self.tools.names(),
+                jobs=jobs,
+                authority_facts=(
+                    "SHADOW_ONLY",
+                    "LIVE_AUTHORITY_UNCHANGED",
+                    f"execution_gate_shadow={bool(execution_gate_record)}",
+                ),
+                legacy_facts={
+                    "intent": getattr(
+                        getattr(decision, "intent", None), "value", None
+                    ),
+                    "reason_code": getattr(decision, "reason_code", None),
+                    "selected_action": getattr(decision, "selected_action", None),
+                },
+            )
+            self.tools.logger.write_event("orchestration_shadow", **record)
+        except Exception as exc:
+            self.tools.logger.write_event(
+                "orchestration_shadow_error",
+                error=type(exc).__name__,
+            )
 
     def _authority_block_answer(
         self,
@@ -547,7 +684,12 @@ class Supervisor:
             set_web_trace(trace)
         original_user_text = user_text
         routing_text = normalize_technical_transcript(user_text)
-        explicit_agent_binding = detect_explicit_agent_binding(routing_text)
+        project_context = self.tools.projects.context_text()
+        decision_context = self.decision_policy.build_context()
+        explicit_agent_binding = detect_explicit_agent_binding(
+            routing_text,
+            focused_agent=decision_context.focused_agent,
+        )
         trace(
             "EXPLICIT_AGENT_BINDING",
             result="bound" if explicit_agent_binding else "not_bound",
@@ -566,8 +708,36 @@ class Supervisor:
         if callable(begin_research):
             begin_research(routing_text)
 
-        project_context = self.tools.projects.context_text()
-        decision_context = self.decision_policy.build_context()
+        if self.orchestration_live_runner is not None:
+            timing.mark("bounded_live_started")
+            emit("orchestration_started", mode=OrchestrationMode.BOUNDED_LIVE.value)
+            result = self.orchestration_live_runner.run(
+                original_user_text,
+                runtime_context=decision_context,
+                conversation_id=self.conversation_id,
+                event_callback=event_callback,
+            )
+            orchestration = result.get("orchestration") or {}
+            trace(
+                "BOUNDED_LIVE_ORCHESTRATION",
+                result=(
+                    "completed"
+                    if orchestration.get("termination_reason") == "GOAL_COMPLETED"
+                    else "stopped"
+                ),
+                reason_code=orchestration.get("termination_reason"),
+            )
+            timing.mark("response_ready")
+            result["timing"] = timing.as_dict()
+            result["pipeline_trace"] = pipeline_trace
+            self.decision_policy.record_answer(str(result.get("answer") or ""))
+            emit(
+                "orchestration_completed",
+                mode=OrchestrationMode.BOUNDED_LIVE.value,
+                termination_reason=orchestration.get("termination_reason"),
+            )
+            return result
+
         timing.mark("decision_context_ready")
         emit("decision_context_ready")
         semantic_result = QwenSemanticInterpreter.skipped()
@@ -625,7 +795,15 @@ class Supervisor:
             semantic_decision=semantic_result.decision,
             explicit_agent_binding=explicit_agent_binding,
         )
-        if semantic_result.used and not semantic_result.parse_valid:
+        deterministic_mutation = decision.reason_code in {
+            "project_mutation_requires_execution",
+            "active_job_mutation_interaction",
+        }
+        if (
+            semantic_result.used
+            and not semantic_result.parse_valid
+            and not deterministic_mutation
+        ):
             decision = self.decision_policy.safe_fallback_decision(decision)
         all_tool_specs = self.tools.specs()
         registered_tool_names = {
@@ -683,6 +861,12 @@ class Supervisor:
             routing_text,
             decision,
             decision_context,
+        )
+        self._observe_orchestration_shadow(
+            routing_text,
+            decision,
+            decision_context,
+            shadow_record,
         )
         if shadow_record is not None:
             trace(
@@ -1111,6 +1295,24 @@ class Supervisor:
                     "turn_id": agent_turn_id,
                     "user_text": routing_text,
                     "original_user_text": original_user_text,
+                    "delegation_constraints": (
+                        [value.value for value in decision.intent_frame.constraints]
+                        if decision.intent_frame
+                        else []
+                    ),
+                    "delegation_action": (
+                        decision.intent_frame.action.value
+                        if decision.intent_frame and decision.intent_frame.action
+                        else None
+                    ),
+                    "delegation_references": (
+                        [decision.resolved_reference.id]
+                        if decision.resolved_reference
+                        and decision.resolved_reference.id
+                        and not decision.resolved_reference.ambiguous
+                        else []
+                    ),
+                    "requested_agent_source": decision.requested_agent_source,
                     "request_fingerprint": progress.fingerprint(
                         fast_path.tool,
                         fast_path.arguments,
@@ -1189,7 +1391,11 @@ class Supervisor:
                     None,
                     response_stage="WEB_SAFETY_REPORT",
                 )
-            if fast_path.reason_code == "explicit_agent_direct_handoff":
+            if fast_path.reason_code in {
+                "explicit_agent_direct_handoff",
+                "automatic_mutation_direct_handoff",
+                "active_job_mutation_direct_steer",
+            }:
                 if not fast_result.get("ok"):
                     detail = str(
                         fast_result.get("message")
@@ -1208,6 +1414,10 @@ class Supervisor:
                         answer = f"Tarefa enviada diretamente ao Codex ({status})."
                         if job_id:
                             answer += f" Job: {job_id}."
+                elif fast_path.tool == "steer_codex_job":
+                    answer = str(fast_result.get("message") or "").strip()
+                    if not answer:
+                        answer = "InstruÃ§Ã£o enviada Ã  tarefa ativa do Codex."
                 else:
                     answer = str(fast_result.get("response") or "").strip()
                     if not answer:
@@ -1216,9 +1426,11 @@ class Supervisor:
                     answer,
                     fast_result.get("usage") if isinstance(fast_result.get("usage"), dict) else None,
                     response_stage=(
-                        "EXPLICIT_AGENT_DIRECT_HANDOFF"
-                        if fast_result.get("ok")
-                        else "EXPLICIT_AGENT_HANDOFF_FAILED"
+                        "EXPLICIT_AGENT_HANDOFF_FAILED"
+                        if not fast_result.get("ok")
+                        else "EXPLICIT_AGENT_DIRECT_HANDOFF"
+                        if fast_path.reason_code == "explicit_agent_direct_handoff"
+                        else "CODEX_MUTATION_DIRECT_HANDOFF"
                     ),
                 )
             if fast_path.tool == "get_hardware_telemetry":
@@ -1295,9 +1507,10 @@ class Supervisor:
                         "qwen_request_started",
                         time.perf_counter(),
                     )
-                return completed(
-                    message.get("content", ""), response.get("usage")
-                )
+                answer = str(message.get("content") or "").strip()
+                if not answer:
+                    answer = _EMPTY_FINAL_ANSWER_FALLBACK
+                return completed(answer, response.get("usage"))
             if tools_disabled:
                 self.tools.logger.write_event(
                     "tool_loop_blocked",
@@ -1310,14 +1523,37 @@ class Supervisor:
                     reason="tools_disabled",
                     state="blocked",
                 )
-                timing_values = finish_observation("loop_prevented")
-                return {
-                    "ok": False,
-                    "error": "tool_loop_blocked",
-                    "message": "nova chamada de ferramenta bloqueada apos encerramento do fluxo",
-                    "tool_calls": calls,
-                    "timing": timing_values,
-                }
+                # O modelo insistiu em ferramentas apos o encerramento do fluxo.
+                # Em vez de devolver um erro vazio ao painel, força uma ultima
+                # resposta em texto com o que ja foi coletado.
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "O fluxo de ferramentas foi encerrado. Nao chame mais "
+                            "ferramentas. Responda agora, em texto, com o que ja "
+                            "foi apurado, e diga o que ficou pendente."
+                        ),
+                    }
+                )
+                final_response = None
+                try:
+                    final_response = self.client.chat(messages, tools=None)
+                    final_message = final_response.get("choices", [{}])[0].get(
+                        "message", {}
+                    )
+                    answer = str(final_message.get("content") or "").strip()
+                except ServerError:
+                    answer = ""
+                if not answer:
+                    answer = _EMPTY_FINAL_ANSWER_FALLBACK
+                return completed(
+                    answer,
+                    final_response.get("usage")
+                    if isinstance(final_response, dict)
+                    else None,
+                    response_stage="TOOLS_DISABLED_FINAL_ANSWER",
+                )
             messages.append(message)
             for call in tool_calls:
                 if calls >= self.settings.max_tool_calls:
@@ -1488,6 +1724,24 @@ class Supervisor:
                                 "turn_id": agent_turn_id,
                                 "user_text": routing_text,
                                 "original_user_text": original_user_text,
+                                "delegation_constraints": (
+                                    [value.value for value in decision.intent_frame.constraints]
+                                    if decision.intent_frame
+                                    else []
+                                ),
+                                "delegation_action": (
+                                    decision.intent_frame.action.value
+                                    if decision.intent_frame and decision.intent_frame.action
+                                    else None
+                                ),
+                                "delegation_references": (
+                                    [decision.resolved_reference.id]
+                                    if decision.resolved_reference
+                                    and decision.resolved_reference.id
+                                    and not decision.resolved_reference.ambiguous
+                                    else []
+                                ),
+                                "requested_agent_source": decision.requested_agent_source,
                                 "request_fingerprint": fingerprint,
                                 "conversation_id": self.conversation_id,
                                 "focused_codex_thread_id": (
@@ -1712,18 +1966,15 @@ class Supervisor:
             final_message = final_response.get("choices", [{}])[0].get(
                 "message", {}
             )
-            answer = final_message.get("content", "")
+            answer = str(final_message.get("content") or "").strip()
             if answer:
                 return completed(answer, final_response.get("usage"))
         except ServerError:
             timing.qwen_request_ms += (time.perf_counter() - qwen_started) * 1000
             timing.qwen_requests += 1
         timing_values = finish_observation("tool_error")
-        return {
-            "ok": False,
-            "error": "tool_limit",
-            "message": f"limite de {self.settings.max_tool_calls} chamadas atingido",
-            "tool_calls": calls,
-            "timing": timing_values,
-            "web": {"used": web_used, "sources": web_sources},
-        }
+        return completed(
+            _EMPTY_FINAL_ANSWER_FALLBACK,
+            None,
+            response_stage="TOOL_LIMIT_FALLBACK",
+        )

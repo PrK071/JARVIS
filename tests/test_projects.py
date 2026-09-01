@@ -385,7 +385,7 @@ def test_delegate_normalization_uses_alias_not_home_directory(tmp_path):
         {"user_text": "Corrija o Jarvis", "turn_id": "one"},
     )
     assert normalized["project_path"] == str(root.resolve())
-    assert normalized["task"].splitlines()[0] == f"Trabalhe no projeto {root.resolve()}."
+    assert normalized["task"] == "Corrija o roteamento"
 
 
 def test_project_tools_are_small_and_read_only(tmp_path):

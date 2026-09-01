@@ -91,6 +91,22 @@ class Settings:
     agent_decision_semantic_first: bool
     execution_gate_shadow: bool
     execution_gate_authority: str
+    orchestration_mode: str
+    orchestration_shadow_enabled: bool
+    orchestration_fast_path_enabled: bool
+    orchestration_decision_cache_enabled: bool
+    orchestration_decision_cache_max_entries: int
+    orchestration_shadow_max_steps: int
+    orchestration_shadow_max_observations: int
+    orchestration_shadow_max_action_history: int
+    orchestration_shadow_max_context_items: int
+    orchestration_shadow_max_repeated_action: int
+    orchestration_shadow_max_same_observation: int
+    orchestration_shadow_max_failures: int
+    orchestration_max_model_calls: int
+    orchestration_max_tool_calls: int
+    orchestration_max_delegations: int
+    orchestration_max_elapsed_seconds: int
     codex_timeout: int
     codex_app_server_endpoint: str
     codex_current_thread_id: str | None
@@ -299,7 +315,11 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         parallel_slots=int(values.get("MODEL_PARALLEL_SLOTS", "1")),
         server_host=values.get("MODEL_SERVER_HOST", "127.0.0.1"),
         server_port=int(values.get("MODEL_SERVER_PORT", "8080")),
-        timeout=int(values.get("MODEL_TIMEOUT", "180")),
+        # O mesmo valor vira o -to do llama-server (timeout HTTP do servidor) e
+        # o timeout do cliente. 180s cortava respostas finais longas no meio da
+        # geracao (prompt grande + ~12 tok/s no Vulkan), deixando o painel com
+        # "O modelo respondeu vazio." em tarefas reais. 600s da margem segura.
+        timeout=int(values.get("MODEL_TIMEOUT", "600")),
         fit=_bool(values.get("MODEL_FIT", "true")),
         vram_reserve_mib=int(values.get("MODEL_VRAM_RESERVE_MIB", "1280")),
         reasoning=values.get("MODEL_REASONING", "off"),
@@ -323,6 +343,54 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         execution_gate_authority=values.get(
             "EXECUTION_GATE_AUTHORITY", "shadow"
         ).strip().lower(),
+        orchestration_mode=values.get(
+            "ORCHESTRATION_MODE", "shadow"
+        ).strip().lower(),
+        orchestration_shadow_enabled=_bool(
+            values.get("ORCHESTRATION_SHADOW_ENABLED", "false")
+        ),
+        orchestration_fast_path_enabled=_bool(
+            values.get("ORCHESTRATION_FAST_PATH_ENABLED", "true")
+        ),
+        orchestration_decision_cache_enabled=_bool(
+            values.get("ORCHESTRATION_DECISION_CACHE_ENABLED", "true")
+        ),
+        orchestration_decision_cache_max_entries=int(
+            values.get("ORCHESTRATION_DECISION_CACHE_MAX_ENTRIES", "128")
+        ),
+        orchestration_shadow_max_steps=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_STEPS", "8")
+        ),
+        orchestration_shadow_max_observations=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_OBSERVATIONS", "16")
+        ),
+        orchestration_shadow_max_action_history=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_ACTION_HISTORY", "16")
+        ),
+        orchestration_shadow_max_context_items=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_CONTEXT_ITEMS", "64")
+        ),
+        orchestration_shadow_max_repeated_action=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_REPEATED_ACTION", "2")
+        ),
+        orchestration_shadow_max_same_observation=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_SAME_OBSERVATION", "2")
+        ),
+        orchestration_shadow_max_failures=int(
+            values.get("ORCHESTRATION_SHADOW_MAX_FAILURES", "3")
+        ),
+        orchestration_max_model_calls=int(
+            values.get("ORCHESTRATION_MAX_MODEL_CALLS", "8")
+        ),
+        orchestration_max_tool_calls=int(
+            values.get("ORCHESTRATION_MAX_TOOL_CALLS", "8")
+        ),
+        orchestration_max_delegations=int(
+            values.get("ORCHESTRATION_MAX_DELEGATIONS", "4")
+        ),
+        orchestration_max_elapsed_seconds=int(
+            values.get("ORCHESTRATION_MAX_ELAPSED_SECONDS", "900")
+        ),
         codex_timeout=int(values.get("CODEX_TIMEOUT", "1800")),
         codex_app_server_endpoint=values.get(
             "CODEX_APP_SERVER_ENDPOINT", "ws://127.0.0.1:4500"
@@ -589,6 +657,26 @@ def _validate(settings: Settings) -> None:
         raise ValueError("MODEL_KV_CACHE_V nao suportado")
     if settings.max_tool_calls < 1 or settings.max_attempts < 1:
         raise ValueError("limites devem ser positivos")
+    if settings.orchestration_mode not in {"shadow", "bounded_live"}:
+        raise ValueError("ORCHESTRATION_MODE deve ser shadow ou bounded_live")
+    if any(
+        value < 1
+        for value in (
+            settings.orchestration_decision_cache_max_entries,
+            settings.orchestration_shadow_max_steps,
+            settings.orchestration_shadow_max_observations,
+            settings.orchestration_shadow_max_action_history,
+            settings.orchestration_shadow_max_context_items,
+            settings.orchestration_shadow_max_repeated_action,
+            settings.orchestration_shadow_max_same_observation,
+            settings.orchestration_shadow_max_failures,
+            settings.orchestration_max_model_calls,
+            settings.orchestration_max_tool_calls,
+            settings.orchestration_max_delegations,
+            settings.orchestration_max_elapsed_seconds,
+        )
+    ):
+        raise ValueError("limites de orchestration shadow/live devem ser positivos")
     if (
         not re.fullmatch(
             r"wss?://(?:127\.0\.0\.1|localhost|\[?::1\]?):\d+",

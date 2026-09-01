@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Iterable
@@ -38,6 +39,15 @@ class FollowupType(str, Enum):
     STATUS_FOLLOWUP = "STATUS_FOLLOWUP"
     REFERENCE_FOLLOWUP = "REFERENCE_FOLLOWUP"
     CORRECTION = "CORRECTION"
+
+
+class MutationAction(str, Enum):
+    """Concrete mutation requested inside a local or delegated task."""
+
+    DELETE_OBJECT = "DELETE_OBJECT"
+    REMOVE_COMPONENT = "REMOVE_COMPONENT"
+    CLEAR_CONTENT = "CLEAR_CONTENT"
+    RESET_STATE = "RESET_STATE"
 
 
 @dataclass(frozen=True)
@@ -104,6 +114,7 @@ class IntentFrame:
     constraints: tuple[Constraint, ...]
     confidence: float
     followup_type: FollowupType
+    action: MutationAction | None = None
     plan: tuple[PlanStep, ...] = ()
     contradictory_constraints: tuple[str, ...] = ()
 
@@ -119,6 +130,7 @@ class IntentFrame:
             "constraints": [value.value for value in self.constraints],
             "confidence": round(self.confidence, 3),
             "followup_type": self.followup_type.value,
+            "action": self.action.value if self.action else None,
             "plan": [step.as_dict() for step in self.plan],
             "contradictory_constraints": list(self.contradictory_constraints),
         }
@@ -177,11 +189,138 @@ _ACTION_VERBS = (
     "cancela", "cancele", "para ", "pare ", "faz ", "faca ", "poe ",
     "aplica", "aplique", "corrige", "corrija", "implementa", "implemente",
     "roda", "rode", "adiciona", "adicione", "verifica", "verifique", "revisar",
+    "cria", "crie", "criar", "melhora", "melhore", "melhorar",
+    "modifica", "modifique", "modificar", "altera", "altere", "alterar",
+    "edita", "edite", "editar", "atualiza", "atualize", "atualizar",
+    "ajusta", "ajuste", "ajustar", "remove", "remova", "remover",
+    "apaga", "apague", "apagar", "deleta", "delete", "deletar",
+    "exclui", "exclua", "excluir",
+    "troca", "troque", "trocar", "inclui", "inclua", "incluir",
+    "desenvolve", "desenvolva", "desenvolver", "constroi", "construa", "construir",
+    "gera", "gere", "gerar", "refaz", "refaca", "refazer",
     "abre", "abra", "leia", "ler ", "procura", "procure", "localiza",
     "mostra", "mostre", "veja", "revisa", "revise", "avisa", "avise", "fala", "fale",
     "delega", "delegue", "delegar", "encaminha", "encaminhe", "encaminhar",
     "aciona", "acione", "acionar",
 )
+
+_PROJECT_MUTATION_RE = re.compile(
+    r"\b(?:cri(?:a|e|ar)|melhor(?:a|e|ar)|modifi(?:ca|car|que)|"
+    r"alter(?:a|ar|e)|edit(?:a|ar|e)|atualiz(?:a|ar|e)|ajust(?:a|ar|e)|"
+    r"remov(?:a|e|er)|apag(?:a|ar|ue)|delet(?:a|ar|e)|exclu(?:a|i|ir)|"
+    r"troc(?:a|ar|e)|inclu(?:a|i|ir)|"
+    r"desenvolv(?:a|e|er)|constr(?:oi|ua|uir)|ger(?:a|ar|e)|"
+    r"refa(?:ca|z|zer)|adicion(?:a|ar|e)|implement(?:a|ar|e)|"
+    r"corrig(?:e|ir|ija)|arrum(?:a|ar|e)|consert(?:a|ar|e)|aplic(?:a|ar|e))\b"
+)
+_PROJECT_CREATION_WITH_DO_RE = re.compile(
+    r"\bfa(?:ca|z|zer)\s+(?:(?:um|uma|o|a)\s+)?"
+    r"(?:site|landing\s+page|pagina|aplicativo|aplicacao|app|sistema|dashboard|"
+    r"painel|componente|funcionalidade|endpoint|api|botao|formulario|tela|layout|"
+    r"script)\b"
+)
+
+_DESTRUCTIVE_MUTATION_RE = re.compile(
+    r"\b(?:delet(?:a|ar|e)|apag(?:a|ar|ue)|exclu(?:a|i|ir)|"
+    r"remov(?:a|e|er)|retir(?:a|e|ar)|elimin(?:a|e|ar)|"
+    r"suprim(?:a|e|ir)|descart(?:a|e|ar)|exting(?:a|uir)|extingu(?:a|e|ir)|"
+    r"erradic(?:a|e|ar)|tir(?:a|e|ar)|arranc(?:a|e|ar)|"
+    r"cort(?:a|e|ar)|desinstal(?:a|e|ar)|baixar)\b|"
+    r"\b(?:dar\s+(?:uma?\s+)?baixa|jog(?:a|ue|ar)\s+fora|"
+    r"mand(?:a|e|ar)\s+embora|some\s+com|fa(?:z|ca|zer)\s+"
+    r"(?:isso\s+)?(?:sumir|desaparecer)|se\s+livr(?:a|e|ar)\s+(?:de|disso)|"
+    r"livr(?:a|e|ar)\s+(?:de|disso))\b"
+)
+_CLEAR_MUTATION_RE = re.compile(
+    r"\b(?:limp(?:a|e|ar)|esvazi(?:a|e|ar)|clear|dar\s+clear)\b|"
+    r"\b(?:apag(?:a|ar|ue)|remov(?:a|e|er))\s+(?:o\s+)?conteudo\b"
+)
+_RESET_MUTATION_RE = re.compile(
+    r"\b(?:zer(?:a|e|ar)|reset(?:a|e|ar)?)\b"
+)
+_COMPONENT_TARGET_RE = re.compile(
+    r"\b(?:trecho|linhas?|partes?|se(?:cao|coes)|campos?|propriedades?|"
+    r"parametros?|valor(?:es)?|codigos?|fun(?:cao|coes)|metodos?|classes?|imports?|"
+    r"dependencias?|variave(?:l|is)|blocos?|logica|implementa(?:cao|coes)|"
+    r"configura(?:cao|coes)|op(?:cao|coes)|regras?)\b|\b(?:do|da)\s+config\b"
+)
+_POSITIVE_NON_EXISTENCE_RE = re.compile(
+    r"\b(?:nao\s+quero\s+mais\s+isso|nao\s+precisa\s+mais\s+disso|"
+    r"isso\s+(?:nao\s+deve(?:\s+mais)?|nao\s+deveria|pode\s+deixar\s+de)\s+existir|"
+    r"quero\s+isso\s+(?:fora|removido|apagado|excluido|deletado)|"
+    r"nao\s+(?:mantenha|preserve)\s+isso|nao\s+deixe\s+isso(?:\s+(?:ai|no\s+(?:codigo|projeto)))?|"
+    r"tire\s+isso\s+do\s+projeto|quero\s+isso\s+fora\s+do\s+projeto|"
+    r"isso\s+(?:tem(?:\s+que)?|precisa|deve)\s+sair)\b"
+)
+
+_GLOBAL_MUTATION_PROHIBITION_RE = re.compile(
+    r"\b(?:nao|sem)\s+(?:(?:quero|quer|precisa|deve)\s+(?:que\s+)?)?"
+    r"(?:crie|criar|melhore|melhorar|modifique|modificar|altere|alterar|"
+    r"edite|editar|atualize|atualizar|ajuste|ajustar|remove|remova|remover|"
+    r"apaga|apague|apagar|deleta|delete|deletar|exclui|exclua|excluir|"
+    r"retira|retire|retirar|elimina|elimine|eliminar|suprime|suprima|suprimir|"
+    r"descarta|descarte|descartar|extingue|extinga|extinguir|"
+    r"erradica|erradique|erradicar|tira|tire|tirar|corta|corte|cortar|"
+    r"arranca|arranque|arrancar|limpa|limpe|limpar|esvazia|esvazie|esvaziar|"
+    r"zera|zere|zerar|reseta|resete|resetar|desinstala|desinstale|desinstalar|"
+    r"troque|trocar|inclua|incluir|desenvolva|desenvolver|construa|"
+    r"construir|gere|gerar|refaca|refazer|adicione|adicionar|implemente|"
+    r"implementar|corrija|corrigir|arrume|arrumar|conserte|consertar|"
+    r"aplique|aplicar|mexa|mexer|mexe|mude|mudar)"
+    r"(?:\s+(?:absolutamente\s+)?nada\b|"
+    r"\s+(?:(?:nenhum(?:a)?|qualquer|os?|as?)\s+)?"
+    r"(?:arquivos?|codigo|modulos?|projeto)\b|"
+    r"(?=\s*(?:$|[,;])))"
+)
+
+_NEGATED_PROJECT_MUTATION_CLAUSE_RE = re.compile(
+    r"\b(?:nao|sem)\s+(?:(?:quero|quer|precisa|deve)\s+(?:que\s+)?)?"
+    r"(?:crie|criar|melhore|melhorar|modifique|modificar|altere|alterar|"
+    r"edite|editar|atualize|atualizar|ajuste|ajustar|remove|remova|remover|"
+    r"apaga|apague|apagar|deleta|delete|deletar|exclui|exclua|excluir|"
+    r"retira|retire|retirar|elimina|elimine|eliminar|suprime|suprima|suprimir|"
+    r"descarta|descarte|descartar|extingue|extinga|extinguir|"
+    r"erradica|erradique|erradicar|tira|tire|tirar|corta|corte|cortar|"
+    r"arranca|arranque|arrancar|limpa|limpe|limpar|esvazia|esvazie|esvaziar|"
+    r"zera|zere|zerar|reseta|resete|resetar|desinstala|desinstale|desinstalar|"
+    r"troque|trocar|inclua|incluir|desenvolva|desenvolver|construa|"
+    r"construir|gere|gerar|refaca|refazer|adicione|adicionar|implemente|"
+    r"implementar|corrija|corrigir|arrume|arrumar|conserte|consertar|"
+    r"aplique|aplicar|mexa|mexer|mexe|mude|mudar)\b[^,;.]*"
+)
+
+
+def project_mutation_signal(text: str) -> bool:
+    """Return whether normalized text asks for a concrete project change."""
+    affirmative_text = _without_negated_clauses(text)
+    return bool(
+        classify_mutation_action(text)
+        or _PROJECT_MUTATION_RE.search(affirmative_text)
+        or _PROJECT_CREATION_WITH_DO_RE.search(affirmative_text)
+    )
+
+
+def classify_mutation_action(text: str) -> MutationAction | None:
+    """Classify removal semantics without confusing object, content and state."""
+    normalized = " ".join(
+        "".join(
+            character
+            for character in unicodedata.normalize("NFKD", text.casefold())
+            if not unicodedata.combining(character)
+        ).split()
+    )
+    affirmative = _without_negated_clauses(normalized)
+    positive_non_existence = bool(_POSITIVE_NON_EXISTENCE_RE.search(normalized))
+    if _RESET_MUTATION_RE.search(affirmative):
+        return MutationAction.RESET_STATE
+    if _CLEAR_MUTATION_RE.search(affirmative):
+        return MutationAction.CLEAR_CONTENT
+    destructive = bool(_DESTRUCTIVE_MUTATION_RE.search(affirmative))
+    if destructive and _COMPONENT_TARGET_RE.search(affirmative):
+        return MutationAction.REMOVE_COMPONENT
+    if destructive or positive_non_existence:
+        return MutationAction.DELETE_OBJECT
+    return None
 
 
 def _contains(text: str, values: Iterable[str]) -> bool:
@@ -204,8 +343,9 @@ _NEGATED_AGENT_CLAUSE = re.compile(
 
 
 def _without_negated_clauses(text: str) -> str:
-    """A verb inside 'sem/nao ... <agente>' is a prohibition, not an action request."""
-    return _NEGATED_AGENT_CLAUSE.sub(" ", text)
+    """Remove negated agent and mutation clauses from affirmative action signals."""
+    without_agents = _NEGATED_AGENT_CLAUSE.sub(" ", text)
+    return _NEGATED_PROJECT_MUTATION_CLAUSE_RE.sub(" ", without_agents)
 
 
 def _negated_action(text: str, action: str, agent: str | None = None) -> bool:
@@ -458,7 +598,11 @@ class IntentFrameBuilder:
         correction = bool(re.search(r"^(?:nao[,;]?\s+)?(?:o outro|a outra|nao era|quis dizer|eu (?:tava|estava) falando)", text))
         meta = _meta_signal(text)
         question = "?" in text or meta or bool(re.match(r"^(?:como|por que|porque|qual|quais|o que|oq|ele|ela|ja|ainda)\b", text))
-        action_signal = _contains(_without_negated_clauses(text), _ACTION_VERBS)
+        mutation_action = classify_mutation_action(text)
+        action_signal = bool(
+            _contains(_without_negated_clauses(text), _ACTION_VERBS)
+            or mutation_action is not None
+        )
 
         constraints: set[Constraint] = set()
         if _negated_action(text, r"(?:pergunt|consult|cham|us|deleg|encaminh|acion)", "deepseek") or re.search(
@@ -485,7 +629,7 @@ class IntentFrameBuilder:
                 constraints.update({Constraint.FORBID_CODEX, Constraint.FORBID_DEEPSEEK})
         if Constraint.FORBID_DEEPSEEK in constraints and _contains(text, ("o que voce acha", "o que voce achou", "sua opiniao", "sua avaliacao")):
             constraints.update({Constraint.ANSWER_SELF, Constraint.FORBID_DELEGATION})
-        if _contains(text, ("sem alterar", "sem modificar", "nao mexe", "nao mude")):
+        if _GLOBAL_MUTATION_PROHIBITION_RE.search(text):
             constraints.add(Constraint.FORBID_MUTATION)
         if _contains(text, ("so leitura", "somente leitura")):
             constraints.update({Constraint.READ_ONLY, Constraint.FORBID_MUTATION})
@@ -648,6 +792,7 @@ class IntentFrameBuilder:
                 constraints=tuple(sorted(constraints, key=lambda value: value.value)),
                 confidence=confidence,
                 followup_type=followup,
+                action=mutation_action,
                 plan=tuple(plan),
                 contradictory_constraints=tuple(contradictions),
             ),

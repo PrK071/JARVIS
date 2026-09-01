@@ -4,7 +4,7 @@ import json
 import threading
 from pathlib import Path
 
-from tern.orchestrator.codex import CodexResult, CodexRunner
+from tern.orchestrator.codex import CodexError, CodexResult, CodexRunner
 from tern.orchestrator.codex_sessions import (
     CodexSessionRegistry,
     CodexSessionResolver,
@@ -261,6 +261,25 @@ class FakeSessionManager:
         }
 
 
+class RecoveringSessionManager(FakeSessionManager):
+    def __init__(self, project: Path):
+        super().__init__(project)
+        self.list_attempts = 0
+        self.reconnect_count = 0
+
+    def list_project_threads(self):
+        self.list_attempts += 1
+        if self.list_attempts == 1:
+            raise CodexError(
+                "falha ao enviar ao App Server: connection reset",
+                layer="send",
+            )
+        return super().list_project_threads()
+
+    def reconnect(self):
+        self.reconnect_count += 1
+
+
 def integration_runner(tmp_path: Path, manager: FakeSessionManager) -> CodexRunner:
     value = CodexRunner(
         PathPolicy((manager.project,)),
@@ -317,6 +336,25 @@ def test_registration_failure_sends_no_user_work(tmp_path, monkeypatch):
     assert manager.create_count == 1
     assert manager.tasks == []
     assert value.jobs.list() == []
+
+
+def test_transient_app_server_disconnect_recovers_before_sending_user_work(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    manager = RecoveringSessionManager(project)
+    value = integration_runner(tmp_path, manager)
+
+    result = value.delegate_to_codex(
+        task="MELHORE O CSS",
+        project_path=str(project),
+    )
+
+    assert result.ok
+    assert manager.reconnect_count == 1
+    assert manager.list_attempts == 2
+    assert manager.create_count == 1
+    assert manager.tasks == ["MELHORE O CSS"]
+    assert len(value.jobs.list()) == 1
 
 
 def test_concurrent_resolution_creates_at_most_one_session(tmp_path):

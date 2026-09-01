@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import time
+import unicodedata
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
@@ -16,7 +17,12 @@ from .decision_policy import (
     normalize_explicit_web_open_request,
     normalize_music_open_request,
 )
-from .intent_semantics import Constraint, FollowupType, SpeechAct
+from .intent_semantics import (
+    Constraint,
+    FollowupType,
+    SpeechAct,
+    project_mutation_signal,
+)
 
 
 TARGET_TYPES = {
@@ -619,7 +625,16 @@ class QwenSemanticInterpreter:
             return False
         if normalize_contextual_web_open_request(text, context) is not None:
             return False
-        normalized = text.casefold()
+        normalized = "".join(
+            char
+            for char in unicodedata.normalize("NFKD", text.casefold())
+            if not unicodedata.combining(char)
+        )
+        if project_mutation_signal(normalized) and not re.match(
+            r"^(?:como|o que|oq|qual|quais|por que|porque)\b",
+            normalized,
+        ):
+            return False
         if re.search(
             r"\b(?:codex|deepseek|arquivo|projeto|sess[aã]o|job|tarefa|turn|"
             r"n[aã]o|sem|ele|ela|isso|esse|essa|aquilo|anterior|outro|"

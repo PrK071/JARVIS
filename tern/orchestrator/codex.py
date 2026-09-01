@@ -2923,9 +2923,32 @@ class CodexRunner:
         manager = self.manager_for(project)
         started = time.perf_counter()
         with self.sessions.resolution_mutex(project, timeout=min(self.timeout, 60)):
+            failure: CodexError | None = None
             try:
                 provider_threads = manager.list_project_threads()
             except CodexError as exc:
+                failure = exc
+                if exc.layer in {"send", "events", "websocket"}:
+                    manager.bridge_log.write(
+                        "codex_session_recovery_started",
+                        request_id=request_id,
+                        project_path=str(project),
+                        error=str(exc),
+                        error_layer=exc.layer,
+                    )
+                    try:
+                        manager.reconnect()
+                        provider_threads = manager.list_project_threads()
+                    except CodexError as recovery_exc:
+                        failure = recovery_exc
+                    else:
+                        failure = None
+                        manager.bridge_log.write(
+                            "codex_session_recovered",
+                            request_id=request_id,
+                            project_path=str(project),
+                        )
+            if failure is not None:
                 resolution = CodexSessionResolution(
                     "UNAVAILABLE", "SESSION_UNAVAILABLE"
                 )
@@ -2953,7 +2976,7 @@ class CodexRunner:
                     resolution_latency_ms=round(
                         (time.perf_counter() - started) * 1000, 3
                     ),
-                    error=str(exc),
+                    error=str(failure),
                 )
                 return resolution
             candidates = self.sessions.reconcile(project, provider_threads)

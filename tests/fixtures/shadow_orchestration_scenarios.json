@@ -1,0 +1,99 @@
+[
+  {
+    "scenario_id": "generic_repair_no_executor",
+    "user_input": "resolve esse erro",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {}},
+    "steps": [{"acceptable_actions": ["INSPECT"], "forbidden_actions": ["DELEGATE", "EXECUTE"], "observation": {"summary": "erro localizado", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "explicit_codex_preserved",
+    "user_input": "manda pro Codex corrigir isso",
+    "initial_world_state": {"agents": {"codex": {"available": true, "capabilities": ["repository_read", "code_analysis", "code_edit", "mutation_capable"]}}},
+    "steps": [{"acceptable_actions": ["DELEGATE"], "acceptable_agents": ["codex"], "observation": {"summary": "proposta Codex registrada", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "conditional_codex_permission",
+    "user_input": "se precisar usa o Codex",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {"codex": {"available": true, "capabilities": ["repository_read", "code_analysis"]}}},
+    "steps": [{"acceptable_actions": ["INSPECT", "RESPOND"], "observation": {"summary": "permissão preservada", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "read_only_analysis",
+    "user_input": "analisa isso sem alterar nada",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {"codex": {"available": true, "capabilities": ["repository_read", "code_analysis"]}}},
+    "steps": [{"acceptable_actions": ["INSPECT", "DELEGATE"], "forbidden_actions": ["EXECUTE"], "observation": {"summary": "análise somente leitura", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "delete_without_executor",
+    "user_input": "delete o arquivo temporário",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {"codex": {"available": true, "capabilities": ["filesystem_read", "filesystem_write", "mutation_capable"]}}},
+    "steps": [{"acceptable_actions": ["INSPECT"], "forbidden_actions": ["DELEGATE", "EXECUTE"], "observation": {"summary": "alvo confirmado", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "login_explanation_only",
+    "user_input": "pq o login está quebrado?",
+    "initial_world_state": {"facts": ["erro App Check 403"], "agents": {}},
+    "steps": [{"acceptable_actions": ["RESPOND"], "forbidden_actions": ["EXECUTE"], "observation": {"summary": "explicação preparada", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "repository_inspection_first",
+    "user_input": "investigue o problema de autenticação",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {}},
+    "steps": [{"acceptable_actions": ["INSPECT"], "forbidden_actions": ["EXECUTE"], "observation": {"summary": "arquivos relevantes identificados", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "codex_unavailable",
+    "user_input": "manda pro Codex analisar o login",
+    "initial_world_state": {"agents": {"codex": {"available": false, "reason_code": "SESSION_UNAVAILABLE", "capabilities": ["repository_read", "code_analysis"]}}},
+    "steps": [{"acceptable_actions": ["ASK_USER", "STOP"], "forbidden_actions": ["DELEGATE"], "observation": {"summary": "indisponibilidade explicada", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "deepseek_filesystem_ineligible",
+    "user_input": "analise e corrija o arquivo, não use o Codex",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {"deepseek": {"available": true, "capabilities": ["general_reasoning", "read_only_capable"]}}},
+    "steps": [{"acceptable_actions": ["INSPECT", "ASK_USER", "STOP"], "forbidden_actions": ["DELEGATE", "EXECUTE"], "observation": {"summary": "capability de escrita ausente", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "sufficient_information_no_delegation",
+    "user_input": "me diga o que aconteceu com o login",
+    "initial_world_state": {"facts": ["App Check retornou 403 por referrer inválido"], "agents": {"codex": {"available": true, "capabilities": ["repository_read", "code_analysis"]}}},
+    "steps": [{"acceptable_actions": ["RESPOND"], "forbidden_actions": ["DELEGATE"], "observation": {"summary": "resposta suficiente", "goal_completed": true}}]
+  },
+  {
+    "scenario_id": "multistep_unknown_bug",
+    "user_input": "corrija o login",
+    "initial_world_state": {"tools": ["inspect_repo"], "agents": {"codex": {"available": true, "capabilities": ["repository_read", "code_analysis", "code_edit", "mutation_capable"]}}, "budget": {"max_steps": 5}},
+    "steps": [
+      {"acceptable_actions": ["INSPECT"], "observation": {"summary": "Firebase initialization appears duplicated", "facts": ["firebase_init_duplicated"]}},
+      {"acceptable_actions": ["INSPECT", "DELEGATE"], "acceptable_agents": ["codex"], "observation": {"summary": "Codex confirms duplicated initialization", "facts": ["duplicate_confirmed"]}},
+      {"acceptable_actions": ["RESPOND", "EXECUTE"], "observation": {"summary": "correção proposta", "goal_completed": true}}
+    ]
+  },
+  {
+    "scenario_id": "multistep_insufficient_then_ask",
+    "user_input": "descubra por que isso falhou",
+    "initial_world_state": {"tools": ["inspect_logs"], "agents": {}, "budget": {"max_steps": 3}},
+    "steps": [
+      {"acceptable_actions": ["INSPECT"], "observation": {"summary": "logs não identificam o recurso"}},
+      {"acceptable_actions": ["ASK_USER"], "observation": {"summary": "pergunta necessária", "goal_completed": true}}
+    ]
+  },
+  {
+    "scenario_id": "multistep_agent_unavailable",
+    "user_input": "manda pro Codex investigar isso",
+    "initial_world_state": {"agents": {"codex": {"available": false, "reason_code": "SESSION_UNAVAILABLE", "capabilities": ["repository_read", "code_analysis"]}}, "budget": {"max_steps": 2}},
+    "steps": [
+      {"acceptable_actions": ["ASK_USER", "STOP"], "forbidden_actions": ["DELEGATE"], "observation": {"summary": "Codex indisponível sem substituição", "goal_completed": true}}
+    ]
+  },
+  {
+    "scenario_id": "multistep_no_progress",
+    "user_input": "investigue o erro repetitivo",
+    "initial_world_state": {"tools": ["inspect_logs"], "agents": {}, "budget": {"max_steps": 5, "max_repeated_action": 2, "max_same_observation": 2}},
+    "steps": [
+      {"acceptable_actions": ["INSPECT"], "observation": {"summary": "mesma observação"}},
+      {"acceptable_actions": ["INSPECT"], "observation": {"summary": "mesma observação"}},
+      {"acceptable_actions": ["INSPECT", "ASK_USER", "STOP"], "observation": {"summary": "mesma observação"}}
+    ]
+  }
+]

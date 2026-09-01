@@ -67,6 +67,26 @@ def response(message):
     return {"choices": [{"message": message}], "usage": {"total_tokens": 1}}
 
 
+def orchestration_response(action, **overrides):
+    payload = {
+        "action": action,
+        "target_agent": None,
+        "target": None,
+        "tool_name": None,
+        "arguments": {},
+        "objective": "continue",
+        "execution_mode": None,
+        "required_capabilities": [],
+        "reason_code": "SUFFICIENT_INFORMATION",
+        "evidence_refs": [],
+        "expected_observation": None,
+        "confidence": 0.9,
+        "short_horizon_hint": None,
+    }
+    payload.update(overrides)
+    return response({"role": "assistant", "content": json.dumps(payload)})
+
+
 def test_qwen35_is_default_and_no_missing_model_fallback():
     settings = load_settings({})
     assert settings.backend.name == "qwen35"
@@ -110,6 +130,52 @@ def test_local_model_aliases_are_model_agnostic(tmp_path):
 def test_invalid_backend_is_rejected():
     with pytest.raises(ValueError, match="MODEL_BACKEND"):
         load_settings({"MODEL_BACKEND": "automatic"})
+
+
+def test_invalid_orchestration_mode_is_rejected():
+    with pytest.raises(ValueError, match="ORCHESTRATION_MODE"):
+        load_settings({"ORCHESTRATION_MODE": "unbounded"})
+
+
+def test_supervisor_bounded_live_uses_new_loop_and_real_read(tmp_path):
+    sample = tmp_path / "sample.txt"
+    sample.write_text("conteudo real", encoding="utf-8")
+    client = Result(
+        [
+            orchestration_response(
+                "INSPECT",
+                target="sample.txt",
+                tool_name="filesystem_read_text",
+                arguments={"path": str(sample), "max_bytes": 4096},
+                objective="read the requested file",
+                execution_mode="READ_ONLY",
+                reason_code="REPOSITORY_INSPECTION_REQUIRED",
+            ),
+            orchestration_response(
+                "RESPOND",
+                objective="O arquivo contém conteúdo real.",
+                reason_code="GOAL_COMPLETED",
+            ),
+        ]
+    )
+    settings = load_settings(
+        {
+            "ORCHESTRATION_MODE": "bounded_live",
+            "ORCHESTRATION_SHADOW_ENABLED": "true",
+            "ORCHESTRATION_SHADOW_MAX_STEPS": "3",
+        }
+    )
+
+    result = Supervisor(settings, client, registry(tmp_path)).run(
+        "analise o arquivo sample.txt"
+    )
+
+    assert result["ok"] is True
+    assert result["tool_calls"] == 1
+    assert result["orchestration"]["mode"] == "BOUNDED_LIVE"
+    assert result["orchestration"]["termination_reason"] == "GOAL_COMPLETED"
+    assert result["orchestration"]["effect_counts"]["tools_executed"] == 1
+    assert result["answer"].endswith("O arquivo contém conteúdo real.")
 
 
 def test_path_policy_allows_root_and_blocks_parent(tmp_path):
@@ -165,6 +231,113 @@ def test_overwrite_requires_confirmation(tmp_path):
     )
     assert result["error"] == "ApprovalRequired"
     assert sample.read_text(encoding="utf-8") == "old"
+
+
+def test_bounded_live_authority_avoids_redundant_overwrite_confirmation(tmp_path):
+    sample = tmp_path / "sample.txt"
+    sample.write_text("old", encoding="utf-8")
+    client = Result(
+        [
+            orchestration_response(
+                "EXECUTE",
+                target="sample.txt",
+                tool_name="filesystem_write_text",
+                arguments={
+                    "directory": str(tmp_path),
+                    "name": "sample.txt",
+                    "content": "new",
+                },
+                objective="corrigir o conteudo do arquivo",
+                execution_mode="MUTATION",
+                reason_code="CODE_MUTATION_REQUIRED",
+            )
+        ]
+    )
+    settings = load_settings(
+        {
+            "ORCHESTRATION_MODE": "bounded_live",
+            "ORCHESTRATION_SHADOW_MAX_STEPS": "1",
+        }
+    )
+
+    result = Supervisor(settings, client, registry(tmp_path)).run(
+        "corrija o arquivo sample.txt e altere o conteudo para new"
+    )
+
+    record = result["orchestration"]["records"][0]
+    assert record["authority_shadow_result"]["allowed"] is True
+    assert record["authority_shadow_result"]["mutation_authorized"] is True
+    assert record["observation"]["status"] == "SUCCESS"
+    assert sample.read_text(encoding="utf-8") == "new"
+
+
+def test_bounded_live_reruns_tests_after_authorized_mutation(tmp_path):
+    module = tmp_path / "calculator.py"
+    module.write_text("def add(left, right):\n    return left - right\n", encoding="utf-8")
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_calculator.py").write_text(
+        "from calculator import add\n\ndef test_add():\n    assert add(2, 3) == 5\n",
+        encoding="utf-8",
+    )
+    client = Result(
+        [
+            orchestration_response(
+                "EXECUTE",
+                target="tests",
+                tool_name="run_project_tests",
+                arguments={"project_path": str(tmp_path)},
+                objective="observar a falha dos testes",
+                execution_mode="READ_ONLY",
+                reason_code="REPOSITORY_INSPECTION_REQUIRED",
+            ),
+            orchestration_response(
+                "EXECUTE",
+                target="calculator.py",
+                tool_name="filesystem_write_text",
+                arguments={
+                    "directory": str(tmp_path),
+                    "name": "calculator.py",
+                    "content": "def add(left, right):\n    return left + right\n",
+                },
+                objective="corrigir a soma",
+                execution_mode="MUTATION",
+                reason_code="CODE_MUTATION_REQUIRED",
+            ),
+            orchestration_response(
+                "EXECUTE",
+                target="tests",
+                tool_name="run_project_tests",
+                arguments={"project_path": str(tmp_path)},
+                objective="verificar a correcao com os mesmos testes",
+                execution_mode="READ_ONLY",
+                reason_code="SUFFICIENT_INFORMATION",
+            ),
+        ]
+    )
+    settings = load_settings(
+        {
+            "ORCHESTRATION_MODE": "bounded_live",
+            "ORCHESTRATION_SHADOW_MAX_STEPS": "4",
+        }
+    )
+
+    result = Supervisor(settings, client, registry(tmp_path)).run(
+        f"no projeto {tmp_path}, descubra por que o teste falha, corrija e verifique"
+    )
+
+    records = result["orchestration"]["records"]
+    assert [item["next_action"]["action"] for item in records] == [
+        "EXECUTE",
+        "EXECUTE",
+        "EXECUTE",
+        "RESPOND",
+    ]
+    assert records[0]["observation"]["verification_status"] == "FAILED"
+    assert records[2]["observation"]["verification_status"] == "VERIFIED"
+    assert records[3]["decision_source"] == "FAST_PATH"
+    assert result["orchestration"]["termination_reason"] == "GOAL_COMPLETED"
+    assert result["tool_calls"] == 3
 
 
 def test_simple_answer_without_tool(tmp_path):
@@ -282,10 +455,12 @@ def test_tool_call_after_access_denied_is_not_executed(tmp_path):
         [
             response(list_call("denied", outside)),
             response(list_call("must-not-run", tmp_path)),
+            response({"role": "assistant", "content": "Fluxo encerrado."}),
         ]
     )
     result = Supervisor(load_settings({}), client, tools).run("Liste pastas")
-    assert result["error"] == "tool_loop_blocked"
+    assert result["ok"]
+    assert result["answer"] == "Fluxo encerrado."
     assert result["tool_calls"] == 1
     records = [
         json.loads(line)

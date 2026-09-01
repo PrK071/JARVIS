@@ -123,6 +123,14 @@ class CapabilityProfileBuilder:
         "filesystem_list": (Capability.FILESYSTEM_READ, Capability.REPOSITORY_READ),
         "filesystem_read_text": (Capability.FILESYSTEM_READ, Capability.REPOSITORY_READ),
         "find_project_files": (Capability.FILESYSTEM_READ, Capability.REPOSITORY_READ),
+        "get_project_git_state": (
+            Capability.FILESYSTEM_READ,
+            Capability.REPOSITORY_READ,
+        ),
+        "run_project_tests": (
+            Capability.REPOSITORY_READ,
+            Capability.TEST_EXECUTION,
+        ),
         "filesystem_write_text": (
             Capability.FILESYSTEM_WRITE,
             Capability.REPOSITORY_WRITE,
