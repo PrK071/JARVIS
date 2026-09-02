@@ -117,6 +117,7 @@ class BoundedLiveRiskMatrix:
         "get_hardware_telemetry": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "list_installed_applications": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "resolve_project": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "discover_project": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "find_project_files": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "filesystem_list": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "filesystem_read_text": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),

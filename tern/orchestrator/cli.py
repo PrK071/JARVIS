@@ -19,6 +19,7 @@ from .deepseek import DeepSeekClient, DeepSeekService, DeepSeekSessionManager
 from .decision_policy import AgentDecisionPolicy, tool_catalog_audit
 from .decision_observability import AgentDecisionObserver
 from .projects import ProjectRegistry, normalize_technical_transcript
+from .project_discovery import DiscoveryPolicy
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -149,7 +150,15 @@ def _registry(settings, *, approval=None) -> ToolRegistry:
         hard_timeout=settings.codex_turn_hard_timeout_seconds,
         job_retention_days=settings.codex_job_retention_days,
     )
-    projects = ProjectRegistry(policy, settings.state_dir, codex=codex)
+    projects = ProjectRegistry(
+        policy,
+        settings.state_dir,
+        codex=codex,
+        discovery_policy=DiscoveryPolicy.from_values(
+            settings.project_discovery_roots or None,
+            settings.project_discovery_excludes or None,
+        ),
+    )
     deepseek = DeepSeekSessionManager(
         client=DeepSeekClient(
             enabled=settings.deepseek_enabled,

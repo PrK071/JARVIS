@@ -82,6 +82,8 @@ class Settings:
     vram_reserve_mib: int
     reasoning: str
     allowed_roots: tuple[Path, ...]
+    project_discovery_roots: tuple[Path, ...]
+    project_discovery_excludes: tuple[str, ...]
     max_tool_calls: int
     max_attempts: int
     max_tool_output_bytes: int
@@ -324,6 +326,12 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         vram_reserve_mib=int(values.get("MODEL_VRAM_RESERVE_MIB", "1280")),
         reasoning=values.get("MODEL_REASONING", "off"),
         allowed_roots=_path_list(values.get("MODEL_ALLOWED_ROOTS", allowed_default)),
+        project_discovery_roots=_path_list(
+            values.get("PROJECT_DISCOVERY_ROOTS", "")
+        ),
+        project_discovery_excludes=_domain_list(
+            values.get("PROJECT_DISCOVERY_EXCLUDES", "")
+        ),
         max_tool_calls=int(values.get("MODEL_MAX_TOOL_CALLS", "8")),
         max_attempts=int(values.get("MODEL_MAX_ATTEMPTS", "3")),
         max_tool_output_bytes=int(values.get("MODEL_MAX_TOOL_OUTPUT_BYTES", "131072")),

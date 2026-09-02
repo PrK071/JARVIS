@@ -56,6 +56,7 @@ class SideEffect(str, Enum):
 
 TOOL_EFFECTS: dict[str, SideEffect] = {
     "resolve_project": SideEffect.READ_ONLY,
+    "discover_project": SideEffect.READ_ONLY,
     "find_project_files": SideEffect.READ_ONLY,
     "filesystem_list": SideEffect.READ_ONLY,
     "filesystem_read_text": SideEffect.READ_ONLY,

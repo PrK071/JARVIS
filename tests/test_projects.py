@@ -15,6 +15,7 @@ from tern.orchestrator.projects import (
     ProjectRegistry,
     normalize_technical_transcript,
 )
+from tern.orchestrator.project_discovery import DiscoveryPolicy
 from tern.orchestrator.security import ActionLogger, PathPolicy
 from tern.orchestrator.tool_progress import ToolProgressTracker
 from tern.orchestrator.tools import ToolRegistry
@@ -144,6 +145,48 @@ def test_external_path_is_refused(tmp_path):
     outside.mkdir()
     result = registry(tmp_path, (root,)).resolve(path_hint=str(outside))
     assert result["error"] == "project_path_not_allowed"
+
+
+def test_registry_miss_discovers_project_outside_operational_root(tmp_path):
+    active = project(tmp_path, "tern")
+    discovery_root = tmp_path / "C-drive" / "Projects"
+    discovery_root.mkdir(parents=True)
+    target = project(discovery_root, "Kari")
+    values = ProjectRegistry(
+        PathPolicy((active,)),
+        tmp_path / "state-discovery",
+        discovery_policy=DiscoveryPolicy.from_values([discovery_root]),
+    )
+
+    result = values.resolve(query="olhe o projeto Kari")
+
+    assert result["ok"] and result["matched_by"] == "project_discovery"
+    assert result["root"] == str(target.resolve())
+    assert str(target.resolve()) in {item["root"] for item in values.projects()}
+    assert str(discovery_root.resolve()) not in {item["root"] for item in values.projects()}
+
+
+def test_discovered_project_scope_survives_registry_restart(tmp_path):
+    active = project(tmp_path, "tern")
+    discovery_root = tmp_path / "Projects"
+    discovery_root.mkdir()
+    target = project(discovery_root, "Kari")
+    state_dir = tmp_path / "state-restart"
+    first = ProjectRegistry(
+        PathPolicy((active,)),
+        state_dir,
+        discovery_policy=DiscoveryPolicy.from_values([discovery_root]),
+    )
+    first.resolve(query="Kari")
+    second_policy = PathPolicy((active,))
+    second = ProjectRegistry(
+        second_policy,
+        state_dir,
+        discovery_policy=DiscoveryPolicy.from_values([discovery_root]),
+    )
+
+    assert second.resolve(query="Kari")["root"] == str(target.resolve())
+    assert second_policy.resolve(str(target)) == target.resolve()
 
 
 def test_exact_partial_and_description_file_search(tmp_path):

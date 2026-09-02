@@ -54,6 +54,7 @@ _PASSIVE_PROGRESS_TOOLS = frozenset(
         "filesystem_list",
         "filesystem_read_text",
         "resolve_project",
+        "discover_project",
         "find_project_files",
         "get_project_git_state",
         "web_search",
@@ -210,6 +211,8 @@ class ToolRegistry:
     ) -> dict[str, Any]:
         normalized = dict(arguments)
         if name == "resolve_project":
+            return normalized
+        if name == "discover_project":
             return normalized
         if name == "find_project_files":
             project_id = str(normalized.get("project_id") or "").strip()
@@ -895,6 +898,20 @@ class ToolRegistry:
             15,
         )
         self._add(
+            "discover_project",
+            (
+                "Procura um projeto nomeado nas discovery roots configuradas, "
+                "sem ler conteudo arbitrario, executar codigo ou modificar arquivos. "
+                "Retorna RESOLVED, AMBIGUOUS ou NOT_FOUND e registra apenas o projeto exato."
+            ),
+            _object(
+                {"reference": {"type": "string", "minLength": 1, "maxLength": 200}},
+                ["reference"],
+            ),
+            self._discover_project,
+            15,
+        )
+        self._add(
             "find_project_files",
             (
                 "Localiza arquivos no indice leve de um projeto resolvido. "
@@ -1368,6 +1385,9 @@ class ToolRegistry:
             file_types=arguments.get("file_types"),
             max_results=arguments.get("max_results", 20),
         )
+
+    def _discover_project(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.projects.discover(str(arguments["reference"]))
 
     def _get_project_git_state(self, arguments: dict[str, Any]) -> dict[str, Any]:
         project = self.policy.resolve(arguments["project_path"])

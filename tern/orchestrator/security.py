@@ -17,16 +17,19 @@ class ApprovalRequired(PermissionError):
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class PathPolicy:
     roots: tuple[Path, ...]
+    # Exact project roots promoted after read-only discovery. Discovery roots
+    # themselves are never added here.
+    project_roots: tuple[Path, ...] = ()
 
     def resolve(self, raw_path: str, *, must_exist: bool = True) -> Path:
         candidate = Path(raw_path).expanduser()
         if ".." in candidate.parts:
             raise AccessDenied("segmento '..' bloqueado")
         resolved = candidate.resolve(strict=must_exist)
-        for root in self.roots:
+        for root in (*self.roots, *self.project_roots):
             root_resolved = root.resolve(strict=True)
             try:
                 resolved.relative_to(root_resolved)
@@ -34,6 +37,15 @@ class PathPolicy:
             except ValueError:
                 continue
         raise AccessDenied(f"caminho fora da allowlist: {resolved}")
+
+    def grant_project_root(self, root: str | Path) -> Path:
+        """Promote one resolved project directory, never its parent/root."""
+        resolved = Path(root).expanduser().resolve(strict=True)
+        if not resolved.is_dir():
+            raise AccessDenied("projeto descoberto nao e diretorio")
+        if not any(resolved == item.resolve(strict=False) for item in self.project_roots):
+            self.project_roots = (*self.project_roots, resolved)
+        return resolved
 
     def child(self, raw_parent: str, name: str, *, must_exist: bool = False) -> Path:
         if not name or name in {".", ".."} or Path(name).name != name:

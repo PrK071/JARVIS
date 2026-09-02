@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .codex_state import FileMutex
+from .project_discovery import DiscoveryPolicy, DiscoveryResult, ProjectDiscovery
 from .security import AccessDenied, PathPolicy
 
 
@@ -195,14 +196,30 @@ class ProjectRegistry:
         state_dir: Path,
         *,
         codex: Any | None = None,
+        discovery_policy: DiscoveryPolicy | None = None,
     ):
         self.policy = policy
         self.state_dir = state_dir
         self.codex = codex
+        self.discovery = ProjectDiscovery(discovery_policy or DiscoveryPolicy.from_values())
         self.path = state_dir / "projects.json"
         self.lock_path = state_dir / "projects.lock"
         self.index_dir = state_dir / "project-indexes"
+        self._load_project_scopes()
         self._ensure_registry()
+
+    def _load_project_scopes(self) -> None:
+        """Restore exact cached project scopes; never restore discovery roots."""
+        value = self.read()
+        for item in value.get("projects", []):
+            if not isinstance(item, dict) or not item.get("root"):
+                continue
+            try:
+                root = Path(str(item["root"])).resolve(strict=True)
+                if root.is_dir() and self.discovery.inspect_path(root, str(item.get("name") or root.name)):
+                    self.policy.grant_project_root(root)
+            except (OSError, AccessDenied):
+                continue
 
     def _default(self) -> dict[str, Any]:
         return {
@@ -410,7 +427,12 @@ class ProjectRegistry:
             try:
                 hinted = self.policy.resolve(path_hint)
             except Exception as exc:
-                return {"ok": False, "error": "project_path_not_allowed", "message": str(exc)}
+                candidate = self.discovery.inspect_path(path_hint, query)
+                if candidate is None:
+                    return {"ok": False, "error": "project_path_not_allowed", "message": str(exc)}
+                root = self.policy.grant_project_root(candidate.path)
+                registered = self._register_discovered(candidate.as_dict(), root)
+                return self._resolution(registered, 1.0, "explicit_path_discovery", [])
             matches = [
                 item
                 for item in projects
@@ -444,6 +466,26 @@ class ProjectRegistry:
         if not use_fallbacks:
             return {"ok": False, "error": "project_not_found", "alternatives": []}
 
+        # A registry miss triggers bounded discovery outside the normal
+        # project allowlist. Only the exact resolved directory is promoted to
+        # the operational scope; discovery roots remain read-only.
+        if normalized_query:
+            discovered = self.discover(normalized_query)
+            if discovered.get("status") == "RESOLVED" and discovered.get("project"):
+                candidate = discovered["project"]
+                root = self.policy.grant_project_root(str(candidate["path"]))
+                registered = self._register_discovered(candidate, root)
+                return self._resolution(registered, 0.98, "project_discovery", [])
+            if discovered.get("status") == "AMBIGUOUS":
+                return {
+                    "ok": False,
+                    "error": "ambiguous_project",
+                    "alternatives": [
+                        {"project_id": normalize_name(item["name"]), "name": item["name"], "root": item["path"]}
+                        for item in discovered.get("candidates", [])[:8]
+                    ],
+                }
+
         shared = self._shared_project()
         if shared:
             project = next((item for item in projects if Path(item["root"]) == shared), None)
@@ -469,6 +511,39 @@ class ProjectRegistry:
             if project:
                 return self._resolution(project, 0.80, "working_directory", [])
         return {"ok": False, "error": "project_ambiguous", "alternatives": [self._brief(item) for item in projects]}
+
+    def discover(self, reference: str) -> dict[str, Any]:
+        result: DiscoveryResult = self.discovery.discover(reference)
+        value = result.as_dict()
+        if result.status == "RESOLVED" and result.candidates:
+            value["project"] = result.candidates[0].as_dict()
+        return value
+
+    def _register_discovered(self, candidate: dict[str, Any], root: Path) -> dict[str, Any]:
+        with FileMutex(self.lock_path):
+            state = self._read_unlocked()
+            projects = [item for item in state.get("projects", []) if isinstance(item, dict)]
+            existing = next((item for item in projects if Path(str(item.get("root", ""))).resolve(strict=False) == root), None)
+            if existing is None:
+                existing = {
+                    "id": _project_id(root),
+                    "name": str(candidate.get("name") or root.name),
+                    "root": str(root),
+                    "aliases": [normalize_name(root.name)],
+                    "type": _project_type(candidate.get("markers", [])),
+                    "markers": list(candidate.get("markers", [])),
+                    "source": "filesystem",
+                }
+                projects.append(existing)
+            else:
+                existing["markers"] = list(candidate.get("markers", existing.get("markers", [])))
+                existing["source"] = existing.get("source") or "filesystem"
+            state["projects"] = projects
+            state["active_project_id"] = existing["id"]
+            state["last_tool_project_id"] = existing["id"]
+            state["updated_at"] = utc_now()
+            self._write_unlocked(state)
+            return dict(existing)
 
     @staticmethod
     def _brief(project: dict[str, Any]) -> dict[str, Any]:
