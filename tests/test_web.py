@@ -153,7 +153,7 @@ def test_browser_launch_runs_only_after_safe_fetch_and_threat_analysis(tmp_path)
     assert stages.index("WEB_THREAT_ANALYSIS") < stages.index("BROWSER_LAUNCH")
 
 
-def test_system_browser_opener_uses_new_tab_in_existing_session(monkeypatch):
+def test_system_browser_opener_prefers_configured_default_browser(monkeypatch):
     calls = []
     monkeypatch.setattr(
         "tern.orchestrator.web._windows_running_browser_executable",
@@ -170,7 +170,7 @@ def test_system_browser_opener_uses_new_tab_in_existing_session(monkeypatch):
 
     assert _open_system_browser("https://www.amazon.com.br/") is True
     assert calls[0][0] == [
-        r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         "https://www.amazon.com.br/",
     ]
     assert "--new-window" not in calls[0][0]
@@ -195,6 +195,36 @@ def test_system_browser_opener_uses_default_when_no_browser_window_exists(monkey
     assert calls[0][0] == [
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         "https://www.gov.br/pt-br",
+    ]
+
+
+def test_default_browser_is_identified_only_once_per_process(monkeypatch):
+    from tern.orchestrator import web as web_module
+
+    detections = []
+    launches = []
+    monkeypatch.setattr(
+        web_module,
+        "_detect_windows_default_browser_executable",
+        lambda: detections.append("detected")
+        or r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+    )
+    monkeypatch.setattr(
+        web_module.subprocess,
+        "Popen",
+        lambda arguments, **options: launches.append((arguments, options)),
+    )
+    web_module._windows_default_browser_executable.cache_clear()
+    try:
+        assert _open_system_browser("https://example.com/one")
+        assert _open_system_browser("https://example.com/two")
+    finally:
+        web_module._windows_default_browser_executable.cache_clear()
+
+    assert detections == ["detected"]
+    assert [call[0][1] for call in launches] == [
+        "https://example.com/one",
+        "https://example.com/two",
     ]
 
 
@@ -341,6 +371,114 @@ def test_browser_followup_opens_last_validated_url_in_one_tool_call(tmp_path):
     assert second["decision"]["reason_code"] == "explicit_browser_url"
     assert second["tool_calls"] == 1
     assert opened == ["https://example.com/", "https://example.com/"]
+
+
+def test_browser_followup_opens_html_from_latest_completed_codex_job(tmp_path):
+    page = tmp_path / "joao-pereira-site" / "index.html"
+    page.parent.mkdir()
+    page.write_text("<h1>Landing page</h1>", encoding="utf-8")
+    opened = []
+    tools = web_registry(
+        tmp_path,
+        WebClient(
+            WebConfig(enabled=False),
+            browser_opener=lambda url: opened.append(url) or True,
+        ),
+    )
+    tools.codex.jobs = type(
+        "Jobs",
+        (),
+        {
+            "list": lambda self: [
+                {
+                    "job_id": "job-landing",
+                    "status": "completed",
+                    "result": {
+                        "final_response": (
+                            "Landing page criada em "
+                            f"[index.html]({page.as_posix()})."
+                        )
+                    },
+                }
+            ]
+        },
+    )()
+    supervisor = Supervisor(
+        load_settings({"MODEL_MAX_TOOL_CALLS": "1"}),
+        FakeModel(
+            [{"choices": [{"message": {"role": "assistant", "content": "Pagina aberta."}}]}]
+        ),
+        tools,
+    )
+
+    result = supervisor.run("agora pede pra ele abrir no meu navegador padrao")
+
+    assert result["ok"] is True
+    assert result["decision"]["intent"] == "WEB_OPEN"
+    assert result["decision"]["reason_code"] == "explicit_browser_url"
+    assert result["tool_calls"] == 1
+    assert opened == [page.resolve().as_uri()]
+
+
+@pytest.mark.parametrize(
+    "user_text",
+    [
+        "abre o site",
+        "abra o site no meu navegador brave",
+    ],
+)
+def test_targetless_site_command_opens_completed_codex_html_after_cached_running_state(
+    tmp_path, user_text
+):
+    page = tmp_path / "landing" / "index.html"
+    page.parent.mkdir()
+    page.write_text("<h1>Landing page</h1>", encoding="utf-8")
+    opened = []
+    jobs = [
+        {
+            "job_id": "job-landing",
+            "status": "running",
+            "result": None,
+        }
+    ]
+    tools = web_registry(
+        tmp_path,
+        WebClient(
+            WebConfig(enabled=False),
+            browser_opener=lambda url: opened.append(url) or True,
+        ),
+    )
+    tools.codex.jobs = type("Jobs", (), {"list": lambda self: jobs})()
+    supervisor = Supervisor(
+        load_settings(
+            {
+                "AGENT_DECISION_CONTEXT_CACHE": "true",
+                "MODEL_MAX_TOOL_CALLS": "1",
+            }
+        ),
+        FakeModel(
+            [{"choices": [{"message": {"role": "assistant", "content": "Pagina aberta."}}]}]
+        ),
+        tools,
+    )
+    supervisor.decision_policy.build_context()
+    jobs[0].update(
+        status="completed",
+        result={
+            "final_response": (
+                "Landing page criada em "
+                f"[index.html]({page.as_posix()})."
+            )
+        },
+    )
+
+    result = supervisor.run(user_text)
+
+    assert result["ok"] is True
+    assert result["decision"]["intent"] == "WEB_OPEN"
+    assert result["decision"]["reason_code"] == "explicit_browser_url"
+    assert result["tool_calls"] == 1
+    assert opened == [page.resolve().as_uri()]
 
 
 @pytest.mark.parametrize(

@@ -56,6 +56,119 @@ class WebServerHelpersTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "API_KEY_MISSING"):
                 web_server._request_openai("Olá", [])
 
+    def test_local_tool_loop_is_not_reported_as_empty_model_response(self) -> None:
+        supervisor = type(
+            "Supervisor",
+            (),
+            {"run": lambda self, _message: {"ok": False, "error": "tool_limit"}},
+        )()
+
+        with patch.object(web_server, "_local_supervisor", lambda: supervisor):
+            with self.assertRaisesRegex(RuntimeError, "TOOL_LOOP_LIMIT"):
+                web_server._request_local_model("crie uma landing page")
+
+
+class CodexResultDeliveryTest(unittest.TestCase):
+    def test_completed_result_is_claimed_without_being_acknowledged_early(self) -> None:
+        acknowledgements: list[tuple[str, str]] = []
+
+        class FakeCodex:
+            def claim_completed_results(self) -> list[dict[str, object]]:
+                return [
+                    {
+                        "job_id": "job-1",
+                        "thread_id": "thread-1",
+                        "turn_id": "turn-1",
+                        "status": "completed",
+                        "completed_at": "2026-08-29T23:14:45+00:00",
+                        "delivery_token": "token-1",
+                        "result": {"final_response": "Landing page pronta.", "error": None},
+                    }
+                ]
+
+            def acknowledge_result(self, job_id: str, token: str) -> bool:
+                acknowledgements.append((job_id, token))
+                return True
+
+        registry = type("Registry", (), {"codex": FakeCodex()})()
+        with patch.object(web_server, "_tool_registry", lambda: registry):
+            results = web_server._claim_codex_results()
+
+        self.assertEqual(
+            results,
+            [
+                {
+                    "job_id": "job-1",
+                    "thread_id": "thread-1",
+                    "turn_id": "turn-1",
+                    "status": "completed",
+                    "completed_at": "2026-08-29T23:14:45+00:00",
+                    "delivery_token": "token-1",
+                    "result": "Landing page pronta.",
+                }
+            ],
+        )
+        self.assertEqual(acknowledgements, [])
+
+    def test_displayed_result_can_be_acknowledged(self) -> None:
+        acknowledgements: list[tuple[str, str]] = []
+
+        class FakeCodex:
+            def acknowledge_result(self, job_id: str, token: str) -> bool:
+                acknowledgements.append((job_id, token))
+                return True
+
+        registry = type("Registry", (), {"codex": FakeCodex()})()
+        with patch.object(web_server, "_tool_registry", lambda: registry):
+            acknowledged = web_server._acknowledge_codex_result("job-1", "token-1")
+
+        self.assertTrue(acknowledged)
+        self.assertEqual(acknowledgements, [("job-1", "token-1")])
+
+    def test_active_job_is_exposed_and_cancelled_by_exact_id(self) -> None:
+        cancellations: list[str] = []
+
+        class FakeCodex:
+            def list_jobs(self) -> list[dict[str, object]]:
+                return [
+                    {"job_id": "done", "status": "completed"},
+                    {
+                        "job_id": "job-2",
+                        "status": "running",
+                        "started_at": "2026-08-29T23:20:00+00:00",
+                        "task_summary": "Crie uma landing page.",
+                    },
+                ]
+
+            def cancel_job(self, *, job_id: str) -> dict[str, object]:
+                cancellations.append(job_id)
+                return {"ok": True, "job_id": job_id, "status": "interrupted"}
+
+        registry = type("Registry", (), {"codex": FakeCodex()})()
+        with patch.object(web_server, "_tool_registry", lambda: registry):
+            active = web_server._active_codex_job()
+            cancelled = web_server._cancel_codex_job("job-2")
+
+        self.assertEqual(
+            active,
+            {
+                "job_id": "job-2",
+                "status": "running",
+                "started_at": "2026-08-29T23:20:00+00:00",
+                "task_summary": "Crie uma landing page.",
+            },
+        )
+        self.assertEqual(cancelled["status"], "interrupted")
+        self.assertEqual(cancellations, ["job-2"])
+
+    def test_cancel_button_is_wired_to_codex_job_endpoint(self) -> None:
+        html = (web_server.WEB_ROOT / "index.html").read_text(encoding="utf-8")
+        script = (web_server.WEB_ROOT / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="cancel-codex-btn"', html)
+        self.assertIn("/api/codex-jobs/cancel", script)
+        self.assertIn("cancelActiveCodexJob", script)
+
 
 class HardwareTelemetryTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -182,6 +295,18 @@ class ProviderStoreTest(unittest.TestCase):
         self.assertEqual(provider["id"], "teste")
         active = web_server._active_provider()
         self.assertEqual(active["id"], "teste")
+
+    def test_local_router_can_be_selected_without_deleting_saved_connection(self) -> None:
+        provider, _ = self._save(label="DeepSeek")
+
+        self.assertTrue(web_server._activate_provider(web_server.LOCAL_PROVIDER_ID))
+
+        self.assertIsNone(web_server._active_provider())
+        self.assertEqual(web_server._selected_provider_id(), "local")
+        self.assertEqual(web_server._all_providers()[0]["id"], provider["id"])
+        self.assertTrue(web_server._local_provider_public()["built_in"])
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "unused"}):
+            self.assertFalse(web_server._environment_openai_active())
 
     def test_public_view_never_exposes_the_raw_key(self) -> None:
         provider, _ = self._save()

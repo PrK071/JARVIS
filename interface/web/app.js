@@ -44,6 +44,10 @@ const state = {
   messages: [],
   lastResponse: '',
   voiceEnabled: true,
+  codexPollInFlight: false,
+  displayedCodexResults: new Set(),
+  activeCodexJob: null,
+  codexCancelInFlight: false,
   providers: { list: [], formats: [], presets: [], active: null, selected: null },
   mic: {
     available: false,
@@ -109,6 +113,7 @@ const returnCoreBtn = $('#return-core-btn');
 const coreSection = document.querySelector('.core-section');
 const waveform = $('#waveform');
 const quickButtons = [...document.querySelectorAll('.quick-btn')];
+const cancelCodexBtn = $('#cancel-codex-btn');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const speechSupported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const recordingSupported = Boolean(
@@ -135,11 +140,16 @@ function init() {
   setInterval(updateTelemetry, 2000);
   updateCoreTemperature();
   setInterval(updateCoreTemperature, 3000);
+  pollCodexResults();
+  setInterval(pollCodexResults, 3000);
   setInterval(randomizeGrid, 1500);
 
   sendBtn.addEventListener('click', handleSubmit);
   userInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSubmit();
+    if (e.key === 'Enter' && !e.ctrlKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   });
 
   userInput.addEventListener('input', () => {
@@ -154,6 +164,7 @@ function init() {
       handleSubmit();
     });
   });
+  cancelCodexBtn.addEventListener('click', cancelActiveCodexJob);
 
   showAvatarBtn.addEventListener('click', openAvatarManually);
   returnCoreBtn.addEventListener('click', returnToCore);
@@ -512,6 +523,7 @@ const providerModel = $('#provider-model');
 const providerKey = $('#provider-key');
 const providerKeyHint = $('#provider-key-hint');
 const providerStatus = $('#provider-status');
+const providerSaveBtn = providerForm.querySelector('button[type="submit"]');
 const providerTestBtn = $('#provider-test');
 const providerDeleteBtn = $('#provider-delete');
 
@@ -684,6 +696,23 @@ function renderFormatHint(spec) {
 function fillProviderForm(providerId) {
   const provider = state.providers.list.find((item) => item.id === providerId);
   state.providers.selected = provider ? provider.id : NEW_PROVIDER;
+
+  [providerPreset, providerLabel, providerFormat, providerBase, providerModel, providerKey]
+    .forEach((field) => { field.disabled = Boolean(provider?.built_in); });
+  providerSaveBtn.disabled = Boolean(provider?.built_in);
+
+  if (provider?.built_in) {
+    providerLabel.value = provider.label;
+    providerPreset.value = '';
+    providerFormat.value = '';
+    providerBase.value = '';
+    providerModel.value = provider.model;
+    providerKey.value = '';
+    providerKeyHint.textContent = 'Roteamento local; tarefas de código usam o Codex.';
+    providerDeleteBtn.disabled = true;
+    providerTestBtn.disabled = true;
+    return;
+  }
 
   if (!provider) {
     providerLabel.value = '';
@@ -1365,6 +1394,102 @@ async function requestModelResponse(message) {
     clearInterval(progress);
   }
 }
+
+
+async function acknowledgeCodexResult(job) {
+  const response = await fetch('/api/codex-results/ack', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      job_id: job.job_id,
+      delivery_token: job.delivery_token,
+    }),
+  });
+  if (!response.ok) throw new Error('CODEX_RESULT_ACK_FAILED');
+}
+
+
+function updateCancelCodexButton(job) {
+  state.activeCodexJob = job?.job_id ? job : null;
+  const cancelling = state.activeCodexJob?.status === 'cancelling';
+  cancelCodexBtn.hidden = !state.activeCodexJob;
+  cancelCodexBtn.disabled = !state.activeCodexJob || state.codexCancelInFlight || cancelling;
+  cancelCodexBtn.textContent = state.codexCancelInFlight || cancelling
+    ? 'Cancelando...'
+    : 'Cancelar tarefa';
+}
+
+
+async function cancelActiveCodexJob() {
+  const job = state.activeCodexJob;
+  if (!job?.job_id || state.codexCancelInFlight) return;
+  if (!window.confirm('Cancelar a tarefa ativa do Codex? O trabalho em andamento será interrompido.')) return;
+
+  state.codexCancelInFlight = true;
+  updateCancelCodexButton(job);
+  try {
+    const response = await fetch('/api/codex-jobs/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: job.job_id }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'Não foi possível cancelar a tarefa.');
+    }
+    const message = `Tarefa do Codex cancelada. Job: ${job.job_id}.`;
+    addLog('system', message);
+    state.lastResponse = message;
+    updateCancelCodexButton(null);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Não foi possível cancelar a tarefa.';
+    addLog('error', message);
+  } finally {
+    state.codexCancelInFlight = false;
+    updateCancelCodexButton(state.activeCodexJob);
+    pollCodexResults();
+  }
+}
+
+
+async function pollCodexResults() {
+  if (state.codexPollInFlight || state.processing || document.hidden) return;
+  state.codexPollInFlight = true;
+
+  try {
+    const response = await fetch('/api/codex-results', { cache: 'no-store' });
+    if (!response.ok) return;
+    const payload = await response.json();
+    updateCancelCodexButton(payload.active_job);
+    const results = Array.isArray(payload.results) ? payload.results : [];
+
+    for (const job of results) {
+      if (!job?.job_id || !job?.delivery_token) continue;
+      const deliveryId = `${job.job_id}:${job.delivery_token}`;
+      if (!state.displayedCodexResults.has(deliveryId)) {
+        const completed = job.status === 'completed';
+        const fallback = completed
+          ? 'O Codex concluiu a tarefa sem uma mensagem final.'
+          : `A tarefa do Codex terminou com status ${job.status || 'desconhecido'}.`;
+        const result = String(job.result || fallback).trim();
+        const message = completed
+          ? `Codex concluiu a tarefa:\n\n${result}`
+          : `Codex não concluiu a tarefa:\n\n${result}`;
+        addLog(completed ? 'response' : 'error', message);
+        state.lastResponse = message;
+        state.messages.push({ role: 'assistant', content: message });
+        state.messages = state.messages.slice(-MAX_CHAT_HISTORY);
+        state.displayedCodexResults.add(deliveryId);
+      }
+      await acknowledgeCodexResult(job);
+    }
+  } catch (_error) {
+    // A claim expires and is retried; transient delivery failures stay silent.
+  } finally {
+    state.codexPollInFlight = false;
+  }
+}
+
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

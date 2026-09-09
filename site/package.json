@@ -1,0 +1,9 @@
+{
+  "name": "pedro-henrique-landing-page",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-hosting.mjs"
+  }
+}

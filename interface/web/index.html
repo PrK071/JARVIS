@@ -148,14 +148,14 @@
       <div class="input-zone">
         <div class="input-wrapper">
           <span class="prompt-symbol">&gt;</span>
-          <input
-            type="text"
+          <textarea
             id="user-input"
             placeholder="Digite um comando para JARVIS..."
             maxlength="4000"
-            autocomplete="off"
+            rows="1"
+            aria-label="Mensagem para o JARVIS"
             spellcheck="false"
-          />
+          ></textarea>
           <button
             id="mic-btn"
             type="button"
@@ -182,6 +182,7 @@
           <button class="quick-btn" data-cmd="diagnóstico">Diagnóstico</button>
           <button class="quick-btn" data-cmd="analise ternária">Análise</button>
           <button class="quick-btn" data-cmd="reiniciar núcleo">Reiniciar</button>
+          <button class="cancel-job-btn" id="cancel-codex-btn" type="button" hidden disabled>Cancelar tarefa</button>
         </div>
       </div>
     </section>
@@ -299,6 +300,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

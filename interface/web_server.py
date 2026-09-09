@@ -205,6 +205,89 @@ def _tool_registry() -> Any:
         return _registry_cache
 
 
+def _claim_codex_results() -> list[dict[str, Any]]:
+    """Claim completed Codex jobs for browser delivery without acknowledging them."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    claim = getattr(codex, "claim_completed_results", None)
+    if not callable(claim):
+        return []
+
+    results: list[dict[str, Any]] = []
+    for job in claim():
+        if not isinstance(job, dict):
+            continue
+        stored = job.get("result") if isinstance(job.get("result"), dict) else {}
+        result = (
+            stored.get("final_response")
+            or stored.get("message")
+            or stored.get("error")
+            or job.get("error")
+            or ""
+        )
+        results.append(
+            {
+                "job_id": job.get("job_id"),
+                "thread_id": job.get("thread_id"),
+                "turn_id": job.get("turn_id"),
+                "status": job.get("status"),
+                "completed_at": job.get("completed_at"),
+                "delivery_token": job.get("delivery_token"),
+                "result": str(result),
+            }
+        )
+    return results
+
+
+def _acknowledge_codex_result(job_id: str, token: str) -> bool:
+    """Mark one Codex result delivered only after the browser rendered it."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    acknowledge = getattr(codex, "acknowledge_result", None)
+    return bool(callable(acknowledge) and acknowledge(job_id, token))
+
+
+_CODEX_ACTIVE_JOB_STATES = frozenset(
+    {"queued", "starting", "running", "steering", "cancelling", "disconnected", "reconnecting"}
+)
+
+
+def _active_codex_job() -> dict[str, Any] | None:
+    """Return the latest active Codex job using the runner's reconciled state."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    list_jobs = getattr(codex, "list_jobs", None)
+    if not callable(list_jobs):
+        return None
+    active = next(
+        (
+            job
+            for job in reversed(list_jobs())
+            if isinstance(job, dict) and job.get("status") in _CODEX_ACTIVE_JOB_STATES
+        ),
+        None,
+    )
+    if active is None:
+        return None
+    return {
+        "job_id": active.get("job_id"),
+        "status": active.get("status"),
+        "started_at": active.get("started_at"),
+        "task_summary": active.get("task_summary"),
+    }
+
+
+def _cancel_codex_job(job_id: str) -> dict[str, Any]:
+    """Cancel one exact active Codex job through the existing runner contract."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    cancel = getattr(codex, "cancel_job", None)
+    if not callable(cancel):
+        return {"ok": False, "error": "codex_unavailable"}
+    result = cancel(job_id=job_id)
+    return dict(result) if isinstance(result, dict) else {"ok": False, "error": "invalid_result"}
+
+
 def _responses_tools(registry: Any) -> list[dict[str, Any]]:
     """Convert Chat Completions tool specs to the Responses API flat shape."""
     tools: list[dict[str, Any]] = []
@@ -330,6 +413,8 @@ def _request_local_model(message: str) -> str:
     resultado = supervisor.run(message)
     resposta = str(resultado.get("answer") or "").strip()
     if not resposta:
+        if resultado.get("error") == "tool_limit":
+            raise RuntimeError("TOOL_LOOP_LIMIT")
         raise RuntimeError("EMPTY_MODEL_RESPONSE")
     return resposta
 
@@ -460,6 +545,7 @@ PROVIDERS_PATH = Path(
 )
 PROVIDERS_LOCK = threading.Lock()
 MAX_PROVIDERS = 20
+LOCAL_PROVIDER_ID = "local"
 # Modelos de raciocínio (deepseek-v4-pro, o-series) gastam parte do orçamento em
 # reasoning_content. Com 1200 o texto final chegava vazio e virava
 # EMPTY_MODEL_RESPONSE sem explicação; com 4000 ainda estourava em perguntas que
@@ -629,6 +715,20 @@ def _public_provider(provider: dict[str, Any]) -> dict[str, Any]:
         "model": provider.get("model"),
         "has_key": bool(provider.get("api_key")),
         "key_hint": _mask_key(str(provider.get("api_key") or "")),
+        "built_in": False,
+    }
+
+
+def _local_provider_public() -> dict[str, Any]:
+    return {
+        "id": LOCAL_PROVIDER_ID,
+        "label": "Qwen local → Codex",
+        "format": "local",
+        "base_url": "",
+        "model": "qwen-local",
+        "has_key": False,
+        "key_hint": "",
+        "built_in": True,
     }
 
 
@@ -658,6 +758,8 @@ def _all_providers() -> list[dict[str, Any]]:
 
 def _active_provider() -> dict[str, Any] | None:
     store = _read_providers()
+    if store.get("active") == LOCAL_PROVIDER_ID:
+        return None
     providers = _all_providers()
     if not providers:
         return None
@@ -666,6 +768,21 @@ def _active_provider() -> dict[str, Any] | None:
         if provider.get("id") == active_id:
             return provider
     return providers[0]
+
+
+def _selected_provider_id() -> str | None:
+    store = _read_providers()
+    if store.get("active") == LOCAL_PROVIDER_ID:
+        return LOCAL_PROVIDER_ID
+    active = _active_provider()
+    return str(active.get("id")) if active else None
+
+
+def _environment_openai_active() -> bool:
+    return (
+        _selected_provider_id() != LOCAL_PROVIDER_ID
+        and bool(os.environ.get("OPENAI_API_KEY", "").strip())
+    )
 
 
 def _validate_provider(data: Any) -> tuple[dict[str, Any] | None, str | None]:
@@ -757,7 +874,9 @@ def _delete_provider(provider_id: str) -> bool:
 
 
 def _activate_provider(provider_id: str) -> bool:
-    if not any(p.get("id") == provider_id for p in _all_providers()):
+    if provider_id != LOCAL_PROVIDER_ID and not any(
+        p.get("id") == provider_id for p in _all_providers()
+    ):
         return False
     with PROVIDERS_LOCK:
         store = _read_providers()
@@ -1168,6 +1287,24 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/api/codex-results":
+            try:
+                results = _claim_codex_results()
+                active_job = _active_codex_job()
+            except Exception as error:  # noqa: BLE001 - delivery retries on the next poll
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {
+                        "error": "Não foi possível consultar as entregas do Codex.",
+                        "code": type(error).__name__,
+                    },
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK,
+                {"results": results, "active_job": active_job},
+            )
+            return
         if self.path == "/api/telemetry":
             leitura = _hardware_telemetry()
             temperatura = leitura.get("cpu_temperature_c")
@@ -1184,8 +1321,10 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             return
         if self.path == "/api/health":
             registry = _tool_registry()
-            usando_openai = bool(os.environ.get("OPENAI_API_KEY", "").strip())
+            usando_openai = _environment_openai_active()
             active = _active_provider()
+            selected_provider_id = _selected_provider_id()
+            local_selected = selected_provider_id == LOCAL_PROVIDER_ID
             self._send_json(
                 HTTPStatus.OK,
                 {
@@ -1198,21 +1337,26 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
                     "tools": list(registry.names()) if registry is not None else [],
                     "tools_error": _registry_error or None,
                     "local_model_error": _supervisor_error or None,
-                    "model_configured": active is not None,
-                    "model": active.get("model") if active else MODEL,
-                    "provider": active.get("label") if active else None,
+                    "model_configured": local_selected or active is not None,
+                    "model": "qwen-local" if local_selected else (
+                        active.get("model") if active else MODEL
+                    ),
+                    "provider": "Qwen local → Codex" if local_selected else (
+                        active.get("label") if active else None
+                    ),
                     "stt_available": _stt_ready(),
                 },
             )
             return
         if self.path == "/api/providers":
-            store = _read_providers()
-            active = _active_provider()
             self._send_json(
                 HTTPStatus.OK,
                 {
-                    "providers": [_public_provider(p) for p in _all_providers()],
-                    "active": active.get("id") if active else None,
+                    "providers": [
+                        _local_provider_public(),
+                        *[_public_provider(p) for p in _all_providers()],
+                    ],
+                    "active": _selected_provider_id(),
                     "formats": [
                         {
                             "id": key,
@@ -1346,9 +1490,9 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             if not _delete_provider(provider_id):
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "Conexão não encontrada."})
                 return
-            active = _active_provider()
             self._send_json(
-                HTTPStatus.OK, {"deleted": provider_id, "active": active.get("id") if active else None}
+                HTTPStatus.OK,
+                {"deleted": provider_id, "active": _selected_provider_id()},
             )
             return
 
@@ -1381,6 +1525,60 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         if self.path == "/api/transcribe":
             self._handle_transcribe()
+            return
+        if self.path == "/api/codex-results/ack":
+            data, error = self._read_json_body(limit=2_000)
+            if error:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": error})
+                return
+            job_id = str(data.get("job_id") or "") if isinstance(data, dict) else ""
+            token = str(data.get("delivery_token") or "") if isinstance(data, dict) else ""
+            if not job_id or not token:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"error": "Identificação de entrega inválida."},
+                )
+                return
+            try:
+                acknowledged = _acknowledge_codex_result(job_id, token)
+            except Exception as error:  # noqa: BLE001 - client retries the acknowledgement
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {
+                        "error": "Não foi possível confirmar a entrega.",
+                        "code": type(error).__name__,
+                    },
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK if acknowledged else HTTPStatus.CONFLICT,
+                {"acknowledged": acknowledged},
+            )
+            return
+        if self.path == "/api/codex-jobs/cancel":
+            data, error = self._read_json_body(limit=2_000)
+            if error:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": error})
+                return
+            job_id = str(data.get("job_id") or "") if isinstance(data, dict) else ""
+            if not job_id:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"error": "Identificação da tarefa inválida."},
+                )
+                return
+            try:
+                result = _cancel_codex_job(job_id)
+            except Exception as error:  # noqa: BLE001 - cancellation failure is shown to the user
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"error": "Não foi possível cancelar a tarefa.", "code": type(error).__name__},
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK if result.get("ok") else HTTPStatus.CONFLICT,
+                result,
+            )
             return
         if self.path == "/api/providers":
             self._handle_providers()
@@ -1416,7 +1614,7 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             return
 
         provider = _active_provider()
-        usando_openai = bool(os.environ.get("OPENAI_API_KEY", "").strip())
+        usando_openai = _environment_openai_active()
 
         if provider is None and not usando_openai and _tool_registry() is None:
             self._send_json(
@@ -1500,7 +1698,9 @@ def main(*, open_browser: bool = False) -> None:
     server = ThreadingHTTPServer((HOST, PORT), TRIADEWebHandler)
     print(f"JARVIS web disponível em http://{HOST}:{PORT}")
     active = _active_provider()
-    if active is None:
+    if _selected_provider_id() == LOCAL_PROVIDER_ID:
+        print("Conexão de IA ativa: Qwen local → Codex.")
+    elif active is None:
         print("Aviso: nenhuma conexão de IA configurada; cadastre uma no painel Conexões de IA.")
     else:
         print(f"Conexão de IA ativa: {active.get('label')} ({active.get('model')}).")
