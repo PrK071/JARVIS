@@ -497,6 +497,80 @@ def test_shadow_can_be_disabled_by_configuration():
     assert registry.logger.find("execution_gate_shadow") == []
 
 
+class ShadowStructuredClient(AnswerOnlyClient):
+    def chat(self, _messages, **kwargs):
+        self.calls += 1
+        response_format = kwargs.get("response_format") or {}
+        schema_name = (response_format.get("json_schema") or {}).get("name")
+        if schema_name == "shadow_next_action":
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "action": "INSPECT",
+                                    "target_agent": None,
+                                    "target": "authentication files",
+                                    "tool_name": None,
+                                    "arguments": {},
+                                    "objective": "inspect authentication evidence",
+                                    "execution_mode": "READ_ONLY",
+                                    "required_capabilities": [],
+                                    "reason_code": "REPOSITORY_INSPECTION_REQUIRED",
+                                    "evidence_refs": [],
+                                    "expected_observation": "repository facts",
+                                    "confidence": None,
+                                    "short_horizon_hint": None,
+                                }
+                            )
+                        }
+                    }
+                ]
+            }
+        return {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
+
+
+def test_phase_175_observer_is_opt_in_and_has_zero_live_effects():
+    registry = ExplodingRegistry()
+    client = ShadowStructuredClient()
+    result = Supervisor(
+        settings(ORCHESTRATION_SHADOW_ENABLED="true"), client, registry
+    ).run("investigue o bug de autenticacao")
+
+    assert result["ok"] is True
+    assert registry.forbidden_calls == []
+    records = registry.logger.find("orchestration_shadow")
+    assert len(records) == 1
+    record = records[0]
+    assert record["mode"] == "SHADOW"
+    assert record["model_calls"] == 1
+    assert set(record["effect_counts"].values()) == {0}
+    assert record["records"][0]["authority_shadow_result"]["live_authority"] is False
+
+
+def test_phase_175_policy_failure_cannot_change_live_result(monkeypatch):
+    from tern.orchestrator.orchestration_policy import QwenOrchestrationPolicy
+
+    registry = ExplodingRegistry()
+    monkeypatch.setattr(
+        QwenOrchestrationPolicy,
+        "decide",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    result = Supervisor(
+        settings(ORCHESTRATION_SHADOW_ENABLED="true"),
+        AnswerOnlyClient(),
+        registry,
+    ).run("investigue o bug")
+    assert result["ok"] is True
+    assert registry.forbidden_calls == []
+    assert registry.logger.find("orchestration_shadow_error") == []
+    record = registry.logger.find("orchestration_shadow")[0]
+    assert record["termination_reason"] == "POLICY_FAILURE"
+    assert set(record["effect_counts"].values()) == {0}
+
+
 # --- corpus level safety targets ----------------------------------------------
 
 

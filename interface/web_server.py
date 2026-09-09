@@ -8,7 +8,9 @@ import json
 import os
 import sys
 import threading
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import webbrowser
 from http import HTTPStatus
@@ -18,6 +20,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = ROOT.parent
 WEB_ROOT = ROOT / "web"
 HOST = os.environ.get("TRIADE_HOST", "127.0.0.1")
 PORT = int(os.environ.get("TRIADE_PORT", "8000"))
@@ -26,11 +29,24 @@ MAX_MESSAGE_LENGTH = 4_000
 MAX_HISTORY_ITEMS = 16
 MAX_HISTORY_CHARS = 18_000
 
+TOOLS_ENABLED = os.environ.get("TRIADE_TOOLS", "1").strip().lower() not in {
+    "0",
+    "false",
+    "off",
+    "no",
+}
+MAX_TOOL_ITERATIONS = int(os.environ.get("TRIADE_MAX_TOOL_ITERATIONS", "8"))
+MAX_TOOL_OUTPUT_CHARS = 12_000
+# Cobrado quando o modelo esgota as rodadas de ferramentas sem concluir: pedir
+# texto final com o material já coletado vale mais que devolver painel vazio.
+TOOL_BUDGET_PROMPT = (
+    "O limite de chamadas de ferramenta desta pergunta acabou. Responda agora, "
+    "em texto, com o que você já apurou, e diga o que ficou sem verificar."
+)
 # Transcricao local: o audio do microfone nunca sai da maquina. Usa o mesmo
 # FasterWhisperSTT do orquestrador (tern), com o modelo ja baixado em
 # models/voice/. Sem faster-whisper ou sem modelo, o botao de microfone some
 # da interface em vez de falhar no meio da gravacao.
-PROJECT_ROOT = ROOT.parent
 MAX_AUDIO_BYTES = 8_000_000
 STT_SAMPLE_RATE = 16_000
 MIN_AUDIO_SAMPLES = STT_SAMPLE_RATE // 5  # 200 ms
@@ -151,10 +167,256 @@ SYSTEM_INSTRUCTIONS = """Você é o SYNTH-ALPHA, assistente do sistema JARVIS.
 Responda sempre em português do Brasil, com clareza e objetividade.
 Você conversa livremente, explica assuntos, ajuda com estudos, escrita, ideias e programação.
 Mantenha respostas adequadas para leitura em um painel estreito; use texto simples e listas curtas quando ajudarem.
-Não afirme ter executado comandos, alterado arquivos, acessado o computador ou consultado dados externos.
-O painel chamado Terminal de Resposta é apenas o histórico visual da conversa, não um terminal do sistema operacional.
-Quando a pergunta tratar da telemetria do JARVIS, considere que as métricas mostradas pela interface são simuladas.
+Você tem acesso operacional real a este computador através das ferramentas fornecidas: leitura e escrita de
+arquivos dentro das raízes permitidas, resolução de projetos, delegação de tarefas ao Codex e ao DeepSeek,
+consultas web, controle de aplicativos e leitura de telemetria de hardware.
+Quando o pedido exigir estado real da máquina, chame a ferramenta correspondente em vez de supor ou responder
+que não tem acesso. Nunca invente resultado de ferramenta: relate exatamente o que a chamada retornou, incluindo erros.
+Se uma ferramenta falhar por caminho fora da allowlist, diga qual caminho foi negado.
+O painel chamado Terminal de Resposta é o histórico visual da conversa, não um terminal do sistema operacional.
+Quando a pergunta tratar da telemetria exibida pelos widgets da interface, considere que aquelas métricas decorativas são simuladas.
 """
+
+_registry_lock = threading.Lock()
+_registry_cache: Any = None
+_registry_error = ""
+
+
+def _tool_registry() -> Any:
+    """Lazily build the orchestrator ToolRegistry (real machine access)."""
+    global _registry_cache, _registry_error
+
+    if not TOOLS_ENABLED:
+        return None
+    with _registry_lock:
+        if _registry_cache is None and not _registry_error:
+            try:
+                if str(PROJECT_ROOT) not in sys.path:
+                    sys.path.insert(0, str(PROJECT_ROOT))
+                from tern.orchestrator.cli import _registry
+                from tern.orchestrator.config import load_settings
+
+                _registry_cache = _registry(
+                    load_settings(),
+                    approval=lambda _action, _arguments: True,
+                )
+            except Exception as error:  # noqa: BLE001 - surfaced through /api/health
+                _registry_error = f"{type(error).__name__}: {error}"
+        return _registry_cache
+
+
+def _claim_codex_results() -> list[dict[str, Any]]:
+    """Claim completed Codex jobs for browser delivery without acknowledging them."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    claim = getattr(codex, "claim_completed_results", None)
+    if not callable(claim):
+        return []
+
+    results: list[dict[str, Any]] = []
+    for job in claim():
+        if not isinstance(job, dict):
+            continue
+        stored = job.get("result") if isinstance(job.get("result"), dict) else {}
+        result = (
+            stored.get("final_response")
+            or stored.get("message")
+            or stored.get("error")
+            or job.get("error")
+            or ""
+        )
+        results.append(
+            {
+                "job_id": job.get("job_id"),
+                "thread_id": job.get("thread_id"),
+                "turn_id": job.get("turn_id"),
+                "status": job.get("status"),
+                "completed_at": job.get("completed_at"),
+                "delivery_token": job.get("delivery_token"),
+                "result": str(result),
+            }
+        )
+    return results
+
+
+def _acknowledge_codex_result(job_id: str, token: str) -> bool:
+    """Mark one Codex result delivered only after the browser rendered it."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    acknowledge = getattr(codex, "acknowledge_result", None)
+    return bool(callable(acknowledge) and acknowledge(job_id, token))
+
+
+_CODEX_ACTIVE_JOB_STATES = frozenset(
+    {"queued", "starting", "running", "steering", "cancelling", "disconnected", "reconnecting"}
+)
+
+
+def _active_codex_job() -> dict[str, Any] | None:
+    """Return the latest active Codex job using the runner's reconciled state."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    list_jobs = getattr(codex, "list_jobs", None)
+    if not callable(list_jobs):
+        return None
+    active = next(
+        (
+            job
+            for job in reversed(list_jobs())
+            if isinstance(job, dict) and job.get("status") in _CODEX_ACTIVE_JOB_STATES
+        ),
+        None,
+    )
+    if active is None:
+        return None
+    return {
+        "job_id": active.get("job_id"),
+        "status": active.get("status"),
+        "started_at": active.get("started_at"),
+        "task_summary": active.get("task_summary"),
+    }
+
+
+def _cancel_codex_job(job_id: str) -> dict[str, Any]:
+    """Cancel one exact active Codex job through the existing runner contract."""
+    registry = _tool_registry()
+    codex = getattr(registry, "codex", None) if registry is not None else None
+    cancel = getattr(codex, "cancel_job", None)
+    if not callable(cancel):
+        return {"ok": False, "error": "codex_unavailable"}
+    result = cancel(job_id=job_id)
+    return dict(result) if isinstance(result, dict) else {"ok": False, "error": "invalid_result"}
+
+
+def _responses_tools(registry: Any) -> list[dict[str, Any]]:
+    """Convert Chat Completions tool specs to the Responses API flat shape."""
+    tools: list[dict[str, Any]] = []
+    for spec in registry.specs():
+        function = spec.get("function") if isinstance(spec, dict) else None
+        function = function if isinstance(function, dict) else spec
+        name = function.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        tools.append(
+            {
+                "type": "function",
+                "name": name,
+                "description": str(function.get("description") or ""),
+                "parameters": function.get("parameters")
+                or {"type": "object", "properties": {}},
+            }
+        )
+    return tools
+
+
+def _run_tool(registry: Any, call: dict[str, Any]) -> str:
+    name = str(call.get("name") or "")
+    raw_arguments = call.get("arguments")
+    try:
+        arguments = json.loads(raw_arguments) if isinstance(raw_arguments, str) else raw_arguments
+    except json.JSONDecodeError:
+        arguments = None
+    if not isinstance(arguments, dict):
+        arguments = {}
+
+    try:
+        result = registry.execute(
+            name,
+            arguments,
+            context={"conversation_id": "interface-web"},
+        )
+    except Exception as error:  # noqa: BLE001 - tool errors go back to the model
+        result = {"ok": False, "error": type(error).__name__, "message": str(error)}
+
+    return json.dumps(result, ensure_ascii=False, default=str)[:MAX_TOOL_OUTPUT_CHARS]
+
+
+_hardware_lock = threading.Lock()
+_hardware_monitor: Any = None
+_hardware_cache: tuple[float, dict[str, Any]] | None = None
+HARDWARE_MIN_INTERVAL_SECONDS = 2.0
+
+
+def _hardware_telemetry() -> dict[str, Any]:
+    """Real CPU temperature from the hardware sensor, throttled between reads."""
+    global _hardware_monitor, _hardware_cache
+
+    with _hardware_lock:
+        agora = time.monotonic()
+        if _hardware_cache is not None and agora - _hardware_cache[0] < HARDWARE_MIN_INTERVAL_SECONDS:
+            return _hardware_cache[1]
+        try:
+            if _hardware_monitor is None:
+                if str(PROJECT_ROOT) not in sys.path:
+                    sys.path.insert(0, str(PROJECT_ROOT))
+                from tern.orchestrator.hardware import HardwareMonitor
+
+                _hardware_monitor = HardwareMonitor()
+            leitura = _hardware_monitor.read()
+        except Exception as error:  # noqa: BLE001 - reported as unavailable to the UI
+            leitura = {
+                "ok": False,
+                "cpu_temperature_c": None,
+                "cpu_temperature_available": False,
+                "cpu_temperature_source": None,
+                "error": f"{type(error).__name__}: {error}",
+            }
+        _hardware_cache = (agora, leitura)
+        return leitura
+
+
+_supervisor_lock = threading.Lock()
+_supervisor: Any = None
+_supervisor_error = ""
+LOCAL_MODEL_STARTUP_TIMEOUT_SECONDS = int(
+    os.environ.get("TRIADE_LOCAL_MODEL_TIMEOUT", "300")
+)
+
+
+def _local_supervisor() -> Any:
+    """Local Qwen supervisor with the same tool registry, used when no OpenAI key."""
+    global _supervisor, _supervisor_error
+
+    with _supervisor_lock:
+        if _supervisor is None and not _supervisor_error:
+            try:
+                if str(PROJECT_ROOT) not in sys.path:
+                    sys.path.insert(0, str(PROJECT_ROOT))
+                from tern.orchestrator.agent import Supervisor
+                from tern.orchestrator.client import LlamaClient
+                from tern.orchestrator.config import load_settings
+                from tern.orchestrator.runtime import RuntimeManager
+
+                registry = _tool_registry()
+                if registry is None:
+                    raise RuntimeError("TOOLS_DISABLED")
+
+                settings = load_settings()
+                RuntimeManager(settings).ensure_llama_server(
+                    LOCAL_MODEL_STARTUP_TIMEOUT_SECONDS
+                )
+                _supervisor = Supervisor(
+                    settings,
+                    LlamaClient(settings.base_url, settings.timeout),
+                    registry,
+                )
+            except Exception as error:  # noqa: BLE001 - surfaced through /api/health
+                _supervisor_error = f"{type(error).__name__}: {error}"
+        return _supervisor
+
+
+def _request_local_model(message: str) -> str:
+    supervisor = _local_supervisor()
+    if supervisor is None:
+        raise RuntimeError(f"LOCAL_MODEL_UNAVAILABLE: {_supervisor_error or 'sem supervisor'}")
+
+    resultado = supervisor.run(message)
+    resposta = str(resultado.get("answer") or "").strip()
+    if not resposta:
+        if resultado.get("error") == "tool_limit":
+            raise RuntimeError("TOOL_LOOP_LIMIT")
+        raise RuntimeError("EMPTY_MODEL_RESPONSE")
+    return resposta
 
 
 def _safe_history(value: Any) -> list[dict[str, str]]:
@@ -191,28 +453,18 @@ def _extract_output_text(payload: dict[str, Any]) -> str:
     return "\n".join(chunks).strip()
 
 
-def _request_openai(message: str, history: list[dict[str, str]]) -> str:
-    """Legacy path: the OPENAI_API_KEY setup, kept working without migration."""
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("API_KEY_MISSING")
+def _extract_function_calls(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    calls: list[dict[str, Any]] = []
+    for item in payload.get("output", []):
+        if isinstance(item, dict) and item.get("type") == "function_call":
+            calls.append(item)
+    return calls
 
-    model_input: list[dict[str, str]] = [*history, {"role": "user", "content": message}]
-    request_body = json.dumps(
-        {
-            "model": MODEL,
-            "instructions": SYSTEM_INSTRUCTIONS,
-            "input": model_input,
-            "reasoning": {"effort": "low"},
-            "text": {"verbosity": "medium"},
-            "max_output_tokens": 1_200,
-        },
-        ensure_ascii=False,
-    ).encode("utf-8")
 
+def _post_responses(request_body: dict[str, Any], api_key: str) -> dict[str, Any]:
     request = urllib.request.Request(
         "https://api.openai.com/v1/responses",
-        data=request_body,
+        data=json.dumps(request_body, ensure_ascii=False).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -221,18 +473,65 @@ def _request_openai(message: str, history: list[dict[str, str]]) -> str:
     )
 
     try:
-        with urllib.request.urlopen(request, timeout=45) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        with urllib.request.urlopen(request, timeout=180) as response:
+            return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         details = error.read().decode("utf-8", errors="replace")[:600]
         raise RuntimeError(f"OPENAI_HTTP_{error.code}: {details}") from error
     except urllib.error.URLError as error:
         raise RuntimeError("OPENAI_UNAVAILABLE") from error
 
-    reply = _extract_output_text(payload)
-    if not reply:
-        raise RuntimeError("EMPTY_MODEL_RESPONSE")
-    return reply
+
+def _request_openai(message: str, history: list[dict[str, str]]) -> str:
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("API_KEY_MISSING")
+
+    registry = _tool_registry()
+    tools = _responses_tools(registry) if registry is not None else []
+
+    model_input: list[dict[str, Any]] = [*history, {"role": "user", "content": message}]
+    previous_response_id: str | None = None
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        request_body: dict[str, Any] = {
+            "model": MODEL,
+            "instructions": SYSTEM_INSTRUCTIONS,
+            "input": model_input,
+            "reasoning": {"effort": "low"},
+            "text": {"verbosity": "medium"},
+            "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if tools:
+            request_body["tools"] = tools
+            request_body["tool_choice"] = "auto"
+        if previous_response_id:
+            request_body["previous_response_id"] = previous_response_id
+
+        payload = _post_responses(request_body, api_key)
+
+        calls = _extract_function_calls(payload)
+        if not calls:
+            reply = _extract_output_text(payload)
+            if not reply:
+                raise RuntimeError("EMPTY_MODEL_RESPONSE")
+            return reply
+
+        if registry is None:
+            raise RuntimeError("TOOLS_UNAVAILABLE")
+
+        response_id = payload.get("id")
+        previous_response_id = response_id if isinstance(response_id, str) else None
+        model_input = [
+            {
+                "type": "function_call_output",
+                "call_id": str(call.get("call_id") or ""),
+                "output": _run_tool(registry, call),
+            }
+            for call in calls
+        ]
+
+    raise RuntimeError("TOOL_LOOP_LIMIT")
 
 
 
@@ -246,29 +545,121 @@ PROVIDERS_PATH = Path(
 )
 PROVIDERS_LOCK = threading.Lock()
 MAX_PROVIDERS = 20
+LOCAL_PROVIDER_ID = "local"
+# Modelos de raciocínio (deepseek-v4-pro, o-series) gastam parte do orçamento em
+# reasoning_content. Com 1200 o texto final chegava vazio e virava
+# EMPTY_MODEL_RESPONSE sem explicação; com 4000 ainda estourava em perguntas que
+# encadeiam ferramentas. 8000 fica abaixo do teto de saída da DeepSeek (8192).
+MAX_PROVIDER_OUTPUT_TOKENS = int(os.environ.get("TRIADE_PROVIDER_MAX_TOKENS", "16000"))
 
 # Formatos cobrem, na prática, qualquer API de IA relevante:
 # - openai-chat     : /chat/completions — OpenAI, DeepSeek, Groq, OpenRouter,
 #                     Together, Mistral, Ollama, LM Studio, vLLM, llama.cpp
 # - openai-responses: /responses — a Responses API da OpenAI
 # - anthropic       : /messages — Claude
+# O rótulo cita os provedores conhecidos porque o campo descreve o protocolo, não
+# a marca: quem escolhe "DeepSeek" no seletor de provedor precisa reconhecer que
+# o protocolo dela é o chat/completions.
 PROVIDER_FORMATS = {
     "openai-chat": {
-        "label": "OpenAI-compatível (chat/completions)",
+        "label": "Chat Completions — DeepSeek, OpenAI, Groq, Mistral, Ollama, LM Studio",
         "base_url": "https://api.openai.com/v1",
         "path": "/chat/completions",
+        "vendors": (
+            "DeepSeek",
+            "OpenAI",
+            "Groq",
+            "OpenRouter",
+            "Mistral",
+            "Together",
+            "Gemini (modo OpenAI)",
+            "Ollama",
+            "LM Studio",
+            "vLLM",
+            "llama.cpp",
+        ),
     },
     "openai-responses": {
-        "label": "OpenAI Responses",
+        "label": "OpenAI Responses — só OpenAI",
         "base_url": "https://api.openai.com/v1",
         "path": "/responses",
+        "vendors": ("OpenAI",),
     },
     "anthropic": {
-        "label": "Anthropic (Claude)",
+        "label": "Anthropic Messages — Claude",
         "base_url": "https://api.anthropic.com/v1",
         "path": "/messages",
+        "vendors": ("Anthropic (Claude)",),
     },
 }
+
+# Presets de provedores conhecidos: o erro mais comum é salvar a chave de um
+# provedor com o endpoint de outro, que responde 401 sem dizer o motivo.
+PROVIDER_PRESETS = (
+    {
+        "id": "openai",
+        "label": "OpenAI",
+        "format": "openai-chat",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-4o-mini",
+    },
+    {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "format": "openai-chat",
+        "base_url": "https://api.deepseek.com/v1",
+        "model": "deepseek-v4-flash",
+    },
+    {
+        "id": "anthropic",
+        "label": "Anthropic (Claude)",
+        "format": "anthropic",
+        "base_url": "https://api.anthropic.com/v1",
+        "model": "claude-sonnet-4-5",
+    },
+    {
+        "id": "groq",
+        "label": "Groq",
+        "format": "openai-chat",
+        "base_url": "https://api.groq.com/openai/v1",
+        "model": "llama-3.3-70b-versatile",
+    },
+    {
+        "id": "openrouter",
+        "label": "OpenRouter",
+        "format": "openai-chat",
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "deepseek/deepseek-chat",
+    },
+    {
+        "id": "mistral",
+        "label": "Mistral",
+        "format": "openai-chat",
+        "base_url": "https://api.mistral.ai/v1",
+        "model": "mistral-large-latest",
+    },
+    {
+        "id": "gemini",
+        "label": "Google Gemini",
+        "format": "openai-chat",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "model": "gemini-2.5-flash",
+    },
+    {
+        "id": "ollama",
+        "label": "Ollama (local)",
+        "format": "openai-chat",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "model": "qwen2.5:7b",
+    },
+    {
+        "id": "lmstudio",
+        "label": "LM Studio (local)",
+        "format": "openai-chat",
+        "base_url": "http://127.0.0.1:1234/v1",
+        "model": "local-model",
+    },
+)
 
 
 def _slug(value: str) -> str:
@@ -324,6 +715,20 @@ def _public_provider(provider: dict[str, Any]) -> dict[str, Any]:
         "model": provider.get("model"),
         "has_key": bool(provider.get("api_key")),
         "key_hint": _mask_key(str(provider.get("api_key") or "")),
+        "built_in": False,
+    }
+
+
+def _local_provider_public() -> dict[str, Any]:
+    return {
+        "id": LOCAL_PROVIDER_ID,
+        "label": "Qwen local → Codex",
+        "format": "local",
+        "base_url": "",
+        "model": "qwen-local",
+        "has_key": False,
+        "key_hint": "",
+        "built_in": True,
     }
 
 
@@ -353,6 +758,8 @@ def _all_providers() -> list[dict[str, Any]]:
 
 def _active_provider() -> dict[str, Any] | None:
     store = _read_providers()
+    if store.get("active") == LOCAL_PROVIDER_ID:
+        return None
     providers = _all_providers()
     if not providers:
         return None
@@ -361,6 +768,21 @@ def _active_provider() -> dict[str, Any] | None:
         if provider.get("id") == active_id:
             return provider
     return providers[0]
+
+
+def _selected_provider_id() -> str | None:
+    store = _read_providers()
+    if store.get("active") == LOCAL_PROVIDER_ID:
+        return LOCAL_PROVIDER_ID
+    active = _active_provider()
+    return str(active.get("id")) if active else None
+
+
+def _environment_openai_active() -> bool:
+    return (
+        _selected_provider_id() != LOCAL_PROVIDER_ID
+        and bool(os.environ.get("OPENAI_API_KEY", "").strip())
+    )
 
 
 def _validate_provider(data: Any) -> tuple[dict[str, Any] | None, str | None]:
@@ -452,7 +874,9 @@ def _delete_provider(provider_id: str) -> bool:
 
 
 def _activate_provider(provider_id: str) -> bool:
-    if not any(p.get("id") == provider_id for p in _all_providers()):
+    if provider_id != LOCAL_PROVIDER_ID and not any(
+        p.get("id") == provider_id for p in _all_providers()
+    ):
         return False
     with PROVIDERS_LOCK:
         store = _read_providers()
@@ -499,25 +923,217 @@ def _reply_from_anthropic(payload: dict[str, Any]) -> str:
     return "\n".join(chunk for chunk in chunks if chunk).strip()
 
 
-def _provider_error_message(code: str) -> str:
+def _provider_error_message(code: str, *, host: str | None = None) -> str:
     """Turn a provider failure into something readable in the narrow panel."""
+    onde = f" por {host}" if host else " pelo provedor"
     if code.startswith("API_KEY_MISSING"):
         return "Essa conexão exige uma chave de API."
     if code.startswith("UNREACHABLE"):
         return "Endpoint inacessível. Confira a URL e a conexão."
     if code.startswith("HTTP_401") or code.startswith("HTTP_403"):
-        return "Chave recusada pelo provedor."
+        # Nomear quem recusou evita o erro mais comum: chave de um provedor
+        # enviada para o endpoint de outro, que responde 401 sem explicar.
+        return (
+            f"Chave recusada{onde}. Confira se o endpoint corresponde ao provedor "
+            "dessa chave."
+        )
     if code.startswith("HTTP_404"):
         return "Endpoint não encontrado. Confira a URL base e o formato."
     if code.startswith("HTTP_429"):
         return "Limite de uso atingido no provedor."
+    if code.startswith("HTTP_400") and "model" in code.lower():
+        return "Modelo inválido para esse provedor. Confira o nome do modelo."
     if code.startswith("HTTP_"):
         return f"O provedor recusou a requisição ({code.split(':')[0]})."
     if code.startswith("EMPTY_MODEL_RESPONSE"):
         return "O modelo respondeu vazio."
+    if code.startswith("TRUNCATED_BY_TOKEN_LIMIT"):
+        return (
+            "O modelo gastou o orçamento de tokens no raciocínio e não sobrou "
+            f"texto final (limite atual: {MAX_PROVIDER_OUTPUT_TOKENS}). Aumente "
+            "TRIADE_PROVIDER_MAX_TOKENS ou use um modelo sem raciocínio longo."
+        )
+    if code.startswith("TOOL_LOOP_LIMIT"):
+        return (
+            "O modelo encadeou ferramentas além do limite da pergunta "
+            f"({MAX_TOOL_ITERATIONS} rodadas) e não fechou uma resposta. Peça algo "
+            "mais específico ou aumente TRIADE_MAX_TOOL_ITERATIONS."
+        )
     if code.startswith("INVALID_JSON_RESPONSE"):
         return "Resposta do provedor não é JSON válido."
     return "Não foi possível falar com o provedor."
+
+
+def _provider_host(provider: dict[str, Any] | None) -> str | None:
+    if not provider:
+        return None
+    fmt = provider.get("format", "openai-chat")
+    spec = PROVIDER_FORMATS.get(fmt, {})
+    base_url = str(provider.get("base_url") or spec.get("base_url") or "")
+    try:
+        return urllib.parse.urlparse(base_url).hostname
+    except ValueError:
+        return None
+
+
+def _chat_tools(registry: Any) -> list[dict[str, Any]]:
+    """Especificações no formato chat/completions, aceito por DeepSeek e afins."""
+    return list(registry.specs()) if registry is not None else []
+
+
+def _anthropic_tools(registry: Any) -> list[dict[str, Any]]:
+    """Anthropic usa input_schema em vez de parameters."""
+    if registry is None:
+        return []
+    ferramentas = []
+    for spec in registry.specs():
+        funcao = spec.get("function") if isinstance(spec, dict) else None
+        funcao = funcao if isinstance(funcao, dict) else spec
+        nome = funcao.get("name")
+        if not isinstance(nome, str) or not nome:
+            continue
+        ferramentas.append(
+            {
+                "name": nome,
+                "description": str(funcao.get("description") or ""),
+                "input_schema": funcao.get("parameters") or {"type": "object", "properties": {}},
+            }
+        )
+    return ferramentas
+
+
+def _request_provider_chat(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa em chat/completions, executando ferramentas quando pedidas."""
+    ferramentas = _chat_tools(registry)
+    mensagens: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM_INSTRUCTIONS},
+        *turns,
+    ]
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "messages": mensagens,
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+            corpo["tool_choice"] = "auto"
+
+        payload = _post_json(url, headers, corpo)
+        escolha = next(
+            (item for item in payload.get("choices", []) if isinstance(item, dict)),
+            {},
+        )
+        mensagem = escolha.get("message") if isinstance(escolha.get("message"), dict) else {}
+        chamadas = [
+            item
+            for item in (mensagem.get("tool_calls") or [])
+            if isinstance(item, dict)
+        ]
+
+        if not chamadas:
+            return _reply_from_openai_chat(payload), payload
+
+        if registry is None:
+            break
+
+        mensagens.append(
+            {
+                "role": "assistant",
+                "content": mensagem.get("content") or "",
+                "tool_calls": chamadas,
+            }
+        )
+        for chamada in chamadas:
+            funcao = chamada.get("function") if isinstance(chamada.get("function"), dict) else {}
+            mensagens.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": str(chamada.get("id") or ""),
+                    "content": _run_tool(
+                        registry,
+                        {"name": funcao.get("name"), "arguments": funcao.get("arguments")},
+                    ),
+                }
+            )
+
+    if registry is None:
+        return "", payload
+
+    # Orçamento de ferramentas esgotado: o modelo pediria mais chamadas para
+    # sempre. Uma última rodada sem ferramentas força texto com o que já foi
+    # coletado, em vez de devolver resposta vazia ao painel.
+    payload = _post_json(
+        url,
+        headers,
+        {
+            "model": model,
+            "messages": [
+                *mensagens,
+                {"role": "user", "content": TOOL_BUDGET_PROMPT},
+            ],
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        },
+    )
+    return _reply_from_openai_chat(payload), payload
+
+
+def _request_provider_anthropic(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa em /messages, executando ferramentas via blocos tool_use."""
+    ferramentas = _anthropic_tools(registry)
+    mensagens: list[dict[str, Any]] = list(turns)
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "system": SYSTEM_INSTRUCTIONS,
+            "messages": mensagens,
+            "max_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+
+        payload = _post_json(url, headers, corpo)
+        blocos = [item for item in payload.get("content", []) if isinstance(item, dict)]
+        usos = [item for item in blocos if item.get("type") == "tool_use"]
+
+        if not usos:
+            return _reply_from_anthropic(payload), payload
+
+        if registry is None:
+            break
+
+        mensagens.append({"role": "assistant", "content": blocos})
+        resultados = []
+        for uso in usos:
+            resultados.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": str(uso.get("id") or ""),
+                    "content": _run_tool(
+                        registry,
+                        {"name": uso.get("name"), "arguments": uso.get("input") or {}},
+                    ),
+                }
+            )
+        mensagens.append({"role": "user", "content": resultados})
+
+    return "", payload
 
 
 def _request_provider(
@@ -525,7 +1141,12 @@ def _request_provider(
     message: str,
     history: list[dict[str, str]],
 ) -> str:
-    """Send the conversation to the active connection and return the reply."""
+    """Send the conversation to the active connection and return the reply.
+
+    A conexão recebe as mesmas ferramentas do orquestrador. Sem isso o modelo
+    remoto respondia que não tinha acesso ao computador, o que era verdade
+    apenas porque nenhuma ferramenta era oferecida a ele.
+    """
     api_key = str(provider.get("api_key") or "").strip()
     fmt = provider.get("format", "openai-chat")
     spec = PROVIDER_FORMATS.get(fmt)
@@ -535,59 +1156,109 @@ def _request_provider(
     base_url = str(provider.get("base_url") or spec["base_url"]).rstrip("/")
     url = f"{base_url}{spec['path']}"
     model = str(provider.get("model") or "")
-    turns = [*history, {"role": "user", "content": message}]
+    turns: list[dict[str, Any]] = [*history, {"role": "user", "content": message}]
+    registry = _tool_registry()
 
     if fmt == "anthropic":
         if not api_key:
             raise RuntimeError("API_KEY_MISSING")
-        payload = _post_json(
+        reply, payload = _request_provider_anthropic(
             url,
             {"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-            {
-                "model": model,
-                "system": SYSTEM_INSTRUCTIONS,
-                "messages": turns,
-                "max_tokens": 1_200,
-            },
+            model,
+            turns,
+            registry,
         )
-        reply = _reply_from_anthropic(payload)
     elif fmt == "openai-responses":
         if not api_key:
             raise RuntimeError("API_KEY_MISSING")
-        payload = _post_json(
+        reply, payload = _request_provider_responses(
             url,
             {"Authorization": f"Bearer {api_key}"},
-            {
-                "model": model,
-                "instructions": SYSTEM_INSTRUCTIONS,
-                "input": turns,
-                "reasoning": {"effort": "low"},
-                "text": {"verbosity": "medium"},
-                "max_output_tokens": 1_200,
-            },
+            model,
+            turns,
+            registry,
         )
-        reply = _extract_output_text(payload)
     else:
         # Servidores locais (Ollama, LM Studio, llama.cpp) costumam dispensar a
         # chave, entao ela e opcional neste formato.
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        payload = _post_json(
-            url,
-            headers,
-            {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_INSTRUCTIONS},
-                    *turns,
-                ],
-                "max_tokens": 1_200,
-            },
-        )
-        reply = _reply_from_openai_chat(payload)
+        reply, payload = _request_provider_chat(url, headers, model, turns, registry)
 
     if not reply:
-        raise RuntimeError("EMPTY_MODEL_RESPONSE")
+        raise RuntimeError(_empty_reply_reason(payload))
     return reply
+
+
+def _request_provider_responses(
+    url: str,
+    headers: dict[str, str],
+    model: str,
+    turns: list[dict[str, Any]],
+    registry: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Conversa na Responses API, executando ferramentas quando pedidas."""
+    ferramentas = _responses_tools(registry) if registry is not None else []
+    entrada: list[dict[str, Any]] = list(turns)
+    anterior: str | None = None
+    payload: dict[str, Any] = {}
+
+    for _ in range(MAX_TOOL_ITERATIONS + 1):
+        corpo: dict[str, Any] = {
+            "model": model,
+            "instructions": SYSTEM_INSTRUCTIONS,
+            "input": entrada,
+            "reasoning": {"effort": "low"},
+            "text": {"verbosity": "medium"},
+            "max_output_tokens": MAX_PROVIDER_OUTPUT_TOKENS,
+        }
+        if ferramentas:
+            corpo["tools"] = ferramentas
+            corpo["tool_choice"] = "auto"
+        if anterior:
+            corpo["previous_response_id"] = anterior
+
+        payload = _post_json(url, headers, corpo)
+        chamadas = _extract_function_calls(payload)
+        if not chamadas:
+            return _extract_output_text(payload), payload
+        if registry is None:
+            break
+
+        identificador = payload.get("id")
+        anterior = identificador if isinstance(identificador, str) else None
+        entrada = [
+            {
+                "type": "function_call_output",
+                "call_id": str(chamada.get("call_id") or ""),
+                "output": _run_tool(registry, chamada),
+            }
+            for chamada in chamadas
+        ]
+
+    return "", payload
+
+
+def _empty_reply_reason(payload: dict[str, Any]) -> str:
+    """Distingue resposta vazia de resposta cortada pelo limite de tokens."""
+    escolhas = payload.get("choices")
+    if isinstance(escolhas, list):
+        for escolha in escolhas:
+            if not isinstance(escolha, dict):
+                continue
+            if escolha.get("finish_reason") == "length":
+                return "TRUNCATED_BY_TOKEN_LIMIT"
+            if escolha.get("finish_reason") == "tool_calls":
+                # Parou pedindo ferramenta, não por falta de orçamento: culpar o
+                # limite de tokens mandava o usuário mexer na variável errada.
+                return "TOOL_LOOP_LIMIT"
+            mensagem = escolha.get("message")
+            if isinstance(mensagem, dict) and str(mensagem.get("reasoning_content") or "").strip():
+                # Raciocinou e não sobrou orçamento para o texto final.
+                return "TRUNCATED_BY_TOKEN_LIMIT"
+    if payload.get("status") == "incomplete":
+        return "TRUNCATED_BY_TOKEN_LIMIT"
+    return "EMPTY_MODEL_RESPONSE"
 
 
 class TRIADEWebHandler(SimpleHTTPRequestHandler):
@@ -603,35 +1274,99 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        self._cache_header_sent = True
         self.end_headers()
         self.wfile.write(body)
 
+    def end_headers(self) -> None:
+        # Static assets must never be cached: a stale app.js kept showing the old
+        # simulated core temperature after the real sensor was wired in.
+        if not getattr(self, "_cache_header_sent", False):
+            self.send_header("Cache-Control", "no-store, must-revalidate")
+        self._cache_header_sent = False
+        super().end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/api/codex-results":
+            try:
+                results = _claim_codex_results()
+                active_job = _active_codex_job()
+            except Exception as error:  # noqa: BLE001 - delivery retries on the next poll
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {
+                        "error": "Não foi possível consultar as entregas do Codex.",
+                        "code": type(error).__name__,
+                    },
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK,
+                {"results": results, "active_job": active_job},
+            )
+            return
+        if self.path == "/api/telemetry":
+            leitura = _hardware_telemetry()
+            temperatura = leitura.get("cpu_temperature_c")
+            self._send_json(
+                HTTPStatus.OK,
+                {
+                    "ok": bool(leitura.get("cpu_temperature_available")),
+                    "cpu_temperature_c": temperatura,
+                    "source": leitura.get("cpu_temperature_source"),
+                    "measured_at": leitura.get("measured_at"),
+                    "error": leitura.get("error"),
+                },
+            )
+            return
         if self.path == "/api/health":
+            registry = _tool_registry()
+            usando_openai = _environment_openai_active()
             active = _active_provider()
+            selected_provider_id = _selected_provider_id()
+            local_selected = selected_provider_id == LOCAL_PROVIDER_ID
             self._send_json(
                 HTTPStatus.OK,
                 {
                     "ok": True,
-                    "model_configured": active is not None,
-                    "model": active.get("model") if active else MODEL,
-                    "provider": active.get("label") if active else None,
+                    "model_configured": True,
+                    "backend": "openai" if usando_openai else "qwen-local",
+                    "model": MODEL if usando_openai else "qwen-local",
+                    "openai_key_present": usando_openai,
+                    "tools_enabled": TOOLS_ENABLED,
+                    "tools": list(registry.names()) if registry is not None else [],
+                    "tools_error": _registry_error or None,
+                    "local_model_error": _supervisor_error or None,
+                    "model_configured": local_selected or active is not None,
+                    "model": "qwen-local" if local_selected else (
+                        active.get("model") if active else MODEL
+                    ),
+                    "provider": "Qwen local → Codex" if local_selected else (
+                        active.get("label") if active else None
+                    ),
                     "stt_available": _stt_ready(),
                 },
             )
             return
         if self.path == "/api/providers":
-            store = _read_providers()
-            active = _active_provider()
             self._send_json(
                 HTTPStatus.OK,
                 {
-                    "providers": [_public_provider(p) for p in _all_providers()],
-                    "active": active.get("id") if active else None,
+                    "providers": [
+                        _local_provider_public(),
+                        *[_public_provider(p) for p in _all_providers()],
+                    ],
+                    "active": _selected_provider_id(),
                     "formats": [
-                        {"id": key, "label": spec["label"], "base_url": spec["base_url"]}
+                        {
+                            "id": key,
+                            "label": spec["label"],
+                            "base_url": spec["base_url"],
+                            "vendors": list(spec.get("vendors", ())),
+                        }
                         for key, spec in PROVIDER_FORMATS.items()
                     ],
+                    "presets": list(PROVIDER_PRESETS),
                 },
             )
             return
@@ -755,9 +1490,9 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             if not _delete_provider(provider_id):
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "Conexão não encontrada."})
                 return
-            active = _active_provider()
             self._send_json(
-                HTTPStatus.OK, {"deleted": provider_id, "active": active.get("id") if active else None}
+                HTTPStatus.OK,
+                {"deleted": provider_id, "active": _selected_provider_id()},
             )
             return
 
@@ -774,7 +1509,12 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             except RuntimeError as error:
                 self._send_json(
                     HTTPStatus.BAD_GATEWAY,
-                    {"error": _provider_error_message(str(error)), "code": str(error)[:120]},
+                    {
+                        "error": _provider_error_message(
+                            str(error), host=_provider_host(provider)
+                        ),
+                        "code": str(error)[:120],
+                    },
                 )
                 return
             self._send_json(HTTPStatus.OK, {"ok": True, "sample": reply[:200]})
@@ -785,6 +1525,60 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         if self.path == "/api/transcribe":
             self._handle_transcribe()
+            return
+        if self.path == "/api/codex-results/ack":
+            data, error = self._read_json_body(limit=2_000)
+            if error:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": error})
+                return
+            job_id = str(data.get("job_id") or "") if isinstance(data, dict) else ""
+            token = str(data.get("delivery_token") or "") if isinstance(data, dict) else ""
+            if not job_id or not token:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"error": "Identificação de entrega inválida."},
+                )
+                return
+            try:
+                acknowledged = _acknowledge_codex_result(job_id, token)
+            except Exception as error:  # noqa: BLE001 - client retries the acknowledgement
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {
+                        "error": "Não foi possível confirmar a entrega.",
+                        "code": type(error).__name__,
+                    },
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK if acknowledged else HTTPStatus.CONFLICT,
+                {"acknowledged": acknowledged},
+            )
+            return
+        if self.path == "/api/codex-jobs/cancel":
+            data, error = self._read_json_body(limit=2_000)
+            if error:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": error})
+                return
+            job_id = str(data.get("job_id") or "") if isinstance(data, dict) else ""
+            if not job_id:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"error": "Identificação da tarefa inválida."},
+                )
+                return
+            try:
+                result = _cancel_codex_job(job_id)
+            except Exception as error:  # noqa: BLE001 - cancellation failure is shown to the user
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"error": "Não foi possível cancelar a tarefa.", "code": type(error).__name__},
+                )
+                return
+            self._send_json(
+                HTTPStatus.OK if result.get("ok") else HTTPStatus.CONFLICT,
+                result,
+            )
             return
         if self.path == "/api/providers":
             self._handle_providers()
@@ -820,7 +1614,9 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             return
 
         provider = _active_provider()
-        if provider is None:
+        usando_openai = _environment_openai_active()
+
+        if provider is None and not usando_openai and _tool_registry() is None:
             self._send_json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
                 {
@@ -830,12 +1626,37 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             )
             return
 
+        modelo_usado = MODEL if usando_openai else "qwen-local"
+        rotulo_provedor = None
+
         try:
-            reply = _request_provider(
-                provider, message, _safe_history(data.get("history"))
-            )
+            if provider is not None:
+                # Conexão cadastrada no painel tem precedência: foi escolha explícita.
+                reply = _request_provider(
+                    provider, message, _safe_history(data.get("history"))
+                )
+                modelo_usado = provider.get("model")
+                rotulo_provedor = provider.get("label")
+            elif usando_openai:
+                # Caminho com tool-calling das ferramentas do orquestrador.
+                reply = _request_openai(message, _safe_history(data.get("history")))
+            else:
+                # Sem provedor e sem chave: Qwen local, que também tem as ferramentas.
+                reply = _request_local_model(message)
         except RuntimeError as error:
             code = str(error)
+            if code.startswith("LOCAL_MODEL_UNAVAILABLE"):
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {
+                        "error": (
+                            "Modelo local indisponível. Verifique o llama-server, "
+                            "cadastre uma conexão de IA ou defina OPENAI_API_KEY."
+                        ),
+                        "code": code,
+                    },
+                )
+                return
             status = (
                 HTTPStatus.SERVICE_UNAVAILABLE
                 if code == "API_KEY_MISSING"
@@ -843,17 +1664,16 @@ class TRIADEWebHandler(SimpleHTTPRequestHandler):
             )
             self._send_json(
                 status,
-                {"error": _provider_error_message(code), "code": code[:120]},
+                {
+                    "error": _provider_error_message(code, host=_provider_host(provider)),
+                    "code": code[:120],
+                },
             )
             return
 
         self._send_json(
             HTTPStatus.OK,
-            {
-                "reply": reply,
-                "model": provider.get("model"),
-                "provider": provider.get("label"),
-            },
+            {"reply": reply, "model": modelo_usado, "provider": rotulo_provedor},
         )
 
 
@@ -878,7 +1698,9 @@ def main(*, open_browser: bool = False) -> None:
     server = ThreadingHTTPServer((HOST, PORT), TRIADEWebHandler)
     print(f"JARVIS web disponível em http://{HOST}:{PORT}")
     active = _active_provider()
-    if active is None:
+    if _selected_provider_id() == LOCAL_PROVIDER_ID:
+        print("Conexão de IA ativa: Qwen local → Codex.")
+    elif active is None:
         print("Aviso: nenhuma conexão de IA configurada; cadastre uma no painel Conexões de IA.")
     else:
         print(f"Conexão de IA ativa: {active.get('label')} ({active.get('model')}).")

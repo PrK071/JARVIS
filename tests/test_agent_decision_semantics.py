@@ -23,6 +23,54 @@ def constraints(value) -> set[Constraint]:
     return set(value.intent_frame.constraints)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "delegue uma tarefa para o deepseek, peça para ele ver como está o firebase do site da simpleenglish",
+        "delegue ao deepseek: ver como está o firebase",
+        "peça ao deepseek para revisar como está a arquitetura",
+        "encaminhe ao deepseek a revisão do firebase",
+    ],
+)
+def test_status_wording_inside_delegated_task_stays_a_delegation(text: str):
+    """"como está" describing the delegated content must not become a status query."""
+    value = decide(text)
+    assert value.intent == Intent.DEEPSEEK_DELEGATE
+    assert value.tools == ("delegate_to_deepseek",)
+    assert value.intent_frame.speech_act == SpeechAct.COMMAND
+    assert value.intent_frame.execution_requested is True
+    assert value.constraint_violation is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "como funciona a delegação para o deepseek?",
+        "quero entender como se cancela um job",
+        "por que o codex falhou?",
+    ],
+)
+def test_meta_discussion_about_capabilities_stays_direct_answer(text: str):
+    value = decide(text)
+    assert value.intent == Intent.ANSWER_DIRECTLY
+    assert value.tools == ()
+    assert value.intent_frame.execution_requested is False
+
+
+@pytest.mark.parametrize(
+    ("text", "forbidden"),
+    [
+        ("sem delegar ao deepseek, me explique o firebase", Constraint.FORBID_DEEPSEEK),
+        ("sem mandar para o codex, me explique o bug", Constraint.FORBID_CODEX),
+    ],
+)
+def test_verb_inside_prohibition_is_not_an_execution_request(text: str, forbidden: Constraint):
+    value = decide(text)
+    assert forbidden in constraints(value)
+    assert value.intent == Intent.ANSWER_DIRECTLY
+    assert value.intent_frame.execution_requested is False
+
+
 def test_question_about_cancel_is_not_a_cancel_command():
     question = decide(
         "como eu cancelo o Codex?",

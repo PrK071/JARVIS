@@ -59,6 +59,65 @@ def test_core_decisions(text, context, intent, tools, reason):
 
 
 @pytest.mark.parametrize(
+    "text",
+    [
+        "crie uma landing page",
+        "faca uma landing page",
+        "melhore o site",
+        "modifique o formulario",
+        "edite a pagina inicial",
+        "atualize o menu mobile",
+        "remova o campo duplicado",
+        "agora quero q apague o site do adriel e do joão",
+        "delete a landing page antiga",
+        "exclua o diretório gerado",
+    ],
+)
+def test_project_mutation_commands_are_automatically_delegated(text):
+    value = decide(text, active_project="tern")
+
+    assert value.intent is Intent.CODEX_DELEGATE
+    assert value.tools == ("delegate_to_codex",)
+    assert value.reason_code == "project_mutation_requires_execution"
+    assert value.intent_frame is not None
+    assert value.intent_frame.execution_requested is True
+
+
+def test_project_mutation_updates_the_single_active_codex_job():
+    value = decide(
+        "melhore tambem o menu mobile",
+        active_project="tern",
+        codex_job={"status": "running", "job_id": "job-1"},
+    )
+
+    assert value.intent is Intent.CODEX_STEER
+    assert value.tools == ("steer_codex_job",)
+    assert value.reason_code == "active_job_mutation_interaction"
+    assert value.target == "job-1"
+    assert value.new_codex_turn is False
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "como melhorar o site?",
+        "o que voce acha que devo criar?",
+        "nao crie nada",
+        "nao modifique o formulario",
+        "nao apague o site do adriel",
+        "nao delete a landing page",
+        "nao exclua o diretorio gerado",
+    ],
+)
+def test_questions_and_negated_mutations_do_not_execute(text):
+    value = decide(text, active_project="tern")
+
+    assert value.intent not in {Intent.CODEX_DELEGATE, Intent.CODEX_STEER}
+    assert "delegate_to_codex" not in value.tools
+    assert "steer_codex_job" not in value.tools
+
+
+@pytest.mark.parametrize(
     ("text", "expected_url"),
     [
         ("abra example.com", "https://example.com"),

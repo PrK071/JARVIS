@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+import sys
 import threading
+import urllib.parse
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,7 +14,9 @@ from typing import Any, Callable
 
 from .codex import CodexRunner
 from .applications import ApplicationManager
+from .delegation import DelegationRequest
 from .deepseek import DeepSeekSessionManager
+from .external_agents import AgentDiscovery, ExternalAgentRunner
 from .hardware import HardwareMonitor
 from .pending_actions import PendingActionStore
 from .projects import ProjectRegistry
@@ -49,7 +54,9 @@ _PASSIVE_PROGRESS_TOOLS = frozenset(
         "filesystem_list",
         "filesystem_read_text",
         "resolve_project",
+        "discover_project",
         "find_project_files",
+        "get_project_git_state",
         "web_search",
         "web_open",
         "web_extract",
@@ -100,6 +107,7 @@ class ToolRegistry:
         deepseek: DeepSeekSessionManager | None = None,
         hardware: HardwareMonitor | None = None,
         applications: ApplicationManager | None = None,
+        agent_discovery: AgentDiscovery | None = None,
     ):
         self.policy = policy
         self.logger = logger
@@ -119,9 +127,75 @@ class ToolRegistry:
         self.deepseek = deepseek
         self.hardware = hardware or HardwareMonitor()
         self.applications = applications or ApplicationManager()
+        self.agent_discovery = agent_discovery or AgentDiscovery()
+        self.external_agents = ExternalAgentRunner(
+            policy=policy,
+            discovery=self.agent_discovery,
+            logger=logger,
+        )
         self._execution = threading.local()
         self._tools: dict[str, Tool] = {}
+        self._external_agent_tools: tuple[str, ...] = ()
         self._register_defaults()
+        self.refresh_external_agents()
+
+    def refresh_external_agents(self, *, force: bool = False) -> tuple[str, ...]:
+        """Registra uma ferramenta de delegação por agente externo utilizável.
+
+        Chamado na construção e sob demanda: se o usuário abrir uma sessão nova
+        (Kiro, Claude, GLM), a ferramenta aparece sem reiniciar o orquestrador.
+        Agente ausente não ganha ferramenta, então o modelo não promete o que
+        não existe.
+        """
+        descobertos = self.agent_discovery.discover(force=force)
+        desejados = {
+            agent.delegation_tool: agent
+            for agent in descobertos
+            if agent.usable and not agent.spec.native_integration
+        }
+
+        for nome in self._external_agent_tools:
+            if nome not in desejados:
+                self._tools.pop(nome, None)
+
+        for nome, agent in desejados.items():
+            if nome in self._tools:
+                continue
+            self._add_external_agent_tool(nome, agent)
+
+        self._external_agent_tools = tuple(sorted(desejados))
+        return self._external_agent_tools
+
+    def _add_external_agent_tool(self, nome: str, agent: Any) -> None:
+        identificador = agent.spec.id
+        capacidades = ", ".join(sorted(c.value for c in agent.spec.capabilities)) or "nao declaradas"
+        self._add(
+            nome,
+            (
+                f"Delega uma tarefa ao agente externo {agent.spec.display_name} "
+                f"(detectado nesta máquina, estado {agent.availability.value}). "
+                f"Capacidades: {capacidades}. {agent.spec.notes} "
+                "Informe task auto-contida e project_path quando a tarefa for de projeto."
+            ),
+            _object(
+                {
+                    "task": {"type": "string", "minLength": 1, "maxLength": 8000},
+                    "project_path": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 4096},
+                            {"type": "null"},
+                        ]
+                    },
+                },
+                ["task"],
+            ),
+            lambda arguments, _agente=identificador: self.external_agents.run(
+                _agente,
+                str(arguments.get("task") or ""),
+                project_path=arguments.get("project_path") or None,
+            ),
+            self.external_agents.default_timeout,
+        )
 
     def specs(self) -> list[dict[str, Any]]:
         return [tool.openai() for tool in self._tools.values()]
@@ -137,6 +211,8 @@ class ToolRegistry:
     ) -> dict[str, Any]:
         normalized = dict(arguments)
         if name == "resolve_project":
+            return normalized
+        if name == "discover_project":
             return normalized
         if name == "find_project_files":
             project_id = str(normalized.get("project_id") or "").strip()
@@ -172,6 +248,16 @@ class ToolRegistry:
             normalized["project_path"] = str(
                 self.policy.resolve(str(resolution["root"]))
             )
+            return normalized
+        if name in {"get_project_git_state", "run_project_tests"}:
+            normalized["project_path"] = str(
+                self.policy.resolve(str(normalized["project_path"]))
+            )
+            return normalized
+        if name.startswith("delegate_to_") and name != "delegate_to_codex":
+            requested = str(normalized.get("project_path") or "").strip()
+            if requested:
+                normalized["project_path"] = str(self.policy.resolve(requested))
             return normalized
         if name != "delegate_to_codex":
             return normalized
@@ -235,39 +321,11 @@ class ToolRegistry:
         if project is None:
             raise ValueError("nao foi possivel identificar um projeto permitido")
         normalized["project_path"] = str(project)
-        task = str(normalized.get("task") or "").strip()
-        project_record = next(
-            (
-                item
-                for item in self.projects.projects()
-                if Path(item["root"]) == project
-            ),
-            None,
-        )
-        recent = []
-        if project_record is not None:
-            state = self.projects.read()
-            recent = [
-                item["path"]
-                for item in reversed(state.get("recent_files", []))
-                if item.get("project_id") == project_record["id"]
-            ][:5]
-        prefix = [f"Trabalhe no projeto {project}."]
-        if recent:
-            prefix.extend(
-                ["", "Arquivos relevantes ja localizados:"]
-                + [f"- {path}" for path in recent]
-            )
-        prefix.extend(
-            [
-                "",
-                "Use somente a raiz autorizada informada e preserve as restricoes de seguranca.",
-            ]
-        )
-        task = "\n".join(prefix) + "\n\n" + task
-        normalized["task"] = task
         if "wait" not in normalized:
-            intent = f"{user_text}\n{task}".casefold()
+            authoritative_task = str(
+                context.get("original_user_text") or normalized.get("task") or ""
+            )
+            intent = f"{user_text}\n{authoritative_task}".casefold()
             if re.search(r"\b(?:segundo plano|background|nao aguarde|não aguarde)\b", intent):
                 normalized["wait"] = False
             elif re.search(r"\b(?:aguarde terminar|espere terminar|wait)\b", intent):
@@ -282,12 +340,35 @@ class ToolRegistry:
                 )
         return normalized
 
+    @staticmethod
+    def _preserve_delegation_request(
+        name: str,
+        arguments: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not name.startswith("delegate_to_"):
+            return arguments
+        normalized = dict(arguments)
+        request = DelegationRequest.build(
+            requested_agent=name.removeprefix("delegate_to_"),
+            submitted_task=str(normalized.get("task") or ""),
+            project_path=(
+                str(normalized["project_path"])
+                if normalized.get("project_path")
+                else None
+            ),
+            context=context,
+        )
+        normalized["task"] = request.serialize()
+        return normalized
+
     def _confirmation_requirement(
         self,
         name: str,
         arguments: dict[str, Any],
-        user_text: str,
+        context: dict[str, Any],
     ) -> str | None:
+        user_text = str(context.get("user_text") or "")
         if name == "schedule_application":
             return "schedule_task"
         if name == "filesystem_delete":
@@ -299,7 +380,15 @@ class ToolRegistry:
                     arguments["name"],
                     must_exist=False,
                 )
-                return "overwrite" if destination.exists() else None
+                if not destination.exists():
+                    return None
+                authority = context.get("_bounded_live_authority_decision")
+                if bool(
+                    getattr(authority, "allowed", False)
+                    and getattr(authority, "mutation_authorized", False)
+                ):
+                    return None
+                return "overwrite"
             except Exception:
                 return "outside_project"
         if name != "delegate_to_codex":
@@ -354,6 +443,11 @@ class ToolRegistry:
             validate(arguments, tool.schema)
             normalized = self._normalize_arguments(name, arguments, context)
             validate(normalized, tool.schema)
+            normalized = self._preserve_delegation_request(
+                name,
+                normalized,
+                context,
+            )
             if name == "delegate_to_codex":
                 normalized["_conversation_id"] = str(
                     context.get("conversation_id") or ""
@@ -372,10 +466,16 @@ class ToolRegistry:
             project = normalized.get("project_path") or normalized.get(
                 "working_directory"
             )
+            risk_arguments = normalized
+            if name == "delegate_to_codex":
+                risk_arguments = {
+                    **normalized,
+                    "task": str(arguments.get("task") or normalized.get("task") or ""),
+                }
             risk = self._confirmation_requirement(
                 name,
-                normalized,
-                str(context.get("user_text") or ""),
+                risk_arguments,
+                context,
             )
             turn_id = str(context.get("turn_id") or f"direct-{uuid.uuid4()}")
             pending_turn_id = (
@@ -653,11 +753,67 @@ class ToolRegistry:
                 "message": str(exc),
             }
 
+    def _available_agents_result(self) -> dict[str, Any]:
+        """Estado medido dos agentes externos, mais os agentes nativos."""
+        self.refresh_external_agents(force=True)
+        descobertos = self.agent_discovery.discover()
+        nativos = [
+            {
+                "id": "qwen",
+                "name": "Qwen local",
+                "availability": "session_active",
+                "usable": True,
+                "role": "conversa, roteamento e coordenação",
+                "delegation_tool": None,
+            },
+            {
+                "id": "codex",
+                "name": "Codex",
+                "availability": "installed",
+                "usable": "delegate_to_codex" in self._tools,
+                "role": "programa, edita, testa e executa localmente",
+                "delegation_tool": "delegate_to_codex",
+            },
+            {
+                "id": "deepseek",
+                "name": "DeepSeek",
+                "availability": "api_key_only" if self.deepseek is not None else "absent",
+                "usable": "delegate_to_deepseek" in self._tools,
+                "role": "consultor: analise, revisao e segunda opiniao",
+                "delegation_tool": "delegate_to_deepseek",
+            },
+        ]
+        externos = [
+            agent.as_dict()
+            for agent in descobertos
+            if not agent.spec.native_integration
+        ]
+        return {
+            "ok": True,
+            "native_agents": nativos,
+            "external_agents": externos,
+            "delegation_tools": sorted(
+                nome for nome in self._tools if nome.startswith("delegate_to_")
+            ),
+        }
+
     def _add(self, name: str, description: str, schema: dict[str, Any], handler: ToolHandler, timeout: int) -> None:
         self._tools[name] = Tool(name, description, schema, handler, timeout)
 
     def _register_defaults(self) -> None:
         path = {"type": "string", "minLength": 1, "maxLength": 4096}
+        self._add(
+            "list_available_agents",
+            (
+                "Lista os agentes de IA detectados nesta máquina agora, com estado real "
+                "(session_active, installed, configured_not_installed, api_key_only, absent), "
+                "versão, capacidades e o nome da ferramenta de delegação de cada um. "
+                "Use antes de afirmar que pode ou não delegar a um agente."
+            ),
+            _object({}, []),
+            lambda _arguments: self._available_agents_result(),
+            30,
+        )
         nullable_text = {
             "anyOf": [
                 {"type": "string", "minLength": 1, "maxLength": 4096},
@@ -742,6 +898,20 @@ class ToolRegistry:
             15,
         )
         self._add(
+            "discover_project",
+            (
+                "Procura um projeto nomeado nas discovery roots configuradas, "
+                "sem ler conteudo arbitrario, executar codigo ou modificar arquivos. "
+                "Retorna RESOLVED, AMBIGUOUS ou NOT_FOUND e registra apenas o projeto exato."
+            ),
+            _object(
+                {"reference": {"type": "string", "minLength": 1, "maxLength": 200}},
+                ["reference"],
+            ),
+            self._discover_project,
+            15,
+        )
+        self._add(
             "find_project_files",
             (
                 "Localiza arquivos no indice leve de um projeto resolvido. "
@@ -768,6 +938,41 @@ class ToolRegistry:
             ),
             self._find_project_files,
             30,
+        )
+        self._add(
+            "get_project_git_state",
+            (
+                "Inspeciona branch, working tree e diff stat de um projeto Git permitido. "
+                "Somente leitura; não faz checkout, commit, reset, push ou alteração."
+            ),
+            _object({"project_path": path}, ["project_path"]),
+            self._get_project_git_state,
+            20,
+        )
+        self._add(
+            "run_project_tests",
+            (
+                "Executa pytest em modo seguro dentro de um projeto permitido. "
+                "Aceita apenas um alvo relativo opcional e nunca usa shell."
+            ),
+            _object(
+                {
+                    "project_path": path,
+                    "target": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 1000},
+                            {"type": "null"},
+                        ]
+                    },
+                    "timeout_seconds": {
+                        "type": "integer",
+                        "enum": [30, 60, 120, 300],
+                    },
+                },
+                ["project_path"],
+            ),
+            self._run_project_tests,
+            310,
         )
         self._add(
             "filesystem_list",
@@ -1054,9 +1259,10 @@ class ToolRegistry:
         self._add(
             "web_open_browser",
             (
-                "Abre uma URL HTTP/HTTPS em nova guia do navegador ja aberto; "
+                "Abre uma URL HTTP/HTTPS ou um arquivo HTML local permitido em "
+                "nova guia do navegador ja aberto; "
                 "se nenhum existir, usa o navegador padrao do usuario. Faz isso "
-                "somente apos validar DNS/IP, redirects e ameacas web."
+                "somente apos validar a allowlist local ou DNS/IP, redirects e ameacas web."
             ),
             _object(
                 {
@@ -1065,6 +1271,7 @@ class ToolRegistry:
                         "minLength": 8,
                         "maxLength": 8192,
                     },
+                    "local_artifact": {"type": "boolean"},
                 },
                 ["url"],
             ),
@@ -1178,6 +1385,109 @@ class ToolRegistry:
             file_types=arguments.get("file_types"),
             max_results=arguments.get("max_results", 20),
         )
+
+    def _discover_project(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.projects.discover(str(arguments["reference"]))
+
+    def _get_project_git_state(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        project = self.policy.resolve(arguments["project_path"])
+        if not project.is_dir():
+            raise NotADirectoryError(project)
+
+        def git(*args: str) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                ["git", "-C", str(project), *args],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=15,
+                check=False,
+            )
+
+        branch_result = git("branch", "--show-current")
+        if branch_result.returncode != 0:
+            return {
+                "ok": False,
+                "error": "NOT_A_GIT_REPOSITORY",
+                "message": branch_result.stderr.strip()[:1000],
+                "path": str(project),
+                "returncode": branch_result.returncode,
+            }
+        status_result = git("status", "--porcelain=v1")
+        diff_result = git("diff", "--stat")
+        status_lines = tuple(
+            line for line in status_result.stdout.splitlines() if line.strip()
+        )
+        return {
+            "ok": status_result.returncode == 0 and diff_result.returncode == 0,
+            "path": str(project),
+            "branch": branch_result.stdout.strip() or None,
+            "working_tree": "clean" if not status_lines else "dirty",
+            "changed_files": len(status_lines),
+            "status": list(status_lines[:200]),
+            "diff_stat": diff_result.stdout[-8000:],
+        }
+
+    def _run_project_tests(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        project = self.policy.resolve(arguments["project_path"])
+        if not project.is_dir():
+            raise NotADirectoryError(project)
+        target = arguments.get("target")
+        command = [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+        ]
+        if target:
+            target_value = str(target)
+            path_value = target_value.split("::", 1)[0]
+            raw_target = Path(path_value)
+            if raw_target.is_absolute() or ".." in raw_target.parts:
+                raise ValueError("test target must be relative to project")
+            resolved_target = self.policy.resolve(str(project / raw_target))
+            if project != resolved_target and project not in resolved_target.parents:
+                raise PermissionError("test target is outside project")
+            command.append(target_value)
+        timeout_seconds = int(arguments.get("timeout_seconds", 120))
+        environment = os.environ.copy()
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=str(project),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout_seconds,
+                check=False,
+                env=environment,
+            )
+        except subprocess.TimeoutExpired as exc:
+            return {
+                "ok": False,
+                "error": "TEST_TIMEOUT",
+                "message": f"pytest exceeded {timeout_seconds}s",
+                "path": str(project),
+                "stdout": str(exc.stdout or "")[-self.max_output_bytes :],
+                "stderr": str(exc.stderr or "")[-self.max_output_bytes :],
+            }
+        output = (completed.stdout or "")[-self.max_output_bytes :]
+        errors = (completed.stderr or "")[-self.max_output_bytes :]
+        return {
+            "ok": completed.returncode == 0,
+            "path": str(project),
+            "target": str(target) if target else None,
+            "returncode": completed.returncode,
+            "passed": completed.returncode == 0,
+            "output": output,
+            "stderr": errors,
+            "command": [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", *( [str(target)] if target else [])],
+        }
 
     def _read(self, arguments: dict[str, Any]) -> dict[str, Any]:
         file_path = self.policy.resolve(arguments["path"])
@@ -1352,7 +1662,30 @@ class ToolRegistry:
         )
 
     def _web_open_browser(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        return self.web.open_in_browser(url=arguments["url"])
+        url = str(arguments["url"])
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme.casefold() != "file" or not arguments.get("local_artifact"):
+            return self.web.open_in_browser(url=url)
+        if parsed.netloc not in {"", "localhost"} or parsed.query or parsed.fragment:
+            raise WebError("URI de arquivo local invalida")
+        raw_path = urllib.parse.unquote(parsed.path)
+        if re.match(r"^/[A-Za-z]:/", raw_path):
+            raw_path = raw_path[1:]
+        target = self.policy.resolve(raw_path)
+        if not target.is_file() or target.suffix.casefold() not in {".html", ".htm"}:
+            raise WebError("somente arquivos HTML locais permitidos podem ser abertos")
+        file_url = target.as_uri()
+        if not self.web.browser_opener(file_url):
+            raise WebError("o navegador padrao recusou a abertura do arquivo local")
+        return {
+            "ok": True,
+            "url": file_url,
+            "title": target.stem,
+            "browser_opened": True,
+            "local_file": str(target),
+            "threat_checked": False,
+            "citation": None,
+        }
 
     def _web_extract(self, arguments: dict[str, Any]) -> dict[str, Any]:
         return self.web.extract(

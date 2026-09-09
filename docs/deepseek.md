@@ -57,7 +57,7 @@ confirmacao e entrega a recomendacao ao Qwen; somente Qwen pode decidir chamar
 
 ## Persistencia e contexto
 
-As sessoes ficam em `D:\tern\.orchestrator\deepseek-sessions.json`, com uma
+As sessoes ficam em `D:\JARVIS\.orchestrator\deepseek-sessions.json`, com uma
 sessao ativa por projeto resolvido pelo `ProjectRegistry`. Mensagens humanas,
 do Qwen e respostas DeepSeek possuem IDs e fontes distintas.
 

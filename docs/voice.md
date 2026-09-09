@@ -47,33 +47,33 @@ enviado para serviço externo. Não existe clonagem de voz nem custo por uso.
 No PowerShell:
 
 ```powershell
-Set-Location D:\tern
+Set-Location D:\JARVIS
 python -m pip install -e ".[voice]"
-New-Item -ItemType Directory -Force D:\tern\models\voice
-python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-base', local_dir=r'D:\tern\models\voice\faster-whisper-base')"
-python -m piper.download_voices --data-dir D:\tern\models\voice pt_BR-cadu-medium
+New-Item -ItemType Directory -Force D:\JARVIS\models\voice
+python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-base', local_dir=r'D:\JARVIS\models\voice\faster-whisper-base')"
+python -m piper.download_voices --data-dir D:\JARVIS\models\voice pt_BR-cadu-medium
 ```
 
 Modelo `small` opcional; não baixado automaticamente:
 
 ```powershell
-python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-small', local_dir=r'D:\tern\models\voice\faster-whisper-small')"
-(Get-Content .env) -replace '^VOICE_STT_MODEL=.*$', 'VOICE_STT_MODEL=D:\tern\models\voice\faster-whisper-small' | Set-Content .env
+python -c "from huggingface_hub import snapshot_download; snapshot_download('Systran/faster-whisper-small', local_dir=r'D:\JARVIS\models\voice\faster-whisper-small')"
+(Get-Content .env) -replace '^VOICE_STT_MODEL=.*$', 'VOICE_STT_MODEL=D:\JARVIS\models\voice\faster-whisper-small' | Set-Content .env
 python -m tern.orchestrator voice-model-info
 ```
 
 Para voltar:
 
 ```powershell
-(Get-Content .env) -replace '^VOICE_STT_MODEL=.*$', 'VOICE_STT_MODEL=D:\tern\models\voice\faster-whisper-base' | Set-Content .env
+(Get-Content .env) -replace '^VOICE_STT_MODEL=.*$', 'VOICE_STT_MODEL=D:\JARVIS\models\voice\faster-whisper-base' | Set-Content .env
 ```
 
 Arquivos esperados:
 
 ```text
-D:\tern\models\voice\faster-whisper-base\model.bin
-D:\tern\models\voice\pt_BR-cadu-medium.onnx
-D:\tern\models\voice\pt_BR-cadu-medium.onnx.json
+D:\JARVIS\models\voice\faster-whisper-base\model.bin
+D:\JARVIS\models\voice\pt_BR-cadu-medium.onnx
+D:\JARVIS\models\voice\pt_BR-cadu-medium.onnx.json
 ```
 
 Primeira carga do STT e TTS demora mais. Depois do download, uso é offline.
@@ -87,7 +87,7 @@ código.
 ```dotenv
 VOICE_ENABLED=true
 VOICE_STT_PROVIDER=faster_whisper
-VOICE_STT_MODEL=D:\tern\models\voice\faster-whisper-base
+VOICE_STT_MODEL=D:\JARVIS\models\voice\faster-whisper-base
 VOICE_STT_DEVICE=cpu
 VOICE_STT_COMPUTE_TYPE=int8
 VOICE_STT_LANGUAGE=pt
@@ -126,7 +126,7 @@ VOICE_MAX_SPOKEN_CHARACTERS=1200
 VOICE_READ_CODE=false
 VOICE_READ_URLS=false
 VOICE_SUMMARIZE_LONG_RESPONSES=true
-VOICE_TEMP_DIRECTORY=D:\tern\.orchestrator\voice-temp
+VOICE_TEMP_DIRECTORY=D:\JARVIS\.orchestrator\voice-temp
 VOICE_KEEP_RECORDINGS=false
 VOICE_LOG_LEVEL=INFO
 VOICE_DEBUG_TRANSCRIPTS=false
@@ -344,7 +344,7 @@ transcrição completa. Transcrição só entra no log com
 Para limpar temporários manualmente:
 
 ```powershell
-Remove-Item -LiteralPath D:\tern\.orchestrator\voice-temp\* -Force
+Remove-Item -LiteralPath D:\JARVIS\.orchestrator\voice-temp\* -Force
 ```
 
 Confira o caminho antes. Para desativar:

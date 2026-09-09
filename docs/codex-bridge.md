@@ -65,7 +65,7 @@ ambos operam sobre a thread e o turn registrados, sem criar outro turn.
 ## Iniciar ambiente compartilhado
 
 ```powershell
-Set-Location D:\tern
+Set-Location D:\JARVIS
 python -m tern.orchestrator codex-shared-start
 ```
 
@@ -84,7 +84,7 @@ da thread; o bridge preserva o UUID e falha sem abrir uma sessao alternativa.
 Internamente, o comando valida `thread/read` e executa a sintaxe do CLI 0.146.0:
 
 ```powershell
-codex resume --remote ws://127.0.0.1:4500 --dangerously-bypass-approvals-and-sandbox -C "D:\tern" THREAD_ID
+codex resume --remote ws://127.0.0.1:4500 --dangerously-bypass-approvals-and-sandbox -C "D:\JARVIS" THREAD_ID
 ```
 
 Para acompanhar os eventos sem TUI:

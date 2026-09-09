@@ -17,7 +17,7 @@ principal; Piper permanece como fallback local.
 ## Uso rápido
 
 ```powershell
-Set-Location D:\tern
+Set-Location D:\JARVIS
 python -m tern.orchestrator start
 python -m tern.orchestrator ask "Pesquise notícias recentes sobre IA e cite fontes."
 python -m tern.orchestrator voice
@@ -56,7 +56,7 @@ python -m tern.orchestrator project-refresh
 Para disponibilizar o assistente pelo nome em qualquer terminal:
 
 ```powershell
-python -m pip install --editable D:\tern
+python -m pip install --editable D:\JARVIS
 jarvis
 ```
 

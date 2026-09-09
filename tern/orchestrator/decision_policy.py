@@ -20,6 +20,7 @@ from .intent_semantics import (
     PlanStep,
     ResolvedReference,
     SpeechAct,
+    project_mutation_signal,
 )
 
 
@@ -39,6 +40,8 @@ class Intent(str, Enum):
     PROJECT_RESOLUTION = "PROJECT_RESOLUTION"
     HARDWARE_STATUS = "HARDWARE_STATUS"
     APPLICATION_CONTROL = "APPLICATION_CONTROL"
+    AGENT_DISCOVERY = "AGENT_DISCOVERY"
+    EXTERNAL_AGENT_DELEGATE = "EXTERNAL_AGENT_DELEGATE"
     CLARIFY = "CLARIFY"
     NO_ACTION = "NO_ACTION"
 
@@ -53,6 +56,7 @@ class SideEffect(str, Enum):
 
 TOOL_EFFECTS: dict[str, SideEffect] = {
     "resolve_project": SideEffect.READ_ONLY,
+    "discover_project": SideEffect.READ_ONLY,
     "find_project_files": SideEffect.READ_ONLY,
     "filesystem_list": SideEffect.READ_ONLY,
     "filesystem_read_text": SideEffect.READ_ONLY,
@@ -71,9 +75,25 @@ TOOL_EFFECTS: dict[str, SideEffect] = {
     "delegate_to_deepseek": SideEffect.REMOTE_GENERATION,
     "get_hardware_telemetry": SideEffect.READ_ONLY,
     "list_installed_applications": SideEffect.READ_ONLY,
+    "list_available_agents": SideEffect.READ_ONLY,
     "open_application": SideEffect.CODE_EXECUTION,
     "schedule_application": SideEffect.LOCAL_MUTATION,
 }
+
+
+def tool_effect(tool: str) -> SideEffect | None:
+    """Efeito de uma ferramenta, inclusive as registradas em tempo de execução.
+
+    Ferramentas `delegate_to_<agente>` são criadas conforme os agentes externos
+    detectados na máquina, então não podem estar no dicionário estático. Um agente
+    externo executa comandos e edita arquivos: CODE_EXECUTION é o piso correto.
+    """
+    efeito = TOOL_EFFECTS.get(tool)
+    if efeito is not None:
+        return efeito
+    if tool.startswith("delegate_to_"):
+        return SideEffect.CODE_EXECUTION
+    return None
 
 
 _STRICT_TOOL_INTENTS = {
@@ -89,7 +109,30 @@ _STRICT_TOOL_INTENTS = {
     Intent.WEB_OPEN,
     Intent.HARDWARE_STATUS,
     Intent.APPLICATION_CONTROL,
+    Intent.AGENT_DISCOVERY,
+    Intent.EXTERNAL_AGENT_DELEGATE,
 }
+
+
+_AGENT_DELEGATION_VERB = re.compile(
+    r"\b(?:deleg(?:a|ue|ar|ando)|encaminh(?:a|e|ar|ando)|acion(?:a|e|ar)|"
+    r"mand(?:a|e)|peca|pede|pergunt(?:a|e)|consult(?:a|e)|us(?:a|e)|manda)\b"
+)
+_AGENT_CAPABILITY_QUESTION = re.compile(
+    r"\b(?:consegue|pode|poderia|da pra|d[áa] para|e possivel|é possível|sabe)\b"
+)
+_AGENT_DISCOVERY_QUESTION = re.compile(
+    r"\b(?:quais|que|quantos|lista|liste|listar)\b[^?]{0,60}"
+    r"\b(?:agentes?|ias?|modelos?|assistentes?|clis?)\b"
+    r"|\b(?:agentes?|ias?|modelos?)\b[^?]{0,40}"
+    r"\b(?:disponiveis|disponíveis|instalad[oa]s|detectad[oa]s|ativos)\b"
+)
+
+
+def is_agent_discovery_request(text: str) -> bool:
+    """Pergunta sobre quais agentes existem, não ordem para delegar."""
+    normalizado = _plain(text)
+    return bool(_AGENT_DISCOVERY_QUESTION.search(normalizado))
 
 
 def is_hardware_status_request(text: str) -> bool:
@@ -345,22 +388,33 @@ def normalize_contextual_web_open_request(
 
 
 _BROWSER_OPEN_SIGNAL_RE = re.compile(
-    r"\b(?:navegador|browser|chrome|edge|firefox)\b",
+    r"\b(?:navegador|browser|brave|chrome|edge|firefox)\b",
     re.IGNORECASE,
 )
 _OPEN_VERB_RE = re.compile(r"\b(?:abra|abre|abrir|acesse|visite)\b", re.IGNORECASE)
+_LOCAL_SITE_OPEN_REQUEST_RE = re.compile(
+    r"^\s*(?:abra|abre|abrir)\s+(?:(?:o|a)\s+)?"
+    r"(?:site|pagina|página|landing\s+page)"
+    r"(?:\s+(?:no|em)\s+(?:o\s+)?meu\s+"
+    r"(?:navegador|browser)(?:\s+(?:padrao|padrão|brave|chrome|edge|firefox))?)?"
+    r"\s*[.!]?\s*$",
+    re.IGNORECASE,
+)
 
 
 def is_browser_open_request(text: str) -> bool:
     """Return whether the user explicitly asked for a visible browser tab."""
     return bool(
-        _BROWSER_OPEN_SIGNAL_RE.search(text)
-        and _OPEN_VERB_RE.search(text)
+        (
+            _BROWSER_OPEN_SIGNAL_RE.search(text)
+            and _OPEN_VERB_RE.search(text)
+        )
+        or _LOCAL_SITE_OPEN_REQUEST_RE.fullmatch(text)
     )
 
 
 def normalize_browser_open_request(text: str, context: Any) -> str | None:
-    """Resolve one explicit or previously validated URL for browser launch."""
+    """Resolve one explicit URL or a validated local HTML artifact."""
     if not is_browser_open_request(text):
         return None
     candidates: list[str] = []
@@ -386,7 +440,53 @@ def normalize_browser_open_request(text: str, context: Any) -> str | None:
         and item.get("status") == "validated"
         and item.get("id")
     ]
-    return validated_urls[0] if validated_urls else None
+    if validated_urls:
+        return validated_urls[0]
+    return _validated_local_html_uri(context)
+
+
+def _validated_local_html_uri(context: Any) -> str | None:
+    recent_entities = tuple(getattr(context, "recent_entities", ()) or ())
+    local_html = next(
+        (
+            str(item.get("id"))
+            for item in reversed(recent_entities)
+            if isinstance(item, dict)
+            and item.get("type") == "local_html"
+            and item.get("status") == "validated"
+            and item.get("id")
+        ),
+        None,
+    )
+    if not local_html:
+        return None
+    try:
+        return Path(local_html).as_uri()
+    except ValueError:
+        return None
+
+
+_LOCAL_HTML_ARTIFACT_RE = re.compile(
+    r"(?i)(?P<path>[a-z]:[\\/][^)\]\r\n`\"]*?\.html?)"
+)
+
+
+def _completed_codex_local_html(job: dict[str, Any], policy: Any) -> str | None:
+    """Extract one existing allowlisted HTML artifact from a completed Codex result."""
+    if job.get("status") != "completed":
+        return None
+    stored = job.get("result") if isinstance(job.get("result"), dict) else {}
+    final_response = str(
+        stored.get("final_response") or stored.get("message") or ""
+    )
+    for match in _LOCAL_HTML_ARTIFACT_RE.finditer(final_response):
+        try:
+            candidate = policy.resolve(match.group("path"))
+        except (OSError, ValueError, PermissionError):
+            continue
+        if candidate.is_file() and candidate.suffix.casefold() in {".html", ".htm"}:
+            return str(candidate)
+    return None
 
 
 _RUNNING_STATES = {
@@ -568,6 +668,11 @@ class Decision:
             "target": self.target,
             "tools": list(self.tools),
             "selected_action": self.selected_action,
+            "action": (
+                self.intent_frame.action.value
+                if self.intent_frame and self.intent_frame.action
+                else None
+            ),
             "reason_code": self.reason_code,
             "side_effects": [effect.value for effect in self.side_effects],
             "alternatives": [
@@ -611,7 +716,7 @@ def constraint_violation_for_tool(
     if frame is None:
         return None
     constraints = set(frame.constraints)
-    effect = TOOL_EFFECTS.get(tool)
+    effect = tool_effect(tool)
     if Constraint.FORBID_CODEX in constraints and "codex" in tool:
         return Constraint.FORBID_CODEX.value
     if Constraint.FORBID_DEEPSEEK in constraints and "deepseek" in tool:
@@ -680,6 +785,17 @@ class AgentDecisionPolicy:
             )
 
     def _focus_context(self, value: DecisionContext) -> DecisionContext:
+        recent_entities = list(value.recent_entities)
+        for current in self.focus.recent_entities[-10:]:
+            recent_entities = [
+                item
+                for item in recent_entities
+                if not (
+                    item.get("type") == current.get("type")
+                    and item.get("id") == current.get("id")
+                )
+            ]
+            recent_entities.append(current)
         return replace(
             value,
             focused_agent=self.focus.focused_agent,
@@ -693,7 +809,7 @@ class AgentDecisionPolicy:
             last_user_intent=self.focus.last_user_intent,
             last_user_text=self.focus.last_user_text,
             turn_index=self.focus.turn_index,
-            recent_entities=tuple(self.focus.recent_entities[-10:]),
+            recent_entities=tuple(recent_entities[-10:]),
         )
 
     def _fixture_context(self, fixture: dict[str, Any]) -> DecisionContext:
@@ -743,10 +859,6 @@ class AgentDecisionPolicy:
             return self._fixture_context(fixture_context)
         if self.tools is None:
             return self._fixture_context({})
-        if self.context_cache_enabled and self._context_cache is not None:
-            return self._focus_context(self._context_cache)
-        project_value = self.tools.projects.context()
-        active = project_value.get("active_project") or {}
         jobs: list[dict[str, Any]] = []
         job_store = getattr(self.tools.codex, "jobs", None)
         if job_store is not None:
@@ -756,6 +868,51 @@ class AgentDecisionPolicy:
                 jobs = []
         running = [item for item in jobs if item.get("status") in _RUNNING_STATES]
         latest = (running or jobs)[-1] if (running or jobs) else {}
+        if self.context_cache_enabled and self._context_cache is not None:
+            cached = self._context_cache
+            live_job_state = (
+                str(latest.get("job_id")) if latest.get("job_id") else None,
+                str(latest.get("status")) if latest.get("status") else None,
+                len(running),
+            )
+            cached_job_state = (
+                cached.codex_job_id,
+                cached.codex_job_status,
+                cached.codex_running_jobs,
+            )
+            if live_job_state == cached_job_state:
+                return self._focus_context(cached)
+            self.invalidate_context("codex_job_state_changed")
+        project_value = self.tools.projects.context()
+        active = project_value.get("active_project") or {}
+        recent_entities = list(self.focus.recent_entities[-10:])
+        path_policy = getattr(self.tools, "policy", None)
+        local_html = next(
+            (
+                artifact
+                for job in reversed(jobs)
+                if path_policy is not None
+                and (artifact := _completed_codex_local_html(job, path_policy))
+            ),
+            None,
+        )
+        if local_html:
+            recent_entities = [
+                item
+                for item in recent_entities
+                if not (
+                    item.get("type") == "local_html"
+                    and item.get("id") == local_html
+                )
+            ]
+            recent_entities.append(
+                {
+                    "type": "local_html",
+                    "id": local_html,
+                    "status": "validated",
+                    "turn_index": self.focus.turn_index,
+                }
+            )
         deepseek_status: dict[str, Any] = {}
         if getattr(self.tools, "deepseek", None) is not None:
             try:
@@ -796,7 +953,7 @@ class AgentDecisionPolicy:
             last_user_intent=self.focus.last_user_intent,
             last_user_text=self.focus.last_user_text,
             turn_index=self.focus.turn_index,
-            recent_entities=tuple(self.focus.recent_entities[-10:]),
+            recent_entities=tuple(recent_entities[-10:]),
         )
         if self.context_cache_enabled:
             self._context_cache = value
@@ -853,7 +1010,11 @@ class AgentDecisionPolicy:
             target=target,
             tools=tools,
             reason_code=reason,
-            side_effects=tuple(TOOL_EFFECTS[tool] for tool in tools if tool in TOOL_EFFECTS),
+            side_effects=tuple(
+                efeito
+                for efeito in (tool_effect(tool) for tool in tools)
+                if efeito is not None
+            ),
             alternatives=alternatives,
             max_tool_calls=len(tools),
             new_codex_turn="delegate_to_codex" in tools,
@@ -943,6 +1104,83 @@ class AgentDecisionPolicy:
             target=reference.id,
             override=f"{binding.requested_agent}_explicit",
         )
+
+    def _agent_routing(
+        self,
+        user_text: str,
+    ) -> tuple[Intent, tuple[str, ...], str, str | None] | None:
+        """Roteia perguntas e ordens sobre agentes de IA disponíveis.
+
+        Pergunta de capacidade ("consegue delegar pro kiro?") vai para
+        list_available_agents, porque a resposta precisa vir do estado medido.
+        Ordem explícita ("delegue pro kiro") vai para a ferramenta do agente,
+        se e somente se ela estiver registrada.
+        """
+        texto = _plain(user_text)
+
+        agente = self._mentioned_external_agent(texto)
+        pergunta_inventario = agente is None and is_agent_discovery_request(texto)
+        if agente is None and not pergunta_inventario:
+            # Sem menção a agente externo e sem pergunta de inventário, nada aqui
+            # se aplica. Retornar antes evita inspecionar o registro de ferramentas
+            # em turnos que não têm relação com agentes.
+            return None
+
+        registradas = set(self._registered_tool_names())
+
+        if agente is not None:
+            ferramenta = agente.delegation_tool
+            disponivel = ferramenta in registradas
+            if _AGENT_CAPABILITY_QUESTION.search(texto) or not disponivel:
+                if "list_available_agents" in registradas:
+                    return (
+                        Intent.AGENT_DISCOVERY,
+                        ("list_available_agents",),
+                        "agent_capability_question",
+                        agente.id,
+                    )
+                return None
+            if _AGENT_DELEGATION_VERB.search(texto):
+                return (
+                    Intent.EXTERNAL_AGENT_DELEGATE,
+                    (ferramenta,),
+                    "explicit_external_agent_request",
+                    agente.id,
+                )
+            return None
+
+        if is_agent_discovery_request(texto) and "list_available_agents" in registradas:            return (
+                Intent.AGENT_DISCOVERY,
+                ("list_available_agents",),
+                "agent_discovery_request",
+                None,
+            )
+        return None
+
+    def _registered_tool_names(self) -> tuple[str, ...]:
+        nomes = getattr(self.tools, "names", None)
+        if not callable(nomes):
+            return ()
+        try:
+            return tuple(nomes())
+        except Exception:  # noqa: BLE001 - registro indisponível não deve quebrar a rota
+            return ()
+
+    def _mentioned_external_agent(self, texto: str) -> Any | None:
+        discovery = getattr(self.tools, "agent_discovery", None)
+        if discovery is None:
+            return None
+        try:
+            descobertos = discovery.discover()
+        except Exception:  # noqa: BLE001 - descoberta é best-effort
+            return None
+        for agente in descobertos:
+            if agente.spec.native_integration:
+                continue
+            for alias in agente.spec.aliases:
+                if re.search(rf"(?<![\w-]){re.escape(alias)}(?![\w-])", texto):
+                    return agente
+        return None
 
     def _semantic_frame_from_qwen(self, semantic: Any) -> IntentFrame:
         return IntentFrame(
@@ -1254,6 +1492,16 @@ class AgentDecisionPolicy:
                     override="deepseek_explicit",
                 )
             if frame.agent == "codex":
+                if job_active and "codex" not in text and project_mutation_signal(text):
+                    return self._decision(
+                        Intent.CODEX_STEER,
+                        0.98,
+                        project,
+                        root,
+                        ("steer_codex_job",),
+                        "active_job_mutation_interaction",
+                        target=reference.id or context.focused_job or context.codex_job_id,
+                    )
                 if project is None:
                     return self._decision(Intent.CLARIFY, 0.82, None, None, (), "ambiguous_target")
                 return self._decision(
@@ -1266,6 +1514,67 @@ class AgentDecisionPolicy:
                     target=root,
                 )
         return None
+
+    def _automatic_project_mutation_route(
+        self,
+        *,
+        text: str,
+        context: DecisionContext,
+        project: str | None,
+        root: str | None,
+    ) -> Decision | None:
+        """Select the mutation-capable executor before model-proposed routing."""
+        if not project_mutation_signal(text):
+            return None
+        if re.match(r"^(?:como|o que|oq|qual|quais|por que|porque)\b", text):
+            return None
+        if "codex" in text or "deepseek" in text or "consultor" in text:
+            return None
+
+        frame, reference = self.frame_builder.build(text, context)
+        constraints = set(frame.constraints)
+        if (
+            not frame.execution_requested
+            or Constraint.FORBID_MUTATION in constraints
+            or Constraint.READ_ONLY in constraints
+            or Constraint.FORBID_CODEX in constraints
+            or Constraint.FORBID_DELEGATION in constraints
+            or Constraint.ANSWER_SELF in constraints
+            or _has(text, ("nao faca nada", "so me diga se entendeu", "apenas confirme que entendeu"))
+        ):
+            return None
+
+        self._active_frame = frame
+        self._active_reference = reference
+        job_active = context.codex_job_status in _RUNNING_STATES or context.codex_running_jobs > 0
+        if job_active and "codex" not in text:
+            return self._decision(
+                Intent.CODEX_STEER,
+                0.99,
+                project,
+                root,
+                ("steer_codex_job",),
+                "active_job_mutation_interaction",
+                target=context.focused_job or context.codex_job_id,
+            )
+        if project is None:
+            return self._decision(
+                Intent.CLARIFY,
+                0.90,
+                None,
+                None,
+                (),
+                "ambiguous_target",
+            )
+        return self._decision(
+            Intent.CODEX_DELEGATE,
+            0.99,
+            project,
+            root,
+            ("delegate_to_codex",),
+            "project_mutation_requires_execution",
+            target=root,
+        )
 
     def decide(
         self,
@@ -1308,6 +1617,47 @@ class AgentDecisionPolicy:
                 ("get_codex_job_status",),
                 "active_job_status_query",
                 target=context.focused_job or context.codex_job_id,
+            )
+        agent_route = self._agent_routing(user_text)
+        if agent_route is not None:
+            intencao, ferramentas, motivo, identificador = agent_route
+            somente_leitura = intencao is Intent.AGENT_DISCOVERY
+            self._active_semantic = semantic_decision
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.QUESTION if somente_leitura else SpeechAct.COMMAND,
+                operation="read" if somente_leitura else "delegate",
+                agent=identificador or "system",
+                target="agent_inventory" if somente_leitura else identificador,
+                polarity="positive",
+                execution_requested=True,
+                continuation=False,
+                constraints=(Constraint.READ_ONLY,) if somente_leitura else (),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "agent",
+                identificador or "agent_inventory",
+                1.0,
+                (motivo,),
+            )
+            return self._decision(
+                intencao,
+                0.99,
+                project,
+                root,
+                ferramentas,
+                motivo,
+                target=identificador or "agent_inventory",
+            )
+        if explicit_agent_binding is not None:
+            self._active_semantic = semantic_decision
+            return self._decision_from_explicit_agent_binding(
+                explicit_agent_binding,
+                text=text,
+                context=context,
+                project=project,
+                root=root,
             )
         if is_hardware_status_request(user_text):
             self._active_semantic = semantic_decision
@@ -1488,14 +1838,14 @@ class AgentDecisionPolicy:
                 target=requested_url,
             )
         self._active_semantic = semantic_decision
-        if explicit_agent_binding is not None:
-            return self._decision_from_explicit_agent_binding(
-                explicit_agent_binding,
-                text=text,
-                context=context,
-                project=project,
-                root=root,
-            )
+        automatic_mutation = self._automatic_project_mutation_route(
+            text=text,
+            context=context,
+            project=project,
+            root=root,
+        )
+        if automatic_mutation is not None:
+            return automatic_mutation
         if semantic_decision is not None:
             self._active_frame = self._semantic_frame_from_qwen(semantic_decision)
             self._active_reference = self.reference_resolver.resolve_typed(
@@ -1651,27 +2001,38 @@ class AgentDecisionPolicy:
         if context.ambiguous_target:
             return self._decision(Intent.CLARIFY, 0.90, project, root, (), "ambiguous_target", target=context.focused_file, alternatives=((Intent.LOCAL_READ.value, 0.35),))
 
-        mutation = _has(
-            text,
-            (
-                "corrige",
-                "corrigir",
-                "implementa",
-                "implemente",
-                "adiciona",
-                "arruma",
-                "conserta",
-                "roda os testes e",
-                "executa os testes e",
-            ),
+        informational_mutation_question = bool(
+            re.match(r"^(?:como|o que|oq|qual|quais|por que|porque)\b", text)
+        )
+        mutation = (
+            project_mutation_signal(text)
+            or _has(text, ("roda os testes e", "executa os testes e"))
+        )
+        mutation_requested = bool(
+            mutation
+            and self._active_frame
+            and self._active_frame.execution_requested
+            and not informational_mutation_question
+            and Constraint.FORBID_MUTATION not in self._active_frame.constraints
+            and Constraint.READ_ONLY not in self._active_frame.constraints
         )
         explicit_codex_action = explicit_codex and _has(
             text, ("peca", "manda", "faz", "use", "rodar", "revisar", "corrigir", "implementar", "verifica")
         )
-        if mutation or explicit_codex_action:
+        if mutation_requested and job_active and not explicit_codex:
+            return self._decision(
+                Intent.CODEX_STEER,
+                0.98,
+                project,
+                root,
+                ("steer_codex_job",),
+                "active_job_mutation_interaction",
+                target=context.focused_job or context.codex_job_id,
+            )
+        if mutation_requested or explicit_codex_action:
             if project is None:
                 return self._decision(Intent.CLARIFY, 0.82, None, None, (), "ambiguous_target")
-            return self._decision(Intent.CODEX_DELEGATE, 0.96 if explicit_codex_action else 0.90, project, root, ("delegate_to_codex",), "explicit_codex_delegate" if explicit_codex_action else "project_mutation_requires_execution", target=root)
+            return self._decision(Intent.CODEX_DELEGATE, 0.98 if mutation_requested else 0.96, project, root, ("delegate_to_codex",), "explicit_codex_delegate" if explicit_codex_action else "project_mutation_requires_execution", target=root)
 
         if _has(text, ("onde eu tava mexendo", "onde eu estava mexendo")) and context.focused_file:
             return self._decision(Intent.ANSWER_DIRECTLY, 0.97, project, root, (), "existing_file_context", target=context.focused_file)
@@ -1799,6 +2160,11 @@ class AgentDecisionPolicy:
                 original_transcript=user_text,
                 routing_transcript=normalize_technical_transcript(user_text),
                 speech_act=(decision.intent_frame.speech_act.value if decision.intent_frame else None),
+                action=(
+                    decision.intent_frame.action.value
+                    if decision.intent_frame and decision.intent_frame.action
+                    else None
+                ),
                 execution_requested=(decision.intent_frame.execution_requested if decision.intent_frame else None),
                 constraints=([value.value for value in decision.intent_frame.constraints] if decision.intent_frame else []),
                 resolved_reference_type=(decision.resolved_reference.type if decision.resolved_reference else None),
@@ -1818,7 +2184,7 @@ class AgentDecisionPolicy:
             )
         if (
             decision.tools
-            and all(TOOL_EFFECTS.get(tool) is SideEffect.READ_ONLY for tool in decision.tools)
+            and all(tool_effect(tool) is SideEffect.READ_ONLY for tool in decision.tools)
             and not (decision.resolved_reference and decision.resolved_reference.ambiguous)
             and decision.confidence >= 0.95
         ):
@@ -1883,7 +2249,41 @@ class AgentDecisionPolicy:
                 tool,
                 arguments,
                 "explicit_agent_direct_handoff",
-                TOOL_EFFECTS[tool],
+                tool_effect(tool) or SideEffect.CODE_EXECUTION,
+            )
+        if (
+            decision.reason_code == "project_mutation_requires_execution"
+            and decision.execution_allowed is not False
+            and tool == "delegate_to_codex"
+            and (decision.project_root or context.project_root)
+        ):
+            return FastPath(
+                tool,
+                {
+                    "task": user_text,
+                    "project_path": decision.project_root or context.project_root,
+                    "continue_current_thread": True,
+                },
+                "automatic_mutation_direct_handoff",
+                SideEffect.CODE_EXECUTION,
+            )
+        if (
+            decision.reason_code == "active_job_mutation_interaction"
+            and decision.execution_allowed is not False
+            and tool == "steer_codex_job"
+        ):
+            job_id = decision.target or context.focused_job or context.codex_job_id
+            if not job_id:
+                return None
+            return FastPath(
+                tool,
+                {
+                    "instruction": user_text,
+                    "job_id": job_id,
+                    "latest": False,
+                },
+                "active_job_mutation_direct_steer",
+                SideEffect.CODE_EXECUTION,
             )
         if tool in {"web_open", "web_open_browser"} and decision.intent is Intent.WEB_OPEN:
             requested_url = (
@@ -1912,9 +2312,16 @@ class AgentDecisionPolicy:
                 requested_url = decision.target
             if requested_url is None or requested_url != decision.target:
                 return None
+            local_artifact = (
+                requested_url.startswith("file:")
+                and _validated_local_html_uri(context) == requested_url
+            )
             return FastPath(
                 tool,
-                {"url": requested_url},
+                {
+                    "url": requested_url,
+                    **({"local_artifact": True} if local_artifact else {}),
+                },
                 (
                     "explicit_browser_url_launch"
                     if tool == "web_open_browser"

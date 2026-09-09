@@ -342,6 +342,33 @@ def test_current_message_too_large_is_rejected_before_api(tmp_path):
     assert client.calls == []
 
 
+def test_current_message_above_history_limit_is_sent_without_truncation(tmp_path):
+    client = StubClient(["ok"])
+    session, project = manager(tmp_path, client=client)
+    task = "preserve-exact:" + ("x" * 9_000)
+
+    result = session.delegate(task, project_path=str(project))
+
+    assert result["ok"]
+    assert client.calls[0][-1] == {"role": "user", "content": task}
+
+
+def test_current_message_takes_priority_over_temporary_context(tmp_path):
+    client = StubClient(["ok"])
+    session, project = manager(tmp_path, client=client, context=4_000)
+    task = "authoritative:" + ("x" * 3_100)
+
+    result = session.delegate(
+        task,
+        project_path=str(project),
+        context="supplemental:" + ("y" * 20_000),
+    )
+
+    assert result["ok"]
+    assert client.calls[0][-1] == {"role": "user", "content": task}
+    assert sum(len(item["content"]) for item in client.calls[0]) <= 4_000
+
+
 def test_usage_is_returned_and_persisted(tmp_path):
     session, project = manager(tmp_path)
     result = session.delegate("teste", project_path=str(project))
@@ -498,6 +525,34 @@ def test_qwen_to_deepseek_and_human_to_deepseek_share_session(tmp_path):
     )
     assert review["last_response"] == "DEEPSEEK-QWEN-OK"
     assert {turn["source"] for turn in review["summary_source"]} == {"human", "qwen"}
+
+
+def test_deepseek_tool_receives_the_same_preserved_delegation_protocol(tmp_path):
+    client = StubClient(["ok"])
+    tools, root = integrated_registry(tmp_path, client)
+    original = "Analise apenas auth.py e não proponha alterações fora dele."
+
+    result = tools.execute(
+        "delegate_to_deepseek",
+        {
+            "task": "avalie o repositório inteiro",
+            "project_path": str(root),
+        },
+        context={
+            "user_text": "Pergunte ao DeepSeek no projeto tern",
+            "original_user_text": original,
+            "delegation_references": ["auth.py"],
+            "turn_id": "turn-preservation",
+        },
+    )
+
+    assert result["ok"]
+    payload = json.loads(client.calls[0][-1]["content"])
+    assert payload["schema"] == "jarvis.delegation_request.v1"
+    assert payload["requested_agent"] == "deepseek"
+    assert payload["task"] == original
+    assert payload["references"] == ["auth.py"]
+    assert "avalie o repositório inteiro" not in client.calls[0][-1]["content"]
 
 
 def test_deepseek_tool_content_is_not_duplicated_in_logs_or_action_history(tmp_path):

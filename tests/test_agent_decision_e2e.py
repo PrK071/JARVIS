@@ -269,6 +269,29 @@ def test_e2e_project_mutation_delegates_once_to_tern():
     assert tools.calls == [("delegate_to_codex", arguments)]
 
 
+def test_e2e_project_creation_fast_path_skips_qwen_and_delegates(tmp_path):
+    tools = DryTools()
+    client = ToolThenAnswer()
+    agent = Supervisor(
+        load_settings(
+            {
+                "MODEL_STATE_DIR": str(tmp_path),
+                "AGENT_DECISION_FAST_PATH": "true",
+            }
+        ),
+        client,
+        tools,
+    )
+
+    result = agent.run("crie uma landing page sobre o joao")
+
+    assert result["ok"]
+    assert [name for name, _arguments in tools.calls] == ["delegate_to_codex"]
+    assert tools.calls[0][1]["project_path"] == r"D:\tern"
+    assert client.available == []
+    assert result["decision"]["fast_path"] is True
+
+
 def test_e2e_explicit_deepseek_has_zero_codex_calls():
     tools = DryTools()
     result = supervisor(tools, ToolThenAnswer("delegate_to_deepseek", {"task": "avalie"})).run("pergunta pro deepseek oq ele acha dessa solucao")

@@ -202,13 +202,47 @@ def test_explicit_codex_binding_has_direct_handoff_arguments():
     }
 
 
-def test_fast_path_never_mutates_cancels_or_generates():
+def test_automatic_project_mutation_has_direct_handoff_arguments():
+    policy, context, decision = fixture_policy(
+        "melhore a pagina inicial",
+        active_project="tern",
+    )
+
+    shortcut = policy.fast_path(decision, context, "melhore a pagina inicial")
+
+    assert shortcut is not None
+    assert shortcut.tool == "delegate_to_codex"
+    assert shortcut.reason_code == "automatic_mutation_direct_handoff"
+    assert shortcut.side_effect == SideEffect.CODE_EXECUTION
+    assert shortcut.arguments == {
+        "task": "melhore a pagina inicial",
+        "project_path": r"D:\tern",
+        "continue_current_thread": True,
+    }
+
+
+def test_active_job_mutation_has_direct_steer_arguments():
+    policy, context, decision = fixture_policy(
+        "adicione tambem testes mobile",
+        active_project="tern",
+        codex_job={"status": "running", "job_id": "job-1"},
+    )
+
+    shortcut = policy.fast_path(decision, context, "adicione tambem testes mobile")
+
+    assert shortcut is not None
+    assert shortcut.tool == "steer_codex_job"
+    assert shortcut.reason_code == "active_job_mutation_direct_steer"
+    assert shortcut.side_effect == SideEffect.CODE_EXECUTION
+    assert shortcut.arguments == {
+        "instruction": "adicione tambem testes mobile",
+        "job_id": "job-1",
+        "latest": False,
+    }
+
+
+def test_fast_path_never_cancels_or_generates_consultations():
     cases = [
-        (
-            "corrige o Jarvis",
-            {"active_project": "tern"},
-            Intent.CODEX_DELEGATE,
-        ),
         (
             "para ele",
             {

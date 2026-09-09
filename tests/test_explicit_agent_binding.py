@@ -60,6 +60,129 @@ def test_detector_requires_an_explicit_executor_clause(text, agent):
     assert detect_explicit_agent_binding(text).requested_agent == agent
 
 
+@pytest.mark.parametrize(
+    ("text", "agent"),
+    [
+        ("diga ao DeepSeek que revise isso", "deepseek"),
+        ("avise o Codex para corrigir o erro", "codex"),
+        ("informe para o Codex revisar isso", "codex"),
+        ("comunique ao DeepSeek o problema", "deepseek"),
+        ("conte para o Codex corrigir isso", "codex"),
+        ("explique para o DeepSeek analisar isso", "deepseek"),
+        ("oriente o Codex a revisar isso", "codex"),
+        ("instrua o Codex a corrigir isso", "codex"),
+        ("converse com o Codex sobre o problema", "codex"),
+        ("questiona o DeepSeek sobre essa decisao", "deepseek"),
+        ("atribua essa tarefa para o Codex", "codex"),
+        ("designe o Codex para revisar isso", "codex"),
+        ("redirecione isso para o Codex", "codex"),
+        ("transfira essa analise para o DeepSeek", "deepseek"),
+        ("repasse essa tarefa para o Codex", "codex"),
+        ("deixe isso com o Codex", "codex"),
+        ("encarregue o Codex de revisar isso", "codex"),
+        ("incumba o Codex de corrigir isso", "codex"),
+        ("comissione o Codex para corrigir isso", "codex"),
+        ("chame o agente Codex para revisar isso", "codex"),
+        ("quero que o Codex faca isso", "codex"),
+        ("quero o DeepSeek trabalhando nisso", "deepseek"),
+        ("faz o Codex resolver isso", "codex"),
+        ("isso e pro Codex", "codex"),
+        ("essa tarefa fica com o DeepSeek", "deepseek"),
+        ("o Codex pode cuidar disso", "codex"),
+        ("joga isso no Codex", "codex"),
+        ("preciso que o Codex revise isso", "codex"),
+        ("manda o Codex corrigir isso", "codex"),
+        ("faz o Codex melhorar isso", "codex"),
+        ("manda pro Codex continuar", "codex"),
+        ("pergunta pro Codex se terminou", "codex"),
+    ],
+)
+def test_delegation_language_families_converge_on_named_executor(text, agent):
+    binding = detect_explicit_agent_binding(text)
+
+    assert binding is not None
+    assert binding.requested_agent == agent
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "avisa ele que precisa revisar isso",
+        "manda isso pra ele corrigir",
+        "faz ele cuidar disso",
+        "joga isso nele para revisar",
+    ],
+)
+def test_focused_executor_pronouns_bind_to_conversation_agent(text):
+    binding = detect_explicit_agent_binding(text, focused_agent="codex")
+
+    assert binding is not None
+    assert binding.requested_agent == "codex"
+    assert binding.evidence == "focused_executor_pronoun"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "manda o Codex corrigir isso",
+        "pede pro Codex corrigir isso",
+        "passa isso pro Codex corrigir",
+        "bota o Codex pra corrigir isso",
+        "faz o Codex corrigir isso",
+        "deixa isso com o Codex",
+        "quero que o Codex corrija isso",
+        "o Codex pode cuidar disso",
+        "usa o Codex pra resolver",
+        "joga isso pro Codex",
+    ],
+)
+def test_equivalent_codex_phrasings_converge_on_same_delegation_intent(text):
+    policy = AgentDecisionPolicy()
+    context = policy.build_context(fixture_context={"active_project": "tern"})
+    binding = detect_explicit_agent_binding(text)
+
+    decision = policy.decide(
+        text,
+        context=context,
+        explicit_agent_binding=binding,
+    )
+
+    assert binding is not None
+    assert decision.intent is Intent.CODEX_DELEGATE
+    assert decision.tools == ("delegate_to_codex",)
+    assert decision.reason_code == "explicit_agent_binding"
+    assert decision.requested_agent == "codex"
+
+
+def test_delegation_constraint_stays_in_original_text_without_blocking_mutation():
+    text = "manda o Codex dar uma melhorada nesse codigo sem mudar a API"
+    policy = AgentDecisionPolicy()
+    context = policy.build_context(fixture_context={"active_project": "tern"})
+
+    decision = policy.decide(
+        text,
+        context=context,
+        explicit_agent_binding=detect_explicit_agent_binding(text),
+    )
+
+    assert decision.intent is Intent.CODEX_DELEGATE
+    assert decision.intent_frame is not None
+    assert decision.intent_frame.execution_requested is True
+    assert decision.constraint_violation is None
+
+
+def test_negative_feedback_and_missing_css_do_not_negate_codex_handoff():
+    text = (
+        "eu nao gostei do design do site, parece estar sem o css, "
+        "fale para o Codex melhorar isso e deixar parecido com o do adriel"
+    )
+
+    binding = detect_explicit_agent_binding(text)
+
+    assert binding is not None
+    assert binding.requested_agent == "codex"
+
+
 def test_leading_binding_survives_agent_names_inside_a_long_task_body():
     text = """delegue essa tarefa para o Codex
 # Experimento de payload
@@ -217,6 +340,28 @@ def test_binding_precedes_a_wrong_semantic_agent_without_repair(
     assert decision.requested_agent == requested
     assert decision.requested_agent_source == "explicit_user"
     assert decision.semantic_frame == wrong_semantic.as_dict()
+
+
+def test_explicit_codex_binding_precedes_embedded_browser_step_without_url():
+    text = (
+        "fale para o codex criar um site sobre um garoto chamado adriel "
+        "e abrir no meu navegador brave"
+    )
+    policy = AgentDecisionPolicy()
+    context = policy.build_context(fixture_context={"active_project": "tern"})
+    binding = detect_explicit_agent_binding(text)
+
+    decision = policy.decide(
+        text,
+        context=context,
+        explicit_agent_binding=binding,
+    )
+
+    assert binding is not None
+    assert decision.intent is Intent.CODEX_DELEGATE
+    assert decision.tools == ("delegate_to_codex",)
+    assert decision.reason_code == "explicit_agent_binding"
+    assert decision.requested_agent == "codex"
 
 
 def test_invalid_semantic_fallback_does_not_erase_upstream_binding():

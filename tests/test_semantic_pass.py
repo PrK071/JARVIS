@@ -647,6 +647,44 @@ def test_policy_consumes_semantic_frame_instead_of_reinterpreting_words():
     assert decision.reason_code == "qwen_semantic_frame"
 
 
+def test_project_mutation_command_overrides_non_executing_semantic_guess():
+    semantic = validate_semantic_decision(raw_frame())
+    policy = AgentDecisionPolicy()
+    ctx = context()
+
+    decision = policy.decide(
+        "melhore a pagina inicial",
+        context=ctx,
+        semantic_decision=semantic,
+    )
+    fast_path = policy.fast_path(decision, ctx, "melhore a pagina inicial")
+
+    assert decision.intent is Intent.CODEX_DELEGATE
+    assert decision.reason_code == "project_mutation_requires_execution"
+    assert fast_path is not None
+    assert fast_path.tool == "delegate_to_codex"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "crie uma landing page",
+        "faça uma landing page",
+        "melhore o site",
+        "modifique o formulario",
+    ],
+)
+def test_selector_leaves_project_mutations_to_deterministic_policy(text):
+    assert not QwenSemanticInterpreter.needs_semantic_pass(text, context())
+
+
+def test_selector_does_not_turn_informational_mutation_question_into_execution():
+    assert not QwenSemanticInterpreter.needs_semantic_pass(
+        "como melhorar o site?",
+        context(),
+    )
+
+
 def test_safe_fallback_never_preserves_generation_or_mutation():
     policy = AgentDecisionPolicy()
     unsafe = policy.decide("corrige", context=context())

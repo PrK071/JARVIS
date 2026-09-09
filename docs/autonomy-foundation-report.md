@@ -3,7 +3,7 @@
 Data: 2026-08-13
 
 Escopo: fundação determinística, observabilidade e avaliação em dry-run.
-Checkout avaliado: `D:\tern`, branch `feat/native-ptbr-f5-tts`.
+Checkout avaliado: `D:\JARVIS`, branch `feat/native-ptbr-f5-tts`.
 
 ## 1. Decisões
 

@@ -43,7 +43,7 @@ WEB_MAX_TOTAL_SEARCHES=6
 WEB_MAX_TOTAL_OPENS=10
 ```
 
-O processo carrega `D:\tern\.env` automaticamente, sem sobrescrever variáveis já
+O processo carrega `D:\JARVIS\.env` automaticamente, sem sobrescrever variáveis já
 definidas no ambiente. `python -m tern.orchestrator config` informa caminho,
 existência e carregamento do arquivo; chaves nunca são exibidas.
 

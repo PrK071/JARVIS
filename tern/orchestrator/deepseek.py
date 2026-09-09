@@ -543,13 +543,26 @@ class DeepSeekSessionManager:
         for item in reversed(candidates):
             if not isinstance(item, dict) or item.get("role") not in {"user", "assistant"}:
                 continue
-            content = str(item.get("content") or "")[: self.max_message_characters]
+            content = str(item.get("content") or "")
+            is_current_message = not selected
+            if not is_current_message:
+                content = content[: self.max_message_characters]
             if not content:
                 continue
             allowed = max(0, budget - 32)
             if allowed <= 0:
                 break
-            content = content[-allowed:]
+            if len(content) > allowed:
+                if is_current_message:
+                    # The current request is authoritative. Discard optional
+                    # temporary context/summary before ever truncating it.
+                    while len(result) > 1 and len(content) > allowed:
+                        removed = result.pop()
+                        budget += len(removed["content"])
+                        allowed = max(0, budget - 32)
+                    if len(content) > allowed:
+                        break
+                content = content[-allowed:]
             selected.append({"role": str(item["role"]), "content": content})
             budget -= len(content) + 32
         result.extend(reversed(selected))

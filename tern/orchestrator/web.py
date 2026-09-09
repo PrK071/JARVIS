@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -149,7 +150,7 @@ _STOPWORDS = {
 }
 
 
-def _windows_default_browser_executable() -> str | None:
+def _detect_windows_default_browser_executable() -> str | None:
     if os.name != "nt":
         return None
     try:
@@ -171,6 +172,12 @@ def _windows_default_browser_executable() -> str | None:
     bare = re.match(r"^\s*([^\s]+\.exe)", command, re.IGNORECASE)
     executable = quoted or bare
     return executable.group(1) if executable else None
+
+
+@lru_cache(maxsize=1)
+def _windows_default_browser_executable() -> str | None:
+    """Identify the Windows default browser once for this Jarvis process."""
+    return _detect_windows_default_browser_executable()
 
 
 _BROWSER_EXECUTABLE_NAMES = frozenset(
@@ -258,10 +265,10 @@ def _windows_running_browser_executable() -> str | None:
 
 
 def _open_system_browser(url: str) -> bool:
-    """Open the requested URL in a new tab of the existing browser session."""
+    """Open a URL with the cached default browser, reusing its existing session."""
     executable = (
-        _windows_running_browser_executable()
-        or _windows_default_browser_executable()
+        _windows_default_browser_executable()
+        or _windows_running_browser_executable()
     )
     if executable:
         browser_name = Path(executable).name.casefold()

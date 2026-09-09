@@ -840,10 +840,16 @@ body::before {
   background: transparent;
   border: none;
   outline: none;
+  min-height: 40px;
+  max-height: 140px;
+  padding: 9px 0;
+  resize: vertical;
+  overflow-y: auto;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 500;
+  line-height: 1.35;
 }
 
 #user-input::placeholder {
@@ -870,7 +876,8 @@ body::before {
 }
 
 #send-btn:disabled,
-.quick-btn:disabled {
+.quick-btn:disabled,
+.cancel-job-btn:disabled {
   cursor: wait;
   opacity: 0.45;
   pointer-events: none;
@@ -1002,12 +1009,14 @@ body::before {
 
 .quick-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
   justify-content: center;
 }
 
-.quick-btn {
+.quick-btn,
+.cancel-job-btn {
   background: transparent;
   border: 1px solid rgba(0, 212, 255, 0.2);
   color: var(--text-dim);
@@ -1025,6 +1034,22 @@ body::before {
   border-color: var(--cyan);
   color: var(--cyan);
   background: rgba(0, 212, 255, 0.08);
+}
+
+.cancel-job-btn {
+  border-color: rgba(255, 59, 92, 0.45);
+  color: var(--red);
+}
+
+.cancel-job-btn:hover:not(:disabled) {
+  border-color: var(--red);
+  color: #fff;
+  background: rgba(255, 59, 92, 0.18);
+  box-shadow: 0 0 14px rgba(255, 59, 92, 0.16);
+}
+
+.cancel-job-btn[hidden] {
+  display: none;
 }
 
 /* Janela de Conexões de IA (abre pelo losango do cabeçalho) */

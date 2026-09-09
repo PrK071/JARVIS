@@ -121,7 +121,7 @@ which is why the final rejection is throughput, not contract.
 
 ## Qwen3.5-4B controls captured (baseline preserved)
 
-Model `D:\tern\models\Qwen_Qwen3.5-4B-Q4_K_M.gguf`, `3,013,027,808` bytes,
+Model `D:\JARVIS\models\Qwen_Qwen3.5-4B-Q4_K_M.gguf`, `3,013,027,808` bytes,
 `/props` model type `Q4_K - Medium`.
 
 Progressive contract on b10173 (`b10173-e9fa0781f`):
