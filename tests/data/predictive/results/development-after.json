@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "commit": "7e949b0",
+  "working_tree_dirty": true,
+  "implementation": "working-tree-after-development-hardening",
+  "split": "development",
+  "cases": 30,
+  "methodology": "Full deterministic rerun after diagnostic, grounding, diversity, test-support and score-explanation hardening. No scoring weights changed.",
+  "retrieval": {
+    "passed": 29,
+    "failed": 1,
+    "relevant_file_recall_at_1": 0.6975308642,
+    "relevant_file_recall_at_3": 0.9814814815,
+    "relevant_file_precision": 0.6472222222,
+    "expected_evidence_recall": 0.9814814815,
+    "evidence_ref_validity": 1.0,
+    "traceback_target_recall": 1.0,
+    "related_test_recall": 1.0,
+    "related_test_precision": 0.9
+  },
+  "trivial_baseline": {
+    "passed": 3,
+    "failed": 27,
+    "pass_rate": 0.1,
+    "hypothesis_hit_rate": 0.5333333333,
+    "grounded_hypothesis_rate": 1.0,
+    "candidate_generation_rate": 0.9,
+    "solution_family_hit_rate": 0.0,
+    "ranking_hit_rate": 0.0,
+    "evidence_support_precision": 0.5555555556,
+    "unsupported_claim_rate": 0.4444444444,
+    "abstention_precision": 1.0,
+    "abstention_recall": 1.0,
+    "determinism_rate": 1.0
+  },
+  "live_evaluation": {
+    "complete_development_run": true,
+    "passed": 5,
+    "failed": 25,
+    "pass_rate": 0.1666666667,
+    "qwen_requests": 54,
+    "estimated_prompt_tokens": 32714,
+    "estimated_response_tokens": 29791,
+    "average_request_ms": 46860.574,
+    "hypothesis_hit_rate": 0.5,
+    "grounded_hypothesis_rate": 1.0,
+    "solution_family_hit_rate": 0.6333333333,
+    "ranking_hit_rate": 0.3703703704,
+    "candidate_diversity": 0.8733333333,
+    "unsupported_claim_rate": 0.6419753086,
+    "forbidden_solution_rate": 0.0111111111,
+    "failure_code_counts": {
+      "DUPLICATE_CANDIDATES": 6,
+      "FORBIDDEN_SOLUTION": 1,
+      "MISSED_RELEVANT_FILE": 1,
+      "MISSING_EXPECTED_EVIDENCE": 1,
+      "UNSUPPORTED_HYPOTHESIS": 22,
+      "WRONG_RANKING": 17,
+      "WRONG_ROOT_CAUSE": 12,
+      "WRONG_SOLUTION_FAMILY": 8
+    }
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0
+  },
+  "stage_gate_passed": false,
+  "stage_gate_blockers": [
+    "unsupported_evidence_rate_zero",
+    "forbidden_solution_rate_zero",
+    "hypothesis_quality",
+    "solution_family_hit_rate",
+    "ranking_hit_rate"
+  ]
+}

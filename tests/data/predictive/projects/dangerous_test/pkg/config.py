@@ -1,0 +1,2 @@
+CACHE_ENABLED = True
+CACHE_REGION = ""

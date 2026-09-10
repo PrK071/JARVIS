@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "commit": "7e949b0",
+  "working_tree_dirty": true,
+  "split": "holdout",
+  "cases": 10,
+  "execution_protocol": "Single post-hardening deterministic run. No heuristic tuning performed afterward.",
+  "live_executed": true,
+  "retrieval": {
+    "passed": 10,
+    "failed": 0,
+    "relevant_file_recall_at_1": 0.5555555556,
+    "relevant_file_recall_at_3": 1.0,
+    "relevant_file_precision": 0.6833333333,
+    "expected_evidence_recall": 1.0,
+    "evidence_ref_validity": 1.0,
+    "traceback_target_recall": 1.0,
+    "related_test_recall": 1.0,
+    "related_test_precision": 0.7
+  },
+  "trivial_baseline": {
+    "passed": 1,
+    "failed": 9,
+    "pass_rate": 0.1,
+    "hypothesis_hit_rate": 0.8,
+    "grounded_hypothesis_rate": 1.0,
+    "candidate_generation_rate": 0.9,
+    "solution_family_hit_rate": 0.0,
+    "ranking_hit_rate": 0.0,
+    "evidence_support_precision": 0.7777777778,
+    "unsupported_claim_rate": 0.2222222222,
+    "abstention_precision": 1.0,
+    "abstention_recall": 1.0,
+    "determinism_rate": 1.0
+  },
+  "live_evaluation": {
+    "passed": 1,
+    "failed": 9,
+    "pass_rate": 0.1,
+    "qwen_requests": 18,
+    "estimated_prompt_tokens": 11745,
+    "estimated_response_tokens": 10227,
+    "average_request_ms": 49009.108,
+    "hypothesis_hit_rate": 0.7,
+    "grounded_hypothesis_rate": 1.0,
+    "solution_family_hit_rate": 0.8,
+    "ranking_hit_rate": 0.4444444444,
+    "candidate_diversity": 0.6666666667,
+    "evidence_support_precision": 0.5171957672,
+    "unsupported_claim_rate": 0.3703703704,
+    "forbidden_solution_rate": 0.0,
+    "determinism_rate": 1.0
+  },
+  "failure_code_counts": {
+    "UNSUPPORTED_HYPOTHESIS": 2,
+    "WRONG_RANKING": 9,
+    "WRONG_ROOT_CAUSE": 1,
+    "WRONG_SOLUTION_FAMILY": 9
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0
+  },
+  "stage_gate_passed": false,
+  "stage_gate_blockers": [
+    "unsupported_evidence_rate_zero",
+    "hypothesis_hit_rate",
+    "ranking_hit_rate"
+  ]
+}

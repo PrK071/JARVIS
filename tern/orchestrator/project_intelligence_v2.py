@@ -36,6 +36,7 @@ class SymbolKind(str, Enum):
     ASYNC_METHOD = "async_method"
     CONSTANT = "constant"
     CLASS_ATTRIBUTE = "class_attribute"
+    INSTANCE_ATTRIBUTE = "instance_attribute"
 
 
 class RelevantFileEvidenceSource(str, Enum):
@@ -399,6 +400,29 @@ def _symbol_records(tree: ast.AST, *, path: str, module: str) -> tuple[SymbolRec
                         module,
                     )
                 )
+                if owner:
+                    for child in ast.walk(node):
+                        if not isinstance(child, (ast.Assign, ast.AnnAssign)):
+                            continue
+                        targets = child.targets if isinstance(child, ast.Assign) else (child.target,)
+                        for target in targets:
+                            if not (
+                                isinstance(target, ast.Attribute)
+                                and isinstance(target.value, ast.Name)
+                                and target.value.id == "self"
+                            ):
+                                continue
+                            records.append(
+                                SymbolRecord(
+                                    target.attr,
+                                    f"{owner}.{target.attr}",
+                                    SymbolKind.INSTANCE_ATTRIBUTE,
+                                    path,
+                                    child.lineno,
+                                    getattr(child, "end_lineno", child.lineno),
+                                    module,
+                                )
+                            )
             elif isinstance(node, (ast.Assign, ast.AnnAssign)):
                 targets = node.targets if isinstance(node, ast.Assign) else (node.target,)
                 for target in targets:

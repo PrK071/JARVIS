@@ -48,3 +48,4 @@ include = ["tern*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["tests/data/predictive/projects"]

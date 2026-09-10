@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "commit": "7e949b0",
+  "implementation": "7e949b0",
+  "split": "development",
+  "cases": 30,
+  "methodology": "Frozen structural and trivial baselines before quality hardening; holdout not inspected.",
+  "retrieval": {
+    "passed": 29,
+    "failed": 1,
+    "relevant_file_recall_at_1": 0.6975308642,
+    "relevant_file_recall_at_3": 0.9814814815,
+    "relevant_file_precision": 0.6472222222,
+    "expected_evidence_recall": 0.9814814815,
+    "evidence_ref_validity": 1.0,
+    "traceback_target_recall": 1.0,
+    "related_test_recall": 1.0
+  },
+  "trivial_baseline": {
+    "passed": 3,
+    "failed": 27,
+    "pass_rate": 0.1,
+    "hypothesis_hit_rate": 0.5333333333,
+    "grounded_hypothesis_rate": 1.0,
+    "candidate_generation_rate": 0.9,
+    "solution_family_hit_rate": 0.0,
+    "ranking_hit_rate": 0.0,
+    "evidence_support_precision": 0.5555555556,
+    "unsupported_claim_rate": 0.4444444444,
+    "abstention_precision": 1.0,
+    "abstention_recall": 1.0
+  },
+  "failure_code_counts": {
+    "MISSED_RELEVANT_FILE": 1,
+    "MISSING_EXPECTED_EVIDENCE": 1,
+    "UNSUPPORTED_HYPOTHESIS": 12,
+    "WRONG_RANKING": 27,
+    "WRONG_ROOT_CAUSE": 11,
+    "WRONG_SOLUTION_FAMILY": 27
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0
+  }
+}

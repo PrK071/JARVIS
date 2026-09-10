@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Iterable
 
 from .models import SolutionCandidate
@@ -26,19 +26,16 @@ def candidate_score(candidate: SolutionCandidate) -> float:
 
 
 def explain_score(candidate: SolutionCandidate, score: float) -> str:
-    positive = (
-        candidate.estimated_success_score * SCORE_WEIGHTS["estimated_success_score"]
-        + candidate.evidence_score * SCORE_WEIGHTS["evidence_score"]
-        + candidate.test_support_score * SCORE_WEIGHTS["test_support_score"]
-        + candidate.reversibility_score * SCORE_WEIGHTS["reversibility_score"]
-    )
-    penalty = (
-        candidate.risk_score * abs(SCORE_WEIGHTS["risk_score"])
-        + candidate.cost_score * abs(SCORE_WEIGHTS["cost_score"])
-    )
+    contributions = {
+        name: getattr(candidate, name) * weight for name, weight in SCORE_WEIGHTS.items()
+    }
     return (
-        f"score={score:.3f}; sinais positivos={positive:.3f}; "
-        f"penalidades de risco/custo={penalty:.3f}; normalizacao=+0.200"
+        f"score={score:.3f}; sucesso={contributions['estimated_success_score']:+.3f}; "
+        f"evidencia={contributions['evidence_score']:+.3f}; "
+        f"testes={contributions['test_support_score']:+.3f}; "
+        f"reversibilidade={contributions['reversibility_score']:+.3f}; "
+        f"risco={contributions['risk_score']:+.3f}; "
+        f"custo={contributions['cost_score']:+.3f}; normalizacao=+0.200"
     )
 
 
@@ -54,3 +51,24 @@ def rank_candidates(candidates: Iterable[SolutionCandidate]) -> tuple[SolutionCa
             )
         )
     return tuple(sorted(scored, key=lambda item: (-item.ranking_score, item.id)))
+
+
+@dataclass(frozen=True)
+class RankingDecision:
+    candidates: tuple[SolutionCandidate, ...]
+    winner_id: str | None
+    margin: float | None
+    ambiguous: bool
+
+
+def ranking_decision(candidates: Iterable[SolutionCandidate]) -> RankingDecision:
+    ranked = rank_candidates(item for item in candidates if item.eligible)
+    if not ranked:
+        return RankingDecision((), None, None, False)
+    if len(ranked) == 1:
+        return RankingDecision(ranked, ranked[0].id, None, False)
+    margin = round(ranked[0].ranking_score - ranked[1].ranking_score, 6)
+    # Development v1 showed no monotonic relation between arbitrary small margins
+    # and correctness. Only a real score tie is treated as indistinguishable.
+    ambiguous = margin == 0.0
+    return RankingDecision(ranked, None if ambiguous else ranked[0].id, margin, ambiguous)

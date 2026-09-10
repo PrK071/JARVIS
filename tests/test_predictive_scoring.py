@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tern.orchestrator.predictive.models import SolutionCandidate
-from tern.orchestrator.predictive.scoring import candidate_score, rank_candidates
+from tern.orchestrator.predictive.scoring import candidate_score, rank_candidates, ranking_decision
 
 
 def candidate(identifier: str, **overrides) -> SolutionCandidate:
@@ -56,3 +56,18 @@ def test_ranking_is_deterministic_and_uses_id_as_stable_tie_breaker():
 
     assert rank_candidates(values) == rank_candidates(values)
     assert [item.id for item in rank_candidates(values)] == ["C1", "C2"]
+
+
+def test_equal_scores_are_reported_as_ambiguous_instead_of_a_winner():
+    decision = ranking_decision((candidate("C2"), candidate("C1")))
+    assert decision.margin == 0.0
+    assert decision.ambiguous is True
+    assert decision.winner_id is None
+
+
+def test_ineligible_candidate_never_reaches_ranking():
+    rejected = candidate("C1", eligible=False, rejection_reasons=("FORBIDDEN_CANDIDATE",))
+    accepted = candidate("C2", evidence_score=0.4)
+    decision = ranking_decision((rejected, accepted))
+    assert [item.id for item in decision.candidates] == ["C2"]
+    assert decision.winner_id == "C2"

@@ -21,6 +21,12 @@ from .decision_observability import AgentDecisionObserver
 from .projects import ProjectRegistry, normalize_technical_transcript
 from .project_discovery import DiscoveryPolicy
 from .predictive import DecisionReport, PredictiveDecisionService
+from .predictive.evaluation import (
+    CORPUS_ROOT,
+    evaluate_predictive_cases,
+    format_predictive_evaluation,
+    load_predictive_cases,
+)
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -701,6 +707,33 @@ def build_parser() -> argparse.ArgumentParser:
         dest="json_output",
         help="emite o DecisionReport estruturado",
     )
+    predictive_eval = sub.add_parser(
+        "predictive-eval",
+        help="avalia retrieval ou decisões preditivas em corpus controlado",
+    )
+    predictive_eval.add_argument(
+        "--mode",
+        choices=("retrieval", "baseline", "live"),
+        default="retrieval",
+        help="live é o único modo que consulta Qwen",
+    )
+    predictive_eval.add_argument(
+        "--split",
+        choices=("all", "development", "historical_holdout_v1", "holdout_v2"),
+        default="development",
+    )
+    predictive_eval.add_argument("--runs", type=int, default=1)
+    predictive_eval.add_argument(
+        "--limit", type=int, default=None, help="limita casos para smoke live explícito"
+    )
+    predictive_eval.add_argument("--corpus", type=Path, default=CORPUS_ROOT)
+    predictive_eval.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="grava o relatÃ³rio estruturado em um arquivo JSON",
+    )
+    predictive_eval.add_argument("--json", action="store_true", dest="json_output")
     routing = sub.add_parser(
         "agent-routing-eval",
         help="executa benchmark deterministico de intencao e roteamento",
@@ -1013,6 +1046,33 @@ def main(argv: list[str] | None = None) -> int:
                 _print(report.as_dict())
             else:
                 _print_predictive_report(report)
+        elif args.command == "predictive-eval":
+            cases = load_predictive_cases(args.corpus, split=args.split)
+            if args.limit is not None:
+                if args.limit <= 0:
+                    raise ValueError("--limit deve ser positivo")
+                cases = cases[: args.limit]
+            reasoner = None
+            if args.mode == "live":
+                manager.ensure_llama_server(240)
+                reasoner = LlamaClient(settings.base_url, settings.timeout)
+            report = evaluate_predictive_cases(
+                cases,
+                mode=args.mode,
+                reasoner=reasoner,
+                runs=args.runs,
+            )
+            if args.output is not None:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(
+                    json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
+            if args.json_output:
+                _print(report)
+            else:
+                print(format_predictive_evaluation(report))
+            return 0 if report["safety"]["passed"] else 1
         elif args.command == "agent-routing-eval":
             split = None if args.split == "all" else args.split
             cases_path = args.cases_file
