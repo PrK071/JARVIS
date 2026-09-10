@@ -20,6 +20,7 @@ from .decision_policy import AgentDecisionPolicy, tool_catalog_audit
 from .decision_observability import AgentDecisionObserver
 from .projects import ProjectRegistry, normalize_technical_transcript
 from .project_discovery import DiscoveryPolicy
+from .predictive import DecisionReport, PredictiveDecisionService
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -38,6 +39,27 @@ from .web import WebClient, WebConfig, WebError
 
 def _print(value: object) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2, default=str))
+
+
+def _print_predictive_report(report: DecisionReport) -> None:
+    print("Predictive Decision (consultivo / read-only)")
+    print(f"Problema: {report.problem}")
+    if report.insufficient_evidence:
+        print(f"Evidência insuficiente: {report.recommendation_explanation}")
+        return
+    print("\nHipóteses:")
+    for hypothesis in report.hypotheses:
+        print(f"- {hypothesis.id} [{hypothesis.confidence:.2f}]: {hypothesis.statement}")
+        print(f"  Evidências: {', '.join(hypothesis.evidence_refs)}")
+    print("\nSoluções (ranking):")
+    for candidate in report.candidates:
+        marker = "RECOMENDADA" if candidate.id == report.recommended_candidate_id else "alternativa"
+        print(f"- {candidate.id} [{candidate.ranking_score:.3f}; {marker}]: {candidate.action}")
+        print(f"  Resultado esperado: {candidate.expected_outcome}")
+        print(f"  Evidências: {', '.join(candidate.evidence_refs)}")
+        print(f"  Testes: {', '.join(candidate.required_tests) or 'nenhum teste relacionado localizado'}")
+    print(f"\nRecomendação: {report.recommendation_explanation}")
+    print("Execução: não autorizada; aprovação humana obrigatória.")
 
 
 def _print_llama_startup(value: dict[str, object]) -> None:
@@ -185,6 +207,19 @@ def _registry(settings, *, approval=None) -> ToolRegistry:
         web=_web_client(settings),
         projects=projects,
         deepseek=deepseek,
+    )
+
+
+def _predictive_project_registry(settings) -> ProjectRegistry:
+    """Resolve project state without constructing or exposing a ToolRegistry."""
+
+    return ProjectRegistry(
+        PathPolicy(settings.allowed_roots),
+        settings.state_dir,
+        discovery_policy=DiscoveryPolicy.from_values(
+            settings.project_discovery_roots or None,
+            settings.project_discovery_excludes or None,
+        ),
     )
 
 
@@ -655,6 +690,17 @@ def build_parser() -> argparse.ArgumentParser:
     ask = sub.add_parser("ask", help="executa uma solicitacao pelo supervisor")
     ask.add_argument("prompt")
     ask.add_argument("--approve-destructive", action="store_true")
+    predict = sub.add_parser(
+        "predict",
+        help="compara hipóteses e soluções técnicas sem modificar o projeto",
+    )
+    predict.add_argument("problem", help="problema técnico ou traceback")
+    predict.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emite o DecisionReport estruturado",
+    )
     routing = sub.add_parser(
         "agent-routing-eval",
         help="executa benchmark deterministico de intencao e roteamento",
@@ -951,6 +997,22 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "agent-decision-stats":
             observer = AgentDecisionObserver(settings.state_dir, enabled=True)
             _print(observer.stats(days=args.days))
+        elif args.command == "predict":
+            projects = _predictive_project_registry(settings)
+            active = projects.active()
+            project = active.get("project")
+            if not project:
+                _print({"ok": False, "error": "active_project_not_found"})
+                return 1
+            manager.ensure_llama_server(240)
+            report = PredictiveDecisionService(
+                LlamaClient(settings.base_url, settings.timeout),
+                path_policy=projects.policy,
+            ).predict(args.problem, project["root"])
+            if args.json_output:
+                _print(report.as_dict())
+            else:
+                _print_predictive_report(report)
         elif args.command == "agent-routing-eval":
             split = None if args.split == "all" else args.split
             cases_path = args.cases_file
