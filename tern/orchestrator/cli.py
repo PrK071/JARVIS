@@ -29,6 +29,7 @@ from .predictive.evaluation import (
 )
 from .predictive.benchmark_v4 import evaluate_predictive_cases_v4, format_benchmark_v4
 from .predictive.benchmark_v5 import evaluate_predictive_cases_v5, format_benchmark_v5
+from .predictive.simulation import detect_sandbox_provider
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -780,6 +781,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="grava o relatÃ³rio estruturado em um arquivo JSON",
     )
     predictive_eval.add_argument("--json", action="store_true", dest="json_output")
+    sandbox_check = sub.add_parser(
+        "predictive-sandbox-check",
+        help="verifica isolamento seguro usando apenas um workload controlado do JARVIS",
+    )
+    sandbox_check.add_argument("--json", action="store_true", dest="json_output")
     routing = sub.add_parser(
         "agent-routing-eval",
         help="executa benchmark deterministico de intencao e roteamento",
@@ -1142,6 +1148,27 @@ def main(argv: list[str] | None = None) -> int:
                     else format_predictive_evaluation(report)
                 )
             return 0 if report["safety"]["passed"] else 1
+        elif args.command == "predictive-sandbox-check":
+            provider = detect_sandbox_provider()
+            capabilities = provider.capabilities()
+            value = capabilities.as_dict()
+            if args.json_output:
+                _print(value)
+            else:
+                print("Predictive Sandbox Check")
+                print(f"provider: {capabilities.provider}")
+                print(f"available: {str(capabilities.available).lower()}")
+                for label, passed in (
+                    ("filesystem confinement", capabilities.write_confinement_verified),
+                    ("network isolation", capabilities.network_denial_verified),
+                    ("environment isolation", capabilities.environment_sanitization_verified),
+                    ("process cleanup", capabilities.child_process_containment_verified and capabilities.cleanup_verified),
+                    ("resource limits", capabilities.resource_limits_verified),
+                ):
+                    print(f"{label}: {'PASS' if passed else 'FAIL'}")
+                if capabilities.reason:
+                    print(f"reason: {capabilities.reason}")
+            return 0 if capabilities.ready else 1
         elif args.command == "agent-routing-eval":
             split = None if args.split == "all" else args.split
             cases_path = args.cases_file
