@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis-predictive-benchmark-v5",
+  "title": "Predictive repair benchmark v5 adjudication",
+  "type": "object",
+  "required": [
+    "case_id", "status", "failure_site", "acceptable_root_causes",
+    "acceptable_repairs", "abstention_expected", "notes"
+  ],
+  "properties": {
+    "case_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["CANONICAL", "MULTIPLE_VALID_ANSWERS", "AMBIGUOUS", "INCOMPLETE", "INVALID"]},
+    "failure_site": {"type": ["object", "null"]},
+    "acceptable_root_causes": {"type": "array"},
+    "acceptable_repairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["strategy", "targets", "preferred"],
+        "properties": {
+          "strategy": {"type": "string"},
+          "preferred": {"type": "boolean"},
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "scope_kind"],
+              "properties": {
+                "path": {"type": "string"},
+                "scope_kind": {"enum": ["MODULE", "FUNCTION", "METHOD", "PARAMETER", "ATTRIBUTE", "RETURN_SITE", "CALL_SITE", "CONFIG_VALUE", "IMPORT_EDGE", "TEST_EXPECTATION"]},
+                "symbol": {"type": ["string", "null"]},
+                "parameter": {"type": ["string", "null"]},
+                "attribute": {"type": ["string", "null"]},
+                "line": {"type": ["integer", "null"], "minimum": 1},
+                "expression_id": {"type": ["string", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "abstention_expected": {"type": "boolean"}
+  }
+}

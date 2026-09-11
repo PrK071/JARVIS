@@ -34,6 +34,7 @@ from .models import (
     TestSupportLevel,
 )
 from .service import PredictiveDecisionService
+from .repair import RepairTarget, RepairTargetKind, target_refines, targets_compatible
 
 __all__ = [
     "CausalEdge",
@@ -66,4 +67,8 @@ __all__ = [
     "structurally_dominant_root",
     "SolutionCandidate",
     "TestSupportLevel",
+    "RepairTarget",
+    "RepairTargetKind",
+    "target_refines",
+    "targets_compatible",
 ]

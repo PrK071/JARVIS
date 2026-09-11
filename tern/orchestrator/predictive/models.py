@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .causal import CausalSlice, RepairStrategy, RootCauseCandidate, RootCauseSelection
+    from .repair import RepairTarget
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -340,6 +341,7 @@ class SolutionCandidate:
     root_cause_score: float = 0.0
     repair_locality_score: float = 0.0
     repair_strategy_score: float = 0.0
+    repair_targets: tuple[RepairTarget, ...] = ()
 
     def __post_init__(self) -> None:
         if not all(
@@ -353,6 +355,7 @@ class SolutionCandidate:
         object.__setattr__(self, "target_symbols", _unique_strings(self.target_symbols))
         object.__setattr__(self, "evidence_ids", _unique_strings(self.evidence_ids))
         object.__setattr__(self, "rejection_reasons", _unique_strings(self.rejection_reasons))
+        object.__setattr__(self, "repair_targets", tuple(self.repair_targets))
         if not self.evidence_refs:
             raise ValueError("candidate must reference concrete evidence")
         for name in (
@@ -400,6 +403,7 @@ class SolutionCandidate:
             "root_cause_score": self.root_cause_score,
             "repair_locality_score": self.repair_locality_score,
             "repair_strategy_score": self.repair_strategy_score,
+            "repair_targets": [item.as_dict() for item in self.repair_targets],
         }
 
     @property
@@ -460,7 +464,7 @@ class DecisionReport:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": 4,
+            "schema_version": 5,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
             "candidates": [item.as_dict() for item in self.candidates],

@@ -133,7 +133,7 @@ def test_predictive_json_v3_keeps_legacy_report_fields(tmp_path):
         FakeReasoner(), path_policy=PathPolicy((root,))
     ).predict('File "pkg/calc.py", line 2\nTypeError', root).as_dict()
 
-    assert report["schema_version"] == 4
+    assert report["schema_version"] == 5
     assert "root_cause_selections" in report
     assert {
         "problem", "hypotheses", "candidates", "recommended_candidate_id",

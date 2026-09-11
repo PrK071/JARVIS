@@ -39,10 +39,12 @@ VALID_SPLITS = frozenset({
     "historical_holdout_v2",
     "holdout_v3",
     "holdout_v4",
+    "holdout_v5",
 })
 SPLIT_ALIASES = {
     "holdout_v2": "historical_holdout_v2",
     "historical_holdout_v3": "holdout_v3",
+    "historical_holdout_v4": "holdout_v4",
 }
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
@@ -257,7 +259,7 @@ def load_predictive_cases(
     split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
@@ -282,7 +284,7 @@ def load_predictive_cases(
     adversarial_counts = Counter(tag for case in values for tag in case.adversarial_tags)
     if dict(manifest.get("adversarial_tags") or {}) != dict(sorted(adversarial_counts.items())):
         raise ValueError("predictive corpus adversarial counts do not match manifest")
-    for sealed_split in ("historical_holdout_v2", "holdout_v3", "holdout_v4"):
+    for sealed_split in ("historical_holdout_v2", "holdout_v3", "holdout_v4", "holdout_v5"):
         sealed_hash = manifest.get(f"{sealed_split}_sha256")
         if sealed_hash and predictive_corpus_hash(root, split=sealed_split) != sealed_hash:
             raise ValueError(f"predictive {sealed_split} hash mismatch")
@@ -314,6 +316,13 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
             path for path in sorted((root / "projects" / fixture).rglob("*")) if path.is_file()
         )
     for path in sorted((root / "v4" / "adjudications").glob("*.jsonl")):
+        if any(
+            json.loads(line).get("case_id") in case_ids
+            for line in path.read_text(encoding="utf-8-sig").splitlines()
+            if line.strip()
+        ):
+            selected_files.append(path)
+    for path in sorted((root / "v5" / "adjudications").glob("*.jsonl")):
         if any(
             json.loads(line).get("case_id") in case_ids
             for line in path.read_text(encoding="utf-8-sig").splitlines()

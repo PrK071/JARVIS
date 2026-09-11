@@ -23,7 +23,10 @@ from tern.orchestrator.predictive.evaluation import (
 
 
 def test_all_development_cases_have_individual_v4_adjudications():
-    cases = load_predictive_cases(split="development")
+    cases = tuple(
+        case for case in load_predictive_cases(split="development")
+        if not case.id.startswith("PC5D-")
+    )
     adjudications = load_benchmark_v4_adjudications(cases)
 
     assert len(adjudications) == 42
@@ -114,7 +117,10 @@ def test_strategy_target_pair_prevents_unrelated_valid_strategy():
 
 
 def test_v4_summary_separates_benchmark_and_engine_errors():
-    cases = load_predictive_cases(split="development")
+    cases = tuple(
+        case for case in load_predictive_cases(split="development")
+        if not case.id.startswith("PC5D-")
+    )
     truths = load_benchmark_v4_adjudications(cases)
     base = evaluate_predictive_cases(cases, mode="retrieval")
 

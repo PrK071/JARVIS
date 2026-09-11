@@ -28,6 +28,7 @@ from .predictive.evaluation import (
     load_predictive_cases,
 )
 from .predictive.benchmark_v4 import evaluate_predictive_cases_v4, format_benchmark_v4
+from .predictive.benchmark_v5 import evaluate_predictive_cases_v5, format_benchmark_v5
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -755,16 +756,18 @@ def build_parser() -> argparse.ArgumentParser:
             "holdout_v3",
             "historical_holdout_v3",
             "holdout_v4",
+            "historical_holdout_v4",
+            "holdout_v5",
         ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)
     predictive_eval.add_argument(
         "--benchmark-version",
-        choices=(3, 4),
+        choices=(3, 4, 5),
         type=int,
         default=3,
-        help="v4 usa adjudicacao causal canonica; v3 preserva metricas historicas",
+        help="v5 separa estrategia e target; v4 usa adjudicacao causal canonica",
     )
     predictive_eval.add_argument(
         "--limit", type=int, default=None, help="limita casos para smoke live explícito"
@@ -1099,7 +1102,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.mode == "live":
                 manager.ensure_llama_server(240)
                 reasoner = LlamaClient(settings.base_url, settings.timeout)
-            if args.benchmark_version == 4:
+            if args.benchmark_version == 5:
+                report = evaluate_predictive_cases_v5(
+                    cases,
+                    corpus_root=args.corpus,
+                    mode=args.mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
+            elif args.benchmark_version == 4:
                 report = evaluate_predictive_cases_v4(
                     cases,
                     corpus_root=args.corpus,
@@ -1124,7 +1135,9 @@ def main(argv: list[str] | None = None) -> int:
                 _print(report)
             else:
                 print(
-                    format_benchmark_v4(report)
+                    format_benchmark_v5(report)
+                    if args.benchmark_version == 5
+                    else format_benchmark_v4(report)
                     if args.benchmark_version == 4
                     else format_predictive_evaluation(report)
                 )
