@@ -176,6 +176,7 @@ class PredictiveDecisionService:
                 causal_slice=context.causal_slice,
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
+                root_cause_selections=analysis.root_cause_selections,
             )
 
         policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
@@ -203,6 +204,7 @@ class PredictiveDecisionService:
                 causal_slice=context.causal_slice,
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
+                root_cause_selections=analysis.root_cause_selections,
             )
         try:
             decision = ranking_decision(eligible)
@@ -237,6 +239,7 @@ class PredictiveDecisionService:
                 causal_slice=context.causal_slice,
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
+                root_cause_selections=analysis.root_cause_selections,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -256,6 +259,7 @@ class PredictiveDecisionService:
             causal_slice=context.causal_slice,
             root_cause_candidates=context.root_cause_candidates,
             repair_strategies=analysis.repair_strategies,
+            root_cause_selections=analysis.root_cause_selections,
         )
 
     @staticmethod

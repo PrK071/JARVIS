@@ -19,7 +19,7 @@ to classify historical failures as benchmark or engine failures.
 | Total | 42 |
 
 The frozen v3 result had 23 cases with legacy failure codes. Under independently
-authored structural truth, 14 of those are legacy false failures and 12 of the
+authored structural truth, 18 of those are legacy false failures and 7 of the
 32 evaluable cases still contain a true engine failure. Counts overlap because
 some legacy failures occurred on benchmark-invalid or incomplete cases.
 
@@ -77,17 +77,19 @@ root causes, strategy-target pairs, and notes, is in
 ## Historical failure reclassification
 
 Legacy false failures were identified in PC3D-004, PC3D-011, PD-001, PD-003,
-PD-004, PD-009, PD-011, PD-014, PD-015, PD-017, PD-018, PD-020, PD-021, and
-PD-025. They arose from invalid/incomplete fixtures, lexical root-cause checks,
-or treating one valid repair label as uniquely correct.
+PD-004, PD-009, PD-011, PD-014, PD-015, PD-017, PD-018, PD-020 through PD-023,
+and PD-025 through PD-027. They arose from
+invalid/incomplete fixtures, lexical root-cause checks, treating one valid
+repair label as uniquely correct, or rejecting a precise parameter target only
+because the legacy label named its containing function.
 
 True engine failures remain concentrated in:
 
 - missing attribute-origin relations (`PD-002`, `PD-005` through `PD-008`);
 - root selection at a manifestation rather than the structural return contract
   (`PD-012`, `PD-019`);
-- repair target selection for caller/callee boundary cases (`PD-022` through
-  `PD-024`, `PD-026`, `PD-027`).
+- selected manifestation/control-flow nodes instead of an explicit return
+  contract (`PD-012`, `PD-019`).
 
 These findings justify selector/causal hardening only after the required
 engine-unchanged v4 run confirms them.

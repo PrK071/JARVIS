@@ -6,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .causal import CausalSlice, RepairStrategy, RootCauseCandidate
+    from .causal import CausalSlice, RepairStrategy, RootCauseCandidate, RootCauseSelection
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -236,14 +236,16 @@ class ProblemContext:
         return any(item.strength in {"HARD", "STRONG"} for item in self.evidence)
 
     def reasoning_payload(self) -> dict[str, Any]:
-        from .causal import compatible_strategies
+        from .causal import compatible_strategies_for_root, structurally_dominant_root
 
         node_lookup = {
             node.id: node for node in self.causal_slice.nodes
         } if self.causal_slice else {}
+        dominant = structurally_dominant_root(self.root_cause_candidates, self.problem)
         return {
             "problem": self.problem,
             "project_id": self.project_id,
+            "structurally_dominant_root_id": dominant.id if dominant else None,
             "root_cause_candidates": [{
                 "id": item.id,
                 "cause_kind": item.cause_kind.value,
@@ -257,7 +259,8 @@ class ProblemContext:
                 "completeness": item.completeness,
                 "score": item.score,
                 "allowed_repair_strategies": [
-                    strategy.value for strategy in compatible_strategies(item.cause_kind)
+                    strategy.value
+                    for strategy in compatible_strategies_for_root(item, self.causal_slice)
                 ],
                 "causal_targets": list(dict.fromkeys(
                     (node_lookup[node_id].path, node_lookup[node_id].symbol)
@@ -429,6 +432,7 @@ class DecisionReport:
     causal_slice: CausalSlice | None = None
     root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
     repair_strategies: tuple[RepairStrategy, ...] = ()
+    root_cause_selections: tuple[RootCauseSelection, ...] = ()
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -440,6 +444,7 @@ class DecisionReport:
         object.__setattr__(self, "rejected_candidates", tuple(self.rejected_candidates))
         object.__setattr__(self, "root_cause_candidates", tuple(self.root_cause_candidates))
         object.__setattr__(self, "repair_strategies", tuple(self.repair_strategies))
+        object.__setattr__(self, "root_cause_selections", tuple(self.root_cause_selections))
         if len(self.hypotheses) > 3 or len(self.candidates) > 3:
             raise ValueError("predictive reports are limited to three hypotheses and candidates")
         candidate_ids = {item.id for item in self.candidates}
@@ -455,7 +460,7 @@ class DecisionReport:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": 3,
+            "schema_version": 4,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
             "candidates": [item.as_dict() for item in self.candidates],
@@ -471,6 +476,7 @@ class DecisionReport:
             "causal_slice": self.causal_slice.as_dict() if self.causal_slice else None,
             "root_cause_candidates": [item.as_dict() for item in self.root_cause_candidates],
             "repair_strategies": [item.as_dict() for item in self.repair_strategies],
+            "root_cause_selections": [item.as_dict() for item in self.root_cause_selections],
             "dry_run": self.dry_run,
             "execution_authorized": self.execution_authorized,
         }

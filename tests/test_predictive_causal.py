@@ -7,8 +7,11 @@ from tern.orchestrator.predictive.causal import (
     CausalEdgeKind,
     RepairStrategyKind,
     RootCauseKind,
+    RootSelectionReason,
+    compatible_strategies_for_root,
     repair_locality,
     strategy_compatible,
+    structurally_dominant_root,
 )
 from tern.orchestrator.predictive.evaluation import (
     CORPUS_ROOT,
@@ -93,8 +96,51 @@ def test_import_frame_and_guarded_raise_create_typed_roots():
 def test_method_receiver_flows_back_to_the_function_parameter():
     context = _context("PD-005")
 
-    assert context.root_cause_candidates[0].cause_kind is RootCauseKind.ARGUMENT_BINDING
-    assert context.root_cause_candidates[0].origin_symbol == "user"
+    assert any(
+        root.origin_path == "pkg/models.py"
+        and root.cause_kind is RootCauseKind.NULL_FLOW
+        for root in context.root_cause_candidates
+    )
+    assert CausalEdgeKind.READ_FROM_ATTRIBUTE in {
+        edge.kind for edge in context.causal_slice.edges
+    }
+
+
+def test_attribute_assignment_propagates_to_external_receiver():
+    context = _context("PD-002")
+
+    assert any(
+        root.origin_path == "pkg/orders.py"
+        and root.cause_kind is RootCauseKind.NULL_FLOW
+        for root in context.root_cause_candidates
+    )
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.origin_path == "pkg/orders.py" and item.cause_kind is RootCauseKind.NULL_FLOW
+    )
+    assert RepairStrategyKind.CORRECT_RETURN_VALUE not in compatible_strategies_for_root(
+        root, context.causal_slice
+    )
+
+
+def test_null_return_keeps_return_value_repair_compatible():
+    context = _context("PC3D-001")
+    root = context.root_cause_candidates[0]
+
+    assert RepairStrategyKind.CORRECT_RETURN_VALUE in compatible_strategies_for_root(
+        root, context.causal_slice
+    )
+
+
+def test_explicit_return_contract_can_dominate_failure_site():
+    context = _context("PD-019")
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
+    assert dominant.origin_symbol == "find_user"
 
 
 def test_failure_site_and_root_origin_are_distinct():
@@ -144,13 +190,37 @@ def test_reasoner_protocol_is_compact_single_call_and_contains_no_raw_source_inj
     for messages, kwargs in reasoner.calls:
         payload = json.loads(messages[-1]["content"])
         serialized = json.dumps(payload).casefold()
-        assert set(payload) == {"problem", "project_id", "root_cause_candidates"}
+        assert set(payload) == {
+            "problem",
+            "project_id",
+            "root_cause_candidates",
+            "structurally_dominant_root_id",
+        }
         assert "evidence_ledger" not in payload
         assert "ignore all previous instructions" not in serialized
         assert "system message" not in serialized
         assert "delete database" not in serialized
         assert kwargs["temperature"] == 0.0
         assert kwargs["max_tokens"] <= 650
+
+
+def test_reasoner_schema_requires_closed_comparative_reason_codes():
+    context = _context("PD-019")
+
+    class Recorder:
+        def chat(self, _messages, **kwargs):
+            schema = kwargs["response_format"]["json_schema"]["schema"]
+            item = schema["properties"]["selections"]["items"]
+            assert set(item["properties"]["selection_reason"]["enum"]) == {
+                item.value for item in RootSelectionReason
+            }
+            assert "rejected" in item["required"]
+            assert item["properties"]["root_cause_id"]["enum"] == [
+                context.reasoning_payload()["structurally_dominant_root_id"]
+            ]
+            return {"choices": [{"message": {"content": '{"selections": []}'}}]}
+
+    PredictiveAnalyzer(Recorder()).analyze_with_diagnostics(context)
 
 
 def test_holdout_v3_integrity_is_frozen_in_manifest():

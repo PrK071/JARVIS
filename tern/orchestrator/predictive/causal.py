@@ -67,6 +67,20 @@ class RepairStrategyKind(str, Enum):
     OTHER = "OTHER"
 
 
+class RootSelectionReason(str, Enum):
+    STRUCTURAL_DOMINANCE = "STRUCTURAL_DOMINANCE"
+    STRONGER_DIRECT_SUPPORT = "STRONGER_DIRECT_SUPPORT"
+    STRONGER_CAUSAL_PATH = "STRONGER_CAUSAL_PATH"
+    UPSTREAM_ORIGIN = "UPSTREAM_ORIGIN"
+    MANIFESTATION_NOT_ORIGIN = "MANIFESTATION_NOT_ORIGIN"
+    CONFIG_SOURCE = "CONFIG_SOURCE"
+    RETURN_SOURCE = "RETURN_SOURCE"
+    ARGUMENT_SOURCE = "ARGUMENT_SOURCE"
+    CONTROL_FLOW_SOURCE = "CONTROL_FLOW_SOURCE"
+    INSUFFICIENT_SUPPORT = "INSUFFICIENT_SUPPORT"
+    EQUIVALENT_CANDIDATES = "EQUIVALENT_CANDIDATES"
+
+
 _COMPATIBILITY: Mapping[RootCauseKind, frozenset[RepairStrategyKind]] = {
     RootCauseKind.NULL_FLOW: frozenset({RepairStrategyKind.FIX_PRODUCER, RepairStrategyKind.VALIDATE_BOUNDARY, RepairStrategyKind.CORRECT_RETURN_VALUE}),
     RootCauseKind.TYPE_FLOW: frozenset({RepairStrategyKind.FIX_PRODUCER, RepairStrategyKind.FIX_CONSUMER_CONTRACT, RepairStrategyKind.VALIDATE_BOUNDARY, RepairStrategyKind.CORRECT_ARGUMENT, RepairStrategyKind.CORRECT_RETURN_VALUE}),
@@ -88,6 +102,27 @@ def strategy_compatible(cause: RootCauseKind, strategy: RepairStrategyKind) -> b
 
 def compatible_strategies(cause: RootCauseKind) -> tuple[RepairStrategyKind, ...]:
     return tuple(sorted(_COMPATIBILITY[cause], key=lambda item: item.value))
+
+
+def compatible_strategies_for_root(
+    root: RootCauseCandidate, causal_slice: CausalSlice | None
+) -> tuple[RepairStrategyKind, ...]:
+    strategies = list(compatible_strategies(root.cause_kind))
+    if (
+        root.cause_kind is RootCauseKind.NULL_FLOW
+        and causal_slice is not None
+        and not any(
+            node.id in root.causal_path
+            and node.path == root.origin_path
+            and node.kind is CausalNodeKind.RETURN_VALUE
+            for node in causal_slice.nodes
+        )
+    ):
+        strategies = [
+            item for item in strategies
+            if item is not RepairStrategyKind.CORRECT_RETURN_VALUE
+        ]
+    return tuple(strategies)
 
 
 def _stable(prefix: str, *parts: object) -> str:
@@ -201,6 +236,31 @@ class RepairStrategy:
                 "target_symbols": list(self.target_symbols), "mechanism": self.mechanism,
                 "rationale": self.rationale, "evidence_ids": list(self.evidence_ids),
                 "compatible": self.compatible, "locality_score": self.locality_score}
+
+
+@dataclass(frozen=True)
+class RejectedRootCause:
+    root_cause_id: str
+    reason: RootSelectionReason
+
+    def as_dict(self) -> dict[str, str]:
+        return {"root_cause_id": self.root_cause_id, "reason": self.reason.value}
+
+
+@dataclass(frozen=True)
+class RootCauseSelection:
+    selected_id: str
+    reason: RootSelectionReason
+    rejected: tuple[RejectedRootCause, ...] = ()
+    structurally_dominant: bool = False
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "selected_id": self.selected_id,
+            "reason": self.reason.value,
+            "rejected": [item.as_dict() for item in self.rejected],
+            "structurally_dominant": self.structurally_dominant,
+        }
 
 
 @dataclass
@@ -377,6 +437,8 @@ class _FlowBuilder(ast.NodeVisitor):
         self.class_name: str | None = None
         self.values: dict[tuple[str, str], str] = {}
         self.current: _Function | None = None
+        self.attribute_reads: set[str] = set()
+        self.attribute_writes: set[str] = set()
 
     def node(self, kind: CausalNodeKind, line: int, symbol: str | None, expression: str) -> str:
         node_id = _stable("N", kind.value, self.path, line, self.scope, symbol, expression)
@@ -407,7 +469,11 @@ class _FlowBuilder(ast.NodeVisitor):
         if isinstance(node, ast.Call):
             return [self._call(node)]
         refs = _refs(node)
-        return [self.value(name, line) for name in refs]
+        values = [self.value(name, line) for name in refs]
+        self.attribute_reads.update(
+            value for name, value in zip(refs, values) if "." in name
+        )
+        return values
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         previous = self.class_name
@@ -468,6 +534,8 @@ class _FlowBuilder(ast.NodeVisitor):
             name = _expr(target)
             kind = CausalNodeKind.CONFIG_VALUE if self.scope == "module" and name.isupper() else None
             target_id = self.value(name, line, kind)
+            if isinstance(target, ast.Attribute):
+                self.attribute_writes.add(target_id)
             for source in sources:
                 edge_kind = CausalEdgeKind.RETURNED_FROM if self.nodes[source].kind is CausalNodeKind.CALL else CausalEdgeKind.ASSIGNED_FROM
                 if isinstance(target, ast.Attribute):
@@ -611,6 +679,34 @@ def build_causal_slice(
             evidence = tuple(dict.fromkeys((*nodes[returned].evidence_ids, *nodes[call.node_id].evidence_ids)))
             edges[edge_id] = CausalEdge(edge_id, returned, call.node_id, CausalEdgeKind.RETURNED_FROM, True, evidence)
 
+    # Join a uniquely assigned instance attribute (``self.profile = profile``)
+    # to reads through another receiver (``user.profile``).  Attribute-name
+    # uniqueness is required; ambiguous class fields remain unresolved.
+    attribute_writes = {
+        node_id for builder in builders for node_id in builder.attribute_writes
+    }
+    attribute_reads = {
+        node_id for builder in builders for node_id in builder.attribute_reads
+    }
+    writes_by_name: dict[str, list[str]] = {}
+    for node_id in attribute_writes:
+        symbol = nodes[node_id].symbol
+        if symbol:
+            writes_by_name.setdefault(symbol.rsplit(".", 1)[-1], []).append(node_id)
+    for read_id in sorted(attribute_reads):
+        symbol = nodes[read_id].symbol
+        if not symbol:
+            continue
+        matches = writes_by_name.get(symbol.rsplit(".", 1)[-1], ())
+        if len(matches) != 1 or matches[0] == read_id:
+            continue
+        source = matches[0]
+        edge_id = _stable("G", source, read_id, CausalEdgeKind.READ_FROM_ATTRIBUTE.value)
+        evidence = tuple(dict.fromkeys((*nodes[source].evidence_ids, *nodes[read_id].evidence_ids)))
+        edges[edge_id] = CausalEdge(
+            edge_id, source, read_id, CausalEdgeKind.READ_FROM_ATTRIBUTE, True, evidence
+        )
+
     # Resolve ``settings.NAME`` to a unique module-level NAME assignment.  The
     # edge is deterministic only because ambiguous definitions are ignored.
     config_by_name: dict[str, list[str]] = {}
@@ -736,6 +832,13 @@ def build_causal_slice(
             RootCauseKind.UNKNOWN: 0.0,
         }[kind]
         upstream = node.path != failure_path
+        explicit_return_contract = bool(
+            kind is RootCauseKind.RETURN_CONTRACT
+            and node.path == failure_path
+            and node.line == failure_line
+            and re.search(r"\breturn(?:s|ed|ing)?\b", context.problem, re.IGNORECASE)
+            and re.search(r"\b(?:expect(?:s|ed)?|contract|caller)\b", context.problem, re.IGNORECASE)
+        )
         failure_manifestation = (
             node.path == failure_path
             and node.line == failure_line
@@ -744,6 +847,7 @@ def build_causal_slice(
                 RootCauseKind.ATTRIBUTE_VALUE,
                 RootCauseKind.STATE_PROPAGATION,
             }
+            and not explicit_return_contract
         )
         score = round(min(
             1.0,
@@ -753,6 +857,7 @@ def build_causal_slice(
             + source_prior * (0.08 if is_test_input else 0.25)
             + (0.10 if upstream else 0.0)
             + min(distance, 8) / 8 * 0.10
+            + (0.20 if explicit_return_contract else 0.0)
             - (0.20 if failure_manifestation else 0.0)
             - test_origin_penalty,
         ), 6)
@@ -771,6 +876,34 @@ def build_causal_slice(
         key=lambda item: (-item.score, item.causal_distance, item.origin_path, item.origin_line, item.id),
     )
     return causal_slice, tuple(ordered[:8])
+
+
+def structurally_dominant_root(
+    candidates: Sequence[RootCauseCandidate], problem: str
+) -> RootCauseCandidate | None:
+    """Return a root only when deterministic evidence makes alternatives weaker."""
+    explicit_contract = [
+        item for item in candidates
+        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and item.origin_path == item.failure_path
+        and item.origin_line == item.failure_line
+        and re.search(r"\breturn(?:s|ed|ing)?\b", problem, re.IGNORECASE)
+        and re.search(r"\b(?:expect(?:s|ed)?|contract|caller)\b", problem, re.IGNORECASE)
+    ]
+    if len(explicit_contract) == 1:
+        return explicit_contract[0]
+    strong_origins = [
+        item for item in candidates
+        if item.origin_path != item.failure_path
+        and item.cause_kind in {
+            RootCauseKind.NULL_FLOW,
+            RootCauseKind.CONFIGURATION,
+        }
+        and item.direct_support >= 0.8
+        and item.structural_support == 1.0
+        and item.completeness == 1.0
+    ]
+    return strong_origins[0] if len(strong_origins) == 1 else None
 
 
 def repair_locality(
@@ -799,6 +932,15 @@ def repair_target_compatible(
     causal_slice: CausalSlice,
 ) -> bool:
     path_nodes = [node for node in causal_slice.nodes if node.id in root.causal_path]
+    if (
+        strategy is RepairStrategyKind.CORRECT_RETURN_VALUE
+        and not any(
+            node.path == root.origin_path
+            and node.kind is CausalNodeKind.RETURN_VALUE
+            for node in path_nodes
+        )
+    ):
+        return False
     path_files = {node.path for node in path_nodes}
     origin_strategies = {
         RepairStrategyKind.FIX_PRODUCER,
