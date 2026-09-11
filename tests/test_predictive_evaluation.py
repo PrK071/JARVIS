@@ -56,18 +56,23 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     holdout_v2 = load_predictive_cases(split="historical_holdout_v2")
     holdout_v2_alias = load_predictive_cases(split="holdout_v2")
     holdout_v3 = load_predictive_cases(split="holdout_v3")
+    historical_holdout_v3 = load_predictive_cases(split="historical_holdout_v3")
+    holdout_v4 = load_predictive_cases(split="holdout_v4")
 
-    assert len(all_cases) == 76
+    assert len(all_cases) == 94
     assert len(development) == 42
     assert len(holdout) == 10
     assert len(holdout_v2) == 12
     assert holdout_v2_alias == holdout_v2
     assert len(holdout_v3) == 12
+    assert historical_holdout_v3 == holdout_v3
+    assert len(holdout_v4) == 18
     assert [case.id for case in all_cases] == sorted(case.id for case in all_cases)
     assert {case.split for case in development} == {"development"}
     assert {case.split for case in holdout} == {"historical_holdout_v1"}
     assert {case.split for case in holdout_v2} == {"historical_holdout_v2"}
     assert {case.split for case in holdout_v3} == {"holdout_v3"}
+    assert {case.split for case in holdout_v4} == {"holdout_v4"}
 
 
 def test_holdout_v2_matches_sealed_manifest_hash():
@@ -75,6 +80,7 @@ def test_holdout_v2_matches_sealed_manifest_hash():
 
     assert predictive_corpus_hash(CORPUS_ROOT, split="historical_holdout_v2") == manifest["historical_holdout_v2_sha256"]
     assert predictive_corpus_hash(CORPUS_ROOT, split="holdout_v3") == manifest["holdout_v3_sha256"]
+    assert predictive_corpus_hash(CORPUS_ROOT, split="holdout_v4") == manifest["holdout_v4_sha256"]
 
 
 def test_corpus_rejects_duplicate_case_ids(tmp_path):

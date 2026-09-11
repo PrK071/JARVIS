@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis-predictive-benchmark-v4",
+  "title": "Predictive benchmark v4 adjudication",
+  "type": "object",
+  "required": [
+    "case_id",
+    "status",
+    "failure_site",
+    "acceptable_root_causes",
+    "required_causal_edges",
+    "optional_causal_edges",
+    "acceptable_repairs",
+    "acceptable_repair_strategies",
+    "preferred_repair_strategies",
+    "acceptable_target_files",
+    "acceptable_target_symbols",
+    "forbidden_strategies",
+    "abstention_expected",
+    "notes",
+    "legacy_expectation"
+  ],
+  "properties": {
+    "case_id": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": ["CANONICAL", "MULTIPLE_VALID_ANSWERS", "AMBIGUOUS", "INCOMPLETE", "INVALID"]
+    },
+    "failure_site": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["path", "line"],
+          "properties": {
+            "path": {"type": "string"},
+            "symbol": {"type": ["string", "null"]},
+            "line": {"type": "integer", "minimum": 1}
+          }
+        }
+      ]
+    },
+    "acceptable_root_causes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "symbol", "cause_kind", "evidence", "preferred"]
+      }
+    },
+    "acceptable_repairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["strategy", "target_files", "target_symbols", "preferred"]
+      }
+    },
+    "abstention_expected": {"type": "boolean"}
+  }
+}

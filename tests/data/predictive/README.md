@@ -1,4 +1,8 @@
-# Predictive evaluation corpus v3
+# Predictive evaluation corpus v4
+
+The v3 corpus and all historical reports remain intact. Version 4 adds a
+structural adjudication overlay under `v4/` and a sealed `holdout_v4`. See
+`v4/README.md` for validity-versus-preference metrics and status semantics.
 
 This versioned corpus measures the Predictive Decision pipeline by layer. It
 contains tiny reproducible Python repositories and deterministic ground truth;
@@ -14,6 +18,8 @@ no LLM judge participates in a stage gate.
 - `holdout_v3`: 12 new causal-flow cases, sealed before causal tuning and run
   live exactly once after development is frozen. Its hash covers the matching
   case JSONL and every file in referenced fixture directories.
+- `holdout_v4`: 18 new structurally adjudicated cases, sealed before any v4
+  selector tuning. Its hash also covers the adjudication file.
 
 The canonical SHA-256 and hash scope are recorded in `manifest.json`. Corpus
 loading fails if the sealed material changes.

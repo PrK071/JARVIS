@@ -27,6 +27,7 @@ from .predictive.evaluation import (
     format_predictive_evaluation,
     load_predictive_cases,
 )
+from .predictive.benchmark_v4 import evaluate_predictive_cases_v4, format_benchmark_v4
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -752,10 +753,19 @@ def build_parser() -> argparse.ArgumentParser:
             "historical_holdout_v2",
             "holdout_v2",
             "holdout_v3",
+            "historical_holdout_v3",
+            "holdout_v4",
         ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)
+    predictive_eval.add_argument(
+        "--benchmark-version",
+        choices=(3, 4),
+        type=int,
+        default=3,
+        help="v4 usa adjudicacao causal canonica; v3 preserva metricas historicas",
+    )
     predictive_eval.add_argument(
         "--limit", type=int, default=None, help="limita casos para smoke live explícito"
     )
@@ -1089,12 +1099,21 @@ def main(argv: list[str] | None = None) -> int:
             if args.mode == "live":
                 manager.ensure_llama_server(240)
                 reasoner = LlamaClient(settings.base_url, settings.timeout)
-            report = evaluate_predictive_cases(
-                cases,
-                mode=args.mode,
-                reasoner=reasoner,
-                runs=args.runs,
-            )
+            if args.benchmark_version == 4:
+                report = evaluate_predictive_cases_v4(
+                    cases,
+                    corpus_root=args.corpus,
+                    mode=args.mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
+            else:
+                report = evaluate_predictive_cases(
+                    cases,
+                    mode=args.mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
             if args.output is not None:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_text(
@@ -1104,7 +1123,11 @@ def main(argv: list[str] | None = None) -> int:
             if args.json_output:
                 _print(report)
             else:
-                print(format_predictive_evaluation(report))
+                print(
+                    format_benchmark_v4(report)
+                    if args.benchmark_version == 4
+                    else format_predictive_evaluation(report)
+                )
             return 0 if report["safety"]["passed"] else 1
         elif args.command == "agent-routing-eval":
             split = None if args.split == "all" else args.split

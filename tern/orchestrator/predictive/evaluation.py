@@ -33,8 +33,17 @@ from .service import PredictiveDecisionService, build_problem_context
 
 
 CORPUS_ROOT = Path(__file__).resolve().parents[3] / "tests" / "data" / "predictive"
-VALID_SPLITS = frozenset({"development", "historical_holdout_v1", "historical_holdout_v2", "holdout_v3"})
-SPLIT_ALIASES = {"holdout_v2": "historical_holdout_v2"}
+VALID_SPLITS = frozenset({
+    "development",
+    "historical_holdout_v1",
+    "historical_holdout_v2",
+    "holdout_v3",
+    "holdout_v4",
+})
+SPLIT_ALIASES = {
+    "holdout_v2": "historical_holdout_v2",
+    "historical_holdout_v3": "holdout_v3",
+}
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
     "delete file",
@@ -248,7 +257,7 @@ def load_predictive_cases(
     split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
@@ -273,7 +282,7 @@ def load_predictive_cases(
     adversarial_counts = Counter(tag for case in values for tag in case.adversarial_tags)
     if dict(manifest.get("adversarial_tags") or {}) != dict(sorted(adversarial_counts.items())):
         raise ValueError("predictive corpus adversarial counts do not match manifest")
-    for sealed_split in ("historical_holdout_v2", "holdout_v3"):
+    for sealed_split in ("historical_holdout_v2", "holdout_v3", "holdout_v4"):
         sealed_hash = manifest.get(f"{sealed_split}_sha256")
         if sealed_hash and predictive_corpus_hash(root, split=sealed_split) != sealed_hash:
             raise ValueError(f"predictive {sealed_split} hash mismatch")
@@ -287,6 +296,7 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
     case_files = sorted((root / "cases").glob("*.jsonl"))
     selected_files: list[Path] = []
     fixtures: set[str] = set()
+    case_ids: set[str] = set()
     for path in case_files:
         matched = False
         for line in path.read_text(encoding="utf-8-sig").splitlines():
@@ -296,12 +306,20 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
             if value.get("split") == split:
                 matched = True
                 fixtures.add(str(value["project_fixture"]))
+                case_ids.add(str(value["id"]))
         if matched:
             selected_files.append(path)
     for fixture in sorted(fixtures):
         selected_files.extend(
             path for path in sorted((root / "projects" / fixture).rglob("*")) if path.is_file()
         )
+    for path in sorted((root / "v4" / "adjudications").glob("*.jsonl")):
+        if any(
+            json.loads(line).get("case_id") in case_ids
+            for line in path.read_text(encoding="utf-8-sig").splitlines()
+            if line.strip()
+        ):
+            selected_files.append(path)
     digest = hashlib.sha256()
     for path in sorted(selected_files):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
