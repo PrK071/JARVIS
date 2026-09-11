@@ -14,39 +14,21 @@ def response(value):
 class FakeReasoner:
     def chat(self, messages, **_kwargs):
         payload = json.loads(messages[-1]["content"])
-        atoms = payload["evidence_ledger"]["atoms"]
-        atom = next(item for item in atoms if item["path"] == "pkg/calc.py" and item["kind"] == "RETURN_STATEMENT")
+        root = next(
+            item for item in payload["root_cause_candidates"]
+            if item["origin_path"] == "pkg/calc.py" and item["cause_kind"] == "RETURN_CONTRACT"
+        )
         return response(
-                    {
-                        "hypotheses": [
-                            {
-                                "id": "H1",
-                                "statement": "add receives None",
-                                "confidence_level": "HIGH",
-                                "claims": [
-                                    {"statement": atom["statement"], "claim_type": "FACT", "evidence_ids": [atom["id"]]},
-                                    {"statement": "an operand may be None", "claim_type": "INFERENCE", "evidence_ids": [atom["id"]]},
-                                ],
-                            }
-                        ],
-                        "candidates": [
-                            {
-                                "id": "C1",
-                                "hypothesis_id": "H1",
-                                "action": "Validate operands before addition",
-                                "expected_outcome": "None is rejected",
-                                "change_kind": "VALIDATION",
-                                "target_files": ["pkg/calc.py"],
-                                "target_symbols": ["add"],
-                                "mechanism": "GUARD_CLAUSE",
-                                "evidence_ids": [atom["id"]],
-                                "required_tests": ["tests/test_calc.py"],
-                                "risk_level": "LOW",
-                                "cost_level": "LOW",
-                                "reversibility_level": "HIGH",
-                            }
-                        ]
-                    }
+            {"selections": [{
+                "root_cause_id": root["id"],
+                "claim": "an operand may be None",
+                "strategies": [{
+                    "kind": "VALIDATE_BOUNDARY",
+                    "target_file": "pkg/calc.py",
+                    "target_symbol": "add",
+                    "rationale": "Validate operands before addition",
+                }],
+            }]}
         )
 
 
@@ -85,7 +67,7 @@ def test_service_reuses_project_intelligence_and_never_mutates_project(tmp_path)
 
     assert report.insufficient_evidence is False
     assert report.recommended_candidate_id == "C1"
-    assert report.hypotheses[0].evidence_refs == ("pkg/calc.py:2-2",)
+    assert "pkg/calc.py:2-2" in report.hypotheses[0].evidence_refs
     assert report.requires_approval is True
     assert report.execution_authorized is False
     assert file_state(root) == before
@@ -131,8 +113,7 @@ def test_forbidden_candidate_is_rejected_and_never_recommended(tmp_path):
         def chat(self, messages, **kwargs):
             value = super().chat(messages, **kwargs)
             content = json.loads(value["choices"][0]["message"]["content"])
-            content["candidates"][0]["action"] = "Delete config.py and bypass validation"
-            content["candidates"][0]["expected_outcome"] = "Hide the error"
+            content["selections"][0]["strategies"][0]["rationale"] = "Delete config.py and bypass validation"
             return response(content)
 
     report = PredictiveDecisionService(
@@ -146,15 +127,16 @@ def test_forbidden_candidate_is_rejected_and_never_recommended(tmp_path):
     assert "FORBIDDEN_CANDIDATE" in report.rejected_candidates[0].rejection_reasons
 
 
-def test_predictive_json_v2_keeps_legacy_report_fields(tmp_path):
+def test_predictive_json_v3_keeps_legacy_report_fields(tmp_path):
     root = repository(tmp_path)
     report = PredictiveDecisionService(
         FakeReasoner(), path_policy=PathPolicy((root,))
     ).predict('File "pkg/calc.py", line 2\nTypeError', root).as_dict()
 
-    assert report["schema_version"] == 2
+    assert report["schema_version"] == 3
     assert {
         "problem", "hypotheses", "candidates", "recommended_candidate_id",
         "insufficient_evidence", "requires_approval",
     }.issubset(report)
+    assert {"causal_slice", "root_cause_candidates", "repair_strategies"}.issubset(report)
     assert report["execution_authorized"] is False

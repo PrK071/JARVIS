@@ -7,12 +7,14 @@ from .models import SolutionCandidate
 
 
 SCORE_WEIGHTS = {
-    "estimated_success_score": 0.35,
-    "evidence_score": 0.20,
-    "test_support_score": 0.15,
+    "root_cause_score": 0.25,
+    "repair_strategy_score": 0.20,
+    "evidence_score": 0.10,
+    "test_support_score": 0.10,
+    "repair_locality_score": 0.15,
     "reversibility_score": 0.10,
-    "risk_score": -0.15,
-    "cost_score": -0.05,
+    "risk_score": -0.07,
+    "cost_score": -0.03,
 }
 
 
@@ -20,9 +22,9 @@ def candidate_score(candidate: SolutionCandidate) -> float:
     """Return a normalized, deterministic comparative score."""
 
     raw = sum(getattr(candidate, name) * weight for name, weight in SCORE_WEIGHTS.items())
-    # The specified weighted range is [-0.20, 0.80]. Map it onto [0, 1]
+    # The causal weighted range is [-0.10, 0.90]. Map it onto [0, 1]
     # without hiding the formula or allowing a model to choose the final score.
-    return round(min(1.0, max(0.0, raw + 0.20)), 6)
+    return round(min(1.0, max(0.0, raw + 0.10)), 6)
 
 
 def explain_score(candidate: SolutionCandidate, score: float) -> str:
@@ -30,12 +32,14 @@ def explain_score(candidate: SolutionCandidate, score: float) -> str:
         name: getattr(candidate, name) * weight for name, weight in SCORE_WEIGHTS.items()
     }
     return (
-        f"score={score:.3f}; sucesso={contributions['estimated_success_score']:+.3f}; "
+        f"score={score:.3f}; causa={contributions['root_cause_score']:+.3f}; "
+        f"estrategia={contributions['repair_strategy_score']:+.3f}; "
         f"evidencia={contributions['evidence_score']:+.3f}; "
         f"testes={contributions['test_support_score']:+.3f}; "
+        f"localidade={contributions['repair_locality_score']:+.3f}; "
         f"reversibilidade={contributions['reversibility_score']:+.3f}; "
         f"risco={contributions['risk_score']:+.3f}; "
-        f"custo={contributions['cost_score']:+.3f}; normalizacao=+0.200"
+        f"custo={contributions['cost_score']:+.3f}; normalizacao=+0.100"
     )
 
 

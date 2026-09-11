@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "kind": "pre-change historical baseline",
+  "source_report": "grounding-hardening-development-after.json",
+  "source_commit": "6e5d692b5abafd6491bb959d7b7c9939c89db657",
+  "split": "development",
+  "cases": 30,
+  "note": "Causal metrics are null because the pre-v3 pipeline had no causal slice or repair strategy layer.",
+  "metrics": {
+    "hypothesis_hit": 0.43333333333333335,
+    "causal_root_hit": null,
+    "solution_family_hit": 0.5333333333333333,
+    "repair_strategy_hit": null,
+    "ranking_hit": 0.43478260869565216,
+    "recommendation_precision": 0.45454545454545453,
+    "recommendation_coverage": 0.8148148148148148,
+    "unsupported_claim_rate": 0.0,
+    "evidence_support_precision": 0.7011153098109619,
+    "average_prompt_tokens_per_request": 1404.5185185185185,
+    "average_completion_tokens_per_request": 1419.9259259259259,
+    "average_qwen_latency_ms": 159487.41788889014
+  }
+}

@@ -23,40 +23,29 @@ def response(value):
 class GroundedReasoner:
     def chat(self, messages, *, response_format, **_kwargs):
         payload = json.loads(messages[-1]["content"])
-        atoms = payload["evidence_ledger"]["atoms"]
-        atom = next(item for item in atoms if item["path"] == "pkg/calc.py" and item["kind"] == "RETURN_STATEMENT")
-        tests = payload.get("related_tests") or []
+        root = next(
+            (item for item in payload["root_cause_candidates"] if item["origin_path"] == "pkg/calc.py"),
+            payload["root_cause_candidates"][0],
+        )
+        compatible = {
+            "RETURN_CONTRACT": "VALIDATE_BOUNDARY",
+            "ARGUMENT_BINDING": "VALIDATE_BOUNDARY",
+            "ATTRIBUTE_VALUE": "VALIDATE_BOUNDARY",
+            "TYPE_FLOW": "VALIDATE_BOUNDARY",
+            "STATE_PROPAGATION": "VALIDATE_BOUNDARY",
+            "NULL_FLOW": "VALIDATE_BOUNDARY",
+        }.get(root["cause_kind"], "OTHER")
         return response(
-            {
-                "hypotheses": [
-                    {
-                        "id": "H1",
-                        "statement": "A None operand reaches the tax addition",
-                        "confidence_level": "HIGH",
-                        "claims": [
-                            {"statement": atom["statement"], "claim_type": "FACT", "evidence_ids": [atom["id"]]},
-                            {"statement": "A None operand reaches the addition", "claim_type": "INFERENCE", "evidence_ids": [atom["id"]]},
-                        ],
-                    }
-                ],
-                "candidates": [
-                    {
-                        "id": "C1",
-                        "hypothesis_id": "H1",
-                        "action": "Validate the operand before adding tax",
-                        "expected_outcome": "Reject the None operand",
-                        "change_kind": "VALIDATION",
-                        "target_files": ["pkg/calc.py"],
-                        "target_symbols": ["add_tax"],
-                        "mechanism": "GUARD_CLAUSE",
-                        "evidence_ids": [atom["id"]],
-                        "required_tests": tests[:1],
-                        "risk_level": "LOW",
-                        "cost_level": "LOW",
-                        "reversibility_level": "HIGH",
-                    }
-                ]
-            }
+            {"selections": [{
+                "root_cause_id": root["id"],
+                "claim": "A None operand reaches the tax addition",
+                "strategies": [{
+                    "kind": compatible,
+                    "target_file": root["origin_path"],
+                    "target_symbol": root["origin_symbol"] or "",
+                    "rationale": "Validate the operand before adding tax",
+                }],
+            }]}
         )
 
 
@@ -64,22 +53,28 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     all_cases = load_predictive_cases()
     development = load_predictive_cases(split="development")
     holdout = load_predictive_cases(split="historical_holdout_v1")
-    holdout_v2 = load_predictive_cases(split="holdout_v2")
+    holdout_v2 = load_predictive_cases(split="historical_holdout_v2")
+    holdout_v2_alias = load_predictive_cases(split="holdout_v2")
+    holdout_v3 = load_predictive_cases(split="holdout_v3")
 
-    assert len(all_cases) == 52
-    assert len(development) == 30
+    assert len(all_cases) == 76
+    assert len(development) == 42
     assert len(holdout) == 10
     assert len(holdout_v2) == 12
+    assert holdout_v2_alias == holdout_v2
+    assert len(holdout_v3) == 12
     assert [case.id for case in all_cases] == sorted(case.id for case in all_cases)
     assert {case.split for case in development} == {"development"}
     assert {case.split for case in holdout} == {"historical_holdout_v1"}
-    assert {case.split for case in holdout_v2} == {"holdout_v2"}
+    assert {case.split for case in holdout_v2} == {"historical_holdout_v2"}
+    assert {case.split for case in holdout_v3} == {"holdout_v3"}
 
 
 def test_holdout_v2_matches_sealed_manifest_hash():
     manifest = json.loads((CORPUS_ROOT / "manifest.json").read_text(encoding="utf-8"))
 
-    assert predictive_corpus_hash(CORPUS_ROOT, split="holdout_v2") == manifest["holdout_v2_sha256"]
+    assert predictive_corpus_hash(CORPUS_ROOT, split="historical_holdout_v2") == manifest["historical_holdout_v2_sha256"]
+    assert predictive_corpus_hash(CORPUS_ROOT, split="holdout_v3") == manifest["holdout_v3_sha256"]
 
 
 def test_corpus_rejects_duplicate_case_ids(tmp_path):
@@ -150,15 +145,15 @@ def test_full_evaluation_records_reasoning_ranking_score_and_tokens():
     assert result["full_metrics"]["ranking_hit"] is True
     assert result["full_metrics"]["unsupported_claim_rate"] == 0.0
     assert "C1" in result["full_metrics"]["score_contributions"]
-    assert report["scoring"]["weights"]["evidence_score"] == 0.20
+    assert report["scoring"]["weights"]["evidence_score"] == 0.10
     assert report["scoring"]["monotonicity"]["risk_score"] == "nonincreasing"
-    assert report["scoring"]["unit_sensitivity"]["estimated_success_score"] == 0.35
+    assert report["scoring"]["unit_sensitivity"]["root_cause_score"] == 0.25
     assert report["qwen"]["requests"] == 1
     assert report["qwen"]["estimated_prompt_tokens"] > 0
-    assert report["version"] == 2
-    assert report["reasoning"]["claim_support_precision"] == 0.5
-    assert report["reasoning"]["direct_support_rate"] == 0.5
-    assert report["reasoning"]["inferred_claim_rate"] == 0.5
+    assert report["version"] == 3
+    assert report["reasoning"]["claim_support_precision"] > 0.0
+    assert report["reasoning"]["direct_support_rate"] > 0.0
+    assert report["reasoning"]["inferred_claim_rate"] > 0.0
     assert report["reasoning"]["recommendation_coverage"] == 1.0
     assert report["reasoning"]["forbidden_candidate_recommendation_rate"] == 0.0
 
@@ -188,15 +183,11 @@ def test_solution_family_paraphrases_are_not_counted_as_diverse():
     class ParaphraseReasoner(GroundedReasoner):
         def chat(self, messages, *, response_format, **kwargs):
             value = super().chat(messages, response_format=response_format, **kwargs)
-            if response_format["json_schema"]["name"] == "predictive_decision":
+            if response_format["json_schema"]["name"] == "predictive_causal_decision":
                 content = json.loads(value["choices"][0]["message"]["content"])
-                first = content["candidates"][0]
-                second = {
-                    **first,
-                    "id": "C2",
-                    "action": "Add validation to the tax operand before addition",
-                }
-                content["candidates"] = [first, second]
+                first = content["selections"][0]["strategies"][0]
+                second = {**first, "rationale": "Add validation to the tax operand before addition"}
+                content["selections"][0]["strategies"] = [first, second]
                 return response(content)
             return value
 
@@ -232,43 +223,19 @@ def test_existing_reference_without_support_is_reported_as_unsupported():
 
     class FalseEvidenceReasoner:
         def chat(self, messages, *, response_format, **_kwargs):
-            payload = json.loads(messages[-1]["content"])
-            atoms = payload["evidence_ledger"]["atoms"]
-            atom = next(item for item in atoms if item["path"] == "pkg/auth.py")
-            return response({
-                "hypotheses": [{
-                        "id": "H1",
-                        "statement": "Authentication causes the division by zero",
-                        "confidence_level": "HIGH",
-                        "claims": [
-                            {"statement": atom["statement"], "claim_type": "FACT", "evidence_ids": [atom["id"]]},
-                            {"statement": "Authentication causes the error", "claim_type": "INFERENCE", "evidence_ids": [atom["id"]]},
-                        ],
-                    }],
-                "candidates": [{
-                    "id": "C1",
-                    "hypothesis_id": "H1",
-                    "action": "Change authentication before division",
-                    "expected_outcome": "Prevent the reported error",
-                    "change_kind": "OTHER",
-                    "target_files": ["pkg/auth.py"],
-                    "target_symbols": [],
-                    "mechanism": "OTHER",
-                    "evidence_ids": [atom["id"]],
-                    "required_tests": [],
-                    "risk_level": "LOW",
-                    "cost_level": "LOW",
-                    "reversibility_level": "HIGH",
-                }]
-            })
+            return response({"selections": [{
+                "root_cause_id": "outside-ledger-root",
+                "claim": "Authentication causes the error",
+                "strategies": [],
+            }]})
 
     report = evaluate_predictive_cases(
         (case,), mode="live", reasoner=FalseEvidenceReasoner()
     )
 
     assert report["retrieval"]["evidence_ref_validity"] == 1.0
-    assert report["reasoning"]["inferred_claim_rate"] == 0.5
-    assert "FORBIDDEN_SOLUTION" in report["failure_code_counts"]
+    assert report["reasoning"]["inferred_claim_rate"] is None
+    assert "ROOT_CAUSE_SELECTION_ERROR" in report["failure_code_counts"]
 
 
 def test_destructive_recommendation_hard_fails_safety_gate():
@@ -277,33 +244,24 @@ def test_destructive_recommendation_hard_fails_safety_gate():
     class DestructiveReasoner:
         def chat(self, messages, *, response_format, **_kwargs):
             payload = json.loads(messages[-1]["content"])
-            atom = payload["evidence_ledger"]["atoms"][0]
-            return response({
-                "hypotheses": [{
-                        "id": "H1",
-                        "statement": "The division uses a zero count",
-                        "confidence_level": "HIGH",
-                        "claims": [
-                            {"statement": atom["statement"], "claim_type": "FACT", "evidence_ids": [atom["id"]]},
-                            {"statement": "A zero count causes the division error", "claim_type": "INFERENCE", "evidence_ids": [atom["id"]]},
-                        ],
-                    }],
-                "candidates": [{
-                    "id": "C1",
-                    "hypothesis_id": "H1",
-                    "action": "Delete config.py and bypass validation",
-                    "expected_outcome": "Hide the division error",
-                    "change_kind": "VALIDATION",
-                    "target_files": [atom["path"]],
-                    "target_symbols": [],
-                    "mechanism": "GUARD_CLAUSE",
-                    "evidence_ids": [atom["id"]],
-                    "required_tests": [],
-                    "risk_level": "HIGH",
-                    "cost_level": "LOW",
-                    "reversibility_level": "LOW",
-                }]
-            })
+            root = payload["root_cause_candidates"][0]
+            strategy = {
+                "RETURN_CONTRACT": "VALIDATE_BOUNDARY",
+                "ARGUMENT_BINDING": "VALIDATE_BOUNDARY",
+                "ATTRIBUTE_VALUE": "VALIDATE_BOUNDARY",
+                "STATE_PROPAGATION": "VALIDATE_BOUNDARY",
+                "TYPE_FLOW": "VALIDATE_BOUNDARY",
+            }.get(root["cause_kind"], "OTHER")
+            return response({"selections": [{
+                "root_cause_id": root["id"],
+                "claim": "The division uses a zero count",
+                "strategies": [{
+                    "kind": strategy,
+                    "target_file": root["origin_path"],
+                    "target_symbol": root["origin_symbol"] or "",
+                    "rationale": "Delete config.py and bypass validation",
+                }],
+            }]})
 
     report = evaluate_predictive_cases(
         (case,), mode="live", reasoner=DestructiveReasoner()

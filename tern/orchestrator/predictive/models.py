@@ -3,7 +3,10 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .causal import CausalSlice, RepairStrategy, RootCauseCandidate
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -32,6 +35,12 @@ class PredictiveFailureReason(str, Enum):
     DUPLICATE_SOLUTION_FAMILY = "DUPLICATE_SOLUTION_FAMILY"
     FORBIDDEN_CANDIDATE = "FORBIDDEN_CANDIDATE"
     AMBIGUOUS_RANKING = "AMBIGUOUS_RANKING"
+    CAUSAL_SLICE_MISSED_ORIGIN = "CAUSAL_SLICE_MISSED_ORIGIN"
+    ROOT_CAUSE_CANDIDATE_MISSING = "ROOT_CAUSE_CANDIDATE_MISSING"
+    ROOT_CAUSE_SELECTION_ERROR = "ROOT_CAUSE_SELECTION_ERROR"
+    ROOT_CAUSE_AMBIGUOUS = "ROOT_CAUSE_AMBIGUOUS"
+    REPAIR_STRATEGY_ERROR = "REPAIR_STRATEGY_ERROR"
+    REPAIR_TARGET_ERROR = "REPAIR_TARGET_ERROR"
 
 
 class EvidenceKind(str, Enum):
@@ -201,6 +210,8 @@ class ProblemContext:
     related_tests: tuple[str, ...]
     test_relationships: tuple[tuple[str, str], ...] = ()
     evidence_ledger: EvidenceLedger = field(default_factory=EvidenceLedger)
+    causal_slice: CausalSlice | None = None
+    root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.problem.strip():
@@ -214,6 +225,7 @@ class ProblemContext:
             "test_relationships",
             tuple(dict.fromkeys((str(source), str(test)) for source, test in self.test_relationships)),
         )
+        object.__setattr__(self, "root_cause_candidates", tuple(self.root_cause_candidates))
 
     @property
     def evidence_refs(self) -> tuple[str, ...]:
@@ -224,16 +236,35 @@ class ProblemContext:
         return any(item.strength in {"HARD", "STRONG"} for item in self.evidence)
 
     def reasoning_payload(self) -> dict[str, Any]:
+        from .causal import compatible_strategies
+
+        node_lookup = {
+            node.id: node for node in self.causal_slice.nodes
+        } if self.causal_slice else {}
         return {
             "problem": self.problem,
             "project_id": self.project_id,
-            "evidence_ledger": self.evidence_ledger.as_dict(include_snippets=True),
-            "related_symbols": list(self.related_symbols),
-            "related_tests": list(self.related_tests),
-            "test_relationships": [
-                {"production_file": source, "test_file": test}
-                for source, test in self.test_relationships
-            ],
+            "root_cause_candidates": [{
+                "id": item.id,
+                "cause_kind": item.cause_kind.value,
+                "origin_path": item.origin_path,
+                "origin_symbol": item.origin_symbol,
+                "origin_line": item.origin_line,
+                "failure_path": item.failure_path,
+                "causal_flow": item.statement,
+                "direct_support": item.direct_support,
+                "structural_support": item.structural_support,
+                "completeness": item.completeness,
+                "score": item.score,
+                "allowed_repair_strategies": [
+                    strategy.value for strategy in compatible_strategies(item.cause_kind)
+                ],
+                "causal_targets": list(dict.fromkeys(
+                    (node_lookup[node_id].path, node_lookup[node_id].symbol)
+                    for node_id in item.causal_path
+                    if node_id in node_lookup
+                )),
+            } for item in self.root_cause_candidates],
         }
 
 
@@ -244,6 +275,8 @@ class Hypothesis:
     confidence: float
     evidence_refs: tuple[str, ...]
     claims: tuple[HypothesisClaim, ...] = ()
+    root_cause_id: str | None = None
+    causal_path: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.id.strip() or not self.statement.strip():
@@ -251,6 +284,7 @@ class Hypothesis:
         object.__setattr__(self, "confidence", _bounded_score("confidence", self.confidence))
         object.__setattr__(self, "evidence_refs", _unique_strings(self.evidence_refs))
         object.__setattr__(self, "claims", tuple(self.claims))
+        object.__setattr__(self, "causal_path", _unique_strings(self.causal_path))
         if not self.evidence_refs:
             raise ValueError("hypothesis must reference concrete evidence")
 
@@ -261,6 +295,8 @@ class Hypothesis:
             "confidence": self.confidence,
             "evidence_refs": list(self.evidence_refs),
             "claims": [claim.as_dict() for claim in self.claims],
+            "root_cause_id": self.root_cause_id,
+            "causal_path": list(self.causal_path),
         }
 
     @property
@@ -296,6 +332,11 @@ class SolutionCandidate:
     test_support_level: TestSupportLevel = TestSupportLevel.NONE
     eligible: bool = True
     rejection_reasons: tuple[str, ...] = ()
+    root_cause_id: str | None = None
+    strategy_kind: str = "OTHER"
+    root_cause_score: float = 0.0
+    repair_locality_score: float = 0.0
+    repair_strategy_score: float = 0.0
 
     def __post_init__(self) -> None:
         if not all(
@@ -320,6 +361,9 @@ class SolutionCandidate:
             "confidence",
             "test_support_score",
             "ranking_score",
+            "root_cause_score",
+            "repair_locality_score",
+            "repair_strategy_score",
         ):
             object.__setattr__(self, name, _bounded_score(name, getattr(self, name)))
 
@@ -348,13 +392,24 @@ class SolutionCandidate:
             "test_support_level": self.test_support_level.value,
             "eligible": self.eligible,
             "rejection_reasons": list(self.rejection_reasons),
+            "root_cause_id": self.root_cause_id,
+            "strategy_kind": self.strategy_kind,
+            "root_cause_score": self.root_cause_score,
+            "repair_locality_score": self.repair_locality_score,
+            "repair_strategy_score": self.repair_strategy_score,
         }
 
     @property
     def solution_signature(self) -> str:
         symbols = ",".join(sorted(self.target_symbols))
         files = ",".join(sorted(self.target_files))
-        mechanism = " ".join(self.mechanism.casefold().split())
+        family = {
+            "FIX_PRODUCER": "PRODUCER_VALUE_FIX",
+            "CORRECT_RETURN_VALUE": "PRODUCER_VALUE_FIX",
+            "FIX_CONSUMER_CONTRACT": "BOUNDARY_CONTRACT",
+            "VALIDATE_BOUNDARY": "BOUNDARY_CONTRACT",
+        }.get(self.strategy_kind, self.strategy_kind)
+        mechanism = " ".join(family.casefold().split())
         return "|".join((self.change_kind.value, files, symbols, mechanism, self.hypothesis_id))
 
 
@@ -371,6 +426,9 @@ class DecisionReport:
     rejected_candidates: tuple[SolutionCandidate, ...] = ()
     ranking_margin: float | None = None
     ranking_ambiguous: bool = False
+    causal_slice: CausalSlice | None = None
+    root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
+    repair_strategies: tuple[RepairStrategy, ...] = ()
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -380,6 +438,8 @@ class DecisionReport:
         object.__setattr__(self, "candidates", tuple(self.candidates))
         object.__setattr__(self, "diagnostic_codes", _unique_strings(self.diagnostic_codes))
         object.__setattr__(self, "rejected_candidates", tuple(self.rejected_candidates))
+        object.__setattr__(self, "root_cause_candidates", tuple(self.root_cause_candidates))
+        object.__setattr__(self, "repair_strategies", tuple(self.repair_strategies))
         if len(self.hypotheses) > 3 or len(self.candidates) > 3:
             raise ValueError("predictive reports are limited to three hypotheses and candidates")
         candidate_ids = {item.id for item in self.candidates}
@@ -395,7 +455,7 @@ class DecisionReport:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
             "candidates": [item.as_dict() for item in self.candidates],
@@ -408,6 +468,9 @@ class DecisionReport:
             "rejected_candidates": [item.as_dict() for item in self.rejected_candidates],
             "ranking_margin": self.ranking_margin,
             "ranking_ambiguous": self.ranking_ambiguous,
+            "causal_slice": self.causal_slice.as_dict() if self.causal_slice else None,
+            "root_cause_candidates": [item.as_dict() for item in self.root_cause_candidates],
+            "repair_strategies": [item.as_dict() for item in self.repair_strategies],
             "dry_run": self.dry_run,
             "execution_authorized": self.execution_authorized,
         }

@@ -14,6 +14,7 @@ from ..project_intelligence_v2 import (
 )
 from ..security import PathPolicy
 from .analysis import PredictiveAnalyzer, StructuredReasoner
+from .causal import build_causal_slice, expand_context_for_causal_flow
 from .grounding import build_evidence_ledger
 from .models import (
     DecisionReport,
@@ -144,9 +145,18 @@ class PredictiveDecisionService:
         snapshot = ProjectIndexBuilderV2(root, path_policy=self.path_policy).build()
         selection = self.candidate_generator.generate(problem, snapshot)
         context = build_problem_context(problem, snapshot, selection, self.path_policy)
+        context = expand_context_for_causal_flow(context, snapshot, self.path_policy)
         context = replace(
             context,
             evidence_ledger=build_evidence_ledger(context, snapshot, self.path_policy),
+        )
+        causal_slice, root_causes = build_causal_slice(
+            context, snapshot, self.path_policy
+        )
+        context = replace(
+            context,
+            causal_slice=causal_slice,
+            root_cause_candidates=root_causes,
         )
         if not context.sufficient_evidence:
             return self._insufficient(problem, "Nenhuma evidência estrutural forte foi localizada.")
@@ -163,6 +173,9 @@ class PredictiveDecisionService:
                 failure_reason=analysis.failure_reason,
                 diagnostic_codes=analysis.diagnostic_codes,
                 rejected_candidates=analysis.rejected_candidates,
+                causal_slice=context.causal_slice,
+                root_cause_candidates=context.root_cause_candidates,
+                repair_strategies=analysis.repair_strategies,
             )
 
         policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
@@ -187,6 +200,9 @@ class PredictiveDecisionService:
                     (*analysis.diagnostic_codes, *(reason for item in rejected for reason in item.rejection_reasons))
                 )),
                 rejected_candidates=rejected,
+                causal_slice=context.causal_slice,
+                root_cause_candidates=context.root_cause_candidates,
+                repair_strategies=analysis.repair_strategies,
             )
         try:
             decision = ranking_decision(eligible)
@@ -218,6 +234,9 @@ class PredictiveDecisionService:
                 rejected_candidates=rejected,
                 ranking_margin=decision.margin,
                 ranking_ambiguous=True,
+                causal_slice=context.causal_slice,
+                root_cause_candidates=context.root_cause_candidates,
+                repair_strategies=analysis.repair_strategies,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -234,6 +253,9 @@ class PredictiveDecisionService:
             diagnostic_codes=analysis.diagnostic_codes,
             rejected_candidates=rejected,
             ranking_margin=decision.margin,
+            causal_slice=context.causal_slice,
+            root_cause_candidates=context.root_cause_candidates,
+            repair_strategies=analysis.repair_strategies,
         )
 
     @staticmethod
@@ -285,4 +307,10 @@ class PredictiveDecisionService:
             PredictiveFailureReason.DUPLICATE_SOLUTION_FAMILY: "As soluções pertencem à mesma família técnica.",
             PredictiveFailureReason.FORBIDDEN_CANDIDATE: "Todas as soluções candidatas violaram a política consultiva.",
             PredictiveFailureReason.AMBIGUOUS_RANKING: "Não há margem de evidência para distinguir os candidatos.",
+            PredictiveFailureReason.CAUSAL_SLICE_MISSED_ORIGIN: "O slice causal não localizou uma origem verificável.",
+            PredictiveFailureReason.ROOT_CAUSE_CANDIDATE_MISSING: "Nenhum candidato causal estrutural foi encontrado.",
+            PredictiveFailureReason.ROOT_CAUSE_SELECTION_ERROR: "O reasoner não selecionou uma causa causal válida.",
+            PredictiveFailureReason.ROOT_CAUSE_AMBIGUOUS: "As causas estruturais permanecem indistinguíveis.",
+            PredictiveFailureReason.REPAIR_STRATEGY_ERROR: "A estratégia proposta não é compatível com a causa.",
+            PredictiveFailureReason.REPAIR_TARGET_ERROR: "O alvo proposto não pertence ao caminho causal.",
         }[reason]

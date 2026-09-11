@@ -50,6 +50,31 @@ def _print(value: object) -> None:
 def _print_predictive_report(report: DecisionReport) -> None:
     print("Predictive Decision (consultivo / read-only)")
     print(f"Problema: {report.problem}")
+    selected_hypothesis = next(
+        (item for item in report.hypotheses if item.root_cause_id), None
+    )
+    selected_root = next(
+        (
+            item
+            for item in report.root_cause_candidates
+            if selected_hypothesis and item.id == selected_hypothesis.root_cause_id
+        ),
+        None,
+    )
+    if selected_root:
+        print(
+            f"\nCausa raiz provavel: {selected_root.origin_path}:"
+            f"{selected_root.origin_line} ({selected_root.cause_kind.value})"
+        )
+        if report.causal_slice:
+            nodes = {item.id: item for item in report.causal_slice.nodes}
+            observed = [
+                nodes[node_id].expression
+                for node_id in selected_root.causal_path
+                if node_id in nodes
+            ]
+            if observed:
+                print("Fluxo observado: " + " -> ".join(observed[:6]))
     if report.insufficient_evidence:
         print(f"Evidência insuficiente: {report.recommendation_explanation}")
         return
@@ -64,6 +89,7 @@ def _print_predictive_report(report: DecisionReport) -> None:
         print(f"  Resultado esperado: {candidate.expected_outcome}")
         print(f"  Evidências: {', '.join(candidate.evidence_refs)}")
         print(f"  Testes: {', '.join(candidate.required_tests) or 'nenhum teste relacionado localizado'}")
+        print(f"  Estrategia: {candidate.strategy_kind}")
     print(f"\nRecomendação: {report.recommendation_explanation}")
     print("Execução: não autorizada; aprovação humana obrigatória.")
 
@@ -719,7 +745,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     predictive_eval.add_argument(
         "--split",
-        choices=("all", "development", "historical_holdout_v1", "holdout_v2"),
+        choices=(
+            "all",
+            "development",
+            "historical_holdout_v1",
+            "historical_holdout_v2",
+            "holdout_v2",
+            "holdout_v3",
+        ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)

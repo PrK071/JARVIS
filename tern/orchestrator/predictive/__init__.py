@@ -1,5 +1,19 @@
 """Read-only comparative reasoning for technical project decisions."""
 
+from .causal import (
+    CausalEdge,
+    CausalEdgeKind,
+    CausalNode,
+    CausalNodeKind,
+    CausalSlice,
+    RepairStrategy,
+    RepairStrategyKind,
+    RootCauseCandidate,
+    RootCauseKind,
+    compatible_strategies,
+    expand_context_for_causal_flow,
+    repair_target_compatible,
+)
 from .models import (
     ChangeKind,
     ClaimSupport,
@@ -17,6 +31,11 @@ from .models import (
 from .service import PredictiveDecisionService
 
 __all__ = [
+    "CausalEdge",
+    "CausalEdgeKind",
+    "CausalNode",
+    "CausalNodeKind",
+    "CausalSlice",
     "ChangeKind",
     "ClaimSupport",
     "DecisionReport",
@@ -28,6 +47,13 @@ __all__ = [
     "PredictiveDecisionService",
     "PredictiveFailureReason",
     "ProblemContext",
+    "RepairStrategy",
+    "RepairStrategyKind",
+    "RootCauseCandidate",
+    "RootCauseKind",
+    "compatible_strategies",
+    "expand_context_for_causal_flow",
+    "repair_target_compatible",
     "SolutionCandidate",
     "TestSupportLevel",
 ]

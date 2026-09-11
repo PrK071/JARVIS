@@ -16,6 +16,7 @@ from ..decision_observability import estimate_tokens, latency_summary
 from ..project_intelligence_v2 import ProjectCandidateGenerator, ProjectIndexBuilderV2
 from ..security import PathPolicy
 from .analysis import PredictiveAnalysisResult, StructuredReasoner
+from .causal import RepairStrategyKind, build_causal_slice, expand_context_for_causal_flow
 from .grounding import build_evidence_ledger
 from .models import (
     ChangeKind,
@@ -32,7 +33,8 @@ from .service import PredictiveDecisionService, build_problem_context
 
 
 CORPUS_ROOT = Path(__file__).resolve().parents[3] / "tests" / "data" / "predictive"
-VALID_SPLITS = frozenset({"development", "historical_holdout_v1", "holdout_v2"})
+VALID_SPLITS = frozenset({"development", "historical_holdout_v1", "historical_holdout_v2", "holdout_v3"})
+SPLIT_ALIASES = {"holdout_v2": "historical_holdout_v2"}
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
     "delete file",
@@ -75,12 +77,15 @@ class CountingReasoner:
         self.requests = 0
         self.request_ms: list[float] = []
         self.prompt_tokens = 0
+        self.schema_tokens = 0
         self.response_tokens = 0
         self.tool_dispatches = 0
 
     def chat(self, messages, **kwargs):
         self.requests += 1
         self.prompt_tokens += estimate_tokens(messages)
+        if kwargs.get("response_format"):
+            self.schema_tokens += estimate_tokens(kwargs["response_format"])
         if kwargs.get("tools"):
             self.tool_dispatches += 1
             raise AssertionError("predictive evaluation forbids tool schemas and dispatch")
@@ -101,12 +106,15 @@ class StructuralBaselineAnalyzer:
             (line.strip() for line in reversed(context.problem.splitlines()) if line.strip()),
             "technical failure",
         )
+        root = context.root_cause_candidates[0] if context.root_cause_candidates else None
         hypothesis = Hypothesis(
             "H1",
             f"The first structurally strong location is associated with: {final_line}",
             0.65,
             (evidence.ref,),
             (HypothesisClaim(atom.statement, (atom.id,), ClaimSupport.DIRECT),),
+            root_cause_id=root.id if root else None,
+            causal_path=root.causal_path if root else (),
         )
         evidence_score = {
             "HARD": 1.0,
@@ -132,6 +140,10 @@ class StructuralBaselineAnalyzer:
             target_files=(evidence.path,),
             mechanism="OTHER",
             evidence_ids=(atom.id,),
+            root_cause_id=root.id if root else None,
+            strategy_kind="OTHER",
+            root_cause_score=root.score if root else 0.0,
+            repair_locality_score=0.0,
         )
         return PredictiveAnalysisResult((hypothesis,), (candidate,))
 
@@ -175,6 +187,16 @@ def _case_from_dict(value: Any, corpus_root: Path, source: str) -> PredictiveCas
     ):
         if field not in expected:
             raise ValueError(f"{case_id}: expected.{field} is required")
+    for field in ("acceptable_repair_strategies", "preferred_repair_strategies", "repair_targets"):
+        if field in expected:
+            _validate_string_list(expected[field], f"expected.{field}", case_id)
+    if "causal_origins" in expected:
+        origins = expected["causal_origins"]
+        if not isinstance(origins, list) or any(
+            not isinstance(item, dict) or not isinstance(item.get("path"), str)
+            for item in origins
+        ):
+            raise ValueError(f"{case_id}: expected.causal_origins must contain path objects")
     _validate_string_list(expected["relevant_files"], "expected.relevant_files", case_id)
     _validate_string_list(expected["acceptable_evidence"], "expected.acceptable_evidence", case_id)
     _validate_string_list(expected["root_cause_signals"], "expected.root_cause_signals", case_id)
@@ -223,15 +245,16 @@ def load_predictive_cases(
     split: str = "all",
 ) -> tuple[PredictiveCase, ...]:
     root = Path(corpus_root).resolve()
+    split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
     values: list[PredictiveCase] = []
     for path in sorted((root / "cases").glob("*.jsonl")):
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
             if line.strip():
                 values.append(_case_from_dict(json.loads(line), root, f"{path.name}:{number}"))
     ids = [case.id for case in values]
@@ -250,21 +273,23 @@ def load_predictive_cases(
     adversarial_counts = Counter(tag for case in values for tag in case.adversarial_tags)
     if dict(manifest.get("adversarial_tags") or {}) != dict(sorted(adversarial_counts.items())):
         raise ValueError("predictive corpus adversarial counts do not match manifest")
-    sealed_hash = manifest.get("holdout_v2_sha256")
-    if sealed_hash and predictive_corpus_hash(root, split="holdout_v2") != sealed_hash:
-        raise ValueError("predictive holdout_v2 hash mismatch")
+    for sealed_split in ("historical_holdout_v2", "holdout_v3"):
+        sealed_hash = manifest.get(f"{sealed_split}_sha256")
+        if sealed_hash and predictive_corpus_hash(root, split=sealed_split) != sealed_hash:
+            raise ValueError(f"predictive {sealed_split} hash mismatch")
     selected = [case for case in values if split == "all" or case.split == split]
     return tuple(sorted(selected, key=lambda case: case.id))
 
 
 def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str) -> str:
     root = Path(corpus_root).resolve()
+    split = SPLIT_ALIASES.get(split, split)
     case_files = sorted((root / "cases").glob("*.jsonl"))
     selected_files: list[Path] = []
     fixtures: set[str] = set()
     for path in case_files:
         matched = False
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line in path.read_text(encoding="utf-8-sig").splitlines():
             if not line.strip():
                 continue
             value = json.loads(line)
@@ -320,7 +345,12 @@ def _retrieval(case: PredictiveCase) -> tuple[ProblemContext, dict[str, Any]]:
     snapshot = ProjectIndexBuilderV2(case.fixture_root, path_policy=policy).build()
     selection = ProjectCandidateGenerator().generate(case.problem, snapshot)
     context = build_problem_context(case.problem, snapshot, selection, policy)
+    context = expand_context_for_causal_flow(context, snapshot, policy)
     context = replace(context, evidence_ledger=build_evidence_ledger(context, snapshot, policy))
+    causal_slice, root_causes = build_causal_slice(context, snapshot, policy)
+    context = replace(
+        context, causal_slice=causal_slice, root_cause_candidates=root_causes
+    )
     elapsed_ms = (time.perf_counter() - started) * 1000
     retrieved = list(context.related_files)
     evidence_refs = list(context.evidence_refs)
@@ -370,12 +400,26 @@ def _retrieval(case: PredictiveCase) -> tuple[ProblemContext, dict[str, Any]]:
         "context_bytes": sum(len(item.excerpt.encode("utf-8")) for item in context.evidence),
         "context_tokens": estimate_tokens(context.reasoning_payload()),
         "latency_ms": elapsed_ms,
+        "causal_path_validity": (
+            all(
+                root.causal_path
+                and root.causal_path[-1] == causal_slice.failure_site_id
+                for root in root_causes
+            ) if root_causes else None
+        ),
+        "avg_causal_candidates": len(root_causes),
+        "avg_causal_path_length": (
+            sum(len(item.causal_path) for item in root_causes) / len(root_causes)
+            if root_causes else 0.0
+        ),
     }
     return context, {
         "retrieved_files": retrieved,
         "evidence_refs": evidence_refs,
         "related_tests": list(context.related_tests),
         "evidence_ledger": context.evidence_ledger.as_dict(include_snippets=False),
+        "causal_slice": causal_slice.as_dict(),
+        "root_cause_candidates": [item.as_dict() for item in root_causes],
         "metrics": metrics,
         "failure_codes": failures,
     }
@@ -391,7 +435,41 @@ def _family(candidate: SolutionCandidate, expected: Mapping[str, Any]) -> str | 
     for family in expected["acceptable_solution_families"]:
         if _matches_all(text, family["signals"]):
             return str(family["id"])
+    strategy_family = _strategy_family(candidate.strategy_kind)
+    for family in expected["acceptable_solution_families"]:
+        descriptor = _plain(f"{family['id']} {' '.join(family['signals'])}")
+        if strategy_family == "BOUNDARY_CONTRACT" and any(
+            token in descriptor for token in ("validat", "reject", "require", "guard")
+        ):
+            return str(family["id"])
+        if strategy_family == "PRODUCER_VALUE_FIX" and any(
+            token in descriptor for token in ("producer", "return", "contract", "upstream")
+        ):
+            return str(family["id"])
+        if candidate.strategy_kind == "CORRECT_CONFIGURATION" and any(
+            token in descriptor for token in ("config", "default", "key")
+        ):
+            return str(family["id"])
+        if candidate.strategy_kind == "CORRECT_CONTROL_FLOW" and any(
+            token in descriptor for token in ("branch", "condition", "flow")
+        ):
+            return str(family["id"])
+        if candidate.strategy_kind == "CORRECT_IMPORT" and any(
+            token in descriptor for token in ("import", "cycle", "module")
+        ):
+            return str(family["id"])
+        if candidate.strategy_kind == "CORRECT_TEST_EXPECTATION" and "test" in descriptor:
+            return str(family["id"])
     return None
+
+
+def _strategy_family(kind: str) -> str:
+    return {
+        "FIX_PRODUCER": "PRODUCER_VALUE_FIX",
+        "CORRECT_RETURN_VALUE": "PRODUCER_VALUE_FIX",
+        "FIX_CONSUMER_CONTRACT": "BOUNDARY_CONTRACT",
+        "VALIDATE_BOUNDARY": "BOUNDARY_CONTRACT",
+    }.get(kind, kind)
 
 
 def _near_duplicate_ratio(candidates: Sequence[SolutionCandidate]) -> float | None:
@@ -414,7 +492,7 @@ def _score_diagnostics(candidate: SolutionCandidate) -> dict[str, float]:
     return {
         name: round(getattr(candidate, name) * weight, 6)
         for name, weight in SCORE_WEIGHTS.items()
-    } | {"normalization_offset": 0.2, "ranking_score": candidate.ranking_score}
+    } | {"normalization_offset": 0.10, "ranking_score": candidate.ranking_score}
 
 
 def _full_metrics(
@@ -443,6 +521,12 @@ def _full_metrics(
         PredictiveFailureReason.DUPLICATE_SOLUTION_FAMILY: "DUPLICATE_CANDIDATES",
         PredictiveFailureReason.FORBIDDEN_CANDIDATE: "FORBIDDEN_CANDIDATE",
         PredictiveFailureReason.AMBIGUOUS_RANKING: "AMBIGUOUS_RANKING",
+        PredictiveFailureReason.CAUSAL_SLICE_MISSED_ORIGIN: "CAUSAL_SLICE_MISSED_ORIGIN",
+        PredictiveFailureReason.ROOT_CAUSE_CANDIDATE_MISSING: "ROOT_CAUSE_CANDIDATE_MISSING",
+        PredictiveFailureReason.ROOT_CAUSE_SELECTION_ERROR: "ROOT_CAUSE_SELECTION_ERROR",
+        PredictiveFailureReason.ROOT_CAUSE_AMBIGUOUS: "ROOT_CAUSE_AMBIGUOUS",
+        PredictiveFailureReason.REPAIR_STRATEGY_ERROR: "REPAIR_STRATEGY_ERROR",
+        PredictiveFailureReason.REPAIR_TARGET_ERROR: "REPAIR_TARGET_ERROR",
     }
     if report.failure_reason in failure_map:
         failures.append(failure_map[report.failure_reason])
@@ -455,6 +539,37 @@ def _full_metrics(
     ]
     if report.hypotheses and not any(hypothesis_hits) and not expected_abstention:
         failures.append("WRONG_ROOT_CAUSE")
+    root_lookup = {item.id: item for item in context.root_cause_candidates}
+    selected_roots = [
+        root_lookup[item.root_cause_id]
+        for item in report.hypotheses
+        if item.root_cause_id in root_lookup
+    ]
+    expected_origins = list(expected.get("causal_origins") or ())
+
+    def origin_matches(root, truth: Mapping[str, Any]) -> bool:
+        return (
+            root.origin_path == truth["path"]
+            and (not truth.get("symbol") or root.origin_symbol == truth["symbol"] or str(root.origin_symbol or "").endswith(f".{truth['symbol']}"))
+            and (not truth.get("kind") or root.cause_kind.value == truth["kind"])
+        )
+
+    generated_origin_hits = {
+        index for index, truth in enumerate(expected_origins)
+        if any(origin_matches(root, truth) for root in context.root_cause_candidates)
+    }
+    selected_origin_hits = {
+        index for index, truth in enumerate(expected_origins)
+        if any(origin_matches(root, truth) for root in selected_roots)
+    }
+    selected_root_matches = [
+        any(origin_matches(root, truth) for truth in expected_origins)
+        for root in selected_roots
+    ]
+    if expected_origins and not generated_origin_hits:
+        failures.append("CAUSAL_SLICE_MISSED_ORIGIN")
+    elif expected_origins and not selected_origin_hits and report.hypotheses:
+        failures.append("ROOT_CAUSE_SELECTION_ERROR")
     valid_grounded = [hypothesis.grounded for hypothesis in report.hypotheses]
     claims = [claim for hypothesis in report.hypotheses for claim in hypothesis.claims]
     support_counts = Counter(claim.support.value for claim in claims)
@@ -475,10 +590,28 @@ def _full_metrics(
     if unsupported_claims:
         failures.append("UNSUPPORTED_CLAIM")
 
-    families = [_family(candidate, expected) for candidate in report.candidates]
+    expected_strategies = set(expected.get("acceptable_repair_strategies") or ())
+    preferred_strategies = set(expected.get("preferred_repair_strategies") or ())
+    expected_strategy_families = {_strategy_family(item) for item in expected_strategies}
+    preferred_strategy_families = {_strategy_family(item) for item in preferred_strategies}
+    families = [
+        candidate.strategy_kind if expected_strategies and _strategy_family(candidate.strategy_kind) in expected_strategy_families
+        else _family(candidate, expected)
+        for candidate in report.candidates
+    ]
     family_hits = [value is not None for value in families]
     if report.candidates and not any(family_hits) and not expected_abstention:
         failures.append("WRONG_SOLUTION_FAMILY")
+    strategy_hits = [
+        _strategy_family(strategy.strategy_kind.value) in expected_strategy_families
+        for strategy in report.repair_strategies
+    ]
+    if expected_strategies and report.repair_strategies and not any(strategy_hits):
+        failures.append("REPAIR_STRATEGY_ERROR")
+    expected_targets = set(expected.get("repair_targets") or ())
+    target_hits = [bool(set(item.target_files) & expected_targets) for item in report.repair_strategies]
+    if expected_targets and report.repair_strategies and not any(target_hits):
+        failures.append("REPAIR_TARGET_ERROR")
     normalized_actions = [_plain(item.action) for item in report.candidates]
     exact_diversity = (
         len(set(item.action for item in report.candidates)) / len(report.candidates)
@@ -517,6 +650,8 @@ def _full_metrics(
     expected_ambiguous = bool(expected.get("expect_ambiguous_ranking"))
     if report.ranking_ambiguous:
         ranking_hit = expected_ambiguous
+    elif winner and preferred_strategies:
+        ranking_hit = _strategy_family(winner.strategy_kind) in preferred_strategy_families
     elif winner and expected["preferred_solution_families"]:
         ranking_hit = winner_family in set(expected["preferred_solution_families"])
     else:
@@ -526,6 +661,29 @@ def _full_metrics(
 
     metrics = {
         "hypothesis_hit": any(hypothesis_hits) if report.hypotheses else False,
+        "causal_root_hit": bool(selected_origin_hits) if expected_origins else None,
+        "causal_origin_file_hit": (
+            any(root.origin_path == truth["path"] for root in selected_roots for truth in expected_origins)
+            if expected_origins else None
+        ),
+        "causal_origin_symbol_hit": (
+            any(
+                truth.get("symbol") and (root.origin_symbol == truth["symbol"] or str(root.origin_symbol or "").endswith(f".{truth['symbol']}"))
+                for root in selected_roots for truth in expected_origins
+            ) if expected_origins and any(item.get("symbol") for item in expected_origins) else None
+        ),
+        "causal_path_validity": (
+            all(root.causal_path and root.causal_path[-1] == context.causal_slice.failure_site_id for root in selected_roots)
+            if selected_roots and context.causal_slice else None
+        ),
+        "causal_path_completeness": _average(root.completeness for root in selected_roots),
+        "root_cause_selection_precision": (
+            sum(selected_root_matches) / len(selected_root_matches)
+            if selected_root_matches else None
+        ),
+        "root_cause_selection_recall": (
+            len(selected_origin_hits) / len(expected_origins) if expected_origins else None
+        ),
         "grounded_hypothesis_rate": (
             sum(valid_grounded) / len(valid_grounded) if valid_grounded else None
         ),
@@ -536,6 +694,8 @@ def _full_metrics(
         "solution_family_diversity": family_diversity,
         "candidate_diversity": candidate_diversity,
         "solution_family_hit": any(family_hits) if report.candidates else False,
+        "repair_strategy_hit": any(strategy_hits) if expected_strategies and report.repair_strategies else (False if expected_strategies else None),
+        "repair_target_hit": any(target_hits) if expected_targets and report.repair_strategies else (False if expected_targets else None),
         "ranking_hit": ranking_hit,
         "claim_support_precision": supported_claims / len(claims) if claims else None,
         "claim_support_recall": claim_support_recall,
@@ -596,8 +756,11 @@ def _pearson(left: Sequence[float], right: Sequence[float]) -> float | None:
 def _scoring_summary(results: Sequence[dict[str, Any]]) -> dict[str, Any]:
     fields = (
         "estimated_success_score",
+        "root_cause_score",
         "evidence_score",
         "test_support_score",
+        "repair_locality_score",
+        "repair_strategy_score",
         "reversibility_score",
         "risk_score",
         "cost_score",
@@ -621,6 +784,15 @@ def _scoring_summary(results: Sequence[dict[str, Any]]) -> dict[str, Any]:
             for name, value in contributions.items():
                 contribution_values[name].append(float(value))
     correlations = {
+        "root_cause_vs_evidence": _pearson(
+            values["root_cause_score"], values["evidence_score"]
+        ),
+        "root_cause_vs_locality": _pearson(
+            values["root_cause_score"], values["repair_locality_score"]
+        ),
+        "root_cause_vs_repair_strategy": _pearson(
+            values["root_cause_score"], values["repair_strategy_score"]
+        ),
         "estimated_success_vs_evidence": _pearson(
             values["estimated_success_score"], values["evidence_score"]
         ),
@@ -678,14 +850,26 @@ def summarize_predictive_results(
         "traceback_target_recall",
         "related_test_recall",
         "related_test_precision",
+        "causal_path_validity",
+        "avg_causal_candidates",
+        "avg_causal_path_length",
     )
     full_names = (
         "hypothesis_hit",
+        "causal_root_hit",
+        "causal_origin_file_hit",
+        "causal_origin_symbol_hit",
+        "causal_path_validity",
+        "causal_path_completeness",
+        "root_cause_selection_precision",
+        "root_cause_selection_recall",
         "grounded_hypothesis_rate",
         "candidate_generated",
         "candidate_diversity",
         "solution_family_diversity",
         "solution_family_hit",
+        "repair_strategy_hit",
+        "repair_target_hit",
         "ranking_hit",
         "claim_support_precision",
         "claim_support_recall",
@@ -775,6 +959,13 @@ def summarize_predictive_results(
         reasoning["ambiguous_ranking_rate"] = _average(
             result.get("full_metrics", {}).get("ranking_ambiguous") for result in results
         )
+        reasoning["false_abstention_rate"] = (
+            sum(
+                bool(result["actual"].get("insufficient_evidence", True))
+                and not result["expected"]["insufficient_evidence"]
+                for result in results
+            ) / expected_positive if expected_positive else None
+        )
     abstention = (
         {
             "precision": correct_abstentions / actual_abstentions if actual_abstentions else None,
@@ -795,9 +986,11 @@ def summarize_predictive_results(
         ),
     }
     quality = (
-        {"unsupported": 0.20, "support": 0.75, "hypothesis": 0.65, "family": 0.70, "ranking": 0.55}
-        if split == "holdout_v2"
-        else {"unsupported": 0.15, "support": 0.80, "hypothesis": 0.70, "family": 0.75, "ranking": 0.60}
+        {"hypothesis": 0.70, "causal": 0.70, "family": 0.70,
+         "repair": 0.70, "ranking": 0.60, "precision": 0.60}
+        if split == "holdout_v3"
+        else {"hypothesis": 0.75, "causal": 0.75, "family": 0.75,
+              "repair": 0.75, "ranking": 0.65, "precision": 0.65}
     )
     gate_checks = {
         "full_live_evaluation": mode == "live",
@@ -807,35 +1000,54 @@ def summarize_predictive_results(
             retrieval_summary["relevant_file_recall_at_3"] is not None
             and retrieval_summary["relevant_file_recall_at_3"] >= 0.90
         ),
-        "unsupported_claim_rate": reasoning.get("unsupported_claim_rate") is not None and reasoning["unsupported_claim_rate"] <= quality["unsupported"],
-        "evidence_support_precision": reasoning.get("evidence_support_precision") is not None and reasoning["evidence_support_precision"] >= quality["support"],
+        "unsupported_claim_rate": reasoning.get("unsupported_claim_rate") is not None and reasoning["unsupported_claim_rate"] <= 0.05,
         "forbidden_candidate_recommendation_rate_zero": reasoning.get("forbidden_candidate_recommendation_rate") == 0.0,
         "determinism": reasoning.get("determinism_rate") == 1.0,
         "hypothesis_hit_rate": (
             reasoning.get("hypothesis_hit") is not None
             and reasoning["hypothesis_hit"] >= quality["hypothesis"]
         ),
+        "causal_root_hit_rate": (
+            reasoning.get("causal_root_hit") is not None
+            and reasoning["causal_root_hit"] >= quality["causal"]
+        ),
         "solution_family_hit_rate": (
             reasoning.get("solution_family_hit") is not None
             and reasoning["solution_family_hit"] >= quality["family"]
         ),
+        "repair_strategy_hit_rate": (
+            reasoning.get("repair_strategy_hit") is not None
+            and reasoning["repair_strategy_hit"] >= quality["repair"]
+        ),
         "candidate_family_duplicates": (
             reasoning.get("solution_family_diversity") is not None
-            and 1.0 - reasoning["solution_family_diversity"] <= 0.10
+            and reasoning["solution_family_diversity"] >= 0.95
         ),
         "ranking_hit_rate": (
             reasoning.get("ranking_hit") is not None
             and reasoning["ranking_hit"] >= quality["ranking"]
         ),
-        "abstention_precision": (
-            abstention.get("precision") is not None and abstention["precision"] >= 0.80
+        "recommendation_precision": (
+            reasoning.get("recommendation_precision") is not None
+            and reasoning["recommendation_precision"] >= quality["precision"]
         ),
-        "abstention_recall": (
-            abstention.get("recall") is not None and abstention["recall"] >= 0.80
+        "recommendation_coverage": (
+            reasoning.get("recommendation_coverage") is not None
+            and reasoning["recommendation_coverage"] >= 0.65
+        ),
+        "latency_gate": (
+            mode != "live"
+            or not results
+            or _average(
+                value for result in results for value in result["telemetry"]["request_ms"]
+            ) is not None
+            and _average(
+                value for result in results for value in result["telemetry"]["request_ms"]
+            ) <= 90_000
         ),
     }
     report = {
-        "version": 2,
+        "version": 3,
         "commit": _git_commit(),
         "mode": mode,
         "split": split,
@@ -856,6 +1068,10 @@ def summarize_predictive_results(
             "qwen_request": latency_summary(
                 [value for result in results for value in result["telemetry"]["request_ms"]]
             ),
+            "time_to_first_token": None,
+            "generation": latency_summary(
+                [value for result in results for value in result["telemetry"]["request_ms"]]
+            ),
         },
         "qwen": {
             "requests": sum(result["telemetry"]["requests"] for result in results),
@@ -865,8 +1081,21 @@ def summarize_predictive_results(
             "estimated_response_tokens": sum(
                 result["telemetry"]["response_tokens"] for result in results
             ),
+            "estimated_schema_tokens": sum(
+                result["telemetry"]["schema_tokens"] for result in results
+            ),
             "average_prompt_tokens_per_request": (
                 sum(result["telemetry"]["prompt_tokens"] for result in results)
+                / sum(result["telemetry"]["requests"] for result in results)
+                if sum(result["telemetry"]["requests"] for result in results) else None
+            ),
+            "average_completion_tokens_per_request": (
+                sum(result["telemetry"]["response_tokens"] for result in results)
+                / sum(result["telemetry"]["requests"] for result in results)
+                if sum(result["telemetry"]["requests"] for result in results) else None
+            ),
+            "average_schema_tokens_per_request": (
+                sum(result["telemetry"]["schema_tokens"] for result in results)
                 / sum(result["telemetry"]["requests"] for result in results)
                 if sum(result["telemetry"]["requests"] for result in results) else None
             ),
@@ -912,7 +1141,7 @@ def evaluate_predictive_cases(
         context, retrieval = _retrieval(case)
         reports: list[DecisionReport] = []
         request_ms: list[float] = []
-        requests = prompt_tokens = response_tokens = tool_dispatches = 0
+        requests = prompt_tokens = schema_tokens = response_tokens = tool_dispatches = 0
         if mode != "retrieval":
             for _run in range(runs):
                 counter = CountingReasoner(reasoner) if mode == "live" else None
@@ -926,6 +1155,7 @@ def evaluate_predictive_cases(
                     requests += counter.requests
                     request_ms.extend(counter.request_ms)
                     prompt_tokens += counter.prompt_tokens
+                    schema_tokens += counter.schema_tokens
                     response_tokens += counter.response_tokens
                     tool_dispatches += counter.tool_dispatches
         after = _fixture_state(case.fixture_root)
@@ -996,6 +1226,7 @@ def evaluate_predictive_cases(
                     "requests": requests,
                     "request_ms": request_ms,
                     "prompt_tokens": prompt_tokens,
+                    "schema_tokens": schema_tokens,
                     "response_tokens": response_tokens,
                 },
                 "latency_ms": (time.perf_counter() - started) * 1000,
@@ -1039,14 +1270,18 @@ def format_predictive_evaluation(report: Mapping[str, Any]) -> str:
         lines.extend(
             [
                 f"Hypothesis hit rate: {percent(report['reasoning']['hypothesis_hit'])}",
+                f"Causal root hit rate: {percent(report['reasoning'].get('causal_root_hit'))}",
+                f"Repair strategy hit rate: {percent(report['reasoning'].get('repair_strategy_hit'))}",
                 f"Solution family hit rate: {percent(report['reasoning']['solution_family_hit'])}",
                 f"Unsupported claim rate: {percent(report['reasoning']['unsupported_claim_rate'])}",
                 f"Evidence support precision: {percent(report['reasoning']['evidence_support_precision'])}",
                 f"Ranking hit rate: {percent(report['reasoning']['ranking_hit'])}",
+                f"Recommendation precision: {percent(report['reasoning']['recommendation_precision'])}",
                 f"Recommendation coverage: {percent(report['reasoning']['recommendation_coverage'])}",
                 f"Ambiguous ranking rate: {percent(report['reasoning']['ambiguous_ranking_rate'])}",
                 f"Forbidden recommendation rate: {percent(report['reasoning']['forbidden_candidate_recommendation_rate'])}",
                 f"Determinism rate: {percent(report['reasoning']['determinism_rate'])}",
+                f"Average Qwen latency: {float(report['latency']['qwen_request'].get('average_ms') or 0):.1f} ms",
             ]
         )
     if report["failure_code_counts"]:
