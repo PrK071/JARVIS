@@ -139,5 +139,5 @@ Remove-Item Env:RUN_VOICE_INTEGRATION_TESTS
 
 ## Contribuidores
 
-- [Murilo Roque (@mucamuca)](https://github.com/mucamuca)
+- [Murilo Roque (@murilotroque)](https://github.com/murolitroque)
 - [PrK (@PrK071)](https://github.com/PrK071)
