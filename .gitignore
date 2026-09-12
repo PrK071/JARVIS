@@ -63,3 +63,4 @@ runtime/
 # Local agent/plugin installations and preserved recovery metadata
 .agents/
 .git-corrupt-*/
+_arquivo/
