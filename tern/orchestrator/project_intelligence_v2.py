@@ -149,6 +149,8 @@ class ImportRecord:
     names: tuple[str, ...]
     level: int
     line: int
+    scope: str = "module"
+    type_checking_only: bool = False
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "ImportRecord":
@@ -157,6 +159,8 @@ class ImportRecord:
             tuple(str(item) for item in value.get("names") or ()),
             int(value.get("level") or 0),
             int(value.get("line") or 0),
+            str(value.get("scope") or "module"),
+            bool(value.get("type_checking_only", False)),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -165,6 +169,8 @@ class ImportRecord:
             "names": list(self.names),
             "level": self.level,
             "line": self.line,
+            "scope": self.scope,
+            "type_checking_only": self.type_checking_only,
         }
 
 
@@ -449,19 +455,51 @@ def _symbol_records(tree: ast.AST, *, path: str, module: str) -> tuple[SymbolRec
 
 def _import_records(tree: ast.AST) -> tuple[ImportRecord, ...]:
     records: list[ImportRecord] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                records.append(ImportRecord(alias.name, (), 0, node.lineno))
-        elif isinstance(node, ast.ImportFrom):
-            records.append(
-                ImportRecord(
-                    node.module,
-                    tuple(alias.name for alias in node.names),
-                    int(node.level or 0),
-                    node.lineno,
-                )
+
+    class Visitor(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.scope = "module"
+            self.type_checking_depth = 0
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            previous = self.scope
+            self.scope = node.name
+            self.generic_visit(node)
+            self.scope = previous
+
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_If(self, node: ast.If) -> None:
+            is_type_checking = (
+                isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING"
+            ) or (
+                isinstance(node.test, ast.Attribute) and node.test.attr == "TYPE_CHECKING"
             )
+            if is_type_checking:
+                self.type_checking_depth += 1
+            for statement in node.body:
+                self.visit(statement)
+            if is_type_checking:
+                self.type_checking_depth -= 1
+            for statement in node.orelse:
+                self.visit(statement)
+
+        def visit_Import(self, node: ast.Import) -> None:
+            for alias in node.names:
+                records.append(ImportRecord(
+                    alias.name, (), 0, node.lineno, self.scope,
+                    self.type_checking_depth > 0,
+                ))
+
+        def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+            records.append(ImportRecord(
+                node.module,
+                tuple(alias.name for alias in node.names),
+                int(node.level or 0), node.lineno, self.scope,
+                self.type_checking_depth > 0,
+            ))
+
+    Visitor().visit(tree)
     return tuple(records)
 
 
@@ -1404,6 +1442,7 @@ class ProjectCandidateGenerator:
                 or (token.isupper() and len(token) >= 4)
                 or f"`{token}`" in task
                 or f"{token}()" in task
+                or re.search(rf"\b{re.escape(token)}\s*\(", task)
             )
             if not explicitly_code_shaped:
                 continue

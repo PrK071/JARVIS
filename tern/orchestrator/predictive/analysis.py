@@ -12,11 +12,17 @@ from .causal import (
     RootCauseKind,
     RootSelectionReason,
     repair_locality,
-    repair_target_compatible,
     strategy_compatible,
     structurally_dominant_root,
 )
 from .grounding import ground_claim
+from .repair import (
+    RepairTarget,
+    RepairTargetKind,
+    best_target,
+    derive_repair_targets,
+    validate_repair_target,
+)
 from .models import (
     ChangeKind,
     ClaimSupport,
@@ -381,12 +387,52 @@ class PredictiveAnalyzer:
                     if not strategy_compatible(root.cause_kind, kind):
                         diagnostics.append(PredictiveFailureReason.REPAIR_STRATEGY_ERROR.value)
                         continue
-                    if not context.causal_slice or not repair_target_compatible(
-                        root, kind, target_file, target_symbol or None,
-                        context.causal_slice,
+                    if not context.causal_slice:
+                        diagnostics.append(PredictiveFailureReason.REPAIR_TARGET_ERROR.value)
+                        continue
+                    typed_targets = derive_repair_targets(
+                        kind, root, context.causal_slice
+                    )
+                    if not typed_targets and target_file:
+                        fallback_kind = {
+                            RepairStrategyKind.CORRECT_ARGUMENT: RepairTargetKind.PARAMETER,
+                            RepairStrategyKind.CORRECT_RETURN_VALUE: RepairTargetKind.RETURN_SITE,
+                            RepairStrategyKind.CORRECT_CONFIGURATION: RepairTargetKind.CONFIG_VALUE,
+                            RepairStrategyKind.CORRECT_IMPORT: RepairTargetKind.IMPORT_EDGE,
+                            RepairStrategyKind.CORRECT_TEST_EXPECTATION: RepairTargetKind.TEST_EXPECTATION,
+                        }.get(kind, RepairTargetKind.FUNCTION)
+                        try:
+                            typed_targets = (RepairTarget(
+                                target_file, fallback_kind, target_symbol or root.origin_symbol,
+                                parameter=(target_symbol or root.origin_symbol)
+                                if fallback_kind is RepairTargetKind.PARAMETER else None,
+                            ),)
+                        except ValueError:
+                            typed_targets = ()
+                    requested_id = str(raw_strategy.get("repair_target_id") or "")
+                    target = next(
+                        (item for item in typed_targets if item.id == requested_id),
+                        None,
+                    )
+                    if target is None:
+                        compatible = [
+                            item for item in typed_targets
+                            if item.path == target_file
+                            and (
+                                not target_symbol
+                                or not item.symbol
+                                or item.symbol.rsplit(".", 1)[-1]
+                                == target_symbol.rsplit(".", 1)[-1]
+                            )
+                        ]
+                        target = best_target(compatible or typed_targets)
+                    if target is None or not validate_repair_target(
+                        kind, root, target, context.causal_slice
                     ):
                         diagnostics.append(PredictiveFailureReason.REPAIR_TARGET_ERROR.value)
                         continue
+                    target_file = target.path
+                    target_symbol = target.symbol or target.parameter or target.attribute or ""
                     locality = repair_locality(
                         root, (target_file,), (target_symbol,) if target_symbol else (),
                         context.causal_slice,
@@ -425,6 +471,7 @@ class PredictiveAnalyzer:
                         root_cause_score=root.score,
                         repair_locality_score=locality,
                         repair_strategy_score=repair_strategy_score(root.cause_kind, kind),
+                        repair_targets=(target,),
                     )
                 except (KeyError, TypeError, ValueError, ZeroDivisionError):
                     diagnostics.append(PredictiveFailureReason.REPAIR_STRATEGY_ERROR.value)

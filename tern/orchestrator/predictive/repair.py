@@ -153,6 +153,76 @@ def validate_repair_target(
     return True
 
 
+def derive_repair_targets(
+    strategy: RepairStrategyKind,
+    root: RootCauseCandidate,
+    causal_slice: CausalSlice,
+) -> tuple[RepairTarget, ...]:
+    """Derive typed repair scopes from nodes on the proven causal path."""
+    from .causal import CausalNodeKind
+
+    result: dict[str, RepairTarget] = {}
+    for node in causal_slice.nodes:
+        if node.id not in root.causal_path:
+            continue
+        scope = node.scope if node.scope and node.scope != "module" else None
+        scope_kind = (
+            RepairTargetKind.METHOD if scope and "." in scope
+            else RepairTargetKind.FUNCTION
+        )
+        targets: list[RepairTarget] = []
+        if node.kind is CausalNodeKind.PARAMETER:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.PARAMETER, scope,
+                parameter=node.symbol, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.RETURN_VALUE:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.RETURN_SITE,
+                scope or node.symbol, expression_id=node.id, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.CALL:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.CALL_SITE, scope,
+                expression_id=node.id, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.ATTRIBUTE and node.symbol:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.ATTRIBUTE, scope,
+                attribute=node.symbol.rsplit(".", 1)[-1], line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.CONFIG_VALUE:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.CONFIG_VALUE, node.symbol,
+                expression_id=node.id, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.IMPORT:
+            expression_id = node.id
+            if node.expression.startswith("runtime import ") and " -> " in node.expression:
+                source, target_path = node.expression.removeprefix("runtime import ").split(" -> ", 1)
+                expression_id = "->".join(
+                    path.removesuffix(".py").replace("/", ".")
+                    for path in (source, target_path)
+                )
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.IMPORT_EDGE, node.symbol,
+                expression_id=expression_id, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.TEST_EXPECTATION:
+            targets.append(RepairTarget(
+                node.path, RepairTargetKind.TEST_EXPECTATION, scope,
+                expression_id=node.id, line=node.line,
+            ))
+        elif node.kind is CausalNodeKind.CONDITION and scope:
+            targets.append(RepairTarget(node.path, scope_kind, scope, line=node.line))
+        if scope and node.path == root.origin_path:
+            targets.append(RepairTarget(node.path, scope_kind, scope))
+        for target in targets:
+            if validate_repair_target(strategy, root, target, causal_slice):
+                result[target.id] = target
+    return tuple(sorted(result.values(), key=lambda item: (item.path, item.line or 0, item.id)))
+
+
 def best_target(targets: Iterable[RepairTarget]) -> RepairTarget | None:
     priority = {
         RepairTargetKind.RETURN_SITE: 0,

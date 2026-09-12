@@ -145,7 +145,6 @@ class PredictiveDecisionService:
         snapshot = ProjectIndexBuilderV2(root, path_policy=self.path_policy).build()
         selection = self.candidate_generator.generate(problem, snapshot)
         context = build_problem_context(problem, snapshot, selection, self.path_policy)
-        context = expand_context_for_causal_flow(context, snapshot, self.path_policy)
         context = replace(
             context,
             evidence_ledger=build_evidence_ledger(context, snapshot, self.path_policy),
@@ -153,11 +152,67 @@ class PredictiveDecisionService:
         causal_slice, root_causes = build_causal_slice(
             context, snapshot, self.path_policy
         )
+        selected_paths = set(context.related_files)
+        structural_neighbour_available = False
+        for path in context.related_files:
+            indexed = snapshot.file_index.get(path)
+            adjacent = set(snapshot.import_graph.get(path, ())) | set(
+                snapshot.reverse_import_graph.get(path, ())
+            )
+            if adjacent - selected_paths:
+                structural_neighbour_available = True
+                break
+            if indexed:
+                for name in indexed.referenced_names:
+                    definitions = {
+                        item.file for item in snapshot.symbol_index.get(name, ())
+                    }
+                    if len(definitions) == 1 and definitions - selected_paths:
+                        structural_neighbour_available = True
+                        break
+            if structural_neighbour_available:
+                break
+        unresolved_origin = (
+            not root_causes
+            or all(
+                item.origin_path == item.failure_path
+                or item.causal_distance <= 1
+                for item in root_causes
+            )
+        )
+        if unresolved_origin or structural_neighbour_available:
+            context = expand_context_for_causal_flow(
+                context, snapshot, self.path_policy
+            )
+            context = replace(
+                context,
+                evidence_ledger=build_evidence_ledger(
+                    context, snapshot, self.path_policy
+                ),
+            )
+            causal_slice, root_causes = build_causal_slice(
+                context, snapshot, self.path_policy
+            )
         context = replace(
             context,
             causal_slice=causal_slice,
             root_cause_candidates=root_causes,
         )
+        if not root_causes:
+            return DecisionReport(
+                problem=problem,
+                hypotheses=(),
+                candidates=(),
+                recommended_candidate_id=None,
+                insufficient_evidence=True,
+                recommendation_explanation=(
+                    "Nenhuma origem causal estruturalmente demonstrável foi localizada."
+                ),
+                failure_reason=PredictiveFailureReason.INSUFFICIENT_STRUCTURAL_EVIDENCE,
+                causal_slice=causal_slice,
+                root_cause_candidates=(),
+                retrieval_escalation=context.retrieval_escalation,
+            )
         if not context.sufficient_evidence:
             return self._insufficient(problem, "Nenhuma evidência estrutural forte foi localizada.")
 
@@ -177,6 +232,7 @@ class PredictiveDecisionService:
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
+                retrieval_escalation=context.retrieval_escalation,
             )
 
         policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
@@ -205,6 +261,7 @@ class PredictiveDecisionService:
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
+                retrieval_escalation=context.retrieval_escalation,
             )
         try:
             decision = ranking_decision(eligible)
@@ -240,6 +297,7 @@ class PredictiveDecisionService:
                 root_cause_candidates=context.root_cause_candidates,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
+                retrieval_escalation=context.retrieval_escalation,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -260,6 +318,7 @@ class PredictiveDecisionService:
             root_cause_candidates=context.root_cause_candidates,
             repair_strategies=analysis.repair_strategies,
             root_cause_selections=analysis.root_cause_selections,
+            retrieval_escalation=context.retrieval_escalation,
         )
 
     @staticmethod

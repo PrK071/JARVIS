@@ -44,6 +44,35 @@ class PredictiveFailureReason(str, Enum):
     REPAIR_TARGET_ERROR = "REPAIR_TARGET_ERROR"
 
 
+@dataclass(frozen=True)
+class RetrievalEscalation:
+    attempted: bool = False
+    initial_candidates: tuple[str, ...] = ()
+    expanded_candidates: tuple[str, ...] = ()
+    reasons: tuple[str, ...] = ()
+    causal_relations: tuple[str, ...] = ()
+    max_depth: int = 0
+    max_extra_files: int = 0
+    max_extra_symbols: int = 0
+
+    @property
+    def succeeded(self) -> bool:
+        return bool(self.expanded_candidates)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "attempted": self.attempted,
+            "succeeded": self.succeeded,
+            "initial_candidates": list(self.initial_candidates),
+            "expanded_candidates": list(self.expanded_candidates),
+            "reasons": list(self.reasons),
+            "causal_relations": list(self.causal_relations),
+            "max_depth": self.max_depth,
+            "max_extra_files": self.max_extra_files,
+            "max_extra_symbols": self.max_extra_symbols,
+        }
+
+
 class EvidenceKind(str, Enum):
     TRACEBACK_FRAME = "TRACEBACK_FRAME"
     SYMBOL_DEFINITION = "SYMBOL_DEFINITION"
@@ -213,6 +242,7 @@ class ProblemContext:
     evidence_ledger: EvidenceLedger = field(default_factory=EvidenceLedger)
     causal_slice: CausalSlice | None = None
     root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
+    retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
 
     def __post_init__(self) -> None:
         if not self.problem.strip():
@@ -437,6 +467,7 @@ class DecisionReport:
     root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
     repair_strategies: tuple[RepairStrategy, ...] = ()
     root_cause_selections: tuple[RootCauseSelection, ...] = ()
+    retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -481,6 +512,7 @@ class DecisionReport:
             "root_cause_candidates": [item.as_dict() for item in self.root_cause_candidates],
             "repair_strategies": [item.as_dict() for item in self.repair_strategies],
             "root_cause_selections": [item.as_dict() for item in self.root_cause_selections],
+            "retrieval_escalation": self.retrieval_escalation.as_dict(),
             "dry_run": self.dry_run,
             "execution_authorized": self.execution_authorized,
         }

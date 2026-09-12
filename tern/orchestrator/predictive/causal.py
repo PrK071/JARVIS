@@ -3,14 +3,15 @@ from __future__ import annotations
 import ast
 import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
 from ..project_intelligence_v2 import ProjectSnapshotV2
 from ..security import PathPolicy
-from .models import EvidenceExcerpt, EvidenceLedger, ProblemContext
+from .import_graph import find_import_cycles
+from .models import EvidenceExcerpt, EvidenceLedger, ProblemContext, RetrievalEscalation
 
 
 class CausalNodeKind(str, Enum):
@@ -79,6 +80,7 @@ class RootSelectionReason(str, Enum):
     CONTROL_FLOW_SOURCE = "CONTROL_FLOW_SOURCE"
     INSUFFICIENT_SUPPORT = "INSUFFICIENT_SUPPORT"
     EQUIVALENT_CANDIDATES = "EQUIVALENT_CANDIDATES"
+    CONTRACT_ORIGIN_DOMINATES_MANIFESTATION = "CONTRACT_ORIGIN_DOMINATES_MANIFESTATION"
 
 
 _COMPATIBILITY: Mapping[RootCauseKind, frozenset[RepairStrategyKind]] = {
@@ -139,11 +141,13 @@ class CausalNode:
     symbol: str | None
     expression: str
     evidence_ids: tuple[str, ...] = ()
+    scope: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {"id": self.id, "kind": self.kind.value, "path": self.path,
                 "line": self.line, "symbol": self.symbol,
-                "expression": self.expression, "evidence_ids": list(self.evidence_ids)}
+                "expression": self.expression, "evidence_ids": list(self.evidence_ids),
+                "scope": self.scope}
 
 
 @dataclass(frozen=True)
@@ -324,7 +328,9 @@ def expand_context_for_causal_flow(
     snapshot: ProjectSnapshotV2,
     path_policy: PathPolicy,
     *,
-    max_added_files: int = 6,
+    max_added_files: int = 5,
+    max_depth: int = 2,
+    max_extra_symbols: int = 24,
 ) -> ProblemContext:
     """Add only uniquely resolved symbol neighbours to the read-only context.
 
@@ -337,25 +343,39 @@ def expand_context_for_causal_flow(
     added: list[str] = []
     symbol_index = snapshot.symbol_index
     file_index = snapshot.file_index
-    frontier = list(selected)
+    frontier = [(path, 0) for path in selected]
+    relations: set[str] = set()
+    inspected_symbols = 0
     while frontier and len(added) < max_added_files:
-        current_path = frontier.pop(0)
+        current_path, depth = frontier.pop(0)
+        if depth >= max_depth:
+            continue
         indexed = file_index.get(current_path)
         if not indexed:
             continue
         neighbours: set[str] = set(snapshot.import_graph.get(current_path, ()))
-        neighbours.update(snapshot.reverse_import_graph.get(current_path, ()))
+        if neighbours:
+            relations.add("IMPORT_NEIGHBOR")
+        reverse = set(snapshot.reverse_import_graph.get(current_path, ()))
+        if reverse:
+            relations.add("CALLER_OR_IMPORTER")
+        neighbours.update(reverse)
         for name in indexed.referenced_names:
+            if inspected_symbols >= max_extra_symbols:
+                break
+            inspected_symbols += 1
             records = symbol_index.get(name, ())
             defining_files = {record.file for record in records}
             if len(defining_files) == 1:
                 neighbours.update(defining_files)
+                relations.add("UNIQUE_SYMBOL_DEFINITION")
         defined_names = {symbol.name for symbol in indexed.symbols}
         for other in snapshot.files:
             if other.is_test and not indexed.is_test:
                 continue
             if defined_names & set(other.referenced_names):
                 neighbours.add(other.path)
+                relations.add("SYMBOL_CALLER")
         for path in sorted(neighbours):
             candidate = file_index.get(path)
             if (
@@ -368,11 +388,21 @@ def expand_context_for_causal_flow(
             selected_set.add(path)
             selected.append(path)
             added.append(path)
-            frontier.append(path)
+            frontier.append((path, depth + 1))
             if len(added) >= max_added_files:
                 break
+    escalation = RetrievalEscalation(
+        attempted=True,
+        initial_candidates=tuple(context.related_files),
+        expanded_candidates=tuple(added),
+        reasons=("UNRESOLVED_CAUSAL_ORIGIN",),
+        causal_relations=tuple(sorted(relations)),
+        max_depth=max_depth,
+        max_extra_files=max_added_files,
+        max_extra_symbols=max_extra_symbols,
+    )
     if not added:
-        return context
+        return replace(context, retrieval_escalation=escalation)
 
     excerpts = list(context.evidence)
     symbols = list(context.related_symbols)
@@ -415,6 +445,7 @@ def expand_context_for_causal_flow(
         related_symbols=tuple(dict.fromkeys(symbols)),
         related_tests=tuple(sorted(related_tests)),
         test_relationships=tuple(sorted(relationships)),
+        retrieval_escalation=escalation,
     )
 
 
@@ -445,6 +476,7 @@ class _FlowBuilder(ast.NodeVisitor):
         self.nodes.setdefault(node_id, CausalNode(
             node_id, kind, self.path, max(1, line), symbol, expression,
             _evidence_at(self.ledger, self.path, max(1, line)),
+            self.scope,
         ))
         return node_id
 
@@ -751,6 +783,7 @@ def build_causal_slice(
             failure_id, CausalNodeKind.EXCEPTION_SITE, failure_path, failure_line,
             None, f"exception at {failure_path}:{failure_line}",
             _evidence_at(context.evidence_ledger, failure_path, failure_line),
+            None,
         )
         candidates_at_site = symbolic_failure_nodes or [
             node for node in nodes.values()
@@ -760,6 +793,41 @@ def build_causal_slice(
         for node in candidates_at_site:
             edge_id = _stable("G", node.id, failure_id, CausalEdgeKind.RAISES_AT.value)
             edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, CausalEdgeKind.RAISES_AT, True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
+
+    # Runtime import cycles are a graph property.  Test imports are observers;
+    # TYPE_CHECKING and function-local imports are not runtime SCC edges.
+    import_cycle_node_ids: set[str] = set()
+    folded_problem = context.problem.casefold()
+    if failure_id and any(token in folded_problem for token in (
+        "importerror", "modulenotfounderror", "import cycle", "circular import"
+    )):
+        for cycle in find_import_cycles(snapshot):
+            relevant = bool(
+                set(cycle.strongly_connected_component) & set(context.related_files)
+                or any(edge.source == failure_path for edge in cycle.observer_edges)
+                or failure_path in cycle.strongly_connected_component
+            )
+            if not relevant:
+                continue
+            for import_edge in cycle.production_edges:
+                node_id = _stable(
+                    "N", CausalNodeKind.IMPORT.value, import_edge.source,
+                    import_edge.line, import_edge.target, import_edge.symbol,
+                )
+                node = CausalNode(
+                    node_id, CausalNodeKind.IMPORT, import_edge.source,
+                    import_edge.line, import_edge.symbol or import_edge.target,
+                    f"runtime import {import_edge.source} -> {import_edge.target}",
+                    _evidence_at(context.evidence_ledger, import_edge.source, import_edge.line),
+                    "module",
+                )
+                nodes[node_id] = node
+                import_cycle_node_ids.add(node_id)
+                edge_id = _stable("G", node_id, failure_id, CausalEdgeKind.RAISES_AT.value)
+                edges[edge_id] = CausalEdge(
+                    edge_id, node_id, failure_id, CausalEdgeKind.RAISES_AT,
+                    True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))),
+                )
 
     causal_slice = CausalSlice(
         failure_id,
@@ -808,6 +876,12 @@ def build_causal_slice(
         structural = deterministic_edges / max(1, distance)
         completeness = 1.0 if path_ids[-1] == failure_id else 0.0
         kind = _node_kind_for_cause(node, context.problem)
+        if (
+            node.kind is CausalNodeKind.IMPORT
+            and "cycle" in folded_problem
+            and node.id not in import_cycle_node_ids
+        ):
+            continue
         is_test_input = (
             node.kind is CausalNodeKind.LITERAL
             and (node.path.startswith("tests/") or "/test" in node.path)
@@ -892,6 +966,30 @@ def structurally_dominant_root(
     ]
     if len(explicit_contract) == 1:
         return explicit_contract[0]
+    folded = problem.casefold()
+    upstream_contracts = [
+        item for item in candidates
+        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and item.origin_path != item.failure_path
+        and item.structural_support == 1.0
+        and item.completeness == 1.0
+        and item.origin_symbol
+        and re.search(
+            rf"\b{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}\b",
+            folded,
+        )
+        and re.search(
+            r"\b(?:return|returns|returned|producer|contract|produce|expects?)\b",
+            folded,
+        )
+    ]
+    manifestations = [
+        item for item in candidates
+        if item.origin_path == item.failure_path
+        and item.origin_line == item.failure_line
+    ]
+    if len(upstream_contracts) == 1 and manifestations:
+        return upstream_contracts[0]
     strong_origins = [
         item for item in candidates
         if item.origin_path != item.failure_path
