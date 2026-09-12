@@ -19,6 +19,7 @@ from .config import PROJECT_ROOT, load_settings
 from .deepseek import DeepSeekClient, DeepSeekService, DeepSeekSessionManager
 from .decision_policy import AgentDecisionPolicy, tool_catalog_audit
 from .decision_observability import AgentDecisionObserver
+from .git_checkpoint import DEFAULT_MESSAGE, DEFAULT_REPOSITORY, GitCheckpointService
 from .projects import ProjectRegistry, normalize_technical_transcript
 from .project_discovery import DiscoveryPolicy
 from .predictive import DecisionReport, PredictiveDecisionService
@@ -872,6 +873,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="verifica isolamento seguro usando apenas um workload controlado do JARVIS",
     )
     sandbox_check.add_argument("--json", action="store_true", dest="json_output")
+    checkpoint = sub.add_parser(
+        "git-checkpoint-push",
+        help="cria checkpoint seguro e envia somente para origin/main do JARVIS",
+    )
+    checkpoint.add_argument("--project", type=Path, default=PROJECT_ROOT)
+    checkpoint.add_argument("--message", default=DEFAULT_MESSAGE)
+    checkpoint.add_argument("--remote", default="origin")
+    checkpoint.add_argument("--branch", default="main")
+    checkpoint.add_argument("--run-tests", action="store_true")
+    checkpoint.add_argument("--dry-run", action="store_true")
+    checkpoint.add_argument("--json", action="store_true", dest="json_output")
+    checkpoint_watch = sub.add_parser(
+        "git-checkpoint-watch",
+        help="agenda um checkpoint por tempo decorrido antes do limite da sessao",
+    )
+    checkpoint_watch.add_argument("--project", type=Path, default=PROJECT_ROOT)
+    checkpoint_watch.add_argument("--message", default=DEFAULT_MESSAGE)
+    checkpoint_watch.add_argument("--remote", default="origin")
+    checkpoint_watch.add_argument("--branch", default="main")
+    checkpoint_watch.add_argument("--run-tests", action="store_true")
+    checkpoint_watch.add_argument("--session-seconds", type=int, default=18_000)
+    checkpoint_watch.add_argument("--lead-seconds", type=int, default=90)
+    checkpoint_watch.add_argument("--dry-run", action="store_true")
+    checkpoint_watch.add_argument("--json", action="store_true", dest="json_output")
     routing = sub.add_parser(
         "agent-routing-eval",
         help="executa benchmark deterministico de intencao e roteamento",
@@ -1292,6 +1317,29 @@ def main(argv: list[str] | None = None) -> int:
                 if capabilities.reason:
                     print(f"reason: {capabilities.reason}")
             return 0 if capabilities.ready else 1
+        elif args.command in {"git-checkpoint-push", "git-checkpoint-watch"}:
+            checkpoint = GitCheckpointService(
+                args.project,
+                remote=args.remote,
+                branch=args.branch,
+                expected_repository=DEFAULT_REPOSITORY,
+            )
+            if args.command == "git-checkpoint-watch":
+                result = checkpoint.watch_and_checkpoint(
+                    session_seconds=args.session_seconds,
+                    lead_seconds=args.lead_seconds,
+                    message=args.message,
+                    run_tests=args.run_tests,
+                    dry_run=args.dry_run,
+                )
+            else:
+                result = checkpoint.commit_and_push(
+                    message=args.message,
+                    run_tests=args.run_tests,
+                    dry_run=args.dry_run,
+                )
+            _print(result)
+            return 0 if result.get("ok") else 1
         elif args.command == "agent-routing-eval":
             split = None if args.split == "all" else args.split
             cases_path = args.cases_file
@@ -1759,9 +1807,16 @@ def main(argv: list[str] | None = None) -> int:
                 LlamaClient(settings.base_url, settings.timeout),
                 registry,
             )
-            TextSession(supervisor, console=console).run(
-                once=args.once
-            )
+            checkpoint = GitCheckpointService(PROJECT_ROOT)
+            TextSession(
+                supervisor,
+                console=console,
+                slash_commands={
+                    "git-checkpoint-push": lambda message: checkpoint.commit_and_push(
+                        message=message or DEFAULT_MESSAGE
+                    ),
+                },
+            ).run(once=args.once)
         else:
             registry = _registry(
                 settings,

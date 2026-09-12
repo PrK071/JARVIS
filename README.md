@@ -66,6 +66,24 @@ Digitar apenas `jarvis` inicia a sessão contínua de voz. Os comandos da CLI
 também ficam disponíveis pelo alias, por exemplo `jarvis status`,
 `jarvis voice --once` e `jarvis ask "Sua pergunta"`.
 
+Checkpoint de versão do próprio JARVIS:
+
+```powershell
+# Inspeciona sem alterar o repositório
+jarvis git-checkpoint-push --dry-run
+
+# Cria commit e push seguros para origin/main
+jarvis git-checkpoint-push --message "chore: checkpoint before session limit"
+
+# Inicie no começo da sessão: checkpoint 90 s antes de 5 h decorridas
+jarvis git-checkpoint-watch --session-seconds 18000 --lead-seconds 90
+```
+
+O watchdog usa tempo decorrido porque a cota real do Codex não é exposta à CLI.
+Em `jarvis text`, use `/git-checkpoint-push mensagem` para o mesmo checkpoint
+explícito. O comando recusa branch/remoto inesperados, arquivos protegidos e
+alterações previamente staged; ele nunca faz force-push, pull ou reset.
+
 Diagnóstico e configuração:
 
 ```powershell

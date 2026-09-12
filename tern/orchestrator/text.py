@@ -1,14 +1,22 @@
 from __future__ import annotations
 
-from typing import Any
+import json
+from typing import Any, Callable, Mapping
 
 from .voice.policy import ConsoleIO
 
 
 class TextSession:
-    def __init__(self, supervisor, *, console: ConsoleIO | None = None):
+    def __init__(
+        self,
+        supervisor,
+        *,
+        console: ConsoleIO | None = None,
+        slash_commands: Mapping[str, Callable[[str], dict[str, Any]]] | None = None,
+    ):
         self.supervisor = supervisor
         self.console = console or ConsoleIO()
+        self.slash_commands = dict(slash_commands or {})
 
     def run(self, *, once: bool = False) -> dict[str, Any]:
         interactions = 0
@@ -25,6 +33,17 @@ class TextSession:
                 return last_result
             if not text:
                 continue
+            if text.startswith("/"):
+                command, _, argument = text[1:].partition(" ")
+                handler = self.slash_commands.get(command.casefold())
+                if handler:
+                    result = handler(argument.strip())
+                    interactions += 1
+                    last_result = {**result, "interactions": interactions}
+                    self.console.write(json.dumps(result, ensure_ascii=False, default=str))
+                    if once:
+                        return last_result
+                    continue
             self.console.write("[assistente] pensando...")
             result = self.supervisor.run(text, event_callback=self._event)
             interactions += 1

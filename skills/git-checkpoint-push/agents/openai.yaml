@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git Checkpoint Push"
+  short_description: "Safely checkpoint and push JARVIS"
+  default_prompt: "Use $git-checkpoint-push to create a safe JARVIS checkpoint now."
+policy:
+  allow_implicit_invocation: false
