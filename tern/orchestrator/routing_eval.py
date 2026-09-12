@@ -591,6 +591,8 @@ def _intent_from_tools(tools: list[str], content: str = "") -> str:
     if tools:
         if tools == ["review_codex_session"]:
             return "CODEX_REVIEW"
+        if tools == ["read_codex_history"]:
+            return "CODEX_REVIEW"
         if tools == ["get_codex_job_status"]:
             return "CODEX_STATUS"
         if tools == ["steer_codex_job"]:

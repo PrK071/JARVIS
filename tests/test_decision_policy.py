@@ -41,6 +41,8 @@ def decide(text: str, **context):
         ("o codex terminou?", {}, Intent.CODEX_STATUS, ("get_codex_job_status",), "active_job_status_query"),
         ("qual o status atual da sessão do Codex?", {}, Intent.CODEX_STATUS, ("get_codex_job_status",), "active_job_status_query"),
         ("oq o codex fez por ultimo?", {}, Intent.CODEX_REVIEW, ("review_codex_session",), "codex_history_query"),
+        ("o que conversei com o codex ontem?", {}, Intent.CODEX_REVIEW, ("read_codex_history",), "codex_cli_history_query"),
+        ("quais foram minhas ultimas conversas com o codex?", {}, Intent.CODEX_REVIEW, ("read_codex_history",), "codex_cli_history_query"),
         ("manda o codex corrigir", {"active_project": "tern"}, Intent.CODEX_DELEGATE, ("delegate_to_codex",), "explicit_codex_delegate"),
         ("fala pra ele olhar so warnings", {"focused_agent": "codex", "codex_job": {"status": "running", "job_id": "job-1"}}, Intent.CODEX_STEER, ("steer_codex_job",), "followup_to_active_job"),
         ("para ele", {"focused_agent": "codex", "codex_job": {"status": "running", "job_id": "job-1"}}, Intent.CODEX_CANCEL, ("cancel_codex_job",), "followup_to_active_job"),

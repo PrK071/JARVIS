@@ -14,6 +14,7 @@ from pathlib import Path
 from .agent import Supervisor
 from .client import LlamaClient
 from .codex import CodexError, CodexRunner, CodexSessionManager
+from .codex_history import CodexCliHistory
 from .config import PROJECT_ROOT, load_settings
 from .deepseek import DeepSeekClient, DeepSeekService, DeepSeekSessionManager
 from .decision_policy import AgentDecisionPolicy, tool_catalog_audit
@@ -571,6 +572,57 @@ def _codex_bridge_diagnose(settings, runtime: RuntimeManager, *, include_qwen: b
     return 0 if all(ok for _label, ok, _detail in checks) else 1
 
 
+def _run_codex_history(args) -> int:
+    history = CodexCliHistory()
+    if args.selector is None:
+        result = history.list_recent(
+            limit=args.limit,
+            project_dir=args.project_dir,
+        )
+        if not result.get("ok") or not result.get("sessions"):
+            print("Nenhuma sessao do Codex CLI encontrada em ~/.codex/sessions")
+            return 1
+        print("Sessoes recentes do Codex CLI")
+        for index, session in enumerate(result["sessions"], start=1):
+            title = session.get("title") or "sem mensagem"
+            started = session.get("started_at") or session.get("last_activity") or "-"
+            cwd = session.get("cwd") or "-"
+            print(f"\n{index}. {title}")
+            print(f"   Inicio: {started}")
+            print(f"   Pasta: {cwd}")
+            print(
+                "   Mensagens suas: "
+                f"{session.get('user_messages')} | Ultima: "
+                f"{session.get('last_user_message') or '-'}"
+            )
+        print(f"\nUse 'codex-history <numero>' para ler uma sessao.")
+        return 0
+    result = history.read_session(
+        args.selector,
+        turn_limit=args.turn_limit,
+        max_chars=args.max_chars,
+    )
+    if not result.get("ok"):
+        _print(result)
+        return 1
+    print(f"Sessao: {result.get('session_id') or '-'}")
+    print(f"Inicio: {result.get('started_at') or '-'}")
+    print(f"Pasta: {result.get('cwd') or '-'}")
+    print(
+        "Origem: "
+        f"{result.get('originator') or '-'} "
+        f"(Codex CLI {result.get('cli_version') or '?'})"
+    )
+    print()
+    for message in result["messages"]:
+        role = "Voce" if message["role"] == "user" else "Codex"
+        print(f"[{role}] {message['text']}")
+        print()
+    if result.get("truncated"):
+        print("... (trecho truncado; aumente --max-chars ou use --turn-limit menor)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Orquestrador local Qwen3.5")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -633,6 +685,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="mostra resultado persistido de um job Codex",
     )
     codex_job_result.add_argument("job_id")
+    codex_history = sub.add_parser(
+        "codex-history",
+        help="lista ou le as sessoes de conversa locais do Codex CLI",
+    )
+    codex_history.add_argument("selector", nargs="?", default=None)
+    codex_history.add_argument("--limit", type=int, default=10)
+    codex_history.add_argument("--max-chars", type=int, default=6000)
+    codex_history.add_argument("--turn-limit", type=int, default=None)
+    codex_history.add_argument("--cwd", dest="project_dir", default=None)
     sub.add_parser("projects", help="lista projetos conhecidos e aliases")
     sub.add_parser("project-active", help="mostra o projeto ativo")
     project_use = sub.add_parser(
@@ -1314,6 +1375,8 @@ def main(argv: list[str] | None = None) -> int:
                 manager,
                 include_qwen=not args.skip_qwen,
             )
+        elif args.command == "codex-history":
+            return _run_codex_history(args)
         elif args.command == "codex-jobs":
             jobs = _registry(settings).codex.list_jobs()
             print("Codex jobs")

@@ -312,6 +312,10 @@ class VoiceSession:
                 self.console.write(
                     "[assistente] consultando a sessao compartilhada do Codex..."
                 )
+            elif name == "read_codex_history":
+                self.console.write(
+                    "[assistente] lendo suas sessoes locais do Codex CLI..."
+                )
             elif name == "review_deepseek_session":
                 self.console.write("[assistente] lendo a sessao do DeepSeek...")
             elif name not in {"delegate_to_codex", "delegate_to_deepseek"}:

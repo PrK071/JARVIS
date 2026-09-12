@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .codex import CodexRunner
+from .codex_history import CodexCliHistory
 from .applications import ApplicationManager
 from .delegation import DelegationRequest
 from .deepseek import DeepSeekSessionManager
@@ -112,6 +113,7 @@ class ToolRegistry:
         self.policy = policy
         self.logger = logger
         self.codex = codex
+        self.codex_history = CodexCliHistory()
         self.max_output_bytes = max_output_bytes
         self.approval = approval
         self.web = web or WebClient(WebConfig(enabled=False))
@@ -1052,6 +1054,42 @@ class ToolRegistry:
             min(self.codex.timeout, 60),
         )
         self._add(
+            "read_codex_history",
+            (
+                "Le as sessoes locais de conversa do usuario com o Codex CLI em "
+                "~/.codex/sessions sem iniciar o Codex nem o App Server. Use para "
+                "listar as ultimas conversas do usuario com o Codex ou ler uma "
+                "sessao especifica pelo indice, id ou titulo. Somente leitura; "
+                "nao usa a thread compartilhada e nunca inicia turn."
+            ),
+            _object(
+                {
+                    "action": {"type": "string", "enum": ["list", "read"]},
+                    "selector": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 500},
+                            {"type": "null"},
+                        ]
+                    },
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                    "turn_limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                    "max_chars": {
+                        "type": "integer",
+                        "enum": [2000, 4000, 6000, 8000, 16000, 32000],
+                    },
+                    "project_dir": {
+                        "anyOf": [
+                            {"type": "string", "minLength": 1, "maxLength": 4096},
+                            {"type": "null"},
+                        ]
+                    },
+                },
+                ["action"],
+            ),
+            self._read_codex_history,
+            15,
+        )
+        self._add(
             "delegate_to_codex",
             (
                 "Envia tarefa real ao Codex App Server compartilhado e aguarda "
@@ -1641,6 +1679,22 @@ class ToolRegistry:
                 str(Path(__file__).resolve().parents[2]),
             ),
             turn_limit=arguments.get("turn_limit", 10),
+        )
+
+    def _read_codex_history(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        action = str(arguments.get("action") or "list")
+        selector = str(arguments.get("selector") or "").strip()
+        if action == "read":
+            if not selector:
+                return {"ok": False, "error": "selector_required"}
+            return self.codex_history.read_session(
+                selector,
+                turn_limit=arguments.get("turn_limit"),
+                max_chars=arguments.get("max_chars", 6000),
+            )
+        return self.codex_history.list_recent(
+            limit=arguments.get("limit", 10),
+            project_dir=arguments.get("project_dir") or None,
         )
 
     def _web_search(self, arguments: dict[str, Any]) -> dict[str, Any]:

@@ -122,6 +122,7 @@ class BoundedLiveRiskMatrix:
         "filesystem_list": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "filesystem_read_text": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "review_codex_session": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
+        "read_codex_history": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "review_deepseek_session": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "get_codex_job_status": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),
         "web_search": LiveActionPolicy(EffectRisk.LOW, RiskDisposition.AUTO),

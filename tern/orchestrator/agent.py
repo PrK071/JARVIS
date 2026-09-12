@@ -63,6 +63,7 @@ _SINGLE_CALL_TOOLS = frozenset(
     {
         "delegate_to_codex",
         "review_codex_session",
+        "read_codex_history",
         "get_codex_job_status",
         "cancel_codex_job",
         "steer_codex_job",

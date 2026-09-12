@@ -67,6 +67,7 @@ TOOL_EFFECTS: dict[str, SideEffect] = {
     "web_open_browser": SideEffect.REMOTE_READ,
     "web_extract": SideEffect.REMOTE_READ,
     "review_codex_session": SideEffect.READ_ONLY,
+    "read_codex_history": SideEffect.READ_ONLY,
     "get_codex_job_status": SideEffect.READ_ONLY,
     "steer_codex_job": SideEffect.CODE_EXECUTION,
     "cancel_codex_job": SideEffect.CODE_EXECUTION,
@@ -512,6 +513,24 @@ def _plain(value: str) -> str:
 
 def _has(text: str, phrases: tuple[str, ...]) -> bool:
     return any(phrase in text for phrase in phrases)
+
+
+_PERSONAL_CODEX_HISTORY_PHRASES: tuple[str, ...] = (
+    "minha conversa",
+    "minhas conversas",
+    "conversei com",
+    "conversamos",
+    "falei com o codex",
+    "o que eu perguntei",
+    "historico do codex cli",
+    "sessoes do codex cli",
+    "conversas com o codex",
+)
+
+
+def is_personal_codex_history_request(text: str) -> bool:
+    """Pergunta sobre as proprias conversas do usuario com o Codex CLI."""
+    return "codex" in text and _has(text, _PERSONAL_CODEX_HISTORY_PHRASES)
 
 
 @dataclass
@@ -1846,6 +1865,34 @@ class AgentDecisionPolicy:
         )
         if automatic_mutation is not None:
             return automatic_mutation
+        if is_personal_codex_history_request(text):
+            self._active_frame = IntentFrame(
+                speech_act=SpeechAct.QUESTION,
+                operation="review",
+                agent="codex",
+                target="user_codex_cli_history",
+                polarity="positive",
+                execution_requested=False,
+                continuation=False,
+                constraints=(Constraint.READ_ONLY,),
+                confidence=1.0,
+                followup_type=FollowupType.NEW_REQUEST,
+            )
+            self._active_reference = ResolvedReference(
+                "codex_history",
+                "user_codex_cli_history",
+                1.0,
+                ("codex_cli_history_query",),
+            )
+            return self._decision(
+                Intent.CODEX_REVIEW,
+                0.97,
+                project,
+                root,
+                ("read_codex_history",),
+                "codex_cli_history_query",
+                target="user_codex_cli_history",
+            )
         if semantic_decision is not None:
             self._active_frame = self._semantic_frame_from_qwen(semantic_decision)
             self._active_reference = self.reference_resolver.resolve_typed(
@@ -1911,6 +1958,12 @@ class AgentDecisionPolicy:
                 "o que aconteceu nos ultimos",
                 "ultima solucao do codex",
                 "informacoes do codex",
+                "ultimas conversas",
+                "conversa com o codex",
+                "conversas com o codex",
+                "conversei com",
+                "sessoes com o codex",
+                "historico do codex",
             ),
         ) or ("turn" in text and "ultim" in text)
         cancel_signal = _has(
@@ -1991,6 +2044,16 @@ class AgentDecisionPolicy:
             return self._decision(Intent.CODEX_STATUS, 0.97, project, root, ("get_codex_job_status",), "active_job_status_query", target=context.focused_job or context.codex_job_id, alternatives=((Intent.CODEX_REVIEW.value, 0.10),))
 
         if history_signal and (explicit_codex or context.focused_agent == "codex"):
+            if is_personal_codex_history_request(text):
+                return self._decision(
+                    Intent.CODEX_REVIEW,
+                    0.97,
+                    project,
+                    root,
+                    ("read_codex_history",),
+                    "codex_cli_history_query",
+                    target=context.focused_session,
+                )
             return self._decision(Intent.CODEX_REVIEW, 0.97, project, root, ("review_codex_session",), "codex_history_query", target=context.focused_session)
 
         if context.focused_agent == "deepseek" and _has(

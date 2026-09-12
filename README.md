@@ -46,6 +46,8 @@ python -m tern.orchestrator codex-shared-events --follow
 python -m tern.orchestrator codex-jobs
 python -m tern.orchestrator codex-job-status JOB_ID
 python -m tern.orchestrator codex-job-result JOB_ID
+python -m tern.orchestrator codex-history
+python -m tern.orchestrator codex-history 1 --turn-limit 5
 python -m tern.orchestrator projects
 python -m tern.orchestrator project-active
 python -m tern.orchestrator project-use tern
