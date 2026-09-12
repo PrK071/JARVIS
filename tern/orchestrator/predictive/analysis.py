@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, replace
 from typing import Any, Mapping, Protocol, Sequence
 
@@ -144,7 +145,9 @@ def repair_strategy_score(cause: RootCauseKind, strategy: RepairStrategyKind) ->
 
 
 def _response_schema(context: ProblemContext) -> dict[str, Any]:
-    dominant = structurally_dominant_root(context.root_cause_candidates, context.problem)
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem, context.causal_slice
+    )
     roots = [dominant.id] if dominant else [item.id for item in context.root_cause_candidates]
     all_roots = [item.id for item in context.root_cause_candidates]
     reason_codes = [item.value for item in RootSelectionReason]
@@ -154,6 +157,19 @@ def _response_schema(context: ProblemContext) -> dict[str, Any]:
     symbols = sorted({item.split("@", 1)[0] for item in context.related_symbols} | {
         item.origin_symbol for item in context.root_cause_candidates if item.origin_symbol
     })
+    strategy_values = [item.value for item in RepairStrategyKind]
+    if dominant:
+        compatible = [
+            item for item in RepairStrategyKind
+            if strategy_compatible(dominant.cause_kind, item)
+        ]
+        if (
+            dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
+            and RepairStrategyKind.VALIDATE_BOUNDARY in compatible
+            and re.search(r"\b(?:boundary|validat\w*)\b", context.problem, re.IGNORECASE)
+        ):
+            compatible = [RepairStrategyKind.VALIDATE_BOUNDARY]
+        strategy_values = [item.value for item in compatible]
     return {
         "type": "json_schema",
         "json_schema": {
@@ -194,7 +210,7 @@ def _response_schema(context: ProblemContext) -> dict[str, Any]:
                                         "type": "object",
                                         "additionalProperties": False,
                                         "properties": {
-                                            "kind": {"type": "string", "enum": [item.value for item in RepairStrategyKind]},
+                                            "kind": {"type": "string", "enum": strategy_values},
                                             "target_file": {"type": "string", "enum": files},
                                             "target_symbol": {"type": "string", "enum": ["", *symbols]},
                                             "rationale": {"type": "string", "minLength": 1, "maxLength": 240},
@@ -330,7 +346,9 @@ class PredictiveAnalyzer:
                     continue
                 selected_ids.add(root.id)
                 dominant = structurally_dominant_root(
-                    context.root_cause_candidates, context.problem
+                    context.root_cause_candidates,
+                    context.problem,
+                    context.causal_slice,
                 )
                 reason = RootSelectionReason(
                     str(raw_selection.get("selection_reason") or RootSelectionReason.STRONGER_CAUSAL_PATH.value)
@@ -419,13 +437,21 @@ class PredictiveAnalyzer:
                             item for item in typed_targets
                             if item.path == target_file
                             and (
-                                not target_symbol
+                                kind is RepairStrategyKind.CORRECT_ARGUMENT
+                                or not target_symbol
                                 or not item.symbol
-                                or item.symbol.rsplit(".", 1)[-1]
-                                == target_symbol.rsplit(".", 1)[-1]
+                                or target_symbol.rsplit(".", 1)[-1] in {
+                                    (item.symbol or "").rsplit(".", 1)[-1],
+                                    (item.parameter or "").rsplit(".", 1)[-1],
+                                    (item.attribute or "").rsplit(".", 1)[-1],
+                                }
                             )
                         ]
-                        target = best_target(compatible or typed_targets)
+                        target = best_target(
+                            compatible or typed_targets,
+                            strategy=kind,
+                            root=root,
+                        )
                     if target is None or not validate_repair_target(
                         kind, root, target, context.causal_slice
                     ):

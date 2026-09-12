@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import pytest
 
+from tern.orchestrator.predictive.causal import (
+    RepairStrategyKind,
+    RootCauseCandidate,
+    RootCauseKind,
+)
 from tern.orchestrator.predictive.repair import (
     RepairTarget,
     RepairTargetKind,
+    best_target,
     target_refines,
     targets_compatible,
 )
@@ -39,3 +45,28 @@ def test_parameter_and_attribute_require_names():
         RepairTarget("pkg/math.py", RepairTargetKind.PARAMETER)
     with pytest.raises(ValueError, match="requires attribute"):
         RepairTarget("pkg/math.py", RepairTargetKind.ATTRIBUTE)
+
+
+def test_best_target_uses_strategy_and_causal_origin():
+    root = RootCauseCandidate(
+        "R1", RootCauseKind.ARGUMENT_BINDING,
+        "pkg/math.py", "values", 5, "pkg/math.py", 2,
+        ("N1", "N2"), ("E1",), 0.8, 1.0, 1, 1.0, 0.8, "flow",
+    )
+    parameter = RepairTarget(
+        "pkg/math.py", RepairTargetKind.PARAMETER, "mean", "values", line=5
+    )
+    call_site = RepairTarget(
+        "pkg/math.py", RepairTargetKind.CALL_SITE, "mean", line=6
+    )
+
+    assert best_target(
+        (call_site, parameter),
+        strategy=RepairStrategyKind.VALIDATE_BOUNDARY,
+        root=root,
+    ) == parameter
+    assert best_target(
+        (parameter, call_site),
+        strategy=RepairStrategyKind.CORRECT_ARGUMENT,
+        root=root,
+    ) == call_site

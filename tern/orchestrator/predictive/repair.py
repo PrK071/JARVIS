@@ -223,8 +223,15 @@ def derive_repair_targets(
     return tuple(sorted(result.values(), key=lambda item: (item.path, item.line or 0, item.id)))
 
 
-def best_target(targets: Iterable[RepairTarget]) -> RepairTarget | None:
-    priority = {
+def best_target(
+    targets: Iterable[RepairTarget],
+    *,
+    strategy: RepairStrategyKind | None = None,
+    root: RootCauseCandidate | None = None,
+) -> RepairTarget | None:
+    from .causal import RepairStrategyKind
+
+    default_priority = {
         RepairTargetKind.RETURN_SITE: 0,
         RepairTargetKind.IMPORT_EDGE: 0,
         RepairTargetKind.CONFIG_VALUE: 0,
@@ -236,5 +243,30 @@ def best_target(targets: Iterable[RepairTarget]) -> RepairTarget | None:
         RepairTargetKind.TEST_EXPECTATION: 2,
         RepairTargetKind.MODULE: 3,
     }
-    ordered = sorted(targets, key=lambda item: (priority[item.scope_kind], item.path, item.line or 0, item.id))
+    strategy_priority = {
+        RepairStrategyKind.CORRECT_ARGUMENT: {
+            RepairTargetKind.CALL_SITE: 0,
+            RepairTargetKind.PARAMETER: 1,
+        },
+        RepairStrategyKind.VALIDATE_BOUNDARY: {
+            RepairTargetKind.PARAMETER: 0,
+            RepairTargetKind.FUNCTION: 1,
+            RepairTargetKind.METHOD: 1,
+            RepairTargetKind.CALL_SITE: 2,
+        },
+    }.get(strategy, {})
+
+    def sort_key(item: RepairTarget) -> tuple[object, ...]:
+        origin_distance = 1
+        if root and item.path == root.origin_path:
+            origin_distance = 0 if item.line == root.origin_line else 1
+        return (
+            strategy_priority.get(item.scope_kind, default_priority[item.scope_kind]),
+            origin_distance,
+            item.path,
+            item.line or 0,
+            item.id,
+        )
+
+    ordered = sorted(targets, key=sort_key)
     return ordered[0] if ordered else None

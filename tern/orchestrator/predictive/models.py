@@ -272,7 +272,9 @@ class ProblemContext:
         node_lookup = {
             node.id: node for node in self.causal_slice.nodes
         } if self.causal_slice else {}
-        dominant = structurally_dominant_root(self.root_cause_candidates, self.problem)
+        dominant = structurally_dominant_root(
+            self.root_cause_candidates, self.problem, self.causal_slice
+        )
         return {
             "problem": self.problem,
             "project_id": self.project_id,

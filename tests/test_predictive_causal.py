@@ -143,6 +143,51 @@ def test_explicit_return_contract_can_dominate_failure_site():
     assert dominant.origin_symbol == "find_user"
 
 
+def test_upstream_contract_dominates_consumer_manifestation():
+    for identifier, symbol in (
+        ("PC5D-008", "parse_count"),
+        ("PC5D-013", "decode_quantity"),
+        ("PC5D-014", "decode_price"),
+    ):
+        context = _context(identifier)
+        dominant = structurally_dominant_root(
+            context.root_cause_candidates, context.problem, context.causal_slice
+        )
+
+        assert dominant is not None
+        assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
+        assert dominant.origin_symbol == symbol
+
+
+def test_explicit_parameter_owner_dominates_unrelated_flow():
+    for identifier in ("PC5D-005", "PC5D-006"):
+        context = _context(identifier)
+        dominant = structurally_dominant_root(
+            context.root_cause_candidates, context.problem, context.causal_slice
+        )
+
+        assert dominant is not None
+        assert dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
+        assert dominant.origin_symbol == "values"
+
+
+def test_import_cycle_candidates_are_distinct_and_legacy_wording_is_supported():
+    three_node = _context("PC5D-001")
+    legacy = _context("PD-016")
+    semantic_origins = {
+        (root.cause_kind, root.origin_path, root.origin_symbol, root.origin_line)
+        for root in three_node.root_cause_candidates
+    }
+
+    assert len(semantic_origins) == len(three_node.root_cause_candidates)
+    assert len(three_node.root_cause_candidates) == 3
+    assert legacy.root_cause_candidates
+    assert all(
+        root.cause_kind is RootCauseKind.IMPORT_RESOLUTION
+        for root in legacy.root_cause_candidates
+    )
+
+
 def test_failure_site_and_root_origin_are_distinct():
     context = _context("PC3D-001")
     root = context.root_cause_candidates[0]
@@ -218,6 +263,50 @@ def test_reasoner_schema_requires_closed_comparative_reason_codes():
             assert item["properties"]["root_cause_id"]["enum"] == [
                 context.reasoning_payload()["structurally_dominant_root_id"]
             ]
+            return {"choices": [{"message": {"content": '{"selections": []}'}}]}
+
+    PredictiveAnalyzer(Recorder()).analyze_with_diagnostics(context)
+
+
+def test_argument_repair_uses_call_site_even_when_model_names_parameter():
+    context = _context("PC5D-005")
+    root_id = context.reasoning_payload()["structurally_dominant_root_id"]
+
+    class Reasoner:
+        def chat(self, _messages, **_kwargs):
+            value = {
+                "selections": [{
+                    "root_cause_id": root_id,
+                    "selection_reason": "ARGUMENT_SOURCE",
+                    "rejected": [],
+                    "claim": "mean passes a zero count to ratio",
+                    "strategies": [{
+                        "kind": "CORRECT_ARGUMENT",
+                        "target_file": "pkg/mathops.py",
+                        "target_symbol": "values",
+                        "rationale": "Correct the call argument derived from the empty input",
+                        "reason": "ARGUMENT_SOURCE",
+                    }],
+                }],
+            }
+            return {"choices": [{"message": {"content": json.dumps(value)}}]}
+
+    result = PredictiveAnalyzer(Reasoner()).analyze_with_diagnostics(context)
+
+    assert result.candidates
+    assert result.candidates[0].repair_targets[0].scope_kind.value == "CALL_SITE"
+
+
+def test_explicit_boundary_limits_dominant_binding_to_validation_strategy():
+    context = _context("PC5D-006")
+
+    class Recorder:
+        def chat(self, _messages, **kwargs):
+            schema = kwargs["response_format"]["json_schema"]["schema"]
+            strategy = schema["properties"]["selections"]["items"][
+                "properties"
+            ]["strategies"]["items"]["properties"]["kind"]
+            assert strategy["enum"] == ["VALIDATE_BOUNDARY"]
             return {"choices": [{"message": {"content": '{"selections": []}'}}]}
 
     PredictiveAnalyzer(Recorder()).analyze_with_diagnostics(context)

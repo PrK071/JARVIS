@@ -323,6 +323,20 @@ def _traceback(problem: str) -> tuple[str | None, int | None]:
             int(match.group("line") or match.group("short_line")))
 
 
+def _mentions_import_failure(problem: str) -> bool:
+    folded = problem.casefold()
+    return (
+        any(token in folded for token in (
+            "importerror",
+            "modulenotfounderror",
+            "import cycle",
+            "circular import",
+            "partially initialized module",
+        ))
+        or ("cycle" in folded and "import" in folded)
+    )
+
+
 def expand_context_for_causal_flow(
     context: ProblemContext,
     snapshot: ProjectSnapshotV2,
@@ -798,9 +812,8 @@ def build_causal_slice(
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
     import_cycle_node_ids: set[str] = set()
     folded_problem = context.problem.casefold()
-    if failure_id and any(token in folded_problem for token in (
-        "importerror", "modulenotfounderror", "import cycle", "circular import"
-    )):
+    import_failure = _mentions_import_failure(context.problem)
+    if failure_id and import_failure:
         for cycle in find_import_cycles(snapshot):
             relevant = bool(
                 set(cycle.strongly_connected_component) & set(context.related_files)
@@ -878,7 +891,8 @@ def build_causal_slice(
         kind = _node_kind_for_cause(node, context.problem)
         if (
             node.kind is CausalNodeKind.IMPORT
-            and "cycle" in folded_problem
+            and import_failure
+            and import_cycle_node_ids
             and node.id not in import_cycle_node_ids
         ):
             continue
@@ -945,51 +959,147 @@ def build_causal_slice(
             path_ids, evidence_ids, round(direct, 4), round(structural, 4),
             distance, completeness, score, statement,
         ))
+    distinct_candidates: dict[
+        tuple[RootCauseKind, str, str | None, int], RootCauseCandidate
+    ] = {}
+    for candidate in root_candidates:
+        key = (
+            candidate.cause_kind,
+            candidate.origin_path,
+            candidate.origin_symbol,
+            candidate.origin_line,
+        )
+        current = distinct_candidates.get(key)
+        if current is None or (
+            candidate.score,
+            candidate.direct_support,
+            -candidate.causal_distance,
+            candidate.id,
+        ) > (
+            current.score,
+            current.direct_support,
+            -current.causal_distance,
+            current.id,
+        ):
+            distinct_candidates[key] = candidate
     ordered = sorted(
-        root_candidates,
+        distinct_candidates.values(),
         key=lambda item: (-item.score, item.causal_distance, item.origin_path, item.origin_line, item.id),
     )
     return causal_slice, tuple(ordered[:8])
 
 
 def structurally_dominant_root(
-    candidates: Sequence[RootCauseCandidate], problem: str
+    candidates: Sequence[RootCauseCandidate],
+    problem: str,
+    causal_slice: CausalSlice | None = None,
 ) -> RootCauseCandidate | None:
     """Return a root only when deterministic evidence makes alternatives weaker."""
-    explicit_contract = [
-        item for item in candidates
-        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
-        and item.origin_path == item.failure_path
-        and item.origin_line == item.failure_line
-        and re.search(r"\breturn(?:s|ed|ing)?\b", problem, re.IGNORECASE)
-        and re.search(r"\b(?:expect(?:s|ed)?|contract|caller)\b", problem, re.IGNORECASE)
-    ]
-    if len(explicit_contract) == 1:
-        return explicit_contract[0]
     folded = problem.casefold()
-    upstream_contracts = [
-        item for item in candidates
-        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
-        and item.origin_path != item.failure_path
-        and item.structural_support == 1.0
-        and item.completeness == 1.0
-        and item.origin_symbol
-        and re.search(
-            rf"\b{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}\b",
+    contract_scores: dict[str, int] = {}
+    upstream_contracts: list[RootCauseCandidate] = []
+    for item in candidates:
+        if (
+            item.cause_kind is not RootCauseKind.RETURN_CONTRACT
+            or (
+                item.origin_path == item.failure_path
+                and item.origin_line == item.failure_line
+            )
+            or item.structural_support != 1.0
+            or item.completeness != 1.0
+            or not item.origin_symbol
+        ):
+            continue
+        symbol = re.escape(item.origin_symbol.rsplit(".", 1)[-1].casefold())
+        if not re.search(rf"\b{symbol}\b", folded):
+            continue
+        score = 1
+        if re.search(
+            rf"\b{symbol}\b.{{0,100}}\b(?:violat\w*|return\w*|producer|contract|produc\w*)\b",
             folded,
-        )
-        and re.search(
-            r"\b(?:return|returns|returned|producer|contract|produce|expects?)\b",
+        ):
+            score += 3
+        if re.search(
+            rf"\b(?:expect\w*|contract|producer|source)\b.{{0,100}}\b{symbol}\b",
             folded,
-        )
-    ]
+        ):
+            score += 2
+        contract_scores[item.id] = score
+        upstream_contracts.append(item)
+    if contract_scores:
+        best_contract_score = max(contract_scores.values())
+        upstream_contracts = [
+            item for item in upstream_contracts
+            if contract_scores[item.id] == best_contract_score
+        ]
+    contract_origins = {
+        (item.origin_path, item.origin_symbol): [] for item in upstream_contracts
+    }
+    for item in upstream_contracts:
+        contract_origins[(item.origin_path, item.origin_symbol)].append(item)
     manifestations = [
         item for item in candidates
         if item.origin_path == item.failure_path
         and item.origin_line == item.failure_line
     ]
-    if len(upstream_contracts) == 1 and manifestations:
-        return upstream_contracts[0]
+    if len(contract_origins) == 1 and manifestations:
+        return sorted(
+            next(iter(contract_origins.values())),
+            key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
+        )[0]
+
+    if causal_slice and re.search(
+        r"\b(?:argument|parameter|default|boundary|passed|supplied|receives?)\b",
+        folded,
+    ):
+        nodes = {item.id: item for item in causal_slice.nodes}
+        binding_scores: dict[str, int] = {}
+        bindings: dict[str, RootCauseCandidate] = {}
+        for item in candidates:
+            if (
+                item.cause_kind is not RootCauseKind.ARGUMENT_BINDING
+                or item.structural_support != 1.0
+                or item.completeness != 1.0
+                or not item.origin_symbol
+            ):
+                continue
+            origin = nodes.get(item.causal_path[0]) if item.causal_path else None
+            scope = origin.scope if origin else None
+            score = 0
+            if re.search(
+                rf"\b{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}\b",
+                folded,
+            ):
+                score += 2
+            if scope and re.search(
+                rf"\b{re.escape(scope.rsplit('.', 1)[-1].casefold())}\s*\(",
+                folded,
+            ):
+                score += 3
+            if scope and re.search(
+                rf"\b(?:owned|handled|validated)\s+by\s+{re.escape(scope.rsplit('.', 1)[-1].casefold())}\b",
+                folded,
+            ):
+                score += 3
+            if score:
+                binding_scores[item.id] = score
+                bindings[item.id] = item
+        if binding_scores:
+            best_score = max(binding_scores.values())
+            strongest = [
+                bindings[item_id]
+                for item_id, score in binding_scores.items()
+                if score == best_score
+            ]
+            semantic_origins = {
+                (item.origin_path, item.origin_symbol) for item in strongest
+            }
+            if len(semantic_origins) == 1:
+                return sorted(
+                    strongest,
+                    key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
+                )[0]
+
     strong_origins = [
         item for item in candidates
         if item.origin_path != item.failure_path
@@ -1001,7 +1111,29 @@ def structurally_dominant_root(
         and item.structural_support == 1.0
         and item.completeness == 1.0
     ]
-    return strong_origins[0] if len(strong_origins) == 1 else None
+    strong_origin_groups = {
+        (item.cause_kind, item.origin_path, item.origin_symbol): []
+        for item in strong_origins
+    }
+    for item in strong_origins:
+        strong_origin_groups[(
+            item.cause_kind, item.origin_path, item.origin_symbol
+        )].append(item)
+    if len(strong_origin_groups) == 1:
+        return sorted(
+            next(iter(strong_origin_groups.values())),
+            key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
+        )[0]
+
+    explicit_contract = [
+        item for item in candidates
+        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and item.origin_path == item.failure_path
+        and item.origin_line == item.failure_line
+        and re.search(r"\breturn(?:s|ed|ing)?\b", folded)
+        and re.search(r"\b(?:expect(?:s|ed)?|contract|caller)\b", folded)
+    ]
+    return explicit_contract[0] if len(explicit_contract) == 1 else None
 
 
 def repair_locality(
