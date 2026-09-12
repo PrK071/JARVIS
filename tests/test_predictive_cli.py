@@ -73,3 +73,30 @@ def test_predict_cli_is_read_only_and_emits_structured_report(monkeypatch, capsy
     assert value["dry_run"] is True
     assert value["execution_authorized"] is False
     assert value["requires_approval"] is True
+
+
+def test_predictive_robustness_cli_is_offline_by_default(monkeypatch, capsys):
+    class Runtime:
+        def __init__(self, _settings):
+            pass
+
+        def ensure_llama_server(self, _wait):
+            raise AssertionError("robustness must require --live-qwen")
+
+    metamorphic = {"mode": "baseline", "split": "development", "safety": {"passed": True}}
+    counterfactual = {"mode": "baseline", "split": "development"}
+    combined = {
+        "version": 6, "mode": "baseline", "split": "development",
+        "metrics": {}, "safety": {"passed": True},
+        "stage_gate": {"passed": False, "checks": {}, "blockers": []},
+    }
+    monkeypatch.setattr(cli, "load_settings", lambda: object())
+    monkeypatch.setattr(cli, "RuntimeManager", Runtime)
+    monkeypatch.setattr(cli, "evaluate_robustness_suite", lambda **_kwargs: metamorphic)
+    monkeypatch.setattr(cli, "evaluate_counterfactual_suite", lambda **_kwargs: counterfactual)
+    monkeypatch.setattr(cli, "summarize_robustness_gate", lambda *_args: combined)
+
+    assert cli.main([
+        "predictive-eval", "--mode", "robustness", "--split", "development", "--json",
+    ]) == 0
+    assert json.loads(capsys.readouterr().out)["version"] == 6

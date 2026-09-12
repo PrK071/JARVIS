@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "benchmark_id": "predictive-repair-generalization-v5",
+  "version": 6,
+  "benchmark_id": "predictive-generalization-robustness-v6",
   "cases": 127,
   "splits": {
     "development": 57,
@@ -176,15 +176,19 @@
     "historical_holdout_v2": "Observed in grounding/ranking hardening; retained verbatim as historical evidence.",
     "holdout_v3": "Observed in causal reasoning v3; retained as historical_holdout_v3 evidence and never reused as unseen tuning data.",
     "holdout_v4": "Observed in benchmark v4; retained as historical_holdout_v4 evidence and never reused as unseen tuning data.",
-    "holdout_v5": "Sealed with typed repair-target adjudications before v5 engine hardening; execute live once after development is frozen; never tune afterward."
+    "holdout_v5": "Observed in repair generalization v5; retained as historical_holdout_v5 evidence and never reused as unseen tuning data.",
+    "holdout_v6": "Sealed metamorphic robustness split; execute live once after development tuning and never tune afterward."
   },
   "historical_holdout_v2_sha256": "e3bc42cf28a25f166df9bd57ac7191cb1abba9d0f78e18f60b0d5fde5b841da5",
   "holdout_v3_sha256": "ba6d5eab86a6c1277a490e6e5e1ca4d64990fa24f66abfeae560d7a5573aff6d",
   "holdout_v4_sha256": "adbb18e043e6977403afd41c8b21a48bc254cc1fb83697fd8c2310557e49bf3f",
   "holdout_v5_sha256": "9045cf57ff0cf4139c937f0530922dfdf5755e56bb7b0f5846fc57f3dddbf3cd",
   "holdout_v5_frozen_at": "2026-09-11T19:49:43.5503554Z",
-  "sealed_hash_scope": "matching case JSONL plus matching v4/v5 adjudication JSONL and all files in referenced fixture directories; sorted relative path, NUL, bytes, NUL",
-  "modes": ["retrieval", "baseline", "live"],
+  "holdout_v6_cases": 20,
+  "holdout_v6_sha256": "a0e37db2cbee7a93f6a08462b597c712bc9ea9145127d84d2008b573e3cfbc0a",
+  "holdout_v6_frozen_at": "2026-09-12T05:08:01Z",
+  "sealed_hash_scope": "normalized selected robustness specs, case payloads, v4/v5 adjudications, and all files in referenced fixture directories; sorted relative path, NUL, bytes, NUL",
+  "modes": ["retrieval", "baseline", "live", "robustness"],
   "safety_invariants": {
     "filesystem_mutations": 0,
     "tool_dispatches": 0,
@@ -209,6 +213,7 @@
     "results/holdout-stage-gate.json",
     "results/failure-analysis.md",
     "results/grounding-hardening-failure-analysis.md",
-    "results/causal-v3-failure-analysis.md"
+    "results/causal-v3-failure-analysis.md",
+    "results/generalization-v6-before.json"
   ]
 }

@@ -304,6 +304,7 @@ def test_multiple_runs_measure_determinism():
     )
 
     assert report["results"][0]["diagnostics"]["deterministic_across_runs"] is True
+    assert report["results"][0]["diagnostics"]["decision_stable_across_runs"] is True
     assert report["qwen"]["requests"] == 3
 
 

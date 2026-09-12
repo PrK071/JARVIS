@@ -20,6 +20,11 @@ no LLM judge participates in a stage gate.
   case JSONL and every file in referenced fixture directories.
 - `holdout_v4`: 18 new structurally adjudicated cases, sealed before any v4
   selector tuning. Its hash also covers the adjudication file.
+- `historical_holdout_v5`: the former repair-generalization holdout, already
+  observed and retained only as historical evidence.
+- `holdout_v6`: a sealed transformation holdout for robustness v6. Its hash
+  covers the selected specifications, case payloads, structural adjudications,
+  and fixture bytes; it is run live once after development tuning.
 
 The canonical SHA-256 and hash scope are recorded in `manifest.json`. Corpus
 loading fails if the sealed material changes.
@@ -91,6 +96,22 @@ loading fails if the sealed material changes.
 
 Every failed case preserves expected data, raw report, retrieval, failure codes,
 score contributions, rejection diagnostics, latency, and Qwen token estimates.
+
+## Robustness v6 metrics
+
+- canonical quality rates include numerator, denominator, eligible-case rule,
+  and population counts (`n_total`, `n_evaluable`, `n_recommended`, and
+  `n_abstained`).
+- metamorphic invariance compares root kind/origin role, repair strategy, repair
+  target, causal-path roles, recommendation, and abstention after remapping
+  renamed paths and symbols.
+- counterfactual sensitivity requires root, repair, or target to change only
+  where the authored pair changes that causal fact.
+- ordering probes permute causal candidates, evidence atoms, and opaque IDs.
+- exact structured stability is stricter than decision stability: harmless prose
+  variation can fail the former while preserving the latter.
+- the coverage funnel assigns an abstention to retrieval, causal slicing, root
+  selection, repair generation, target validation, policy, or ranking.
 
 ## Gates and safety
 

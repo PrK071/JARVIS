@@ -390,10 +390,14 @@ def summarize_benchmark_v5(
 def evaluate_predictive_cases_v5(
     cases: Sequence[PredictiveCase], *, corpus_root: str | Path = CORPUS_ROOT,
     mode: str = "retrieval", reasoner: Any = None, runs: int = 1,
+    analyzer_factory: Any = None,
 ) -> dict[str, Any]:
     truths = load_benchmark_v5_adjudications(cases, corpus_root)
     return summarize_benchmark_v5(
-        evaluate_predictive_cases(cases, mode=mode, reasoner=reasoner, runs=runs), truths
+        evaluate_predictive_cases(
+            cases, mode=mode, reasoner=reasoner, runs=runs,
+            analyzer_factory=analyzer_factory,
+        ), truths
     )
 
 

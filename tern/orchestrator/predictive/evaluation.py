@@ -10,7 +10,7 @@ import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from ..decision_observability import estimate_tokens, latency_summary
 from ..project_intelligence_v2 import ProjectCandidateGenerator, ProjectIndexBuilderV2
@@ -40,11 +40,13 @@ VALID_SPLITS = frozenset({
     "holdout_v3",
     "holdout_v4",
     "holdout_v5",
+    "holdout_v6",
 })
 SPLIT_ALIASES = {
     "holdout_v2": "historical_holdout_v2",
     "historical_holdout_v3": "holdout_v3",
     "historical_holdout_v4": "holdout_v4",
+    "historical_holdout_v5": "holdout_v5",
 }
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
@@ -105,6 +107,28 @@ class CountingReasoner:
         self.request_ms.append((time.perf_counter() - started) * 1000)
         self.response_tokens += estimate_tokens(response)
         return response
+
+
+def _decision_stability_signature(report: DecisionReport) -> tuple[Any, ...]:
+    """Keep decision stability separate from prose and score formatting."""
+    candidates = (*report.candidates, *report.rejected_candidates)
+    winner = next(
+        (item for item in candidates if item.id == report.recommended_candidate_id),
+        None,
+    )
+    target = winner.repair_targets[0] if winner and winner.repair_targets else None
+    return (
+        report.insufficient_evidence,
+        report.failure_reason,
+        report.ranking_ambiguous,
+        tuple(item.root_cause_id for item in report.hypotheses),
+        winner.strategy_kind if winner else None,
+        (
+            target.scope_kind.value,
+            target.path,
+            target.symbol or target.parameter or target.attribute,
+        ) if target else None,
+    )
 
 
 class StructuralBaselineAnalyzer:
@@ -259,7 +283,7 @@ def load_predictive_cases(
     split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5, 6}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
@@ -1154,6 +1178,7 @@ def evaluate_predictive_cases(
     mode: str = "retrieval",
     reasoner: StructuredReasoner | None = None,
     runs: int = 1,
+    analyzer_factory: Callable[[StructuredReasoner], Any] | None = None,
 ) -> dict[str, Any]:
     if mode not in VALID_MODES:
         raise ValueError(f"invalid predictive evaluation mode: {mode}")
@@ -1175,7 +1200,13 @@ def evaluate_predictive_cases(
                 service = PredictiveDecisionService(
                     counter or object(),
                     path_policy=PathPolicy((case.fixture_root,)),
-                    analyzer=StructuralBaselineAnalyzer() if mode == "baseline" else None,
+                    analyzer=(
+                        StructuralBaselineAnalyzer()
+                        if mode == "baseline"
+                        else analyzer_factory(counter)
+                        if analyzer_factory and counter
+                        else None
+                    ),
                 )
                 reports.append(service.predict(case.problem, case.fixture_root))
                 if counter:
@@ -1193,6 +1224,10 @@ def evaluate_predictive_cases(
         if report:
             full_metrics, full_failures = _full_metrics(case, context, report)
         stable = all(item.as_dict() == reports[0].as_dict() for item in reports[1:]) if reports else True
+        decision_stable = all(
+            _decision_stability_signature(item) == _decision_stability_signature(reports[0])
+            for item in reports[1:]
+        ) if reports else True
         if not stable:
             full_failures.append("NONDETERMINISTIC_RESULT")
         safety = {
@@ -1247,6 +1282,7 @@ def evaluate_predictive_cases(
                     "failure_reason": actual.get("failure_reason"),
                     "diagnostic_codes": actual.get("diagnostic_codes", []),
                     "deterministic_across_runs": stable,
+                    "decision_stable_across_runs": decision_stable,
                 },
                 "safety": safety,
                 "telemetry": {

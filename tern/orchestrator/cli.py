@@ -30,6 +30,13 @@ from .predictive.evaluation import (
 )
 from .predictive.benchmark_v4 import evaluate_predictive_cases_v4, format_benchmark_v4
 from .predictive.benchmark_v5 import evaluate_predictive_cases_v5, format_benchmark_v5
+from .predictive.benchmark_v6 import evaluate_predictive_cases_v6, format_benchmark_v6
+from .predictive.robustness import (
+    evaluate_counterfactual_suite,
+    evaluate_robustness_suite,
+    format_robustness_evaluation,
+    summarize_robustness_gate,
+)
 from .predictive.simulation import detect_sandbox_provider
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
@@ -803,7 +810,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     predictive_eval.add_argument(
         "--mode",
-        choices=("retrieval", "baseline", "live"),
+        choices=("retrieval", "baseline", "live", "robustness"),
         default="retrieval",
         help="live é o único modo que consulta Qwen",
     )
@@ -820,16 +827,34 @@ def build_parser() -> argparse.ArgumentParser:
             "holdout_v4",
             "historical_holdout_v4",
             "holdout_v5",
+            "historical_holdout_v5",
+            "holdout_v6",
         ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)
     predictive_eval.add_argument(
         "--benchmark-version",
-        choices=(3, 4, 5),
+        choices=(3, 4, 5, 6),
         type=int,
         default=3,
-        help="v5 separa estrategia e target; v4 usa adjudicacao causal canonica",
+        help="v6 audita denominadores e robustez; v5 separa estrategia e target",
+    )
+    predictive_eval.add_argument(
+        "--live-qwen",
+        action="store_true",
+        help="no modo robustness, habilita explicitamente as chamadas ao Qwen",
+    )
+    predictive_eval.add_argument(
+        "--transform",
+        default=None,
+        help="no modo robustness, limita a um tipo de transformacao",
+    )
+    predictive_eval.add_argument(
+        "--order-bias-limit",
+        type=int,
+        default=0,
+        help="amostra live para permutar candidatos, evidencias e IDs",
     )
     predictive_eval.add_argument(
         "--limit", type=int, default=None, help="limita casos para smoke live explícito"
@@ -1160,16 +1185,49 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 _print_predictive_report(report)
         elif args.command == "predictive-eval":
-            cases = load_predictive_cases(args.corpus, split=args.split)
-            if args.limit is not None:
-                if args.limit <= 0:
-                    raise ValueError("--limit deve ser positivo")
-                cases = cases[: args.limit]
             reasoner = None
-            if args.mode == "live":
+            if args.mode == "live" or (args.mode == "robustness" and args.live_qwen):
                 manager.ensure_llama_server(240)
                 reasoner = LlamaClient(settings.base_url, settings.timeout)
-            if args.benchmark_version == 5:
+            if args.limit is not None and args.limit <= 0:
+                raise ValueError("--limit deve ser positivo")
+            if args.order_bias_limit < 0:
+                raise ValueError("--order-bias-limit nao pode ser negativo")
+            if args.mode == "robustness":
+                robustness_mode = "live" if args.live_qwen else "baseline"
+                metamorphic = evaluate_robustness_suite(
+                    split=args.split,
+                    mode=robustness_mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                    transform=args.transform,
+                    limit=args.limit,
+                    corpus_root=args.corpus,
+                    order_bias_limit=args.order_bias_limit,
+                )
+                counterfactual = evaluate_counterfactual_suite(
+                    split=args.split,
+                    mode=robustness_mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                    limit=args.limit,
+                    corpus_root=args.corpus,
+                    known_signatures=metamorphic.get("base_signatures"),
+                )
+                report = summarize_robustness_gate(metamorphic, counterfactual)
+            else:
+                cases = load_predictive_cases(args.corpus, split=args.split)
+                if args.limit is not None:
+                    cases = cases[: args.limit]
+            if args.mode != "robustness" and args.benchmark_version == 6:
+                report = evaluate_predictive_cases_v6(
+                    cases,
+                    corpus_root=args.corpus,
+                    mode=args.mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
+            elif args.mode != "robustness" and args.benchmark_version == 5:
                 report = evaluate_predictive_cases_v5(
                     cases,
                     corpus_root=args.corpus,
@@ -1177,7 +1235,7 @@ def main(argv: list[str] | None = None) -> int:
                     reasoner=reasoner,
                     runs=args.runs,
                 )
-            elif args.benchmark_version == 4:
+            elif args.mode != "robustness" and args.benchmark_version == 4:
                 report = evaluate_predictive_cases_v4(
                     cases,
                     corpus_root=args.corpus,
@@ -1185,7 +1243,7 @@ def main(argv: list[str] | None = None) -> int:
                     reasoner=reasoner,
                     runs=args.runs,
                 )
-            else:
+            elif args.mode != "robustness":
                 report = evaluate_predictive_cases(
                     cases,
                     mode=args.mode,
@@ -1202,7 +1260,11 @@ def main(argv: list[str] | None = None) -> int:
                 _print(report)
             else:
                 print(
-                    format_benchmark_v5(report)
+                    format_robustness_evaluation(report)
+                    if args.mode == "robustness"
+                    else format_benchmark_v6(report)
+                    if args.benchmark_version == 6
+                    else format_benchmark_v5(report)
                     if args.benchmark_version == 5
                     else format_benchmark_v4(report)
                     if args.benchmark_version == 4
