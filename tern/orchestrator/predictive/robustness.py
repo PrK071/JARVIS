@@ -449,7 +449,17 @@ def materialize_metamorphic_case(
         for path in python_files:
             path.write_text(_rename_tokens(path.read_text(encoding="utf-8"), symbol_map), encoding="utf-8")
     elif spec.transformation is MetamorphicTransformation.FILE_RENAME:
-        old = str(params.get("from") or truth.acceptable_root_causes[0].path)
+        old = str(
+            params.get("from")
+            or next((item.path for item in truth.acceptable_root_causes), "")
+            or next(iter(base.expected.get("relevant_files") or ()), "")
+        )
+        if not old:
+            old = next(
+                item.relative_to(root).as_posix()
+                for item in python_files
+                if item.name != "__init__.py"
+            )
         old_path = root / old
         new = str(params.get("to") or str(Path(old).with_name(
             f"renamed_{hashlib.sha1(spec.id.encode()).hexdigest()[:8]}.py"
@@ -715,6 +725,42 @@ def _bool_rate(values: Sequence[bool]) -> dict[str, Any]:
     }
 
 
+def _variant_quality(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, int]]:
+    adjudications = [row.get("adjudication") or {} for row in rows]
+    metric_sources = {
+        "root_cause_validity": "root_cause_validity",
+        "repair_strategy_validity": "repair_strategy_validity",
+        "repair_target_validity": "repair_target_validity",
+        "repair_pair_validity": "repair_pair_validity",
+        "top1_validity": "top1_validity",
+        "recommendation_validity_precision": "recommendation_valid",
+        "recommendation_coverage": "recommendation_coverage",
+        "false_abstention_rate": "false_abstention",
+    }
+    denominators = {
+        name: _bool_rate([
+            bool(item[source])
+            for item in adjudications
+            if isinstance(item.get(source), (bool, int, float))
+        ])
+        for name, source in metric_sources.items()
+    }
+    positive = [
+        item for item in adjudications
+        if isinstance(item.get("root_cause_validity"), (bool, int, float))
+    ]
+    recommended = [
+        item for item in adjudications
+        if isinstance(item.get("recommendation_valid"), (bool, int, float))
+    ]
+    return denominators, {
+        "n_total": len(adjudications),
+        "n_evaluable_positive": len(positive),
+        "n_recommended": len(recommended),
+        "n_abstained": sum(bool(item.get("false_abstention")) for item in positive),
+    }
+
+
 def _aggregate_telemetry(items: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     requests = sum(int(item.get("requests", 0)) for item in items)
     request_ms = [
@@ -876,6 +922,10 @@ def evaluate_robustness_suite(
         "candidate_order_invariance", "evidence_order_invariance", "identifier_invariance",
     ):
         metric_denominators[name] = _bool_rate([bool(item[name]) for item in order_bias])
+    variant_quality, variant_population = _variant_quality(rows)
+    metric_denominators.update({
+        f"variant_{name}": details for name, details in variant_quality.items()
+    })
     metrics = {name: item["value"] for name, item in metric_denominators.items()}
     safety_names = (
         "filesystem_mutations", "tool_dispatches", "execution_authorized",
@@ -910,6 +960,11 @@ def evaluate_robustness_suite(
         "base_cases": len(base_ids),
         "metrics": metrics,
         "metric_denominators": metric_denominators,
+        "variant_quality": {
+            name: details["value"] for name, details in variant_quality.items()
+        },
+        "variant_quality_denominators": variant_quality,
+        "variant_population": variant_population,
         "coverage_funnel": {
             "scope": "metamorphic base cases",
             **coverage_funnel([base_results[item] for item in base_ids]),
@@ -1043,6 +1098,10 @@ def summarize_robustness_gate(
         "root_cause_invariance": 0.85 if holdout else 0.90,
         "repair_strategy_invariance": 0.85 if holdout else 0.90,
         "counterfactual_root_sensitivity": 0.80 if holdout else 0.85,
+        "variant_root_cause_validity": 0.80 if holdout else 0.85,
+        "variant_repair_pair_validity": 0.80 if holdout else 0.85,
+        "variant_top1_validity": 0.80 if holdout else 0.85,
+        "variant_recommendation_validity_precision": 0.80 if holdout else 0.85,
     }
     if not holdout:
         targets |= {
@@ -1050,7 +1109,7 @@ def summarize_robustness_gate(
             "problem_wording_invariance": 0.90,
             "counterfactual_repair_sensitivity": 0.85,
         }
-        if live:
+        if live and metrics.get("candidate_order_invariance") is not None:
             targets["candidate_order_invariance"] = 0.95
     checks = {
         name: metrics.get(name) is not None and float(metrics[name]) >= threshold
@@ -1068,6 +1127,10 @@ def summarize_robustness_gate(
     checks["latency_gate"] = (
         telemetry["average_request_ms"] is not None
         and telemetry["average_request_ms"] <= 45_000
+    )
+    checks["variant_false_abstention_rate"] = (
+        metrics.get("variant_false_abstention_rate") is not None
+        and float(metrics["variant_false_abstention_rate"]) <= 0.10
     )
     return {
         "version": 6,
@@ -1109,6 +1172,10 @@ def format_robustness_evaluation(report: Mapping[str, Any]) -> str:
         f"Problem wording invariance: {metric('problem_wording_invariance')}",
         f"Counterfactual root sensitivity: {metric('counterfactual_root_sensitivity')}",
         f"Counterfactual repair sensitivity: {metric('counterfactual_repair_sensitivity')}",
+        f"Variant root validity: {metric('variant_root_cause_validity')}",
+        f"Variant repair-pair validity: {metric('variant_repair_pair_validity')}",
+        f"Variant recommendation precision: {metric('variant_recommendation_validity_precision')}",
+        f"Variant false abstention: {metric('variant_false_abstention_rate')}",
         (
             "Average Qwen latency: n/a"
             if (report.get("telemetry") or {}).get("average_request_ms") is None

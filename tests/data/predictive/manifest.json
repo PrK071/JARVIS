@@ -185,8 +185,8 @@
   "holdout_v5_sha256": "9045cf57ff0cf4139c937f0530922dfdf5755e56bb7b0f5846fc57f3dddbf3cd",
   "holdout_v5_frozen_at": "2026-09-11T19:49:43.5503554Z",
   "holdout_v6_cases": 20,
-  "holdout_v6_sha256": "a0e37db2cbee7a93f6a08462b597c712bc9ea9145127d84d2008b573e3cfbc0a",
-  "holdout_v6_frozen_at": "2026-09-12T05:08:01Z",
+  "holdout_v6_sha256": "cba2c3ed22e3f94c2e6b24e7b77057058a3b15b3aa59c286b252d1fac72db0e8",
+  "holdout_v6_frozen_at": "2026-09-12T11:20:41Z",
   "sealed_hash_scope": "normalized selected robustness specs, case payloads, v4/v5 adjudications, and all files in referenced fixture directories; sorted relative path, NUL, bytes, NUL",
   "modes": ["retrieval", "baseline", "live", "robustness"],
   "safety_invariants": {
@@ -214,6 +214,17 @@
     "results/failure-analysis.md",
     "results/grounding-hardening-failure-analysis.md",
     "results/causal-v3-failure-analysis.md",
-    "results/generalization-v6-before.json"
+    "results/generalization-v6-before.json",
+    "results/generalization-v6-deterministic-after.json",
+    "results/generalization-v6-development.json",
+    "results/generalization-v6-development-after.json",
+    "results/generalization-v6-ablation-unbounded-binding.json",
+    "results/generalization-v6-ablation.md",
+    "results/generalization-v6-robustness-development.json",
+    "results/generalization-v6-development-readjudication.json",
+    "results/generalization-v6-stability-development.json",
+    "results/generalization-v6-holdout-v6.json",
+    "results/generalization-v6-stage-gate.json",
+    "results/generalization-v6-stage-gate.md"
   ]
 }

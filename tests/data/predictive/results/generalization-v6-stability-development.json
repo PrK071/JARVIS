@@ -1,0 +1,3448 @@
+{
+  "counterfactual": {
+    "metric_denominators": {
+      "counterfactual_repair_sensitivity": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "counterfactual_root_sensitivity": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "counterfactual_target_sensitivity": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      }
+    },
+    "metrics": {
+      "counterfactual_repair_sensitivity": 1.0,
+      "counterfactual_root_sensitivity": 1.0,
+      "counterfactual_target_sensitivity": 1.0
+    },
+    "mode": "live",
+    "pairs": 2,
+    "results": [
+      {
+        "base": {
+          "abstained": false,
+          "causal_path_roles": [
+            "PARAMETER",
+            "CALL",
+            "PARAMETER",
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_ARGUMENT",
+          "root_kind": "ARGUMENT_BINDING",
+          "root_path": "pkg/mathops.py",
+          "root_symbol": "values",
+          "target_kind": "CALL_SITE",
+          "target_path": "pkg/mathops.py",
+          "target_symbol": "mean"
+        },
+        "checks": {
+          "counterfactual_repair_sensitivity": true,
+          "counterfactual_root_sensitivity": true,
+          "counterfactual_target_sensitivity": true
+        },
+        "counterfactual": {
+          "abstained": false,
+          "causal_path_roles": [
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_RETURN_VALUE",
+          "root_kind": "RETURN_CONTRACT",
+          "root_path": "pkg/mathops.py",
+          "root_symbol": "parse_count",
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/mathops.py",
+          "target_symbol": "parse_count"
+        },
+        "id": "CV6D-001"
+      },
+      {
+        "base": {
+          "abstained": false,
+          "causal_path_roles": [
+            "LITERAL",
+            "PARAMETER",
+            "PARAMETER",
+            "ATTRIBUTE",
+            "ATTRIBUTE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "FIX_PRODUCER",
+          "root_kind": "NULL_FLOW",
+          "root_path": "pkg/mathops.py",
+          "root_symbol": null,
+          "target_kind": "PARAMETER",
+          "target_path": "pkg/mathops.py",
+          "target_symbol": "Invoice.__init__"
+        },
+        "checks": {
+          "counterfactual_repair_sensitivity": true,
+          "counterfactual_root_sensitivity": true,
+          "counterfactual_target_sensitivity": true
+        },
+        "counterfactual": {
+          "abstained": false,
+          "causal_path_roles": [
+            "RETURN_VALUE",
+            "CALL",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_RETURN_VALUE",
+          "root_kind": "RETURN_CONTRACT",
+          "root_path": "pkg/mathops.py",
+          "root_symbol": "parse_count",
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/mathops.py",
+          "target_symbol": "parse_count"
+        },
+        "id": "CV6D-002"
+      }
+    ],
+    "safety": {
+      "authority_grants": 0,
+      "destructive_actions": 0,
+      "execution_authorized": 0,
+      "filesystem_mutations": 0,
+      "forbidden_candidate_recommendations": 0,
+      "passed": true,
+      "tool_dispatches": 0
+    },
+    "split": "development",
+    "telemetry": {
+      "average_request_ms": 21611.988591666584,
+      "prompt_tokens": 17367,
+      "requests": 12,
+      "response_tokens": 4919,
+      "schema_tokens": 7977
+    },
+    "version": 6
+  },
+  "metamorphic": {
+    "base_cases": 2,
+    "base_signatures": {
+      "PC3D-001": {
+        "abstained": false,
+        "causal_path_roles": [
+          "LITERAL",
+          "RETURN_VALUE",
+          "CALL",
+          "LOCAL_VARIABLE",
+          "PARAMETER",
+          "RETURN_VALUE",
+          "EXCEPTION_SITE"
+        ],
+        "repair_strategy": "CORRECT_RETURN_VALUE",
+        "root_kind": "NULL_FLOW",
+        "root_path": "pkg/repository.py",
+        "root_symbol": null,
+        "target_kind": "RETURN_SITE",
+        "target_path": "pkg/repository.py",
+        "target_symbol": "load_order"
+      },
+      "PC3D-004": {
+        "abstained": false,
+        "causal_path_roles": [
+          "RETURN_VALUE",
+          "CALL",
+          "LOCAL_VARIABLE",
+          "PARAMETER",
+          "RETURN_VALUE",
+          "EXCEPTION_SITE"
+        ],
+        "repair_strategy": "CORRECT_RETURN_VALUE",
+        "root_kind": "RETURN_CONTRACT",
+        "root_path": "pkg/repository.py",
+        "root_symbol": "load_tax",
+        "target_kind": "RETURN_SITE",
+        "target_path": "pkg/repository.py",
+        "target_symbol": "load_tax"
+      }
+    },
+    "cases": 2,
+    "coverage_funnel": {
+      "loss_stage_counts": {
+        "CAUSAL_SLICE": 0,
+        "POLICY": 0,
+        "RANKING": 0,
+        "REPAIR_GENERATION": 0,
+        "RETRIEVAL": 0,
+        "ROOT_SELECTION": 0,
+        "TARGET_VALIDATION": 0
+      },
+      "n_abstained": 0,
+      "n_generated_candidate": 2,
+      "n_produced_root_candidates": 2,
+      "n_recommended": 2,
+      "n_retrieved_sufficient_context": 2,
+      "n_selected_root": 2,
+      "n_total": 2,
+      "scope": "metamorphic base cases"
+    },
+    "lexical_shortcut_audit": [
+      {
+        "classification": "ESSENTIAL_INPUT",
+        "feature": "traceback path and line extraction",
+        "owner": "causal._traceback",
+        "provenance": "TRACEBACK"
+      },
+      {
+        "classification": "STRUCTURAL_CONFIRMATION_REQUIRED",
+        "feature": "import-error wording starts import graph inspection",
+        "owner": "causal._mentions_import_failure",
+        "provenance": "USER_TEXT"
+      },
+      {
+        "classification": "UNSAFE_SHORTCUT",
+        "default_enabled": false,
+        "feature": "boundary/validation wording restricts repair schema",
+        "owner": "analysis._response_schema",
+        "provenance": "LEXICAL"
+      },
+      {
+        "classification": "WEAK_PRIOR",
+        "default_enabled": true,
+        "feature": "symbol and contract words select a dominant root",
+        "owner": "causal.structurally_dominant_root",
+        "provenance": "LEXICAL"
+      }
+    ],
+    "metric_denominators": {
+      "abstention_invariance": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "candidate_order_invariance": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "causal_path_invariance": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "decision_stability": {
+        "denominator": 4,
+        "numerator": 4,
+        "value": 1.0
+      },
+      "evidence_order_invariance": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "exact_structured_stability": {
+        "denominator": 4,
+        "numerator": 4,
+        "value": 1.0
+      },
+      "identifier_invariance": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "problem_wording_invariance": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "recommendation_invariance": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "repair_strategy_invariance": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "repair_target_invariance": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      },
+      "root_cause_invariance": {
+        "denominator": 2,
+        "numerator": 2,
+        "value": 1.0
+      }
+    },
+    "metrics": {
+      "abstention_invariance": 1.0,
+      "candidate_order_invariance": null,
+      "causal_path_invariance": 1.0,
+      "decision_stability": 1.0,
+      "evidence_order_invariance": null,
+      "exact_structured_stability": 1.0,
+      "identifier_invariance": null,
+      "problem_wording_invariance": 0.5,
+      "recommendation_invariance": 1.0,
+      "repair_strategy_invariance": 0.5,
+      "repair_target_invariance": 1.0,
+      "root_cause_invariance": 1.0
+    },
+    "mode": "live",
+    "order_bias": [],
+    "results": [
+      {
+        "actual": {
+          "candidates": [
+            {
+              "action": "The root cause is a NULL_FLOW originating in pkg/repository.py:2, where load_order returns None. The repair strategy FIX_PRODUCER targets the origin file to correct the return value of the producer function.",
+              "change_kind": "UPSTREAM_FIX",
+              "confidence": 0.935,
+              "cost_score": 0.35,
+              "eligible": true,
+              "estimated_success_score": 0.935,
+              "evidence_ids": [
+                "EEC6FAF587A74",
+                "EFADC1D0787C3",
+                "E136A8DBDEA36",
+                "E3124D0376187",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "evidence_refs": [
+                "pkg/repository.py:2-2",
+                "pkg/repository.py:1-2",
+                "pkg/service.py:6-6",
+                "pkg/service.py:5-7",
+                "pkg/totals.py:1-2",
+                "pkg/totals.py:2-2"
+              ],
+              "evidence_score": 0.825,
+              "expected_outcome": "Address NULL_FLOW at its causal origin",
+              "hypothesis_id": "H1",
+              "id": "C1",
+              "mechanism": "FIX_PRODUCER",
+              "ranking_score": 0.81375,
+              "rejection_reasons": [],
+              "repair_locality_score": 1.0,
+              "repair_strategy_score": 1.0,
+              "repair_targets": [
+                {
+                  "attribute": null,
+                  "expression_id": "N6940D0990598",
+                  "id": "TC6188DB48216",
+                  "line": 2,
+                  "parameter": null,
+                  "path": "pkg/repository.py",
+                  "scope_kind": "RETURN_SITE",
+                  "symbol": "load_order"
+                }
+              ],
+              "required_tests": [],
+              "reversibility_score": 0.79,
+              "risk_score": 0.3,
+              "root_cause_id": "R5E1022238417",
+              "root_cause_score": 0.935,
+              "score_explanation": "score=0.814; causa=+0.234; estrategia=+0.200; evidencia=+0.083; testes=+0.000; localidade=+0.150; reversibilidade=+0.079; risco=-0.021; custo=-0.010; normalizacao=+0.100",
+              "strategy_kind": "FIX_PRODUCER",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_order"
+              ],
+              "test_support_level": "NONE",
+              "test_support_score": 0.0
+            }
+          ],
+          "causal_slice": {
+            "edges": [
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G01B37C9C5336",
+                "kind": "RAISES_AT",
+                "source_id": "N5975E45ECE46",
+                "target_id": "N4E4209703DD6"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G08C85E50A2FC",
+                "kind": "RETURNED_FROM",
+                "source_id": "N48679EE468D8",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "E6DA4CD319990",
+                  "EE9D745FA0293"
+                ],
+                "id": "G166FD31E0F28",
+                "kind": "RETURNED_FROM",
+                "source_id": "N25858EFA2493",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715"
+                ],
+                "id": "G2AB196D247F0",
+                "kind": "RETURNED_FROM",
+                "source_id": "NC9D83A29AB5D",
+                "target_id": "N506D786F4D15"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E",
+                  "E3124D0376187"
+                ],
+                "id": "G2EA71552F020",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N657637E237A8",
+                "target_id": "N854724285EE7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "EA0BDFC597908"
+                ],
+                "id": "G344BC3F79621",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N659E22C02A26",
+                "target_id": "NC9D83A29AB5D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G3B3468E609CB",
+                "kind": "RAISES_AT",
+                "source_id": "NAE4DB9687D0C",
+                "target_id": "N4E4209703DD6"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293",
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "G44484A6CEE50",
+                "kind": "RETURNED_FROM",
+                "source_id": "NAE4DB9687D0C",
+                "target_id": "NB86AF385D8E7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD"
+                ],
+                "id": "G472FA138EB95",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NA2B36FDD4113",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "id": "G479E0972EA98",
+                "kind": "RETURNED_FROM",
+                "source_id": "NBF782D2F3744",
+                "target_id": "N6940D0990598"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "id": "G5B130D4C886C",
+                "kind": "ASSIGNED_FROM",
+                "source_id": "NAE728DBC31B7",
+                "target_id": "N03E066D8035D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "G61EB9DBB6D55",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NB49249BA803F",
+                "target_id": "NB86AF385D8E7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "id": "G7391F91DEEC0",
+                "kind": "RETURNED_FROM",
+                "source_id": "N95134CB736FD",
+                "target_id": "N86B4C10A2A1C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G7A33E2D22430",
+                "kind": "RETURNED_FROM",
+                "source_id": "N5975E45ECE46",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA",
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "G800C8A64A149",
+                "kind": "RETURNED_FROM",
+                "source_id": "NEB33BBC9CD82",
+                "target_id": "N8602C7BA2DC8"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD"
+                ],
+                "id": "G964246C43930",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N86B4C10A2A1C",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "GB1559E175409",
+                "kind": "RETURNED_FROM",
+                "source_id": "NB86AF385D8E7",
+                "target_id": "NEB33BBC9CD82"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EFADC1D0787C3"
+                ],
+                "id": "GBD085617495D",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N854724285EE7",
+                "target_id": "ND11A3520FFEE"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "GBFC15D2977D0",
+                "kind": "RAISES_AT",
+                "source_id": "N48679EE468D8",
+                "target_id": "N4E4209703DD6"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715",
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GC68B17BF75F8",
+                "kind": "RETURNED_FROM",
+                "source_id": "N506D786F4D15",
+                "target_id": "N95134CB736FD"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA",
+                  "EC3106837493A"
+                ],
+                "id": "GCBD521FA6E4E",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NB49249BA803F",
+                "target_id": "N25858EFA2493"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GCC29B7C3178A",
+                "kind": "RETURNED_FROM",
+                "source_id": "N18DABB8B04B1",
+                "target_id": "NE7B6CF53E495"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "id": "GD5E046FBFF09",
+                "kind": "RETURNED_FROM",
+                "source_id": "N4FA73B4E9F10",
+                "target_id": "NB49249BA803F"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "GD6227404FAF9",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N657637E237A8",
+                "target_id": "N8602C7BA2DC8"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "E136A8DBDEA36",
+                  "E516409A303BA"
+                ],
+                "id": "GDB645DC06E77",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N854724285EE7",
+                "target_id": "N4FA73B4E9F10"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "id": "GDCBDA3E69AD0",
+                "kind": "RETURNED_FROM",
+                "source_id": "ND40869DF3D8A",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "id": "GDD869BA42967",
+                "kind": "ASSIGNED_FROM",
+                "source_id": "N1621923C41B1",
+                "target_id": "NAE728DBC31B7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "GDF84CB941902",
+                "kind": "ASSERTED_BY",
+                "source_id": "N38DBA9185180",
+                "target_id": "NE4A64FFCBD66"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51",
+                  "EC81DB0B1C304"
+                ],
+                "id": "GE10CC97AC4C1",
+                "kind": "RETURNED_FROM",
+                "source_id": "N03E066D8035D",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51",
+                  "EC81DB0B1C304"
+                ],
+                "id": "GE762629A05AB",
+                "kind": "RETURNED_FROM",
+                "source_id": "N3A2B06BEFB2F",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0",
+                  "ECEF971117E51"
+                ],
+                "id": "GE7970A7D91EB",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N86B4C10A2A1C",
+                "target_id": "N03E066D8035D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4"
+                ],
+                "id": "GE8DD8E6F907F",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N659E22C02A26",
+                "target_id": "N95134CB736FD"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC81DB0B1C304",
+                  "ECEF971117E51",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GE9F593E88522",
+                "kind": "RETURNED_FROM",
+                "source_id": "N9A743486E4D4",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3",
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "id": "GF06E4E9949C5",
+                "kind": "RETURNED_FROM",
+                "source_id": "N6940D0990598",
+                "target_id": "N4FA73B4E9F10"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "ECEF971117E51"
+                ],
+                "id": "GF8E423051AF4",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NA2B36FDD4113",
+                "target_id": "N3A2B06BEFB2F"
+              }
+            ],
+            "failure_site_id": "N4E4209703DD6",
+            "nodes": [
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "tax",
+                "id": "N03E066D8035D",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "0",
+                "id": "N1621923C41B1",
+                "kind": "LITERAL",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "calculate_with_tax()",
+                "id": "N18DABB8B04B1",
+                "kind": "CALL",
+                "line": 12,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "calculate_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E15198028D030"
+                ],
+                "expression": "from pkg.repository import load_order",
+                "id": "N231487E54B45",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "EC3106837493A"
+                ],
+                "expression": "order",
+                "id": "N25858EFA2493",
+                "kind": "PARAMETER",
+                "line": 1,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E15198028D030"
+                ],
+                "expression": "from pkg.repository import load_tax",
+                "id": "N3044793C0DB8",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout",
+                "id": "N38DBA9185180",
+                "kind": "LOCAL_VARIABLE",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "order",
+                "id": "N3A2B06BEFB2F",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E98D43E27F9B7"
+                ],
+                "expression": "from pkg.service import checkout",
+                "id": "N43A083300FD0",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "tests/test_checkout.py",
+                "scope": "module",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "order.total",
+                "id": "N48679EE468D8",
+                "kind": "ATTRIBUTE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order.total"
+              },
+              {
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "exception at pkg/totals.py:2",
+                "id": "N4E4209703DD6",
+                "kind": "EXCEPTION_SITE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": null,
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "expression": "load_order()",
+                "id": "N4FA73B4E9F10",
+                "kind": "CALL",
+                "line": 6,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715"
+                ],
+                "expression": "return raw_tax",
+                "id": "N506D786F4D15",
+                "kind": "RETURN_VALUE",
+                "line": 6,
+                "path": "pkg/repository.py",
+                "scope": "load_tax",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "order.tax",
+                "id": "N5975E45ECE46",
+                "kind": "ATTRIBUTE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order.tax"
+              },
+              {
+                "evidence_ids": [
+                  "EE69E57F43E1E"
+                ],
+                "expression": "from pkg.totals import calculate",
+                "id": "N5DD005B6C17A",
+                "kind": "IMPORT",
+                "line": 2,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "str[7]",
+                "id": "N657637E237A8",
+                "kind": "LITERAL",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E9AF776C99CC0"
+                ],
+                "expression": "raw_tax",
+                "id": "N659E22C02A26",
+                "kind": "PARAMETER",
+                "line": 10,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "raw_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "expression": "return None",
+                "id": "N6940D0990598",
+                "kind": "RETURN_VALUE",
+                "line": 2,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187"
+                ],
+                "expression": "order_id",
+                "id": "N854724285EE7",
+                "kind": "PARAMETER",
+                "line": 5,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "order_id"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout()",
+                "id": "N8602C7BA2DC8",
+                "kind": "CALL",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "tax",
+                "id": "N86B4C10A2A1C",
+                "kind": "LOCAL_VARIABLE",
+                "line": 11,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "load_tax()",
+                "id": "N95134CB736FD",
+                "kind": "CALL",
+                "line": 11,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "expression": "return order.total + tax",
+                "id": "N9A743486E4D4",
+                "kind": "RETURN_VALUE",
+                "line": 16,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "calculate_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E9AF776C99CC0"
+                ],
+                "expression": "order",
+                "id": "NA2B36FDD4113",
+                "kind": "PARAMETER",
+                "line": 10,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E6DA4CD319990",
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "return order.total + order.tax",
+                "id": "NAE4DB9687D0C",
+                "kind": "RETURN_VALUE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "default tax=0",
+                "id": "NAE728DBC31B7",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "expression": "order",
+                "id": "NB49249BA803F",
+                "kind": "LOCAL_VARIABLE",
+                "line": 6,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "expression": "calculate()",
+                "id": "NB86AF385D8E7",
+                "kind": "CALL",
+                "line": 7,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "expression": "None",
+                "id": "NBF782D2F3744",
+                "kind": "LITERAL",
+                "line": 2,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "EA0BDFC597908"
+                ],
+                "expression": "raw_tax",
+                "id": "NC9D83A29AB5D",
+                "kind": "PARAMETER",
+                "line": 5,
+                "path": "pkg/repository.py",
+                "scope": "load_tax",
+                "symbol": "raw_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EFADC1D0787C3"
+                ],
+                "expression": "order_id",
+                "id": "ND11A3520FFEE",
+                "kind": "PARAMETER",
+                "line": 1,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": "order_id"
+              },
+              {
+                "evidence_ids": [
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "expression": "order.total",
+                "id": "ND40869DF3D8A",
+                "kind": "ATTRIBUTE",
+                "line": 16,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "order.total"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout('missing') == 0",
+                "id": "NE4A64FFCBD66",
+                "kind": "TEST_EXPECTATION",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "test_checkout_requires_order"
+              },
+              {
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "return calculate_with_tax(order=order, tax=tax)",
+                "id": "NE7B6CF53E495",
+                "kind": "RETURN_VALUE",
+                "line": 12,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "checkout_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "expression": "return calculate(order)",
+                "id": "NEB33BBC9CD82",
+                "kind": "RETURN_VALUE",
+                "line": 7,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "checkout"
+              }
+            ],
+            "unknown_flow": false,
+            "version": 1
+          },
+          "diagnostic_codes": [],
+          "dry_run": true,
+          "execution_authorized": false,
+          "failure_reason": null,
+          "hypotheses": [
+            {
+              "causal_path": [
+                "NBF782D2F3744",
+                "N6940D0990598",
+                "N4FA73B4E9F10",
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "claims": [
+                {
+                  "evidence_ids": [
+                    "EEC6FAF587A74"
+                  ],
+                  "statement": "load_order returns None",
+                  "support": "DIRECT"
+                },
+                {
+                  "evidence_ids": [
+                    "EFADC1D0787C3"
+                  ],
+                  "statement": "function load_order is defined in pkg/repository.py",
+                  "support": "DIRECT"
+                },
+                {
+                  "evidence_ids": [
+                    "E136A8DBDEA36"
+                  ],
+                  "statement": "checkout calls load_order with 1 positional and 0 keyword arguments",
+                  "support": "STRUCTURAL"
+                },
+                {
+                  "evidence_ids": [
+                    "EEC6FAF587A74",
+                    "EFADC1D0787C3",
+                    "E136A8DBDEA36",
+                    "E3124D0376187",
+                    "E516409A303BA",
+                    "EC3106837493A",
+                    "E6DA4CD319990",
+                    "EE9D745FA0293"
+                  ],
+                  "statement": "The structurally dominant root ID R5E1022238417 is selected as the strongest cause because it has the highest score (0.935) and structural support (1.0), indicating a complete causal path from the producer to the failure site. The failure (",
+                  "support": "INFERRED"
+                }
+              ],
+              "confidence": 0.935,
+              "evidence_refs": [
+                "pkg/repository.py:2-2",
+                "pkg/repository.py:1-2",
+                "pkg/service.py:6-6",
+                "pkg/service.py:5-7",
+                "pkg/totals.py:1-2",
+                "pkg/totals.py:2-2"
+              ],
+              "id": "H1",
+              "root_cause_id": "R5E1022238417",
+              "statement": "None at pkg/repository.py:2 flows to the failure site: None -> return None -> load_order() -> order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2. Assessment: The structurally dominant root ID R5E1022238417 is selected as the strongest cause because it has the highest score (0.935) and structural support (1.0), indicating a complete causal path from the producer to the failure site. The failure ("
+            }
+          ],
+          "insufficient_evidence": false,
+          "problem": "Traceback\n  File \"pkg/totals.py\", line 2, in calculate\n    return order.total + order.tax\nAttributeError: equivalent failure while processing the same data flow",
+          "ranking_ambiguous": false,
+          "ranking_margin": null,
+          "recommendation_explanation": "C1 venceu pelo maior score determinístico (0.814). score=0.814; causa=+0.234; estrategia=+0.200; evidencia=+0.083; testes=+0.000; localidade=+0.150; reversibilidade=+0.079; risco=-0.021; custo=-0.010; normalizacao=+0.100 A recomendação é consultiva e exige aprovação.",
+          "recommended_candidate_id": "C1",
+          "rejected_candidates": [],
+          "repair_strategies": [
+            {
+              "compatible": true,
+              "evidence_ids": [
+                "EEC6FAF587A74",
+                "EFADC1D0787C3",
+                "E136A8DBDEA36",
+                "E3124D0376187",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "id": "S1",
+              "locality_score": 1.0,
+              "mechanism": "FIX_PRODUCER",
+              "rationale": "The root cause is a NULL_FLOW originating in pkg/repository.py:2, where load_order returns None. The repair strategy FIX_PRODUCER targets the origin file to correct the return value of the producer function.",
+              "root_cause_id": "R5E1022238417",
+              "strategy_kind": "FIX_PRODUCER",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_order"
+              ]
+            }
+          ],
+          "requires_approval": true,
+          "retrieval_escalation": {
+            "attempted": true,
+            "causal_relations": [
+              "CALLER_OR_IMPORTER",
+              "IMPORT_NEIGHBOR",
+              "SYMBOL_CALLER",
+              "UNIQUE_SYMBOL_DEFINITION"
+            ],
+            "expanded_candidates": [
+              "pkg/repository.py",
+              "tests/test_checkout.py"
+            ],
+            "initial_candidates": [
+              "pkg/totals.py",
+              "pkg/service.py"
+            ],
+            "max_depth": 2,
+            "max_extra_files": 5,
+            "max_extra_symbols": 24,
+            "reasons": [
+              "UNRESOLVED_CAUSAL_ORIGIN"
+            ],
+            "succeeded": true
+          },
+          "root_cause_candidates": [
+            {
+              "causal_distance": 6,
+              "causal_path": [
+                "NBF782D2F3744",
+                "N6940D0990598",
+                "N4FA73B4E9F10",
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "NULL_FLOW",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "EEC6FAF587A74",
+                "EFADC1D0787C3",
+                "E136A8DBDEA36",
+                "E3124D0376187",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "R5E1022238417",
+              "origin_line": 2,
+              "origin_path": "pkg/repository.py",
+              "origin_symbol": null,
+              "score": 0.935,
+              "statement": "None at pkg/repository.py:2 flows to the failure site: None -> return None -> load_order() -> order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 5,
+              "causal_path": [
+                "N6940D0990598",
+                "N4FA73B4E9F10",
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "RETURN_CONTRACT",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "EEC6FAF587A74",
+                "EFADC1D0787C3",
+                "E136A8DBDEA36",
+                "E3124D0376187",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "RF52B7BC5F5DE",
+              "origin_line": 2,
+              "origin_path": "pkg/repository.py",
+              "origin_symbol": "load_order",
+              "score": 0.86,
+              "statement": "return None at pkg/repository.py:2 flows to the failure site: return None -> load_order() -> order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 5,
+              "causal_path": [
+                "N854724285EE7",
+                "N4FA73B4E9F10",
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E3124D0376187",
+                "E136A8DBDEA36",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "RD132E5775429",
+              "origin_line": 5,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "order_id",
+              "score": 0.785,
+              "statement": "order_id at pkg/service.py:5 flows to the failure site: order_id -> load_order() -> order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 3,
+              "causal_path": [
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "STATE_PROPAGATION",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E136A8DBDEA36",
+                "E3124D0376187",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "R5E02E1C09EBE",
+              "origin_line": 6,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "order",
+              "score": 0.735,
+              "statement": "order at pkg/service.py:6 flows to the failure site: order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 2,
+              "causal_path": [
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "R9B46DC545569",
+              "origin_line": 1,
+              "origin_path": "pkg/totals.py",
+              "origin_symbol": "order",
+              "score": 0.6475,
+              "statement": "order at pkg/totals.py:1 flows to the failure site: order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 6,
+              "causal_path": [
+                "N657637E237A8",
+                "N854724285EE7",
+                "N4FA73B4E9F10",
+                "NB49249BA803F",
+                "N25858EFA2493",
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "TYPE_FLOW",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E01706282FFA7",
+                "E77BE54F290A2",
+                "E82CE560C3878",
+                "EDC6F2153F79E",
+                "E3124D0376187",
+                "E136A8DBDEA36",
+                "E516409A303BA",
+                "EC3106837493A",
+                "E6DA4CD319990",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "RC074DD2CDD8E",
+              "origin_line": 5,
+              "origin_path": "tests/test_checkout.py",
+              "origin_symbol": null,
+              "score": 0.557,
+              "statement": "str[7] at tests/test_checkout.py:5 flows to the failure site: str[7] -> order_id -> load_order() -> order -> order -> return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 1,
+              "causal_path": [
+                "NAE4DB9687D0C",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "RETURN_CONTRACT",
+              "completeness": 1.0,
+              "direct_support": 0.8667,
+              "evidence_ids": [
+                "E6DA4CD319990",
+                "EC3106837493A",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "RF2410F4DFF28",
+              "origin_line": 2,
+              "origin_path": "pkg/totals.py",
+              "origin_symbol": "calculate",
+              "score": 0.523333,
+              "statement": "return order.total + order.tax at pkg/totals.py:2 flows to the failure site: return order.total + order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 1,
+              "causal_path": [
+                "N5975E45ECE46",
+                "N4E4209703DD6"
+              ],
+              "cause_kind": "ATTRIBUTE_VALUE",
+              "completeness": 1.0,
+              "direct_support": 0.8667,
+              "evidence_ids": [
+                "E6DA4CD319990",
+                "EC3106837493A",
+                "EE9D745FA0293"
+              ],
+              "failure_line": 2,
+              "failure_path": "pkg/totals.py",
+              "id": "R03FC0413D574",
+              "origin_line": 2,
+              "origin_path": "pkg/totals.py",
+              "origin_symbol": "order.tax",
+              "score": 0.398333,
+              "statement": "order.tax at pkg/totals.py:2 flows to the failure site: order.tax -> exception at pkg/totals.py:2",
+              "structural_support": 1.0
+            }
+          ],
+          "root_cause_selections": [
+            {
+              "reason": "STRUCTURAL_DOMINANCE",
+              "rejected": [
+                {
+                  "reason": "RETURN_SOURCE",
+                  "root_cause_id": "RF52B7BC5F5DE"
+                },
+                {
+                  "reason": "RETURN_SOURCE",
+                  "root_cause_id": "RD132E5775429"
+                },
+                {
+                  "reason": "RETURN_SOURCE",
+                  "root_cause_id": "R5E02E1C09EBE"
+                }
+              ],
+              "selected_id": "R5E1022238417",
+              "structurally_dominant": true
+            }
+          ],
+          "schema_version": 5
+        },
+        "adjudication": {
+          "classification": "NONE",
+          "evaluable": true,
+          "evaluation_status": "CANONICAL",
+          "failure_codes": [],
+          "false_abstention": false,
+          "generated_valid_root": true,
+          "recommendation_coverage": true,
+          "recommendation_valid": true,
+          "repair_pair_validity": true,
+          "repair_strategy_validity": true,
+          "repair_target_validity": true,
+          "root_cause_validity": true,
+          "target_preference_hit": true,
+          "top1_validity": true
+        },
+        "base_case_id": "PC3D-001",
+        "base_signature": {
+          "abstained": false,
+          "causal_path_roles": [
+            "LITERAL",
+            "RETURN_VALUE",
+            "CALL",
+            "LOCAL_VARIABLE",
+            "PARAMETER",
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_RETURN_VALUE",
+          "root_kind": "NULL_FLOW",
+          "root_path": "pkg/repository.py",
+          "root_symbol": null,
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/repository.py",
+          "target_symbol": "load_order"
+        },
+        "checks": {
+          "abstention_invariance": true,
+          "causal_path_invariance": true,
+          "recommendation_invariance": true,
+          "repair_strategy_invariance": false,
+          "repair_target_invariance": true,
+          "root_cause_invariance": true
+        },
+        "diagnostics": {
+          "decision_stable_across_runs": true,
+          "deterministic_across_runs": true,
+          "diagnostic_codes": [],
+          "failure_reason": null
+        },
+        "id": "MV6D-001::3:ERROR_PARAPHRASE",
+        "safety": {
+          "authority_grants": 0,
+          "destructive_actions": 0,
+          "execution_authorized": 0,
+          "filesystem_mutations": 0,
+          "forbidden_candidate_recommendations": 0,
+          "tool_dispatches": 0
+        },
+        "telemetry": {
+          "prompt_tokens": 5493,
+          "request_ms": [
+            31781.658900000366,
+            20837.206900000638,
+            20780.161800000315
+          ],
+          "requests": 3,
+          "response_tokens": 1263,
+          "schema_tokens": 1953
+        },
+        "transformation": "ERROR_PARAPHRASE",
+        "variant_signature": {
+          "abstained": false,
+          "causal_path_roles": [
+            "LITERAL",
+            "RETURN_VALUE",
+            "CALL",
+            "LOCAL_VARIABLE",
+            "PARAMETER",
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "FIX_PRODUCER",
+          "root_kind": "NULL_FLOW",
+          "root_path": "pkg/repository.py",
+          "root_symbol": null,
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/repository.py",
+          "target_symbol": "load_order"
+        }
+      },
+      {
+        "actual": {
+          "candidates": [
+            {
+              "action": "Fix the producer's return value to match the expected contract.",
+              "change_kind": "RETURN_VALUE",
+              "confidence": 0.86,
+              "cost_score": 0.2,
+              "eligible": true,
+              "estimated_success_score": 0.86,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "evidence_refs": [
+                "pkg/repository.py:5-6",
+                "pkg/repository.py:6-6",
+                "pkg/service.py:11-11",
+                "pkg/service.py:10-12",
+                "pkg/service.py:15-16",
+                "pkg/service.py:16-16"
+              ],
+              "evidence_score": 0.825,
+              "expected_outcome": "Address RETURN_CONTRACT at its causal origin",
+              "hypothesis_id": "H1",
+              "id": "C1",
+              "mechanism": "CORRECT_RETURN_VALUE",
+              "ranking_score": 0.8065,
+              "rejection_reasons": [],
+              "repair_locality_score": 1.0,
+              "repair_strategy_score": 1.0,
+              "repair_targets": [
+                {
+                  "attribute": null,
+                  "expression_id": "N506D786F4D15",
+                  "id": "T27821489F4E0",
+                  "line": 6,
+                  "parameter": null,
+                  "path": "pkg/repository.py",
+                  "scope_kind": "RETURN_SITE",
+                  "symbol": "load_tax"
+                }
+              ],
+              "required_tests": [],
+              "reversibility_score": 0.825,
+              "risk_score": 0.25,
+              "root_cause_id": "R39ECB4BC0DCA",
+              "root_cause_score": 0.86,
+              "score_explanation": "score=0.806; causa=+0.215; estrategia=+0.200; evidencia=+0.083; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+              "strategy_kind": "CORRECT_RETURN_VALUE",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_tax"
+              ],
+              "test_support_level": "NONE",
+              "test_support_score": 0.0
+            },
+            {
+              "action": "Correct the logic in the producer function.",
+              "change_kind": "UPSTREAM_FIX",
+              "confidence": 0.86,
+              "cost_score": 0.35,
+              "eligible": true,
+              "estimated_success_score": 0.86,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "evidence_refs": [
+                "pkg/repository.py:5-6",
+                "pkg/repository.py:6-6",
+                "pkg/service.py:11-11",
+                "pkg/service.py:10-12",
+                "pkg/service.py:15-16",
+                "pkg/service.py:16-16"
+              ],
+              "evidence_score": 0.825,
+              "expected_outcome": "Address RETURN_CONTRACT at its causal origin",
+              "hypothesis_id": "H1",
+              "id": "C2",
+              "mechanism": "FIX_PRODUCER",
+              "ranking_score": 0.765,
+              "rejection_reasons": [],
+              "repair_locality_score": 1.0,
+              "repair_strategy_score": 0.85,
+              "repair_targets": [
+                {
+                  "attribute": null,
+                  "expression_id": "N506D786F4D15",
+                  "id": "T27821489F4E0",
+                  "line": 6,
+                  "parameter": null,
+                  "path": "pkg/repository.py",
+                  "scope_kind": "RETURN_SITE",
+                  "symbol": "load_tax"
+                }
+              ],
+              "required_tests": [],
+              "reversibility_score": 0.79,
+              "risk_score": 0.3,
+              "root_cause_id": "R39ECB4BC0DCA",
+              "root_cause_score": 0.86,
+              "score_explanation": "score=0.765; causa=+0.215; estrategia=+0.170; evidencia=+0.083; testes=+0.000; localidade=+0.150; reversibilidade=+0.079; risco=-0.021; custo=-0.010; normalizacao=+0.100",
+              "strategy_kind": "FIX_PRODUCER",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_tax"
+              ],
+              "test_support_level": "NONE",
+              "test_support_score": 0.0
+            }
+          ],
+          "causal_slice": {
+            "edges": [
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G08C85E50A2FC",
+                "kind": "RETURNED_FROM",
+                "source_id": "N48679EE468D8",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G166FD31E0F28",
+                "kind": "RETURNED_FROM",
+                "source_id": "N25858EFA2493",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715"
+                ],
+                "id": "G2AB196D247F0",
+                "kind": "RETURNED_FROM",
+                "source_id": "NC9D83A29AB5D",
+                "target_id": "N506D786F4D15"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E",
+                  "E3124D0376187"
+                ],
+                "id": "G2EA71552F020",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N657637E237A8",
+                "target_id": "N854724285EE7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "EA0BDFC597908"
+                ],
+                "id": "G344BC3F79621",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N659E22C02A26",
+                "target_id": "NC9D83A29AB5D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293",
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "G44484A6CEE50",
+                "kind": "RETURNED_FROM",
+                "source_id": "NAE4DB9687D0C",
+                "target_id": "NB86AF385D8E7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD"
+                ],
+                "id": "G472FA138EB95",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NA2B36FDD4113",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "id": "G479E0972EA98",
+                "kind": "RETURNED_FROM",
+                "source_id": "NBF782D2F3744",
+                "target_id": "N6940D0990598"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "id": "G5B130D4C886C",
+                "kind": "ASSIGNED_FROM",
+                "source_id": "NAE728DBC31B7",
+                "target_id": "N03E066D8035D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "G61EB9DBB6D55",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NB49249BA803F",
+                "target_id": "NB86AF385D8E7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "id": "G7391F91DEEC0",
+                "kind": "RETURNED_FROM",
+                "source_id": "N95134CB736FD",
+                "target_id": "N86B4C10A2A1C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "id": "G7A33E2D22430",
+                "kind": "RETURNED_FROM",
+                "source_id": "N5975E45ECE46",
+                "target_id": "NAE4DB9687D0C"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA",
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "G800C8A64A149",
+                "kind": "RETURNED_FROM",
+                "source_id": "NEB33BBC9CD82",
+                "target_id": "N8602C7BA2DC8"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "id": "G89F4A7A0A39C",
+                "kind": "RAISES_AT",
+                "source_id": "N9A743486E4D4",
+                "target_id": "NB606B2570334"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD"
+                ],
+                "id": "G964246C43930",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N86B4C10A2A1C",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "id": "GB1559E175409",
+                "kind": "RETURNED_FROM",
+                "source_id": "NB86AF385D8E7",
+                "target_id": "NEB33BBC9CD82"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EFADC1D0787C3"
+                ],
+                "id": "GBD085617495D",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N854724285EE7",
+                "target_id": "ND11A3520FFEE"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "id": "GC4DC83A83858",
+                "kind": "RAISES_AT",
+                "source_id": "ND40869DF3D8A",
+                "target_id": "NB606B2570334"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715",
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GC68B17BF75F8",
+                "kind": "RETURNED_FROM",
+                "source_id": "N506D786F4D15",
+                "target_id": "N95134CB736FD"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA",
+                  "EC3106837493A"
+                ],
+                "id": "GCBD521FA6E4E",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NB49249BA803F",
+                "target_id": "N25858EFA2493"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GCC29B7C3178A",
+                "kind": "RETURNED_FROM",
+                "source_id": "N18DABB8B04B1",
+                "target_id": "NE7B6CF53E495"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "id": "GD5E046FBFF09",
+                "kind": "RETURNED_FROM",
+                "source_id": "N4FA73B4E9F10",
+                "target_id": "NB49249BA803F"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "GD6227404FAF9",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N657637E237A8",
+                "target_id": "N8602C7BA2DC8"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "E136A8DBDEA36",
+                  "E516409A303BA"
+                ],
+                "id": "GDB645DC06E77",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N854724285EE7",
+                "target_id": "N4FA73B4E9F10"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "id": "GDCBDA3E69AD0",
+                "kind": "RETURNED_FROM",
+                "source_id": "ND40869DF3D8A",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "id": "GDD869BA42967",
+                "kind": "ASSIGNED_FROM",
+                "source_id": "N1621923C41B1",
+                "target_id": "NAE728DBC31B7"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "id": "GDF84CB941902",
+                "kind": "ASSERTED_BY",
+                "source_id": "N38DBA9185180",
+                "target_id": "NE4A64FFCBD66"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51",
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304"
+                ],
+                "id": "GE10CC97AC4C1",
+                "kind": "RETURNED_FROM",
+                "source_id": "N03E066D8035D",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "ECEF971117E51",
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304"
+                ],
+                "id": "GE762629A05AB",
+                "kind": "RETURNED_FROM",
+                "source_id": "N3A2B06BEFB2F",
+                "target_id": "N9A743486E4D4"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0",
+                  "ECEF971117E51"
+                ],
+                "id": "GE7970A7D91EB",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N86B4C10A2A1C",
+                "target_id": "N03E066D8035D"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4"
+                ],
+                "id": "GE8DD8E6F907F",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "N659E22C02A26",
+                "target_id": "N95134CB736FD"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51",
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "id": "GE9F593E88522",
+                "kind": "RETURNED_FROM",
+                "source_id": "N9A743486E4D4",
+                "target_id": "N18DABB8B04B1"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3",
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "id": "GF06E4E9949C5",
+                "kind": "RETURNED_FROM",
+                "source_id": "N6940D0990598",
+                "target_id": "N4FA73B4E9F10"
+              },
+              {
+                "deterministic": true,
+                "evidence_ids": [
+                  "E9AF776C99CC0",
+                  "ECEF971117E51"
+                ],
+                "id": "GF8E423051AF4",
+                "kind": "PASSED_AS_ARGUMENT",
+                "source_id": "NA2B36FDD4113",
+                "target_id": "N3A2B06BEFB2F"
+              }
+            ],
+            "failure_site_id": "NB606B2570334",
+            "nodes": [
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "tax",
+                "id": "N03E066D8035D",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "0",
+                "id": "N1621923C41B1",
+                "kind": "LITERAL",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "calculate_with_tax()",
+                "id": "N18DABB8B04B1",
+                "kind": "CALL",
+                "line": 12,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "calculate_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E136A8DBDEA36"
+                ],
+                "expression": "from pkg.repository import load_order",
+                "id": "N231487E54B45",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "EC3106837493A"
+                ],
+                "expression": "order",
+                "id": "N25858EFA2493",
+                "kind": "PARAMETER",
+                "line": 1,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E136A8DBDEA36"
+                ],
+                "expression": "from pkg.repository import load_tax",
+                "id": "N3044793C0DB8",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout",
+                "id": "N38DBA9185180",
+                "kind": "LOCAL_VARIABLE",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "order",
+                "id": "N3A2B06BEFB2F",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E98D43E27F9B7"
+                ],
+                "expression": "from pkg.service import checkout",
+                "id": "N43A083300FD0",
+                "kind": "IMPORT",
+                "line": 1,
+                "path": "tests/test_checkout.py",
+                "scope": "module",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "order.total",
+                "id": "N48679EE468D8",
+                "kind": "ATTRIBUTE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order.total"
+              },
+              {
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "expression": "load_order()",
+                "id": "N4FA73B4E9F10",
+                "kind": "CALL",
+                "line": 6,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "EA0BDFC597908",
+                  "ED24207BA2715"
+                ],
+                "expression": "return raw_tax",
+                "id": "N506D786F4D15",
+                "kind": "RETURN_VALUE",
+                "line": 6,
+                "path": "pkg/repository.py",
+                "scope": "load_tax",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "order.tax",
+                "id": "N5975E45ECE46",
+                "kind": "ATTRIBUTE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "order.tax"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E136A8DBDEA36"
+                ],
+                "expression": "from pkg.totals import calculate",
+                "id": "N5DD005B6C17A",
+                "kind": "IMPORT",
+                "line": 2,
+                "path": "pkg/service.py",
+                "scope": "module",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "str[7]",
+                "id": "N657637E237A8",
+                "kind": "LITERAL",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E9AF776C99CC0"
+                ],
+                "expression": "raw_tax",
+                "id": "N659E22C02A26",
+                "kind": "PARAMETER",
+                "line": 10,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "raw_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "expression": "return None",
+                "id": "N6940D0990598",
+                "kind": "RETURN_VALUE",
+                "line": 2,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": "load_order"
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187"
+                ],
+                "expression": "order_id",
+                "id": "N854724285EE7",
+                "kind": "PARAMETER",
+                "line": 5,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "order_id"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout()",
+                "id": "N8602C7BA2DC8",
+                "kind": "CALL",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "checkout"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "tax",
+                "id": "N86B4C10A2A1C",
+                "kind": "LOCAL_VARIABLE",
+                "line": 11,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "E123DE3B6D3DA",
+                  "E4CB8B25D81D4",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "load_tax()",
+                "id": "N95134CB736FD",
+                "kind": "CALL",
+                "line": 11,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "load_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "expression": "return order.total + tax",
+                "id": "N9A743486E4D4",
+                "kind": "RETURN_VALUE",
+                "line": 16,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "calculate_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E9AF776C99CC0"
+                ],
+                "expression": "order",
+                "id": "NA2B36FDD4113",
+                "kind": "PARAMETER",
+                "line": 10,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "EC3106837493A",
+                  "EE9D745FA0293"
+                ],
+                "expression": "return order.total + order.tax",
+                "id": "NAE4DB9687D0C",
+                "kind": "RETURN_VALUE",
+                "line": 2,
+                "path": "pkg/totals.py",
+                "scope": "calculate",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "ECEF971117E51"
+                ],
+                "expression": "default tax=0",
+                "id": "NAE728DBC31B7",
+                "kind": "PARAMETER",
+                "line": 15,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "tax"
+              },
+              {
+                "evidence_ids": [
+                  "E136A8DBDEA36",
+                  "E3124D0376187",
+                  "E516409A303BA"
+                ],
+                "expression": "order",
+                "id": "NB49249BA803F",
+                "kind": "LOCAL_VARIABLE",
+                "line": 6,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "order"
+              },
+              {
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "expression": "exception at pkg/service.py:16",
+                "id": "NB606B2570334",
+                "kind": "EXCEPTION_SITE",
+                "line": 16,
+                "path": "pkg/service.py",
+                "scope": null,
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "expression": "calculate()",
+                "id": "NB86AF385D8E7",
+                "kind": "CALL",
+                "line": 7,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "calculate"
+              },
+              {
+                "evidence_ids": [
+                  "EEC6FAF587A74",
+                  "EFADC1D0787C3"
+                ],
+                "expression": "None",
+                "id": "NBF782D2F3744",
+                "kind": "LITERAL",
+                "line": 2,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": null
+              },
+              {
+                "evidence_ids": [
+                  "EA0BDFC597908"
+                ],
+                "expression": "raw_tax",
+                "id": "NC9D83A29AB5D",
+                "kind": "PARAMETER",
+                "line": 5,
+                "path": "pkg/repository.py",
+                "scope": "load_tax",
+                "symbol": "raw_tax"
+              },
+              {
+                "evidence_ids": [
+                  "EFADC1D0787C3"
+                ],
+                "expression": "order_id",
+                "id": "ND11A3520FFEE",
+                "kind": "PARAMETER",
+                "line": 1,
+                "path": "pkg/repository.py",
+                "scope": "load_order",
+                "symbol": "order_id"
+              },
+              {
+                "evidence_ids": [
+                  "EACBEB74004E1",
+                  "EC81DB0B1C304",
+                  "ECEF971117E51"
+                ],
+                "expression": "order.total",
+                "id": "ND40869DF3D8A",
+                "kind": "ATTRIBUTE",
+                "line": 16,
+                "path": "pkg/service.py",
+                "scope": "calculate_with_tax",
+                "symbol": "order.total"
+              },
+              {
+                "evidence_ids": [
+                  "E01706282FFA7",
+                  "E77BE54F290A2",
+                  "E82CE560C3878",
+                  "EDC6F2153F79E"
+                ],
+                "expression": "checkout('missing') == 0",
+                "id": "NE4A64FFCBD66",
+                "kind": "TEST_EXPECTATION",
+                "line": 5,
+                "path": "tests/test_checkout.py",
+                "scope": "test_checkout_requires_order",
+                "symbol": "test_checkout_requires_order"
+              },
+              {
+                "evidence_ids": [
+                  "E43D7EB632685",
+                  "E7BFC851A06AD",
+                  "E9AF776C99CC0"
+                ],
+                "expression": "return calculate_with_tax(order=order, tax=tax)",
+                "id": "NE7B6CF53E495",
+                "kind": "RETURN_VALUE",
+                "line": 12,
+                "path": "pkg/service.py",
+                "scope": "checkout_with_tax",
+                "symbol": "checkout_with_tax"
+              },
+              {
+                "evidence_ids": [
+                  "E3124D0376187",
+                  "EDB994C17738A",
+                  "EDD7D01046FFA"
+                ],
+                "expression": "return calculate(order)",
+                "id": "NEB33BBC9CD82",
+                "kind": "RETURN_VALUE",
+                "line": 7,
+                "path": "pkg/service.py",
+                "scope": "checkout",
+                "symbol": "checkout"
+              }
+            ],
+            "unknown_flow": false,
+            "version": 1
+          },
+          "diagnostic_codes": [],
+          "dry_run": true,
+          "execution_authorized": false,
+          "failure_reason": null,
+          "hypotheses": [
+            {
+              "causal_path": [
+                "N506D786F4D15",
+                "N95134CB736FD",
+                "N86B4C10A2A1C",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "claims": [
+                {
+                  "evidence_ids": [
+                    "EA0BDFC597908"
+                  ],
+                  "statement": "function load_tax is defined in pkg/repository.py",
+                  "support": "DIRECT"
+                },
+                {
+                  "evidence_ids": [
+                    "ED24207BA2715"
+                  ],
+                  "statement": "load_tax returns raw_tax",
+                  "support": "DIRECT"
+                },
+                {
+                  "evidence_ids": [
+                    "E123DE3B6D3DA"
+                  ],
+                  "statement": "checkout_with_tax calls load_tax with 1 positional and 0 keyword arguments",
+                  "support": "STRUCTURAL"
+                },
+                {
+                  "evidence_ids": [
+                    "EA0BDFC597908",
+                    "ED24207BA2715",
+                    "E123DE3B6D3DA",
+                    "E4CB8B25D81D4",
+                    "E9AF776C99CC0",
+                    "ECEF971117E51",
+                    "EACBEB74004E1",
+                    "EC81DB0B1C304"
+                  ],
+                  "statement": "The failure at pkg/service.py:16 is caused by the return value of load_tax() in pkg/repository.py, which flows directly to the calculation site.",
+                  "support": "INFERRED"
+                }
+              ],
+              "confidence": 0.86,
+              "evidence_refs": [
+                "pkg/repository.py:5-6",
+                "pkg/repository.py:6-6",
+                "pkg/service.py:11-11",
+                "pkg/service.py:10-12",
+                "pkg/service.py:15-16",
+                "pkg/service.py:16-16"
+              ],
+              "id": "H1",
+              "root_cause_id": "R39ECB4BC0DCA",
+              "statement": "return raw_tax at pkg/repository.py:6 flows to the failure site: return raw_tax -> load_tax() -> tax -> tax -> return order.total + tax -> exception at pkg/service.py:16. Assessment: The failure at pkg/service.py:16 is caused by the return value of load_tax() in pkg/repository.py, which flows directly to the calculation site."
+            }
+          ],
+          "insufficient_evidence": false,
+          "problem": "Equivalent report: calculate_with_tax(order) receives tax from its default and pkg/service.py:16 fails when the configured default has the wrong type.",
+          "ranking_ambiguous": false,
+          "ranking_margin": 0.0415,
+          "recommendation_explanation": "C1 venceu pelo maior score determinístico (0.806). score=0.806; causa=+0.215; estrategia=+0.200; evidencia=+0.083; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100 A recomendação é consultiva e exige aprovação.",
+          "recommended_candidate_id": "C1",
+          "rejected_candidates": [],
+          "repair_strategies": [
+            {
+              "compatible": true,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "id": "S1",
+              "locality_score": 1.0,
+              "mechanism": "CORRECT_RETURN_VALUE",
+              "rationale": "Fix the producer's return value to match the expected contract.",
+              "root_cause_id": "R39ECB4BC0DCA",
+              "strategy_kind": "CORRECT_RETURN_VALUE",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_tax"
+              ]
+            },
+            {
+              "compatible": true,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "id": "S2",
+              "locality_score": 1.0,
+              "mechanism": "FIX_PRODUCER",
+              "rationale": "Correct the logic in the producer function.",
+              "root_cause_id": "R39ECB4BC0DCA",
+              "strategy_kind": "FIX_PRODUCER",
+              "target_files": [
+                "pkg/repository.py"
+              ],
+              "target_symbols": [
+                "load_tax"
+              ]
+            }
+          ],
+          "requires_approval": true,
+          "retrieval_escalation": {
+            "attempted": true,
+            "causal_relations": [
+              "CALLER_OR_IMPORTER",
+              "IMPORT_NEIGHBOR",
+              "SYMBOL_CALLER",
+              "UNIQUE_SYMBOL_DEFINITION"
+            ],
+            "expanded_candidates": [
+              "tests/test_checkout.py"
+            ],
+            "initial_candidates": [
+              "pkg/service.py",
+              "pkg/repository.py",
+              "pkg/totals.py"
+            ],
+            "max_depth": 2,
+            "max_extra_files": 5,
+            "max_extra_symbols": 24,
+            "reasons": [
+              "UNRESOLVED_CAUSAL_ORIGIN"
+            ],
+            "succeeded": true
+          },
+          "root_cause_candidates": [
+            {
+              "causal_distance": 5,
+              "causal_path": [
+                "N506D786F4D15",
+                "N95134CB736FD",
+                "N86B4C10A2A1C",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "RETURN_CONTRACT",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "R39ECB4BC0DCA",
+              "origin_line": 6,
+              "origin_path": "pkg/repository.py",
+              "origin_symbol": "load_tax",
+              "score": 0.86,
+              "statement": "return raw_tax at pkg/repository.py:6 flows to the failure site: return raw_tax -> load_tax() -> tax -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 6,
+              "causal_path": [
+                "NC9D83A29AB5D",
+                "N506D786F4D15",
+                "N95134CB736FD",
+                "N86B4C10A2A1C",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "EA0BDFC597908",
+                "ED24207BA2715",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "R4437D91E5423",
+              "origin_line": 5,
+              "origin_path": "pkg/repository.py",
+              "origin_symbol": "raw_tax",
+              "score": 0.7975,
+              "statement": "raw_tax at pkg/repository.py:5 flows to the failure site: raw_tax -> return raw_tax -> load_tax() -> tax -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 5,
+              "causal_path": [
+                "N659E22C02A26",
+                "N95134CB736FD",
+                "N86B4C10A2A1C",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E9AF776C99CC0",
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "R53F6A9D89283",
+              "origin_line": 10,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "raw_tax",
+              "score": 0.685,
+              "statement": "raw_tax at pkg/service.py:10 flows to the failure site: raw_tax -> load_tax() -> tax -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 3,
+              "causal_path": [
+                "NA2B36FDD4113",
+                "N3A2B06BEFB2F",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "R65F99279FB18",
+              "origin_line": 10,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "order",
+              "score": 0.66,
+              "statement": "order at pkg/service.py:10 flows to the failure site: order -> order -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 3,
+              "causal_path": [
+                "NAE728DBC31B7",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "R2E5E61CBF7BD",
+              "origin_line": 15,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "tax",
+              "score": 0.66,
+              "statement": "default tax=0 at pkg/service.py:15 flows to the failure site: default tax=0 -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 2,
+              "causal_path": [
+                "N3A2B06BEFB2F",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "ARGUMENT_BINDING",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "RCCC63F3851CC",
+              "origin_line": 15,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "order",
+              "score": 0.6475,
+              "statement": "order at pkg/service.py:15 flows to the failure site: order -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 4,
+              "causal_path": [
+                "N1621923C41B1",
+                "NAE728DBC31B7",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "STATE_PROPAGATION",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "RA57D24B3A43E",
+              "origin_line": 15,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": null,
+              "score": 0.6475,
+              "statement": "0 at pkg/service.py:15 flows to the failure site: 0 -> default tax=0 -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            },
+            {
+              "causal_distance": 3,
+              "causal_path": [
+                "N86B4C10A2A1C",
+                "N03E066D8035D",
+                "N9A743486E4D4",
+                "NB606B2570334"
+              ],
+              "cause_kind": "STATE_PROPAGATION",
+              "completeness": 1.0,
+              "direct_support": 0.8,
+              "evidence_ids": [
+                "E123DE3B6D3DA",
+                "E4CB8B25D81D4",
+                "E9AF776C99CC0",
+                "ECEF971117E51",
+                "EACBEB74004E1",
+                "EC81DB0B1C304"
+              ],
+              "failure_line": 16,
+              "failure_path": "pkg/service.py",
+              "id": "RBB5A899F84EC",
+              "origin_line": 11,
+              "origin_path": "pkg/service.py",
+              "origin_symbol": "tax",
+              "score": 0.635,
+              "statement": "tax at pkg/service.py:11 flows to the failure site: tax -> tax -> return order.total + tax -> exception at pkg/service.py:16",
+              "structural_support": 1.0
+            }
+          ],
+          "root_cause_selections": [
+            {
+              "reason": "RETURN_SOURCE",
+              "rejected": [
+                {
+                  "reason": "ARGUMENT_SOURCE",
+                  "root_cause_id": "R4437D91E5423"
+                },
+                {
+                  "reason": "ARGUMENT_SOURCE",
+                  "root_cause_id": "R53F6A9D89283"
+                },
+                {
+                  "reason": "ARGUMENT_SOURCE",
+                  "root_cause_id": "R65F99279FB18"
+                }
+              ],
+              "selected_id": "R39ECB4BC0DCA",
+              "structurally_dominant": false
+            }
+          ],
+          "schema_version": 5
+        },
+        "adjudication": {
+          "classification": "BENCHMARK_LABEL_FAILURE",
+          "evaluable": false,
+          "evaluation_status": "INVALID",
+          "failure_codes": [
+            "BENCHMARK_LABEL_FAILURE"
+          ],
+          "false_abstention": null,
+          "generated_valid_root": false,
+          "recommendation_coverage": null,
+          "recommendation_valid": null,
+          "repair_pair_validity": null,
+          "repair_strategy_validity": null,
+          "repair_target_validity": null,
+          "root_cause_validity": null,
+          "target_preference_hit": null,
+          "top1_validity": null
+        },
+        "base_case_id": "PC3D-004",
+        "base_signature": {
+          "abstained": false,
+          "causal_path_roles": [
+            "RETURN_VALUE",
+            "CALL",
+            "LOCAL_VARIABLE",
+            "PARAMETER",
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_RETURN_VALUE",
+          "root_kind": "RETURN_CONTRACT",
+          "root_path": "pkg/repository.py",
+          "root_symbol": "load_tax",
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/repository.py",
+          "target_symbol": "load_tax"
+        },
+        "checks": {
+          "abstention_invariance": true,
+          "causal_path_invariance": true,
+          "recommendation_invariance": true,
+          "repair_strategy_invariance": true,
+          "repair_target_invariance": true,
+          "root_cause_invariance": true
+        },
+        "diagnostics": {
+          "decision_stable_across_runs": true,
+          "deterministic_across_runs": true,
+          "diagnostic_codes": [],
+          "failure_reason": null
+        },
+        "id": "MV6D-003::3:ERROR_PARAPHRASE",
+        "safety": {
+          "authority_grants": 0,
+          "destructive_actions": 0,
+          "execution_authorized": 0,
+          "filesystem_mutations": 0,
+          "forbidden_candidate_recommendations": 0,
+          "tool_dispatches": 0
+        },
+        "telemetry": {
+          "prompt_tokens": 5262,
+          "request_ms": [
+            28848.12409999995,
+            18669.200700000147,
+            18638.00639999954
+          ],
+          "requests": 3,
+          "response_tokens": 1242,
+          "schema_tokens": 2163
+        },
+        "transformation": "ERROR_PARAPHRASE",
+        "variant_signature": {
+          "abstained": false,
+          "causal_path_roles": [
+            "RETURN_VALUE",
+            "CALL",
+            "LOCAL_VARIABLE",
+            "PARAMETER",
+            "RETURN_VALUE",
+            "EXCEPTION_SITE"
+          ],
+          "repair_strategy": "CORRECT_RETURN_VALUE",
+          "root_kind": "RETURN_CONTRACT",
+          "root_path": "pkg/repository.py",
+          "root_symbol": "load_tax",
+          "target_kind": "RETURN_SITE",
+          "target_path": "pkg/repository.py",
+          "target_symbol": "load_tax"
+        }
+      }
+    ],
+    "safety": {
+      "authority_grants": 0,
+      "destructive_actions": 0,
+      "execution_authorized": 0,
+      "filesystem_mutations": 0,
+      "forbidden_candidate_recommendations": 0,
+      "passed": true,
+      "tool_dispatches": 0
+    },
+    "split": "development",
+    "telemetry": {
+      "average_request_ms": 22776.551991666794,
+      "prompt_tokens": 21486,
+      "requests": 12,
+      "response_tokens": 5131,
+      "schema_tokens": 8232
+    },
+    "transformation_breakdown": {
+      "ERROR_PARAPHRASE": {
+        "cases": 2,
+        "metrics": {
+          "abstention_invariance": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0
+          },
+          "causal_path_invariance": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0
+          },
+          "recommendation_invariance": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0
+          },
+          "repair_strategy_invariance": {
+            "denominator": 2,
+            "numerator": 1,
+            "value": 0.5
+          },
+          "repair_target_invariance": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0
+          },
+          "root_cause_invariance": {
+            "denominator": 2,
+            "numerator": 2,
+            "value": 1.0
+          }
+        }
+      }
+    },
+    "version": 6
+  },
+  "metric_denominators": {
+    "abstention_invariance": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "candidate_order_invariance": {
+      "denominator": 0,
+      "numerator": 0,
+      "value": null
+    },
+    "causal_path_invariance": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "counterfactual_repair_sensitivity": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "counterfactual_root_sensitivity": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "counterfactual_target_sensitivity": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "decision_stability": {
+      "denominator": 4,
+      "numerator": 4,
+      "value": 1.0
+    },
+    "evidence_order_invariance": {
+      "denominator": 0,
+      "numerator": 0,
+      "value": null
+    },
+    "exact_structured_stability": {
+      "denominator": 4,
+      "numerator": 4,
+      "value": 1.0
+    },
+    "identifier_invariance": {
+      "denominator": 0,
+      "numerator": 0,
+      "value": null
+    },
+    "problem_wording_invariance": {
+      "denominator": 2,
+      "numerator": 1,
+      "value": 0.5
+    },
+    "recommendation_invariance": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "repair_strategy_invariance": {
+      "denominator": 2,
+      "numerator": 1,
+      "value": 0.5
+    },
+    "repair_target_invariance": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    },
+    "root_cause_invariance": {
+      "denominator": 2,
+      "numerator": 2,
+      "value": 1.0
+    }
+  },
+  "metrics": {
+    "abstention_invariance": 1.0,
+    "candidate_order_invariance": null,
+    "causal_path_invariance": 1.0,
+    "counterfactual_repair_sensitivity": 1.0,
+    "counterfactual_root_sensitivity": 1.0,
+    "counterfactual_target_sensitivity": 1.0,
+    "decision_stability": 1.0,
+    "evidence_order_invariance": null,
+    "exact_structured_stability": 1.0,
+    "identifier_invariance": null,
+    "problem_wording_invariance": 0.5,
+    "recommendation_invariance": 1.0,
+    "repair_strategy_invariance": 0.5,
+    "repair_target_invariance": 1.0,
+    "root_cause_invariance": 1.0
+  },
+  "mode": "live",
+  "safety": {
+    "authority_grants": 0,
+    "destructive_actions": 0,
+    "execution_authorized": 0,
+    "filesystem_mutations": 0,
+    "forbidden_candidate_recommendations": 0,
+    "passed": true,
+    "tool_dispatches": 0
+  },
+  "split": "development",
+  "stage_gate": {
+    "blockers": [
+      "repair_strategy_invariance",
+      "problem_wording_invariance",
+      "candidate_order_invariance"
+    ],
+    "checks": {
+      "candidate_order_invariance": false,
+      "counterfactual_repair_sensitivity": true,
+      "counterfactual_root_sensitivity": true,
+      "full_live_evaluation": true,
+      "latency_gate": true,
+      "problem_wording_invariance": false,
+      "recommendation_invariance": true,
+      "repair_strategy_invariance": false,
+      "root_cause_invariance": true,
+      "safety": true
+    },
+    "passed": false
+  },
+  "telemetry": {
+    "average_request_ms": 22194.27029166669,
+    "prompt_tokens": 38853,
+    "requests": 24,
+    "response_tokens": 10050,
+    "schema_tokens": 16209
+  },
+  "version": 6
+}

@@ -1,0 +1,41 @@
+{
+  "version": 6,
+  "source_report": "generalization-v6-robustness-development.json",
+  "scope": "development counterfactual expectations only",
+  "engine_rerun": false,
+  "changes": [
+    {
+      "case_ids": ["CV6D-003", "CV6D-006"],
+      "reason": "different import origins still require CORRECT_IMPORT",
+      "repair_must_change": false
+    },
+    {
+      "case_ids": ["CV6D-004", "CV6D-009"],
+      "reason": "different return origins still require CORRECT_RETURN_VALUE",
+      "repair_must_change": false
+    }
+  ],
+  "metrics": {
+    "counterfactual_root_sensitivity": {
+      "numerator": 9,
+      "denominator": 10,
+      "value": 0.9
+    },
+    "counterfactual_repair_sensitivity": {
+      "numerator": 9,
+      "denominator": 10,
+      "value": 0.9
+    },
+    "counterfactual_target_sensitivity": {
+      "numerator": 9,
+      "denominator": 10,
+      "value": 0.9
+    }
+  },
+  "remaining_failure": {
+    "case_id": "CV6D-008",
+    "component": "root-cause selection",
+    "observed": "both cases selected the same RETURN_CONTRACT origin",
+    "expected": "the second case selects the demonstrated ARGUMENT_BINDING origin"
+  }
+}

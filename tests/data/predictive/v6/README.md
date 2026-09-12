@@ -18,4 +18,6 @@ directories, evaluated read-only, and deleted after each run.
 Reports keep canonical quality, metamorphic invariance, counterfactual
 sensitivity, exact/decision stability, ordering probes, safety counters, and an
 abstention coverage funnel separate. A percentage is never emitted without its
-eligible population in canonical benchmark v6 reports.
+eligible population in canonical benchmark v6 reports. Metamorphic reports also
+measure absolute structural validity: repeating an incorrect base decision does
+not satisfy the robustness gate merely because the repetition is stable.

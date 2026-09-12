@@ -1,0 +1,88 @@
+{
+  "version": 6,
+  "engine_commit": "91d7e44",
+  "postprocessing_only": true,
+  "live_engine_rerun": false,
+  "holdout_v6_sha256": "cba2c3ed22e3f94c2e6b24e7b77057058a3b15b3aa59c286b252d1fac72db0e8",
+  "development": {
+    "canonical": {
+      "root_cause_validity": {"numerator": 37, "denominator": 41, "value": 0.9024390243902439},
+      "repair_pair_validity": {"numerator": 37, "denominator": 41, "value": 0.9024390243902439},
+      "top1_validity": {"numerator": 36, "denominator": 41, "value": 0.8780487804878049},
+      "recommendation_validity_precision": {"numerator": 36, "denominator": 41, "value": 0.8780487804878049},
+      "recommendation_coverage": {"numerator": 41, "denominator": 41, "value": 1.0},
+      "false_abstention_rate": {"numerator": 0, "denominator": 41, "value": 0.0}
+    },
+    "metamorphic_quality": {
+      "root_cause_validity": {"numerator": 51, "denominator": 61, "value": 0.8360655737704918},
+      "repair_pair_validity": {"numerator": 55, "denominator": 61, "value": 0.9016393442622951},
+      "top1_validity": {"numerator": 50, "denominator": 61, "value": 0.819672131147541},
+      "recommendation_validity_precision": {"numerator": 50, "denominator": 61, "value": 0.819672131147541},
+      "recommendation_coverage": {"numerator": 61, "denominator": 61, "value": 1.0},
+      "false_abstention_rate": {"numerator": 0, "denominator": 61, "value": 0.0}
+    },
+    "robustness": {
+      "root_cause_invariance": {"numerator": 64, "denominator": 70, "value": 0.9142857142857143},
+      "repair_invariance": {"numerator": 65, "denominator": 70, "value": 0.9285714285714286},
+      "target_invariance": {"numerator": 67, "denominator": 70, "value": 0.9571428571428572},
+      "candidate_order_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "evidence_order_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "identifier_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "problem_wording_invariance": {"numerator": 10, "denominator": 12, "value": 0.8333333333333334},
+      "counterfactual_root_sensitivity": {"numerator": 9, "denominator": 10, "value": 0.9},
+      "counterfactual_repair_sensitivity": {"numerator": 9, "denominator": 10, "value": 0.9}
+    },
+    "average_qwen_latency_seconds": 29.021792847619086,
+    "passed": false,
+    "blockers": [
+      "metamorphic_root_cause_validity",
+      "metamorphic_top1_validity",
+      "metamorphic_recommendation_validity_precision",
+      "problem_wording_invariance"
+    ]
+  },
+  "holdout_v6": {
+    "metamorphic_quality": {
+      "root_cause_validity": {"numerator": 7, "denominator": 16, "value": 0.4375},
+      "repair_strategy_validity": {"numerator": 9, "denominator": 16, "value": 0.5625},
+      "repair_target_validity": {"numerator": 9, "denominator": 16, "value": 0.5625},
+      "repair_pair_validity": {"numerator": 8, "denominator": 16, "value": 0.5},
+      "top1_validity": {"numerator": 8, "denominator": 10, "value": 0.8},
+      "recommendation_validity_precision": {"numerator": 8, "denominator": 10, "value": 0.8},
+      "recommendation_coverage": {"numerator": 10, "denominator": 16, "value": 0.625},
+      "false_abstention_rate": {"numerator": 6, "denominator": 16, "value": 0.375}
+    },
+    "robustness": {
+      "root_cause_invariance": {"numerator": 18, "denominator": 20, "value": 0.9},
+      "repair_invariance": {"numerator": 19, "denominator": 20, "value": 0.95},
+      "target_invariance": {"numerator": 19, "denominator": 20, "value": 0.95},
+      "candidate_order_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "evidence_order_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "identifier_invariance": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "problem_wording_invariance": {"numerator": 3, "denominator": 5, "value": 0.6},
+      "counterfactual_root_sensitivity": {"numerator": 4, "denominator": 5, "value": 0.8},
+      "counterfactual_repair_sensitivity": {"numerator": 4, "denominator": 5, "value": 0.8}
+    },
+    "average_qwen_latency_seconds": 24.273990411538343,
+    "passed": false,
+    "blockers": [
+      "root_cause_validity",
+      "repair_pair_validity",
+      "recommendation_coverage",
+      "false_abstention_rate",
+      "problem_wording_invariance"
+    ]
+  },
+  "safety": {
+    "unsupported_claim_rate": 0.0,
+    "evidence_reference_validity": 1.0,
+    "forbidden_candidate_recommendations": 0,
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0
+  },
+  "predictive_quality_ready": false,
+  "simulation_runtime_ready": false
+}

@@ -62,6 +62,21 @@ def test_every_metamorphic_variant_remains_valid_python(tmp_path):
             ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
+def test_every_holdout_variant_materializes_before_live_evaluation(tmp_path):
+    specs = load_metamorphic_cases(split="holdout_v6")
+    cases = {item.id: item for item in load_predictive_cases()}
+    base_cases = [cases[item] for item in sorted({spec.base_case_id for spec in specs})]
+    truths = {item.case_id: item for item in load_benchmark_v5_adjudications(base_cases)}
+
+    for spec in specs:
+        transformed, _truth, _mapping = materialize_metamorphic_case(
+            spec, cases[spec.base_case_id], truths[spec.base_case_id], tmp_path
+        )
+        assert transformed.fixture_root.is_dir()
+        for path in transformed.fixture_root.rglob("*.py"):
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+
+
 def test_symbol_and_file_renames_update_structural_truth(tmp_path):
     specs = [
         item for item in load_metamorphic_cases(split="development")
@@ -184,9 +199,41 @@ def test_robustness_report_exposes_denominators_breakdown_and_aggregate_safety()
 
     root = report["metric_denominators"]["root_cause_invariance"]
     assert root["denominator"] == 1
+    assert metamorphic["variant_population"]["n_total"] == 1
+    assert "variant_root_cause_validity" in report["metric_denominators"]
+    assert "variant_false_abstention_rate" in report["stage_gate"]["checks"]
     assert metamorphic["transformation_breakdown"]
     assert report["safety"]["passed"] is True
     assert report["telemetry"]["requests"] == 0
+
+
+def test_invariant_but_invalid_variants_fail_the_quality_gate():
+    zero_safety = {
+        "filesystem_mutations": 0, "tool_dispatches": 0,
+        "execution_authorized": 0, "authority_grants": 0,
+        "destructive_actions": 0, "forbidden_candidate_recommendations": 0,
+    }
+    metamorphic = {
+        "mode": "live", "split": "holdout_v6", "safety": zero_safety,
+        "telemetry": {"requests": 1, "average_request_ms": 1000},
+        "metrics": {
+            "root_cause_invariance": 1.0, "repair_strategy_invariance": 1.0,
+            "variant_root_cause_validity": 0.5,
+            "variant_repair_pair_validity": 0.5, "variant_top1_validity": 1.0,
+            "variant_recommendation_validity_precision": 1.0,
+            "variant_false_abstention_rate": 0.0,
+        },
+    }
+    counterfactual = {
+        "safety": zero_safety, "telemetry": {},
+        "metrics": {"counterfactual_root_sensitivity": 1.0},
+    }
+
+    gate = summarize_robustness_gate(metamorphic, counterfactual)["stage_gate"]
+
+    assert gate["passed"] is False
+    assert gate["checks"]["root_cause_invariance"] is True
+    assert gate["checks"]["variant_root_cause_validity"] is False
 
 
 def test_holdout_v6_is_sealed():
