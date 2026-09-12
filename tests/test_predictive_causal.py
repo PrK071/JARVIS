@@ -297,7 +297,7 @@ def test_argument_repair_uses_call_site_even_when_model_names_parameter():
     assert result.candidates[0].repair_targets[0].scope_kind.value == "CALL_SITE"
 
 
-def test_explicit_boundary_limits_dominant_binding_to_validation_strategy():
+def test_boundary_wording_does_not_eliminate_structurally_valid_strategies():
     context = _context("PC5D-006")
 
     class Recorder:
@@ -306,10 +306,28 @@ def test_explicit_boundary_limits_dominant_binding_to_validation_strategy():
             strategy = schema["properties"]["selections"]["items"][
                 "properties"
             ]["strategies"]["items"]["properties"]["kind"]
-            assert strategy["enum"] == ["VALIDATE_BOUNDARY"]
+            assert set(strategy["enum"]) == {"CORRECT_ARGUMENT", "VALIDATE_BOUNDARY"}
             return {"choices": [{"message": {"content": '{"selections": []}'}}]}
 
     PredictiveAnalyzer(Recorder()).analyze_with_diagnostics(context)
+
+
+def test_legacy_boundary_shortcut_is_available_only_for_ablation():
+    context = _context("PC5D-006")
+
+    class Recorder:
+        def chat(self, _messages, **kwargs):
+            strategy = kwargs["response_format"]["json_schema"]["schema"][
+                "properties"
+            ]["selections"]["items"]["properties"]["strategies"]["items"][
+                "properties"
+            ]["kind"]
+            assert strategy["enum"] == ["VALIDATE_BOUNDARY"]
+            return {"choices": [{"message": {"content": '{"selections": []}'}}]}
+
+    PredictiveAnalyzer(
+        Recorder(), lexical_strategy_restriction=True
+    ).analyze_with_diagnostics(context)
 
 
 def test_holdout_v3_integrity_is_frozen_in_manifest():

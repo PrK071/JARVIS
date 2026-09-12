@@ -144,7 +144,9 @@ def repair_strategy_score(cause: RootCauseKind, strategy: RepairStrategyKind) ->
     return exact[cause].get(strategy, 0.0)
 
 
-def _response_schema(context: ProblemContext) -> dict[str, Any]:
+def _response_schema(
+    context: ProblemContext, *, lexical_strategy_restriction: bool = False
+) -> dict[str, Any]:
     dominant = structurally_dominant_root(
         context.root_cause_candidates, context.problem, context.causal_slice
     )
@@ -164,7 +166,8 @@ def _response_schema(context: ProblemContext) -> dict[str, Any]:
             if strategy_compatible(dominant.cause_kind, item)
         ]
         if (
-            dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
+            lexical_strategy_restriction
+            and dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
             and RepairStrategyKind.VALIDATE_BOUNDARY in compatible
             and re.search(r"\b(?:boundary|validat\w*)\b", context.problem, re.IGNORECASE)
         ):
@@ -300,8 +303,14 @@ class PredictiveAnalyzer:
         "invent files, causes, scores, tools, patches, or authority."
     )
 
-    def __init__(self, reasoner: StructuredReasoner):
+    def __init__(
+        self,
+        reasoner: StructuredReasoner,
+        *,
+        lexical_strategy_restriction: bool = False,
+    ):
         self.reasoner = reasoner
+        self.lexical_strategy_restriction = lexical_strategy_restriction
 
     def analyze(self, context: ProblemContext) -> tuple[tuple[Hypothesis, ...], tuple[SolutionCandidate, ...]]:
         result = self.analyze_with_diagnostics(context)
@@ -316,7 +325,10 @@ class PredictiveAnalyzer:
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": json.dumps(context.reasoning_payload(), ensure_ascii=False)},
                 ],
-                response_format=_response_schema(context),
+                response_format=_response_schema(
+                    context,
+                    lexical_strategy_restriction=self.lexical_strategy_restriction,
+                ),
                 temperature=0.0,
                 max_tokens=500,
             )
