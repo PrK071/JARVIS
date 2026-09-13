@@ -145,6 +145,9 @@ class StructuralRecoveryTrace:
     final_root_count: int = 0
     initial_evidence_atom_count: int = 0
     final_evidence_atom_count: int = 0
+    seed_synthesis_attempted: bool = False
+    seed_synthesis_succeeded: bool = False
+    synthesized_seed: UnresolvedCausalFrontier | None = None
 
     @property
     def attempted(self) -> bool:
@@ -176,6 +179,11 @@ class StructuralRecoveryTrace:
             "extra_files": len(set(self.final_files) - set(self.initial_files)),
             "extra_evidence_atoms": max(
                 0, self.final_evidence_atom_count - self.initial_evidence_atom_count
+            ),
+            "seed_synthesis_attempted": self.seed_synthesis_attempted,
+            "seed_synthesis_succeeded": self.seed_synthesis_succeeded,
+            "synthesized_seed": (
+                self.synthesized_seed.as_dict() if self.synthesized_seed else None
             ),
         }
 
@@ -259,6 +267,17 @@ class StructuralRecoveryService:
             causal_sufficiency(causal_slice, roots), context, roots, snapshot
         )
         frontiers = self._frontiers(context, snapshot, causal_slice)
+        seed_attempted = not roots
+        synthesized_seed = (
+            self._synthesize_unique_symbol_seed(context, snapshot)
+            if seed_attempted else None
+        )
+        if synthesized_seed is not None:
+            # An exact, unique symbol definition is a stronger structural
+            # anchor than frontiers derived from an unrelated initial file.
+            # Keep the seed budget at one and do not combine it with weaker
+            # expansions in the same recovery attempt.
+            frontiers = (synthesized_seed,)
         root_path_nodes = {
             node_id for item in roots for node_id in item.causal_path
         }
@@ -288,6 +307,8 @@ class StructuralRecoveryService:
             )
             trace = self._trace(
                 outcome, context, context, initial, initial, (), (), roots, roots,
+                seed_attempted=seed_attempted,
+                synthesized_seed=synthesized_seed,
             )
             return StructuralRecoveryResult(context, causal_slice, roots, trace)
 
@@ -312,6 +333,8 @@ class StructuralRecoveryService:
             trace = self._trace(
                 RecoveryOutcome.RECOVERY_NO_NEW_EVIDENCE, context, context,
                 initial, initial, frontiers, (), roots, roots,
+                seed_attempted=seed_attempted,
+                synthesized_seed=synthesized_seed,
             )
             return StructuralRecoveryResult(context, causal_slice, roots, trace)
 
@@ -392,10 +415,55 @@ class StructuralRecoveryService:
         trace = self._trace(
             outcome, context, recovered, initial, final, frontiers, actions,
             roots, recovered_roots,
+            seed_attempted=seed_attempted,
+            synthesized_seed=synthesized_seed,
         )
         return StructuralRecoveryResult(
             recovered, recovered_slice, recovered_roots, trace
         )
+
+    @staticmethod
+    def _synthesize_unique_symbol_seed(
+        context: ProblemContext,
+        snapshot: ProjectSnapshotV2,
+    ) -> UnresolvedCausalFrontier | None:
+        """Return one exact structural anchor, or abstain on ambiguity.
+
+        The problem text is used only to identify an exact symbol token.  A
+        seed is accepted when the project index proves that all matching
+        definitions resolve to one production file.  Comments, docstrings,
+        filename similarity and partial lexical matches are never searched.
+        """
+        candidates: dict[tuple[str, str], UnresolvedCausalFrontier] = {}
+        allowed = {
+            SymbolKind.FUNCTION,
+            SymbolKind.ASYNC_FUNCTION,
+            SymbolKind.CLASS,
+            SymbolKind.METHOD,
+            SymbolKind.ASYNC_METHOD,
+        }
+        for token in dict.fromkeys(_IDENTIFIER.findall(context.problem)):
+            records = tuple(
+                item for item in snapshot.symbol_index.get(token, ())
+                if item.kind in allowed
+                and not snapshot.file_index[item.file].is_test
+            )
+            paths = tuple(sorted({item.file for item in records}))
+            if len(paths) != 1:
+                continue
+            key = (token, paths[0])
+            candidates[key] = UnresolvedCausalFrontier(
+                None,
+                token,
+                None,
+                UnresolvedRelation.SYMBOL_REFERENCE_UNKNOWN,
+                (),
+                paths,
+                1,
+            )
+        if len(candidates) != 1:
+            return None
+        return next(iter(candidates.values()))
 
     @staticmethod
     def _with_origin_coverage(
@@ -644,6 +712,9 @@ class StructuralRecoveryService:
         actions: tuple[RecoveryAction, ...],
         initial_roots: tuple[RootCauseCandidate, ...],
         final_roots: tuple[RootCauseCandidate, ...],
+        *,
+        seed_attempted: bool = False,
+        synthesized_seed: UnresolvedCausalFrontier | None = None,
     ) -> StructuralRecoveryTrace:
         return StructuralRecoveryTrace(
             outcome=outcome,
@@ -658,4 +729,10 @@ class StructuralRecoveryService:
             final_root_count=len(final_roots),
             initial_evidence_atom_count=len(initial_context.evidence_ledger.atoms),
             final_evidence_atom_count=len(final_context.evidence_ledger.atoms),
+            seed_synthesis_attempted=seed_attempted,
+            seed_synthesis_succeeded=(
+                synthesized_seed is not None
+                and outcome is RecoveryOutcome.RECOVERY_SUCCEEDED
+            ),
+            synthesized_seed=synthesized_seed,
         )

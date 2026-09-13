@@ -71,6 +71,34 @@ def test_recovery_resolves_unique_plain_symbol_seed():
     assert result.root_causes
 
 
+def test_seed_synthesis_replaces_irrelevant_initial_frontier():
+    context, snapshot, policy, causal_slice, roots = _initial(_case("SV8D-009"))
+    assert "metrics/core.py" not in context.related_files
+    assert not roots
+
+    result = StructuralRecoveryService().recover(
+        context, snapshot, policy, causal_slice, roots
+    )
+
+    assert result.trace.seed_synthesis_attempted is True
+    assert result.trace.seed_synthesis_succeeded is True
+    assert result.trace.synthesized_seed is not None
+    assert result.trace.synthesized_seed.symbol == "mean"
+    assert "metrics/core.py" in result.context.related_files
+    assert result.root_causes
+
+
+def test_seed_synthesis_abstains_when_structural_anchors_are_ambiguous():
+    context, snapshot, _policy, _causal_slice, _roots = _initial(_case("SV8D-009"))
+    ambiguous = replace(context, problem="mean and invoice_label both fail")
+
+    seed = StructuralRecoveryService._synthesize_unique_symbol_seed(
+        ambiguous, snapshot
+    )
+
+    assert seed is None
+
+
 def test_recovery_adds_missing_attribute_origin():
     context, snapshot, policy, causal_slice, roots = _initial(_case("PD-005"))
     result = StructuralRecoveryService().recover(

@@ -278,9 +278,6 @@ class ProblemContext:
         from .repair import derive_repair_targets
         from .semantic import pairwise_root_matrix, root_cause_signature
 
-        node_lookup = {
-            node.id: node for node in self.causal_slice.nodes
-        } if self.causal_slice else {}
         dominant = structurally_dominant_root(
             self.root_cause_candidates, self.problem, self.causal_slice
         )
@@ -299,16 +296,21 @@ class ProblemContext:
                 "direct_support": item.direct_support,
                 "structural_support": item.structural_support,
                 "completeness": item.completeness,
-                "score": item.score,
-                "allowed_repair_strategies": [
-                    strategy.value
-                    for strategy in compatible_strategies_for_root(item, self.causal_slice)
-                ],
                 "allowed_repairs": [
                     {
                         "strategy": strategy.value,
                         "targets": [
-                            target.as_dict() for target in derive_repair_targets(
+                            {
+                                "id": target.id,
+                                "kind": target.scope_kind.value,
+                                "path": target.path,
+                                "owner": (
+                                    target.symbol
+                                    or target.parameter
+                                    or target.attribute
+                                ),
+                            }
+                            for target in derive_repair_targets(
                                 strategy, item, self.causal_slice
                             )
                         ] if self.causal_slice else [],
@@ -317,11 +319,6 @@ class ProblemContext:
                         item, self.causal_slice
                     )
                 ],
-                "causal_targets": list(dict.fromkeys(
-                    (node_lookup[node_id].path, node_lookup[node_id].symbol)
-                    for node_id in item.causal_path
-                    if node_id in node_lookup
-                )),
                 "semantic_signature": (
                     root_cause_signature(item, self.causal_slice).as_dict()
                     if self.causal_slice else None
@@ -331,6 +328,7 @@ class ProblemContext:
                 item.as_dict() for item in pairwise_root_matrix(
                     self.root_cause_candidates, self.causal_slice
                 )
+                if item.preferred_id is not None
             ] if self.causal_slice else [],
         }
 

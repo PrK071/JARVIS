@@ -23,6 +23,112 @@ def _rate(values: Sequence[bool]) -> dict[str, Any]:
     }
 
 
+def _signature_key(value: Mapping[str, Any] | None) -> tuple[object, ...] | None:
+    if not value:
+        return None
+    return (
+        value.get("cause_kind"),
+        tuple(value.get("causal_roles") or ()),
+        value.get("origin_role"),
+        value.get("relation_to_failure"),
+        value.get("contract_role"),
+    )
+
+
+def _signatures_equivalent(
+    left: Mapping[str, Any] | None, right: Mapping[str, Any] | None
+) -> bool:
+    if _signature_key(left) == _signature_key(right):
+        return _signature_key(left) is not None
+    if not left or not right:
+        return False
+    flow_contract_family = {"NULL_FLOW", "TYPE_FLOW", "RETURN_CONTRACT"}
+    left_roles = set(left.get("causal_roles") or ())
+    right_roles = set(right.get("causal_roles") or ())
+    return (
+        left.get("cause_kind") in flow_contract_family
+        and right.get("cause_kind") in flow_contract_family
+        and {"PRODUCER", "RETURN_SOURCE"} <= left_roles
+        and {"PRODUCER", "RETURN_SOURCE"} <= right_roles
+        and left.get("origin_role") == right.get("origin_role") == "SOURCE"
+    )
+
+
+def _semantic_root_metrics(
+    actual: Mapping[str, Any], truth: BenchmarkAdjudicationV5
+) -> tuple[bool, bool]:
+    roots = {item["id"]: item for item in actual.get("root_cause_candidates") or ()}
+    signatures = actual.get("root_cause_signatures") or {}
+    expected_ids = {
+        root_id
+        for root_id, root in roots.items()
+        if any(
+            item.matches(root)
+            or (
+                item.cause_kind == root.get("cause_kind") == "IMPORT_RESOLUTION"
+                and item.path == root.get("origin_path")
+                and item.symbol is not None
+                and str(root.get("origin_symbol") or "").rsplit(".", 1)[-1]
+                == item.symbol.rsplit(".", 1)[-1]
+            )
+            for item in truth.acceptable_root_causes
+        )
+    }
+    valid_ids = set(expected_ids)
+    for root_id, root in roots.items():
+        if root_id in valid_ids:
+            continue
+        if any(
+            root.get("origin_path") == roots[expected_id].get("origin_path")
+            and root.get("origin_line") == roots[expected_id].get("origin_line")
+            and _signatures_equivalent(
+                signatures.get(root_id), signatures.get(expected_id)
+            )
+            for expected_id in expected_ids
+        ):
+            valid_ids.add(root_id)
+    selected_ids = {
+        item.get("root_cause_id")
+        for item in actual.get("hypotheses") or ()
+        if item.get("root_cause_id") in roots
+    }
+    return bool(valid_ids), bool(selected_ids & valid_ids)
+
+
+def _metrics_v8(
+    result: Mapping[str, Any], truth: BenchmarkAdjudicationV5
+) -> dict[str, Any]:
+    legacy = dict(result.get("metrics_v5") or {})
+    generated, selected = _semantic_root_metrics(result.get("actual") or {}, truth)
+    if truth.evaluable and not truth.abstention_expected:
+        legacy["root_cause_validity"] = selected
+    legacy["generated_valid_root"] = generated
+    failures = list(legacy.get("failure_codes") or ())
+    if generated:
+        failures = [
+            item for item in failures
+            if item not in {"CAUSAL_SLICE_ERROR", "MISSED_STRUCTURAL_NEIGHBOR"}
+        ]
+    if selected:
+        failures = [item for item in failures if item != "ROOT_CAUSE_SELECTION_ERROR"]
+    elif (
+        truth.evaluable
+        and not truth.abstention_expected
+        and not legacy.get("false_abstention")
+        and "ROOT_CAUSE_SELECTION_ERROR" not in failures
+    ):
+        failures.append("ROOT_CAUSE_SELECTION_ERROR")
+    legacy["failure_codes"] = failures
+    legacy["classification"] = (
+        "NONE"
+        if not failures and legacy.get("classification") == "TRUE_ENGINE_FAILURE"
+        else "TRUE_ENGINE_FAILURE"
+        if failures and legacy.get("classification") == "NONE"
+        else legacy.get("classification")
+    )
+    return legacy
+
+
 def _pairwise_metrics(
     actual: Mapping[str, Any], truth: BenchmarkAdjudicationV5
 ) -> tuple[list[bool], list[bool]]:
@@ -32,20 +138,15 @@ def _pairwise_metrics(
         for root_id, root in roots.items()
         if any(item.preferred and item.matches(root) for item in truth.acceptable_root_causes)
     }
-    valid_roots = {
-        root_id
-        for root_id, root in roots.items()
-        if any(item.matches(root) for item in truth.acceptable_root_causes)
-    }
     selected_ids = {
         item.get("root_cause_id")
         for item in actual.get("hypotheses") or ()
         if item.get("root_cause_id")
     }
     root_pairs = [
-        bool(selected_ids & preferred_roots) and not bool(selected_ids - valid_roots)
+        bool(selected_ids & preferred_roots)
         for _preferred in preferred_roots
-        for _other in roots.keys() - valid_roots
+        for _other in roots.keys() - preferred_roots
     ]
 
     candidates = list(actual.get("candidates") or ())
@@ -68,9 +169,13 @@ def summarize_benchmark_v8(report_v5: Mapping[str, Any]) -> dict[str, Any]:
     root_pairs: list[bool] = []
     ranking_pairs: list[bool] = []
     margins = {"correct": [], "wrong": [], "ambiguous": []}
+    results = []
     for result in report_v5.get("results") or ():
         truth = result.get("benchmark_v5") or {}
         typed_truth = load_benchmark_v5_adjudications_for_result(result, truth)
+        metrics = _metrics_v8(result, typed_truth)
+        result = dict(result) | {"metrics_v8": metrics}
+        results.append(result)
         roots, rankings = _pairwise_metrics(result.get("actual") or {}, typed_truth)
         root_pairs.extend(roots)
         ranking_pairs.extend(rankings)
@@ -80,12 +185,51 @@ def summarize_benchmark_v8(report_v5: Mapping[str, Any]) -> dict[str, Any]:
                 "ambiguous"
                 if (result.get("actual") or {}).get("ranking_ambiguous")
                 else "correct"
-                if (result.get("metrics_v5") or {}).get("top1_validity")
+                if metrics.get("top1_validity")
                 else "wrong"
             )
             margins[bucket].append(float(margin))
 
+    positive = [
+        item for item in results
+        if (item.get("metrics_v8") or {}).get("evaluable")
+        and not (item.get("benchmark_v5") or {}).get("abstention_expected")
+    ]
+    recommended = [
+        item for item in positive
+        if (item.get("metrics_v8") or {}).get("recommendation_coverage")
+    ]
+    seed_attempts = [
+        item for item in results
+        if bool(((item.get("actual") or {}).get("recovery") or {}).get(
+            "seed_synthesis_attempted"
+        ))
+    ]
+    seed_successes = [
+        item for item in seed_attempts
+        if bool(((item.get("actual") or {}).get("recovery") or {}).get(
+            "seed_synthesis_succeeded"
+        ))
+    ]
+    seed_correct = [
+        item for item in seed_successes
+        if bool((item.get("metrics_v8") or {}).get("root_cause_validity"))
+    ]
+    quality_names = (
+        "root_cause_validity", "repair_strategy_validity",
+        "repair_target_validity", "repair_pair_validity", "top1_validity",
+        "recommendation_coverage", "false_abstention",
+    )
     denominators = {
+        name: _rate([
+            bool((item.get("metrics_v8") or {}).get(name)) for item in positive
+        ])
+        for name in quality_names
+    } | {
+        "recommendation_validity_precision": _rate([
+            bool((item.get("metrics_v8") or {}).get("recommendation_valid"))
+            for item in recommended
+        ]),
         "root_pairwise_accuracy": _rate(root_pairs),
         "candidate_pairwise_ranking_accuracy": _rate(ranking_pairs),
     }
@@ -122,6 +266,7 @@ def summarize_benchmark_v8(report_v5: Mapping[str, Any]) -> dict[str, Any]:
         checks["false_abstention"] = (quality.get("false_abstention") or 0.0) <= 0.08
     return dict(report_v5) | {
         "version": 8,
+        "results": results,
         "quality": quality,
         "metric_denominators_v8": denominators,
         "ranking_margin_distribution": {
@@ -142,6 +287,17 @@ def summarize_benchmark_v8(report_v5: Mapping[str, Any]) -> dict[str, Any]:
             }
             for name, weight in SCORE_WEIGHTS.items()
         ],
+        "seed_synthesis_v8": {
+            "attempts": len(seed_attempts),
+            "successes": len(seed_successes),
+            "correct_diagnoses": len(seed_correct),
+            "success_rate": (
+                len(seed_successes) / len(seed_attempts) if seed_attempts else None
+            ),
+            "precision": (
+                len(seed_correct) / len(seed_successes) if seed_successes else None
+            ),
+        },
         "stage_gate_v8": {"checks": checks, "passed": all(checks.values())},
     }
 

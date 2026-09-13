@@ -9,6 +9,7 @@ from .causal import (
     RejectedRootCause,
     RepairStrategy,
     RepairStrategyKind,
+    RootCauseCandidate,
     RootCauseSelection,
     RootCauseKind,
     RootSelectionReason,
@@ -161,12 +162,6 @@ def _response_schema(
     roots = [dominant.id] if dominant else [item.id for item in context.root_cause_candidates]
     all_roots = [item.id for item in context.root_cause_candidates]
     reason_codes = [item.value for item in RootSelectionReason]
-    files = sorted(set(context.related_files) | {
-        item.origin_path for item in context.root_cause_candidates
-    })
-    symbols = sorted({item.split("@", 1)[0] for item in context.related_symbols} | {
-        item.origin_symbol for item in context.root_cause_candidates if item.origin_symbol
-    })
     strategy_values = [item.value for item in RepairStrategyKind]
     target_ids = sorted({
         target.id
@@ -190,6 +185,7 @@ def _response_schema(
         ):
             compatible = [RepairStrategyKind.VALIDATE_BOUNDARY]
         strategy_values = [item.value for item in compatible]
+    strategy_min_items = 2 if dominant and len(strategy_values) > 1 else 1
     return {
         "type": "json_schema",
         "json_schema": {
@@ -224,20 +220,21 @@ def _response_schema(
                                 "claim": {"type": "string", "minLength": 1, "maxLength": 240},
                                 "strategies": {
                                     "type": "array",
-                                    "minItems": 1,
+                                    "minItems": strategy_min_items,
                                     "maxItems": 2,
                                     "items": {
                                         "type": "object",
                                         "additionalProperties": False,
                                         "properties": {
                                             "kind": {"type": "string", "enum": strategy_values},
-                                            "target_file": {"type": "string", "enum": files},
-                                            "target_symbol": {"type": "string", "enum": ["", *symbols]},
-                                            "repair_target_id": {"type": "string", "enum": ["", *target_ids]},
+                                            "repair_target_id": {
+                                                "type": "string",
+                                                "enum": target_ids or [""],
+                                            },
                                             "rationale": {"type": "string", "minLength": 1, "maxLength": 240},
                                             "reason": {"type": "string", "enum": reason_codes},
                                         },
-                                        "required": ["kind", "target_file", "target_symbol", "repair_target_id", "rationale", "reason"],
+                                        "required": ["kind", "repair_target_id", "rationale", "reason"],
                                     },
                                 },
                             },
@@ -291,6 +288,70 @@ def _related_tests(context: ProblemContext, target_file: str) -> tuple[str, ...]
         test for production, test in context.test_relationships
         if production == target_file and test in context.related_tests
     ))
+
+
+def _complete_distinct_strategy_rows(
+    raw_rows: Sequence[Mapping[str, Any]],
+    root: RootCauseCandidate,
+    context: ProblemContext,
+) -> tuple[Mapping[str, Any], ...]:
+    """Keep model choices and add only structurally derived alternatives."""
+    rows = list(raw_rows[:2])
+    # Legacy/fake reasoners may use the public MVP shape. Preserve it rather
+    # than silently changing their candidate count. The v8 protocol always
+    # carries typed target IDs and closed comparison reasons.
+    if not rows or any("repair_target_id" not in row for row in rows):
+        return tuple(rows)
+    seen: set[RepairStrategyKind] = set()
+    for row in rows:
+        try:
+            kind = RepairStrategyKind(str(row.get("kind") or ""))
+        except ValueError:
+            continue
+        seen.add(kind)
+    if not context.causal_slice or len(seen) >= 2:
+        return tuple(rows)
+
+    compatible = sorted(
+        compatible_strategies_for_root(root, context.causal_slice),
+        key=lambda item: (
+            -semantic_repair_strategy_score(
+                item,
+                root,
+                context.causal_slice,
+                repair_strategy_score(root.cause_kind, item),
+            ),
+            item.value,
+        ),
+    )
+    for kind in compatible:
+        if kind in seen:
+            continue
+        targets = derive_repair_targets(kind, root, context.causal_slice)
+        if not targets:
+            continue
+        target = sorted(
+            targets,
+            key=lambda item: (
+                -rank_target_preference(
+                    target_preference(kind, root, item, context.causal_slice)
+                ),
+                item.id,
+            ),
+        )[0]
+        rows.append({
+            "kind": kind.value,
+            "repair_target_id": target.id,
+            "rationale": (
+                f"Apply {kind.value} at the structurally compatible "
+                f"{target.scope_kind.value} target"
+            ),
+            "reason": PairwiseRootReason.STRONGER_STRUCTURAL_PATH.value,
+        })
+        seen.add(kind)
+        if len(rows) >= 2:
+            break
+    return tuple(rows)
 
 
 @dataclass(frozen=True)
@@ -438,13 +499,16 @@ class PredictiveAnalyzer:
                 diagnostics.append(PredictiveFailureReason.ROOT_CAUSE_SELECTION_ERROR.value)
                 continue
 
-            for raw_strategy in raw_selection.get("strategies", ())[:2]:
+            strategy_rows = _complete_distinct_strategy_rows(
+                raw_selection.get("strategies", ()), root, context
+            )
+            for raw_strategy in strategy_rows:
                 if len(candidates) >= 3:
                     break
                 try:
                     kind = RepairStrategyKind(str(raw_strategy["kind"]))
-                    target_file = str(raw_strategy["target_file"])
-                    target_symbol = str(raw_strategy["target_symbol"])
+                    target_file = str(raw_strategy.get("target_file") or "")
+                    target_symbol = str(raw_strategy.get("target_symbol") or "")
                     if not strategy_compatible(root.cause_kind, kind):
                         diagnostics.append(PredictiveFailureReason.REPAIR_STRATEGY_ERROR.value)
                         continue
@@ -495,6 +559,28 @@ class PredictiveAnalyzer:
                             strategy=kind,
                             root=root,
                         )
+                    if target is not None and typed_targets:
+                        semantic_best = (
+                            best_target(
+                                typed_targets, strategy=kind, root=root
+                            )
+                            if kind is RepairStrategyKind.CORRECT_ARGUMENT
+                            else sorted(
+                                typed_targets,
+                                key=lambda item: (
+                                    -rank_target_preference(target_preference(
+                                        kind, root, item, context.causal_slice
+                                    )),
+                                    item.id,
+                                ),
+                            )[0]
+                        )
+                        if rank_target_preference(target_preference(
+                            kind, root, semantic_best, context.causal_slice
+                        )) > rank_target_preference(target_preference(
+                            kind, root, target, context.causal_slice
+                        )):
+                            target = semantic_best
                     if target is None or not validate_repair_target(
                         kind, root, target, context.causal_slice
                     ):

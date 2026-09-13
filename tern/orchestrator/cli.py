@@ -861,7 +861,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=(3, 4, 5, 6, 7, 8),
         type=int,
         default=3,
-        help="v6 audita denominadores e robustez; v5 separa estrategia e target",
+        help="v8 mede selecao semantica; v6 audita robustez; v5 separa target",
     )
     predictive_eval.add_argument(
         "--live-qwen",

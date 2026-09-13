@@ -121,10 +121,16 @@ def test_reasoner_selection_is_invariant_to_candidate_evidence_and_id_order():
             payload = json.loads(messages[-1]["content"])
             root = max(
                 payload["root_cause_candidates"],
-                key=lambda item: (item["structural_support"], item["score"]),
+                key=lambda item: (
+                    item["structural_support"],
+                    item["completeness"],
+                    item["direct_support"],
+                    item["causal_flow"],
+                ),
             )
-            strategy = root["allowed_repair_strategies"][0]
-            target_file, target_symbol = root["causal_targets"][0]
+            repair = root["allowed_repairs"][0]
+            strategy = repair["strategy"]
+            target = repair["targets"][0]
             value = {"selections": [{
                 "root_cause_id": root["id"],
                 "selection_reason": "STRONGER_CAUSAL_PATH",
@@ -132,8 +138,7 @@ def test_reasoner_selection_is_invariant_to_candidate_evidence_and_id_order():
                 "claim": "selected from the proven causal path",
                 "strategies": [{
                     "kind": strategy,
-                    "target_file": target_file,
-                    "target_symbol": target_symbol or "",
+                    "repair_target_id": target["id"],
                     "rationale": "repair the structural origin",
                     "reason": "STRONGER_CAUSAL_PATH",
                 }],

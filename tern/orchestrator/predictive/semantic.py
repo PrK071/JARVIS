@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
@@ -153,12 +154,18 @@ def _transparent_expression(expression: str) -> bool:
     returned = value[7:].strip()
     if not returned:
         return False
-    if returned.replace(".", "").replace("_", "").isalnum():
+    try:
+        parsed = ast.parse(value).body[0]
+    except (SyntaxError, IndexError):
+        return False
+    if not isinstance(parsed, ast.Return) or parsed.value is None:
+        return False
+    if isinstance(parsed.value, (ast.Name, ast.Attribute)):
         return True
-    if returned.endswith(")") and "(" in returned:
-        prefix = returned.split("(", 1)[0]
-        return prefix.replace(".", "").replace("_", "").isalnum()
-    return False
+    if not isinstance(parsed.value, ast.Call):
+        return False
+    forwarded = (*parsed.value.args, *(item.value for item in parsed.value.keywords))
+    return all(isinstance(item, (ast.Name, ast.Attribute)) for item in forwarded)
 
 
 def is_transparent_wrapper(root: RootCauseCandidate, causal_slice: CausalSlice) -> bool:
@@ -268,11 +275,24 @@ def compare_root_candidates(
     right_wrapper = CausalRole.INTERMEDIATE_WRAPPER in right_signature.causal_roles
     if left_wrapper != right_wrapper:
         return result(right, left, PairwiseRootReason.INTERMEDIATE_WRAPPER) if left_wrapper else result(left, right, PairwiseRootReason.INTERMEDIATE_WRAPPER)
+    if (
+        left.cause_kind is RootCauseKind.ARGUMENT_BINDING
+        and right.cause_kind is RootCauseKind.ARGUMENT_BINDING
+        and left.causal_path
+        and right.causal_path
+    ):
+        left_origin, right_origin = left.causal_path[0], right.causal_path[0]
+        if right_origin in left.causal_path[1:]:
+            return result(left, right, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN)
+        if left_origin in right.causal_path[1:]:
+            return result(right, left, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN)
     left_manifest = left_signature.origin_role is OriginRole.MANIFESTATION
     right_manifest = right_signature.origin_role is OriginRole.MANIFESTATION
     demonstrable_contract_origins = {
         RootCauseKind.NULL_FLOW,
         RootCauseKind.TYPE_FLOW,
+        RootCauseKind.ARGUMENT_BINDING,
+        RootCauseKind.RETURN_CONTRACT,
     }
     if left_manifest != right_manifest:
         upstream = right if left_manifest else left
@@ -280,10 +300,21 @@ def compare_root_candidates(
         upstream_signature = right_signature if left_manifest else left_signature
         if upstream.cause_kind in demonstrable_contract_origins:
             return result(upstream, symptom, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN)
-    direct_source_kinds = demonstrable_contract_origins
+    left_config = CausalRole.CONFIG_SOURCE in left_signature.causal_roles
+    right_config = CausalRole.CONFIG_SOURCE in right_signature.causal_roles
+    if left_config != right_config:
+        source, alternate = (left, right) if left_config else (right, left)
+        if source.structural_support == 1.0 and source.completeness == 1.0:
+            return result(
+                source, alternate, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN
+            )
+    direct_source_kinds = {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
     if (left.cause_kind in direct_source_kinds) != (right.cause_kind in direct_source_kinds):
         source, alternate = (left, right) if left.cause_kind in direct_source_kinds else (right, left)
         if (
+            (source.origin_path, source.origin_line)
+            != (alternate.origin_path, alternate.origin_line)
+            and
             not (source.origin_path.startswith("tests/") or "/test" in source.origin_path)
             and source.structural_support == 1.0
             and source.completeness == 1.0
@@ -324,15 +355,94 @@ def semantic_dominant_root(
         item for item in candidates
         if not (item.origin_path.startswith("tests/") or "/test" in item.origin_path)
     ) or tuple(candidates)
-    winners: list[RootCauseCandidate] = []
-    for candidate in production:
-        comparisons = [
-            compare_root_candidates(candidate, other, causal_slice)
-            for other in production if other.id != candidate.id
-        ]
-        if comparisons and all(item.preferred_id == candidate.id for item in comparisons):
-            winners.append(candidate)
-    return winners[0] if len(winners) == 1 else None
+    rejected: set[str] = set()
+    # NULL/TYPE/RETURN candidates at one producer return site are alternate
+    # representations of the same structural origin. Compare the strongest
+    # representative with other causal roles instead of creating an
+    # artificial tie between its representations.
+    flow_family = {
+        RootCauseKind.NULL_FLOW,
+        RootCauseKind.TYPE_FLOW,
+        RootCauseKind.RETURN_CONTRACT,
+    }
+    representation_priority = {
+        RootCauseKind.NULL_FLOW: 0,
+        RootCauseKind.TYPE_FLOW: 1,
+        RootCauseKind.RETURN_CONTRACT: 2,
+    }
+    groups: dict[tuple[str, int], list[RootCauseCandidate]] = {}
+    for item in production:
+        signature = root_cause_signature(item, causal_slice)
+        if (
+            item.cause_kind in flow_family
+            and {CausalRole.PRODUCER, CausalRole.RETURN_SOURCE}
+            <= set(signature.causal_roles)
+        ):
+            groups.setdefault((item.origin_path, item.origin_line), []).append(item)
+    deferred_representations: set[str] = set()
+    for values in groups.values():
+        if len(values) < 2:
+            continue
+        representative = sorted(
+            values,
+            key=lambda item: (
+                representation_priority[item.cause_kind],
+                -item.score,
+                item.id,
+            ),
+        )[0]
+        deferred_representations.add(representative.id)
+        rejected.update(item.id for item in values if item.id != representative.id)
+    decisive = 0
+    for index, left in enumerate(production):
+        for right in production[index + 1 :]:
+            comparison = compare_root_candidates(left, right, causal_slice)
+            if comparison.preferred_id and comparison.rejected_id:
+                decisive += 1
+                rejected.add(comparison.rejected_id)
+    unbeaten = [item for item in production if item.id not in rejected]
+    if decisive and len(unbeaten) == 1:
+        if unbeaten[0].id in deferred_representations:
+            return None
+        return unbeaten[0]
+    return None
+
+
+def equivalent_root_origin(
+    candidates: Sequence[RootCauseCandidate], causal_slice: CausalSlice | None
+) -> RootCauseCandidate | None:
+    """Choose a representation only when all unbeaten roots share one origin."""
+    if not causal_slice:
+        return None
+    production = tuple(
+        item for item in candidates
+        if not (item.origin_path.startswith("tests/") or "/test" in item.origin_path)
+    ) or tuple(candidates)
+    rejected = {
+        comparison.rejected_id
+        for comparison in pairwise_root_matrix(production, causal_slice)
+        if comparison.preferred_id and comparison.rejected_id
+    }
+    unbeaten = [item for item in production if item.id not in rejected]
+    locations = {(item.origin_path, item.origin_line) for item in unbeaten}
+    family = {
+        RootCauseKind.NULL_FLOW,
+        RootCauseKind.TYPE_FLOW,
+        RootCauseKind.RETURN_CONTRACT,
+    }
+    signatures = [root_cause_signature(item, causal_slice) for item in unbeaten]
+    if (
+        unbeaten
+        and len(locations) == 1
+        and all(item.cause_kind in family for item in unbeaten)
+        and all(
+            {CausalRole.PRODUCER, CausalRole.RETURN_SOURCE}
+            <= set(signature.causal_roles)
+            for signature in signatures
+        )
+    ):
+        return sorted(unbeaten, key=lambda item: (-item.score, item.id))[0]
+    return None
 
 
 def _node_for_target(target: RepairTarget, causal_slice: CausalSlice) -> CausalNode | None:
@@ -363,6 +473,7 @@ def repair_target_signature(
     causal_slice: CausalSlice,
 ) -> RepairTargetSignature:
     node = _node_for_target(target, causal_slice)
+    origin = _origin_node(root, causal_slice)
     root_signature = root_cause_signature(root, causal_slice)
     roles: set[CausalRole] = set()
     if target.path == root.origin_path:
@@ -380,11 +491,18 @@ def repair_target_signature(
     elif target.scope_kind is RepairTargetKind.IMPORT_EDGE:
         roles.add(CausalRole.IMPORT_SOURCE)
 
+    target_owner = (target.symbol or "").rsplit(".", 1)[-1]
+    root_owner = (
+        (origin.scope if origin and origin.scope != "module" else None)
+        or root.origin_symbol
+        or ""
+    ).rsplit(".", 1)[-1]
+    same_owner_scope = bool(target_owner and root_owner and target_owner == root_owner)
     relation_to_root = (
         TargetRelation.ROOT
         if node and root.causal_path and node.id == root.causal_path[0]
         else TargetRelation.ROOT_SCOPE
-        if target.path == root.origin_path
+        if target.path == root.origin_path and same_owner_scope
         else TargetRelation.CAUSAL_PATH
         if node and node.id in root.causal_path
         else TargetRelation.UNRELATED
@@ -436,12 +554,29 @@ def target_preference(
             )
             for edge in causal_slice.edges
         ) if root.causal_path else False
-        preferred = {
-            RepairTargetKind.CALL_SITE if incoming_argument else RepairTargetKind.PARAMETER
-        }
-    if target.scope_kind in preferred and signature.relation_to_root in {
-        TargetRelation.ROOT, TargetRelation.ROOT_SCOPE, TargetRelation.CAUSAL_PATH,
-    }:
+        forwarded_argument = any(
+            edge.source_id == root.causal_path[0]
+            and edge.target_id in root.causal_path[1:]
+            and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+            and edge.deterministic
+            and nodes.get(edge.target_id) is not None
+            and nodes[edge.target_id].kind is CausalNodeKind.PARAMETER
+            for edge in causal_slice.edges
+        ) if root.causal_path else False
+        preferred = (
+            {RepairTargetKind.CALL_SITE, RepairTargetKind.PARAMETER}
+            if forwarded_argument
+            else {RepairTargetKind.CALL_SITE}
+            if incoming_argument
+            else {RepairTargetKind.PARAMETER}
+        )
+    preferred_relations = {TargetRelation.ROOT, TargetRelation.ROOT_SCOPE}
+    if (
+        strategy is RepairStrategyKind.CORRECT_ARGUMENT
+        and target.scope_kind is RepairTargetKind.CALL_SITE
+    ):
+        preferred_relations.add(TargetRelation.CAUSAL_PATH)
+    if target.scope_kind in preferred and signature.relation_to_root in preferred_relations:
         return TargetPreference.PREFERRED
     if signature.relation_to_root is TargetRelation.UNRELATED:
         return TargetPreference.INVALID
@@ -498,7 +633,16 @@ def semantic_repair_strategy_score(
         )
         for edge in causal_slice.edges
     )
-    if has_production_argument_source:
+    forwards_to_parameter = any(
+        edge.source_id == root.causal_path[0]
+        and edge.target_id in root.causal_path[1:]
+        and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+        and edge.deterministic
+        and nodes.get(edge.target_id) is not None
+        and nodes[edge.target_id].kind is CausalNodeKind.PARAMETER
+        for edge in causal_slice.edges
+    )
+    if has_production_argument_source or forwards_to_parameter:
         return {
             RepairStrategyKind.CORRECT_ARGUMENT: 1.0,
             RepairStrategyKind.VALIDATE_BOUNDARY: 0.65,

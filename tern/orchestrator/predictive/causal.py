@@ -519,6 +519,16 @@ class _FlowBuilder(ast.NodeVisitor):
             return [self.node(kind, line, None, _expr(node))]
         if isinstance(node, ast.Call):
             return [self._call(node)]
+        if isinstance(node, ast.BinOp):
+            # Preserve calls inside compound expressions.  In
+            # ``return producer() + 1`` the call result, not the identifier
+            # named ``producer``, flows into the return value.
+            values: list[str] = []
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, (ast.operator, ast.unaryop, ast.boolop, ast.cmpop)):
+                    continue
+                values.extend(self.source_nodes(child, line))
+            return list(dict.fromkeys(values))
         refs = _refs(node)
         values = [self.value(name, line) for name in refs]
         self.attribute_reads.update(
@@ -1029,53 +1039,12 @@ def structurally_dominant_root(
     """Return a root only when deterministic evidence makes alternatives weaker."""
     folded = problem.casefold()
     binding_hint = bool(re.search(
-        r"\b(?:argument|parameter|default|boundary|passed|supplied|receives?)\b",
+        r"\b(?:argument|parameter|input|default|passed|supplied)\b",
+        folded,
+    ) or re.search(
+        r"\bboundary\s+(?:owned|handled|validated)\s+by\b",
         folded,
     ))
-
-    # User text may identify which of several structurally valid contracts is
-    # under discussion. It never creates a candidate: the return path must be
-    # complete and independently present in the causal slice.
-    contract_scores: dict[str, int] = {}
-    if not binding_hint:
-        for item in candidates:
-            if (
-                item.cause_kind is not RootCauseKind.RETURN_CONTRACT
-                or not item.origin_symbol
-                or item.structural_support != 1.0
-                or item.completeness != 1.0
-            ):
-                continue
-            if causal_slice:
-                from .semantic import is_transparent_wrapper
-
-                if is_transparent_wrapper(item, causal_slice):
-                    continue
-            symbol = re.escape(item.origin_symbol.rsplit(".", 1)[-1].casefold())
-            score = 0
-            if re.search(
-                rf"\b{symbol}\b.{{0,90}}\b(?:violat\w*|return\w*|produc\w*|expect\w*|contract)\b",
-                folded,
-            ):
-                score += 3
-            if re.search(
-                rf"\b(?:expect\w*|contract|producer|source|return\w*)\b.{{0,90}}\b{symbol}\b",
-                folded,
-            ):
-                score += 2
-            if folded.startswith(item.origin_symbol.rsplit(".", 1)[-1].casefold()):
-                score += 1
-            if score:
-                contract_scores[item.id] = score
-    if contract_scores:
-            best_score = max(contract_scores.values())
-            strongest = [
-                item for item in candidates
-                if contract_scores.get(item.id) == best_score
-            ]
-            origins = {(item.origin_path, item.origin_symbol) for item in strongest}
-            if len(origins) == 1:
-                return sorted(strongest, key=lambda item: (-item.score, item.id))[0]
 
     if causal_slice is None:
         explicit = [
@@ -1089,15 +1058,63 @@ def structurally_dominant_root(
         if len(explicit) == 1:
             return explicit[0]
 
-    if causal_slice and not binding_hint:
+    if causal_slice:
         # Semantic dominance uses only typed causal roles and proven edges.
-        # Text remains available below as a weak disambiguator when structure
-        # alone cannot distinguish parameter branches.
-        from .semantic import semantic_dominant_root
+        # Text remains a weak fallback only when structure cannot distinguish.
+        from .semantic import pairwise_root_matrix, semantic_dominant_root
 
         semantic = semantic_dominant_root(candidates, causal_slice)
         if semantic is not None:
             return semantic
+        semantically_rejected = {
+            comparison.rejected_id
+            for comparison in pairwise_root_matrix(candidates, causal_slice)
+            if comparison.preferred_id and comparison.rejected_id
+        }
+    else:
+        semantically_rejected = set()
+
+    # Problem wording is a weak prior only after structural comparison could
+    # not distinguish equivalent, fully grounded return origins.
+    if causal_slice and not binding_hint:
+        contract_scores: dict[str, int] = {}
+        for item in candidates:
+            if (
+                item.id in semantically_rejected
+                or
+                item.cause_kind is not RootCauseKind.RETURN_CONTRACT
+                or not item.origin_symbol
+                or item.structural_support != 1.0
+                or item.completeness != 1.0
+            ):
+                continue
+            from .semantic import is_transparent_wrapper
+
+            if is_transparent_wrapper(item, causal_slice):
+                continue
+            symbol = re.escape(item.origin_symbol.rsplit(".", 1)[-1].casefold())
+            score = 0
+            if re.search(
+                rf"\b{symbol}\b.{{0,90}}\b(?:violat\w*|return\w*|produc\w*|expect\w*|contract)\b",
+                folded,
+            ):
+                score += 3
+            if re.search(
+                rf"\b(?:expect\w*|contract|producer|source|return\w*)\b.{{0,90}}\b{symbol}\b",
+                folded,
+            ):
+                score += 2
+            if score:
+                contract_scores[item.id] = score
+        if contract_scores:
+            best_score = max(contract_scores.values())
+            strongest = [
+                item for item in candidates
+                if contract_scores.get(item.id) == best_score
+            ]
+            origins = {(item.origin_path, item.origin_symbol) for item in strongest}
+            if len(origins) == 1:
+                return sorted(strongest, key=lambda item: (-item.score, item.id))[0]
 
     if causal_slice and binding_hint:
         nodes = {item.id: item for item in causal_slice.nodes}
@@ -1105,6 +1122,8 @@ def structurally_dominant_root(
         bindings: dict[str, RootCauseCandidate] = {}
         for item in candidates:
             if (
+                item.id in semantically_rejected
+                or
                 item.cause_kind is not RootCauseKind.ARGUMENT_BINDING
                 or item.structural_support != 1.0
                 or item.completeness != 1.0
@@ -1124,6 +1143,11 @@ def structurally_dominant_root(
                 folded,
             ):
                 score += 3
+            elif scope and re.search(
+                rf"\b{re.escape(scope.rsplit('.', 1)[-1].casefold())}\b",
+                folded,
+            ):
+                score += 1
             if scope and re.search(
                 rf"\b(?:owned|handled|validated)\s+by\s+{re.escape(scope.rsplit('.', 1)[-1].casefold())}\b",
                 folded,
@@ -1147,6 +1171,13 @@ def structurally_dominant_root(
                     strongest,
                     key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
                 )[0]
+
+    if causal_slice:
+        from .semantic import equivalent_root_origin
+
+        equivalent = equivalent_root_origin(candidates, causal_slice)
+        if equivalent is not None:
+            return equivalent
 
     return None
 

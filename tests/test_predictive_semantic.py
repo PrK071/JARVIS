@@ -4,11 +4,15 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
-from tern.orchestrator.predictive.benchmark_v8 import summarize_benchmark_v8
+from tern.orchestrator.predictive.benchmark_v8 import (
+    _semantic_root_metrics,
+    summarize_benchmark_v8,
+)
 from tern.orchestrator.predictive.causal import (
     RepairStrategyKind,
     RootCauseKind,
     build_causal_slice,
+    structurally_dominant_root,
 )
 from tern.orchestrator.predictive.evaluation import (
     _retrieval,
@@ -30,6 +34,7 @@ from tern.orchestrator.predictive.semantic import (
     is_transparent_wrapper,
     repair_target_signature,
     root_cause_signature,
+    semantic_dominant_root,
     semantic_target_equivalent,
     target_preference,
     validate_root_comparison,
@@ -83,6 +88,9 @@ def test_pairwise_root_selection_rejects_transparent_wrapper():
         wrapper, producer, PairwiseRootReason.DIRECT_CAUSAL_ORIGIN,
         context.causal_slice,
     )
+    assert semantic_dominant_root(
+        context.root_cause_candidates, context.causal_slice
+    ) == producer
 
 
 def test_nontransparent_wrapper_is_not_collapsed():
@@ -93,6 +101,28 @@ def test_nontransparent_wrapper_is_not_collapsed():
     )
 
     assert not is_transparent_wrapper(wrapper, context.causal_slice)
+
+
+def test_compound_return_keeps_upstream_producer_in_causal_candidates():
+    context = _context("SV8D-007")
+
+    assert any(
+        item.origin_path == "commerce/source.py"
+        and item.cause_kind in {RootCauseKind.TYPE_FLOW, RootCauseKind.RETURN_CONTRACT}
+        for item in context.root_cause_candidates
+    )
+
+
+def test_argument_source_dominates_downstream_parameter_manifestation():
+    context = _context("SV8D-011")
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem, context.causal_slice
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
+    assert dominant.origin_symbol == "count"
+    assert dominant.origin_line == 9
 
 
 def test_boundary_target_preference_ignores_test_only_argument_source():
@@ -158,9 +188,82 @@ def test_v8_report_exposes_pairwise_denominators_and_features():
 
     assert report["version"] == 8
     assert report["metric_denominators_v8"]["root_pairwise_accuracy"]["denominator"] == 0
+    assert report["seed_synthesis_v8"] == {
+        "attempts": 0,
+        "successes": 0,
+        "correct_diagnoses": 0,
+        "success_rate": None,
+        "precision": None,
+    }
     assert {item["source"] for item in report["ranking_features"]} <= {
         "STRUCTURAL", "OBSERVED", "DERIVED", "MODEL", "LEXICAL"
     }
+
+
+def test_v8_root_validity_uses_semantic_identity_for_target_granularity():
+    context = _context("SV8D-012")
+    roots = {item.id: item for item in context.root_cause_candidates}
+    unsymbolized = next(
+        item for item in roots.values()
+        if item.cause_kind is RootCauseKind.CONFIGURATION
+        and item.origin_symbol is None
+    )
+    truth = next(
+        item for item in load_benchmark_v5_adjudications((_case("SV8D-012"),))
+    )
+    actual = {
+        "root_cause_candidates": [item.as_dict() for item in roots.values()],
+        "root_cause_signatures": {
+            item.id: root_cause_signature(item, context.causal_slice).as_dict()
+            for item in roots.values()
+        },
+        "hypotheses": [{"root_cause_id": unsymbolized.id}],
+    }
+
+    assert _semantic_root_metrics(actual, truth) == (True, True)
+
+
+def test_v8_root_validity_treats_return_source_flow_as_same_causal_origin():
+    context = _context("SV8D-005")
+    flow = _root(
+        context, kind=RootCauseKind.TYPE_FLOW, path="commerce/source.py"
+    )
+    truth = next(
+        item for item in load_benchmark_v5_adjudications((_case("SV8D-005"),))
+    )
+    actual = {
+        "root_cause_candidates": [
+            item.as_dict() for item in context.root_cause_candidates
+        ],
+        "root_cause_signatures": {
+            item.id: root_cause_signature(item, context.causal_slice).as_dict()
+            for item in context.root_cause_candidates
+        },
+        "hypotheses": [{"root_cause_id": flow.id}],
+    }
+
+    assert _semantic_root_metrics(actual, truth) == (True, True)
+
+
+def test_v8_import_root_accepts_qualified_and_local_edge_symbols():
+    context = _context("SV8D-014")
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.cause_kind is RootCauseKind.IMPORT_RESOLUTION
+    )
+    truth = next(
+        item for item in load_benchmark_v5_adjudications((_case("SV8D-014"),))
+    )
+    actual = {
+        "root_cause_candidates": [item.as_dict() for item in context.root_cause_candidates],
+        "root_cause_signatures": {
+            item.id: root_cause_signature(item, context.causal_slice).as_dict()
+            for item in context.root_cause_candidates
+        },
+        "hypotheses": [{"root_cause_id": root.id}],
+    }
+
+    assert _semantic_root_metrics(actual, truth) == (True, True)
 
 
 def test_holdout_v8_is_sealed_before_live_evaluation():
@@ -194,3 +297,36 @@ def test_v8_metamorphic_and_counterfactual_suites_are_versioned(tmp_path):
         )
         assert case.fixture_root.is_dir()
         assert truth.acceptable_root_causes
+
+
+def test_comment_and_docstring_distractors_do_not_change_root_signature(tmp_path):
+    root = Path(__file__).parent / "data" / "predictive" / "v8"
+    specs = load_metamorphic_cases(root, split="development")
+    cases = {item.id: item for item in load_predictive_cases()}
+    chosen = [
+        next(item for item in specs if item.transformation.value == kind)
+        for kind in ("HARMLESS_COMMENT", "DOCSTRING_DISTRACTOR")
+    ]
+    truths = {
+        item.case_id: item
+        for item in load_benchmark_v5_adjudications(
+            tuple(cases[item.base_case_id] for item in chosen)
+        )
+    }
+
+    for index, spec in enumerate(chosen):
+        base_context = _context(spec.base_case_id)
+        variant, _truth, _mapping = materialize_metamorphic_case(
+            spec,
+            cases[spec.base_case_id],
+            truths[spec.base_case_id],
+            tmp_path / f"variant-{index}",
+        )
+        variant_context = _retrieval(variant)[0]
+        base_root = max(base_context.root_cause_candidates, key=lambda item: item.score)
+        variant_root = max(
+            variant_context.root_cause_candidates, key=lambda item: item.score
+        )
+        assert root_cause_signature(
+            base_root, base_context.causal_slice
+        ) == root_cause_signature(variant_root, variant_context.causal_slice)
