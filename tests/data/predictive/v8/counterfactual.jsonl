@@ -1,0 +1,8 @@
+{"id":"CV8D-001","base_case_id":"SV8D-001","counterfactual_case_id":"SV8D-005","split":"development","root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8D-002","base_case_id":"SV8D-008","counterfactual_case_id":"SV8D-011","split":"development","root_must_change":false,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8D-003","base_case_id":"SV8D-011","counterfactual_case_id":"SV8D-012","split":"development","root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8D-004","base_case_id":"SV8D-012","counterfactual_case_id":"SV8D-014","split":"development","root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8H-001","base_case_id":"SV8H-001","counterfactual_case_id":"SV8H-005","split":"holdout_v8","root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8H-002","base_case_id":"SV8H-009","counterfactual_case_id":"SV8H-013","split":"holdout_v8","root_must_change":false,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8H-003","base_case_id":"SV8H-013","counterfactual_case_id":"SV8H-015","split":"holdout_v8","root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"CV8H-004","base_case_id":"SV8H-015","counterfactual_case_id":"SV8H-017","split":"holdout_v8","root_must_change":true,"repair_must_change":true,"target_must_change":true}

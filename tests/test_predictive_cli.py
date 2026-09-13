@@ -51,6 +51,16 @@ def test_predict_parser_is_separate_from_agent_decision():
     assert args.json_output is True
 
 
+def test_predictive_eval_parser_accepts_v8_holdout():
+    args = cli.build_parser().parse_args([
+        "predictive-eval", "--mode", "retrieval", "--split", "holdout_v8",
+        "--benchmark-version", "8", "--json",
+    ])
+
+    assert args.split == "holdout_v8"
+    assert args.benchmark_version == 8
+
+
 def test_predict_cli_is_read_only_and_emits_structured_report(monkeypatch, capsys, tmp_path):
     root = tmp_path / "repo"
     root.mkdir()

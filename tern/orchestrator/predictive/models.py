@@ -41,6 +41,7 @@ class PredictiveFailureReason(str, Enum):
     ROOT_CAUSE_CANDIDATE_MISSING = "ROOT_CAUSE_CANDIDATE_MISSING"
     ROOT_CAUSE_SELECTION_ERROR = "ROOT_CAUSE_SELECTION_ERROR"
     ROOT_CAUSE_AMBIGUOUS = "ROOT_CAUSE_AMBIGUOUS"
+    INVALID_ROOT_COMPARISON = "INVALID_ROOT_COMPARISON"
     REPAIR_STRATEGY_ERROR = "REPAIR_STRATEGY_ERROR"
     REPAIR_TARGET_ERROR = "REPAIR_TARGET_ERROR"
     RECOVERY_BUDGET_EXHAUSTED = "RECOVERY_BUDGET_EXHAUSTED"
@@ -274,6 +275,8 @@ class ProblemContext:
 
     def reasoning_payload(self) -> dict[str, Any]:
         from .causal import compatible_strategies_for_root, structurally_dominant_root
+        from .repair import derive_repair_targets
+        from .semantic import pairwise_root_matrix, root_cause_signature
 
         node_lookup = {
             node.id: node for node in self.causal_slice.nodes
@@ -301,12 +304,34 @@ class ProblemContext:
                     strategy.value
                     for strategy in compatible_strategies_for_root(item, self.causal_slice)
                 ],
+                "allowed_repairs": [
+                    {
+                        "strategy": strategy.value,
+                        "targets": [
+                            target.as_dict() for target in derive_repair_targets(
+                                strategy, item, self.causal_slice
+                            )
+                        ] if self.causal_slice else [],
+                    }
+                    for strategy in compatible_strategies_for_root(
+                        item, self.causal_slice
+                    )
+                ],
                 "causal_targets": list(dict.fromkeys(
                     (node_lookup[node_id].path, node_lookup[node_id].symbol)
                     for node_id in item.causal_path
                     if node_id in node_lookup
                 )),
+                "semantic_signature": (
+                    root_cause_signature(item, self.causal_slice).as_dict()
+                    if self.causal_slice else None
+                ),
             } for item in self.root_cause_candidates],
+            "root_pairwise_facts": [
+                item.as_dict() for item in pairwise_root_matrix(
+                    self.root_cause_candidates, self.causal_slice
+                )
+            ] if self.causal_slice else [],
         }
 
 
@@ -503,8 +528,33 @@ class DecisionReport:
             raise ValueError("report must explain its outcome")
 
     def as_dict(self) -> dict[str, Any]:
+        from .semantic import (
+            pairwise_root_matrix,
+            repair_target_signature,
+            root_cause_signature,
+        )
+
+        roots = {item.id: item for item in self.root_cause_candidates}
+        semantic_targets = {}
+        if self.causal_slice:
+            for candidate in (*self.candidates, *self.rejected_candidates):
+                root = roots.get(candidate.root_cause_id or "")
+                if not root:
+                    continue
+                try:
+                    from .causal import RepairStrategyKind
+                    strategy = RepairStrategyKind(candidate.strategy_kind)
+                except ValueError:
+                    continue
+                semantic_targets[candidate.id] = [
+                    repair_target_signature(
+                        target, strategy, root, self.causal_slice
+                    ).as_dict()
+                    for target in candidate.repair_targets
+                ]
         return {
-            "schema_version": 5,
+            "schema_version": 6,
+            "semantic_schema_version": 1,
             "recovery_schema_version": 1,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
@@ -522,6 +572,16 @@ class DecisionReport:
             "root_cause_candidates": [item.as_dict() for item in self.root_cause_candidates],
             "repair_strategies": [item.as_dict() for item in self.repair_strategies],
             "root_cause_selections": [item.as_dict() for item in self.root_cause_selections],
+            "root_cause_signatures": {
+                item.id: root_cause_signature(item, self.causal_slice).as_dict()
+                for item in self.root_cause_candidates
+            } if self.causal_slice else {},
+            "root_pairwise_comparisons": [
+                item.as_dict() for item in pairwise_root_matrix(
+                    self.root_cause_candidates, self.causal_slice
+                )
+            ] if self.causal_slice else [],
+            "candidate_target_signatures": semantic_targets,
             "retrieval_escalation": self.retrieval_escalation.as_dict(),
             "recovery": self.recovery_trace.as_dict() if self.recovery_trace else None,
             "dry_run": self.dry_run,

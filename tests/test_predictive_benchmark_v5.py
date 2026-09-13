@@ -19,7 +19,7 @@ def test_v5_development_and_holdout_truth_are_complete():
     development = load_predictive_cases(split="development")
     holdout = load_predictive_cases(split="holdout_v5")
 
-    assert len(development) == len(load_benchmark_v5_adjudications(development)) == 72
+    assert len(development) == len(load_benchmark_v5_adjudications(development)) == 87
     assert len(holdout) == len(load_benchmark_v5_adjudications(holdout)) == 18
 
 

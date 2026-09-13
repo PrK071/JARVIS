@@ -559,6 +559,12 @@ def structural_decision_signature(
         if item.get("id") == actual.get("recommended_candidate_id")
     ), None)
     target = (winner.get("repair_targets") or [None])[0] if winner else None
+    semantic_root = (actual.get("root_cause_signatures") or {}).get(
+        root.get("id") if root else ""
+    )
+    semantic_target = ((actual.get("candidate_target_signatures") or {}).get(
+        winner.get("id") if winner else ""
+    ) or [None])[0]
     nodes = {item["id"]: item for item in (actual.get("causal_slice") or {}).get("nodes") or ()}
     path_roles = tuple(nodes[item]["kind"] for item in (root or {}).get("causal_path") or () if item in nodes)
     return {
@@ -574,6 +580,20 @@ def structural_decision_signature(
             target.get("symbol") or target.get("parameter") or target.get("attribute"),
         ) if target else None,
         "causal_path_roles": path_roles,
+        "root_signature": (
+            semantic_root.get("cause_kind"),
+            tuple(semantic_root.get("causal_roles") or ()),
+            semantic_root.get("origin_role"),
+            semantic_root.get("relation_to_failure"),
+            semantic_root.get("contract_role"),
+        ) if semantic_root else None,
+        "target_signature": (
+            semantic_target.get("target_kind"),
+            tuple(semantic_target.get("causal_roles") or ()),
+            semantic_target.get("owning_symbol_role"),
+            semantic_target.get("relation_to_root"),
+            semantic_target.get("relation_to_failure"),
+        ) if semantic_target else None,
     }
 
 
@@ -896,8 +916,9 @@ def evaluate_robustness_suite(
     analyzer_factory: Callable[[Any], Any] | None = None,
     base_case_ids: Sequence[str] | None = None,
     order_bias_limit: int = 0,
+    suite_version: int = 6,
 ) -> dict[str, Any]:
-    specs = list(load_metamorphic_cases(Path(corpus_root) / "v6", split=split))
+    specs = list(load_metamorphic_cases(Path(corpus_root) / f"v{suite_version}", split=split))
     if transform:
         requested = MetamorphicTransformation(transform.upper())
         specs = [item for item in specs if item.transformation is requested]
@@ -936,6 +957,11 @@ def evaluate_robustness_suite(
                 "root_cause_invariance": (
                     not spec.expectation.root_cause
                     or (
+                        base_signature.get("root_signature") is not None
+                        and base_signature.get("root_signature")
+                        == variant_signature.get("root_signature")
+                    )
+                    or (
                         base_signature["root_kind"], base_signature["root_path"],
                         base_signature["root_symbol"],
                     ) == (
@@ -948,6 +974,10 @@ def evaluate_robustness_suite(
                     or base_signature["repair_strategy"] == variant_signature["repair_strategy"]
                 ),
                 "repair_target_invariance": not spec.expectation.repair_target or (
+                    base_signature.get("target_signature") is not None
+                    and base_signature.get("target_signature")
+                    == variant_signature.get("target_signature")
+                ) or (
                     base_signature["target_kind"], base_signature["target_path"], base_signature["target_symbol"]
                 ) == (
                     variant_signature["target_kind"], variant_signature["target_path"], variant_signature["target_symbol"]
@@ -1062,7 +1092,7 @@ def evaluate_robustness_suite(
             } if group else {},
         }
     return {
-        "version": 6,
+        "version": suite_version,
         "mode": mode,
         "split": split,
         "cases": len(rows),
@@ -1096,8 +1126,9 @@ def evaluate_counterfactual_suite(
     runs: int = 1, limit: int | None = None, corpus_root: str | Path = CORPUS_ROOT,
     analyzer_factory: Callable[[Any], Any] | None = None,
     known_signatures: Mapping[str, Mapping[str, Any]] | None = None,
+    suite_version: int = 6,
 ) -> dict[str, Any]:
-    pairs = list(load_counterfactual_cases(Path(corpus_root) / "v6", split=split))
+    pairs = list(load_counterfactual_cases(Path(corpus_root) / f"v{suite_version}", split=split))
     if limit is not None:
         pairs = pairs[:limit]
     all_cases = {case.id: case for case in load_predictive_cases(corpus_root, split="all")}
@@ -1123,15 +1154,23 @@ def evaluate_counterfactual_suite(
         right = signatures[pair.counterfactual_case_id]
         checks = {
             "counterfactual_root_sensitivity": not pair.root_must_change or (
-                left["root_kind"], left["root_path"], left["root_symbol"]
-            ) != (
-                right["root_kind"], right["root_path"], right["root_symbol"]
+                left.get("root_signature") != right.get("root_signature")
+                if left.get("root_signature") is not None and right.get("root_signature") is not None
+                else (
+                    left["root_kind"], left["root_path"], left["root_symbol"]
+                ) != (
+                    right["root_kind"], right["root_path"], right["root_symbol"]
+                )
             ),
             "counterfactual_repair_sensitivity": not pair.repair_must_change or left["repair_strategy"] != right["repair_strategy"],
             "counterfactual_target_sensitivity": not pair.target_must_change or (
-                left["target_kind"], left["target_path"], left["target_symbol"]
-            ) != (
-                right["target_kind"], right["target_path"], right["target_symbol"]
+                left.get("target_signature") != right.get("target_signature")
+                if left.get("target_signature") is not None and right.get("target_signature") is not None
+                else (
+                    left["target_kind"], left["target_path"], left["target_symbol"]
+                ) != (
+                    right["target_kind"], right["target_path"], right["target_symbol"]
+                )
             ),
         }
         rows.append({"id": pair.id, "base": left, "counterfactual": right, "checks": checks})
@@ -1149,7 +1188,7 @@ def evaluate_counterfactual_suite(
         )
     }
     return {
-        "version": 6, "mode": mode, "split": split, "pairs": len(rows),
+        "version": suite_version, "mode": mode, "split": split, "pairs": len(rows),
         "metrics": {name: item["value"] for name, item in metric_denominators.items()},
         "metric_denominators": metric_denominators,
         "safety": safety,

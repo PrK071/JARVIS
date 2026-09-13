@@ -127,13 +127,14 @@ def test_forbidden_candidate_is_rejected_and_never_recommended(tmp_path):
     assert "FORBIDDEN_CANDIDATE" in report.rejected_candidates[0].rejection_reasons
 
 
-def test_predictive_json_v3_keeps_legacy_report_fields(tmp_path):
+def test_predictive_json_v6_keeps_legacy_report_fields(tmp_path):
     root = repository(tmp_path)
     report = PredictiveDecisionService(
         FakeReasoner(), path_policy=PathPolicy((root,))
     ).predict('File "pkg/calc.py", line 2\nTypeError', root).as_dict()
 
-    assert report["schema_version"] == 5
+    assert report["schema_version"] == 6
+    assert report["semantic_schema_version"] == 1
     assert "root_cause_selections" in report
     assert {
         "problem", "hypotheses", "candidates", "recommended_candidate_id",

@@ -1,0 +1,12 @@
+{"id":"MV8D-001","base_case_id":"SV8D-001","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"},{"kind":"WRAPPER_FUNCTION","parameters":{"path":"commerce/view.py","old":"return relay_invoice().label","new":"return semantic_wrapper().label","wrapper_source":"def semantic_wrapper():\n    return relay_invoice()"}}]}
+{"id":"MV8D-002","base_case_id":"SV8D-005","split":"development","transformations":[{"kind":"FILE_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8D-003","base_case_id":"SV8D-008","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8D-004","base_case_id":"SV8D-011","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8D-005","base_case_id":"SV8D-012","split":"development","transformations":[{"kind":"FILE_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8D-006","base_case_id":"SV8D-014","split":"development","transformations":[{"kind":"FILE_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8H-001","base_case_id":"SV8H-001","split":"holdout_v8","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"},{"kind":"WRAPPER_FUNCTION","parameters":{"path":"inventory/presenter.py","old":"return forward_record().name","new":"return sealed_wrapper().name","wrapper_source":"def sealed_wrapper():\n    return forward_record()"}}]}
+{"id":"MV8H-002","base_case_id":"SV8H-005","split":"holdout_v8","transformations":[{"kind":"FILE_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8H-003","base_case_id":"SV8H-009","split":"holdout_v8","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8H-004","base_case_id":"SV8H-013","split":"holdout_v8","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8H-005","base_case_id":"SV8H-015","split":"holdout_v8","transformations":[{"kind":"FILE_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MV8H-006","base_case_id":"SV8H-017","split":"holdout_v8","transformations":[{"kind":"FILE_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}

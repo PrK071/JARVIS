@@ -46,6 +46,21 @@ from .recovery import (
     UnresolvedCausalFrontier,
     UnresolvedRelation,
 )
+from .semantic import (
+    CausalRole,
+    ContractRole,
+    OriginRole,
+    PairwiseRootReason,
+    RelationToFailure,
+    RepairTargetSignature,
+    RootCauseSignature,
+    RootPairwiseComparison,
+    TargetPreference,
+    TargetRelation,
+    compare_root_candidates,
+    repair_target_signature,
+    root_cause_signature,
+)
 
 __all__ = [
     "CausalEdge",
@@ -91,4 +106,17 @@ __all__ = [
     "StructuralRecoveryTrace",
     "UnresolvedCausalFrontier",
     "UnresolvedRelation",
+    "CausalRole",
+    "ContractRole",
+    "OriginRole",
+    "PairwiseRootReason",
+    "RelationToFailure",
+    "RepairTargetSignature",
+    "RootCauseSignature",
+    "RootPairwiseComparison",
+    "TargetPreference",
+    "TargetRelation",
+    "compare_root_candidates",
+    "repair_target_signature",
+    "root_cause_signature",
 ]

@@ -1,4 +1,11 @@
-# Predictive evaluation corpus v4
+# Predictive evaluation corpus v8
+
+## Semantic selection v8
+
+O v8 acrescenta 15 casos development e um `holdout_v8` selado com 20 casos.
+As decisões passam a ser comparadas por papel causal e assinatura de alvo, não
+por nomes literais. As métricas par-a-par têm numerador e denominador explícitos.
+O hash do holdout inclui casos, fixtures e adjudicações estruturais.
 
 ## Structural recovery v7
 
@@ -32,6 +39,9 @@ no LLM judge participates in a stage gate.
 - `holdout_v6`: a sealed transformation holdout for robustness v6. Its hash
   covers the selected specifications, case payloads, structural adjudications,
   and fixture bytes; it is run live once after development tuning.
+- `holdout_v7`: histórico observado da fase de structural recovery.
+- `holdout_v8`: 20 casos novos, selados antes do hardening semântico e
+  reservados para uma única execução live ao final.
 
 The canonical SHA-256 and hash scope are recorded in `manifest.json`. Corpus
 loading fails if the sealed material changes.

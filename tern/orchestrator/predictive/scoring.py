@@ -17,6 +17,24 @@ SCORE_WEIGHTS = {
     "cost_score": -0.03,
 }
 
+SCORE_FEATURE_PROVENANCE = {
+    "root_cause_score": "STRUCTURAL",
+    "repair_strategy_score": "DERIVED",
+    "evidence_score": "OBSERVED",
+    "test_support_score": "STRUCTURAL",
+    "repair_locality_score": "STRUCTURAL",
+    "reversibility_score": "DERIVED",
+    "risk_score": "DERIVED",
+    "cost_score": "DERIVED",
+}
+
+
+def score_contributions(candidate: SolutionCandidate) -> dict[str, float]:
+    return {
+        name: round(getattr(candidate, name) * weight, 8)
+        for name, weight in SCORE_WEIGHTS.items()
+    }
+
 
 def candidate_score(candidate: SolutionCandidate) -> float:
     """Return a normalized, deterministic comparative score."""
@@ -28,9 +46,7 @@ def candidate_score(candidate: SolutionCandidate) -> float:
 
 
 def explain_score(candidate: SolutionCandidate, score: float) -> str:
-    contributions = {
-        name: getattr(candidate, name) * weight for name, weight in SCORE_WEIGHTS.items()
-    }
+    contributions = score_contributions(candidate)
     return (
         f"score={score:.3f}; causa={contributions['root_cause_score']:+.3f}; "
         f"estrategia={contributions['repair_strategy_score']:+.3f}; "

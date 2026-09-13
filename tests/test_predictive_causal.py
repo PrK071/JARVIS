@@ -263,6 +263,7 @@ def test_reasoner_protocol_is_compact_single_call_and_contains_no_raw_source_inj
             "problem",
             "project_id",
             "root_cause_candidates",
+            "root_pairwise_facts",
             "structurally_dominant_root_id",
         }
         assert "evidence_ledger" not in payload
