@@ -32,6 +32,7 @@ from .predictive.evaluation import (
 from .predictive.benchmark_v4 import evaluate_predictive_cases_v4, format_benchmark_v4
 from .predictive.benchmark_v5 import evaluate_predictive_cases_v5, format_benchmark_v5
 from .predictive.benchmark_v6 import evaluate_predictive_cases_v6, format_benchmark_v6
+from .predictive.benchmark_v7 import evaluate_predictive_cases_v7, format_benchmark_v7
 from .predictive.robustness import (
     evaluate_counterfactual_suite,
     evaluate_robustness_suite,
@@ -87,6 +88,17 @@ def _print_predictive_report(report: DecisionReport) -> None:
             ]
             if observed:
                 print("Fluxo observado: " + " -> ".join(observed[:6]))
+    if report.recovery_trace and report.recovery_trace.attempted:
+        actions = ", ".join(
+            item.reason.value for item in report.recovery_trace.actions
+        ) or report.recovery_trace.outcome.value
+        added = sorted(
+            set(report.recovery_trace.final_files)
+            - set(report.recovery_trace.initial_files)
+        )
+        print(f"Recuperacao estrutural: {actions}")
+        if added:
+            print("Contexto recuperado: " + ", ".join(added))
     if report.insufficient_evidence:
         print(f"Evidência insuficiente: {report.recommendation_explanation}")
         return
@@ -811,7 +823,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     predictive_eval.add_argument(
         "--mode",
-        choices=("retrieval", "baseline", "live", "robustness"),
+        choices=("retrieval", "baseline", "live", "robustness", "recovery"),
         default="retrieval",
         help="live é o único modo que consulta Qwen",
     )
@@ -830,13 +842,15 @@ def build_parser() -> argparse.ArgumentParser:
             "holdout_v5",
             "historical_holdout_v5",
             "holdout_v6",
+            "historical_holdout_v6",
+            "holdout_v7",
         ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)
     predictive_eval.add_argument(
         "--benchmark-version",
-        choices=(3, 4, 5, 6),
+        choices=(3, 4, 5, 6, 7),
         type=int,
         default=3,
         help="v6 audita denominadores e robustez; v5 separa estrategia e target",
@@ -1211,7 +1225,7 @@ def main(argv: list[str] | None = None) -> int:
                 _print_predictive_report(report)
         elif args.command == "predictive-eval":
             reasoner = None
-            if args.mode == "live" or (args.mode == "robustness" and args.live_qwen):
+            if args.mode == "live" or (args.mode in {"robustness", "recovery"} and args.live_qwen):
                 manager.ensure_llama_server(240)
                 reasoner = LlamaClient(settings.base_url, settings.timeout)
             if args.limit is not None and args.limit <= 0:
@@ -1244,11 +1258,24 @@ def main(argv: list[str] | None = None) -> int:
                 cases = load_predictive_cases(args.corpus, split=args.split)
                 if args.limit is not None:
                     cases = cases[: args.limit]
-            if args.mode != "robustness" and args.benchmark_version == 6:
+            evaluation_mode = (
+                "live" if args.mode == "recovery" and args.live_qwen
+                else "retrieval" if args.mode == "recovery"
+                else args.mode
+            )
+            if args.mode != "robustness" and (args.benchmark_version == 7 or args.mode == "recovery"):
+                report = evaluate_predictive_cases_v7(
+                    cases,
+                    corpus_root=args.corpus,
+                    mode=evaluation_mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
+            elif args.mode != "robustness" and args.benchmark_version == 6:
                 report = evaluate_predictive_cases_v6(
                     cases,
                     corpus_root=args.corpus,
-                    mode=args.mode,
+                    mode=evaluation_mode,
                     reasoner=reasoner,
                     runs=args.runs,
                 )
@@ -1256,7 +1283,7 @@ def main(argv: list[str] | None = None) -> int:
                 report = evaluate_predictive_cases_v5(
                     cases,
                     corpus_root=args.corpus,
-                    mode=args.mode,
+                    mode=evaluation_mode,
                     reasoner=reasoner,
                     runs=args.runs,
                 )
@@ -1264,14 +1291,14 @@ def main(argv: list[str] | None = None) -> int:
                 report = evaluate_predictive_cases_v4(
                     cases,
                     corpus_root=args.corpus,
-                    mode=args.mode,
+                    mode=evaluation_mode,
                     reasoner=reasoner,
                     runs=args.runs,
                 )
             elif args.mode != "robustness":
                 report = evaluate_predictive_cases(
                     cases,
-                    mode=args.mode,
+                    mode=evaluation_mode,
                     reasoner=reasoner,
                     runs=args.runs,
                 )
@@ -1287,6 +1314,8 @@ def main(argv: list[str] | None = None) -> int:
                 print(
                     format_robustness_evaluation(report)
                     if args.mode == "robustness"
+                    else format_benchmark_v7(report)
+                    if args.benchmark_version == 7 or args.mode == "recovery"
                     else format_benchmark_v6(report)
                     if args.benchmark_version == 6
                     else format_benchmark_v5(report)

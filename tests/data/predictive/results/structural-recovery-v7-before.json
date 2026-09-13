@@ -1,0 +1,28 @@
+{
+  "version": 7,
+  "source_report": "generalization-v6-holdout-v6.json",
+  "engine_commit": "8c6d1382a1b32f0c7f585c260213800d8cc2c620",
+  "scope": "positive false abstentions observed in holdout_v6",
+  "cases": 6,
+  "loss_stage_counts": {
+    "INITIAL_RETRIEVAL_INCOMPLETE": 2,
+    "CAUSAL_SLICE_INCOMPLETE": 4,
+    "NO_ROOT_CAUSE_CANDIDATE": 0,
+    "ROOT_SELECTION_REJECTED": 0,
+    "NO_COMPATIBLE_REPAIR": 0,
+    "NO_VALID_REPAIR_TARGET": 0,
+    "POLICY_REJECTED_ALL": 0,
+    "RANKING_ABSTENTION": 0
+  },
+  "root_causes": {
+    "unique_basename_not_normalized_in_causal_slice": 2,
+    "production_import_scc_gated_by_problem_wording": 2,
+    "empty_initial_context_without_structural_seed_recovery": 2
+  },
+  "invariants": {
+    "reasoner_called_before_failure": false,
+    "tool_dispatches": 0,
+    "filesystem_mutations": 0,
+    "authority_grants": 0
+  }
+}

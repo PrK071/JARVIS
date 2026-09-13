@@ -773,6 +773,28 @@ def build_causal_slice(
         )
 
     failure_path, failure_line = _traceback(context.problem)
+    if failure_path and failure_path not in snapshot.file_index:
+        suffix = failure_path.removeprefix("./")
+        path_matches = tuple(sorted(
+            path for path in snapshot.file_index
+            if path == suffix or path.endswith(f"/{suffix}")
+        ))
+        if len(path_matches) == 1:
+            failure_path = path_matches[0]
+
+    # A production import cycle is a property of the indexed graph. When the
+    # selected structural context covers at least two members of an SCC, the
+    # structure is sufficient to seed a failure site without a lexical
+    # "circular import" password in the problem statement.
+    import_cycles = find_import_cycles(snapshot)
+    related_paths = set(context.related_files)
+    relevant_import_cycles = tuple(
+        cycle for cycle in import_cycles
+        if len(set(cycle.strongly_connected_component) & related_paths) >= 2
+    )
+    if failure_path is None and relevant_import_cycles:
+        first_edge = relevant_import_cycles[0].production_edges[0]
+        failure_path, failure_line = first_edge.source, first_edge.line
     symbolic_failure_nodes: list[CausalNode] = []
     if failure_path is None:
         folded_problem = context.problem.casefold()
@@ -812,9 +834,10 @@ def build_causal_slice(
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
     import_cycle_node_ids: set[str] = set()
     folded_problem = context.problem.casefold()
-    import_failure = _mentions_import_failure(context.problem)
+    import_failure = _mentions_import_failure(context.problem) or bool(relevant_import_cycles)
     if failure_id and import_failure:
-        for cycle in find_import_cycles(snapshot):
+        cycles = relevant_import_cycles or import_cycles
+        for cycle in cycles:
             relevant = bool(
                 set(cycle.strongly_connected_component) & set(context.related_files)
                 or any(edge.source == failure_path for edge in cycle.observer_edges)
@@ -854,11 +877,15 @@ def build_causal_slice(
     incoming: dict[str, list[CausalEdge]] = {}
     for edge in edges.values():
         incoming.setdefault(edge.target_id, []).append(edge)
+    # A small explicit budget keeps slicing bounded while allowing a producer
+    # behind two trivial forwarding wrappers to remain visible.  Eight nodes
+    # excluded that common topology before recovery could use the added file.
+    max_causal_path_nodes = 12
     paths_to_failure: dict[str, tuple[str, ...]] = {failure_id: (failure_id,)}
     queue = [failure_id]
     while queue:
         target = queue.pop(0)
-        if len(paths_to_failure[target]) >= 8:
+        if len(paths_to_failure[target]) >= max_causal_path_nodes:
             continue
         for edge in sorted(incoming.get(target, ()), key=lambda item: item.id):
             if edge.source_id in paths_to_failure:
@@ -996,6 +1023,30 @@ def structurally_dominant_root(
 ) -> RootCauseCandidate | None:
     """Return a root only when deterministic evidence makes alternatives weaker."""
     folded = problem.casefold()
+
+    # In an exact return-forwarding chain the farthest complete producer is
+    # the origin; intermediate wrappers merely preserve its value.  Require a
+    # unique distance winner and a non-weaker structural score so parallel
+    # producers remain ambiguous instead of being guessed.
+    complete_contracts = [
+        item for item in candidates
+        if item.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and item.origin_path != item.failure_path
+        and item.structural_support == 1.0
+        and item.completeness == 1.0
+    ]
+    if len(complete_contracts) >= 2:
+        ordered_contracts = sorted(
+            complete_contracts,
+            key=lambda item: (-item.causal_distance, -item.score, item.id),
+        )
+        first, second = ordered_contracts[:2]
+        if (
+            first.causal_distance >= second.causal_distance + 2
+            and first.score >= second.score
+        ):
+            return first
+
     contract_scores: dict[str, int] = {}
     upstream_contracts: list[RootCauseCandidate] = []
     for item in candidates:
@@ -1045,6 +1096,36 @@ def structurally_dominant_root(
     if len(contract_origins) == 1 and manifestations:
         return sorted(
             next(iter(contract_origins.values())),
+            key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
+        )[0]
+
+    # A literal/config origin with a complete deterministic path is stronger
+    # than a downstream lexical hint.  Evaluate it before wording-based
+    # parameter disambiguation so words such as "receives" cannot override a
+    # proven upstream None/config source, while preserving explicit contract
+    # ownership above.
+    strong_origins = [
+        item for item in candidates
+        if item.origin_path != item.failure_path
+        and item.cause_kind in {
+            RootCauseKind.NULL_FLOW,
+            RootCauseKind.CONFIGURATION,
+        }
+        and item.direct_support >= 0.8
+        and item.structural_support == 1.0
+        and item.completeness == 1.0
+    ]
+    strong_origin_groups = {
+        (item.cause_kind, item.origin_path, item.origin_symbol): []
+        for item in strong_origins
+    }
+    for item in strong_origins:
+        strong_origin_groups[(
+            item.cause_kind, item.origin_path, item.origin_symbol
+        )].append(item)
+    if len(strong_origin_groups) == 1:
+        return sorted(
+            next(iter(strong_origin_groups.values())),
             key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
         )[0]
 
@@ -1099,31 +1180,6 @@ def structurally_dominant_root(
                     strongest,
                     key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
                 )[0]
-
-    strong_origins = [
-        item for item in candidates
-        if item.origin_path != item.failure_path
-        and item.cause_kind in {
-            RootCauseKind.NULL_FLOW,
-            RootCauseKind.CONFIGURATION,
-        }
-        and item.direct_support >= 0.8
-        and item.structural_support == 1.0
-        and item.completeness == 1.0
-    ]
-    strong_origin_groups = {
-        (item.cause_kind, item.origin_path, item.origin_symbol): []
-        for item in strong_origins
-    }
-    for item in strong_origins:
-        strong_origin_groups[(
-            item.cause_kind, item.origin_path, item.origin_symbol
-        )].append(item)
-    if len(strong_origin_groups) == 1:
-        return sorted(
-            next(iter(strong_origin_groups.values())),
-            key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
-        )[0]
 
     explicit_contract = [
         item for item in candidates

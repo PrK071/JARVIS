@@ -61,8 +61,8 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     historical_holdout_v4 = load_predictive_cases(split="historical_holdout_v4")
     holdout_v5 = load_predictive_cases(split="holdout_v5")
 
-    assert len(all_cases) == 127
-    assert len(development) == 57
+    assert len(all_cases) == 162
+    assert len(development) == 72
     assert len(holdout) == 10
     assert len(holdout_v2) == 12
     assert holdout_v2_alias == holdout_v2

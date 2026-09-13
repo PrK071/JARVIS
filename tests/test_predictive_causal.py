@@ -159,6 +159,30 @@ def test_upstream_contract_dominates_consumer_manifestation():
         assert dominant.origin_symbol == symbol
 
 
+def test_two_wrapper_null_origin_remains_inside_bounded_slice():
+    context = _context("PR7D-001")
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem, context.causal_slice
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.NULL_FLOW
+    assert dominant.origin_path == "pkg/source.py"
+    assert len(dominant.causal_path) <= 12
+
+
+def test_forwarded_return_contract_dominates_intermediate_wrapper():
+    context = _context("PR7D-007")
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem, context.causal_slice
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
+    assert dominant.origin_path == "pkg/decoder.py"
+    assert dominant.origin_symbol == "decode"
+
+
 def test_explicit_parameter_owner_dominates_unrelated_flow():
     for identifier in ("PC5D-005", "PC5D-006"):
         context = _context(identifier)

@@ -72,6 +72,20 @@ class AbstentionStage(str, Enum):
     RECOMMENDED = "RECOMMENDED"
 
 
+class CoverageStageV7(str, Enum):
+    INITIAL_RETRIEVAL = "INITIAL_RETRIEVAL_INCOMPLETE"
+    EVIDENCE_LEDGER = "EVIDENCE_LEDGER_EMPTY"
+    CAUSAL_SLICE = "CAUSAL_SLICE_INCOMPLETE"
+    ROOT_CANDIDATES = "NO_ROOT_CAUSE_CANDIDATE"
+    ROOT_SELECTION = "ROOT_SELECTION_REJECTED"
+    REPAIR_STRATEGIES = "NO_COMPATIBLE_REPAIR"
+    REPAIR_TARGETS = "NO_VALID_REPAIR_TARGET"
+    ELIGIBILITY = "POLICY_REJECTED_ALL"
+    RANKING = "RANKING_ABSTENTION"
+    RECOMMENDATION = "RECOMMENDED"
+    TRUE_INSUFFICIENT = "TRUE_INSUFFICIENT_EVIDENCE"
+
+
 @dataclass(frozen=True)
 class MetricDefinition:
     name: str
@@ -610,6 +624,101 @@ def coverage_funnel(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "n_recommended": stages[AbstentionStage.RECOMMENDED.value],
         "n_abstained": total - stages[AbstentionStage.RECOMMENDED.value],
         "loss_stage_counts": losses,
+    }
+
+
+def coverage_trace_v7(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Describe the exact positive-case stage at which coverage was lost."""
+    actual = result.get("actual") or {}
+    retrieval = result.get("retrieval") or {}
+    recovery = actual.get("recovery") or retrieval.get("recovery") or {}
+    metrics = retrieval.get("metrics") or {}
+    causal = actual.get("causal_slice") or retrieval.get("causal_slice") or {}
+    expected = result.get("expected") or {}
+    expected_abstention = bool(expected.get("insufficient_evidence"))
+    initial_files = len(recovery.get("initial_files") or ())
+    final_files = len(retrieval.get("retrieved_files") or ())
+    initial_atoms = int(
+        recovery.get("initial_evidence_atom_count")
+        or metrics.get("initial_evidence_atoms")
+        or 0
+    )
+    final_atoms = len((retrieval.get("evidence_ledger") or {}).get("atoms") or ())
+    roots = len(actual.get("root_cause_candidates") or retrieval.get("root_cause_candidates") or ())
+    selected = len(actual.get("hypotheses") or ())
+    strategies = len(actual.get("repair_strategies") or ())
+    generated = [*(actual.get("candidates") or ()), *(actual.get("rejected_candidates") or ())]
+    targets = sum(len(item.get("repair_targets") or ()) for item in generated)
+    eligible = sum(bool(item.get("eligible", True)) for item in actual.get("candidates") or ())
+    recommended = int(bool(actual.get("recommended_candidate_id")))
+    stages = (
+        ("initial_retrieval", 1, initial_files),
+        ("evidence_ledger", final_files, final_atoms),
+        ("causal_slice", final_atoms, int(bool(causal.get("failure_site_id")))),
+        ("root_candidates", int(bool(causal.get("failure_site_id"))), roots),
+        ("root_selection", roots, selected),
+        ("repair_strategies", selected, strategies),
+        ("repair_targets", strategies, targets),
+        ("eligible_candidates", targets, eligible),
+        ("ranking", eligible, int(not actual.get("ranking_ambiguous") and bool(actual.get("recommended_candidate_id")))),
+        ("recommendation", eligible, recommended),
+    )
+    rows = [
+        {"stage": name, "input_count": input_count, "output_count": output_count}
+        for name, input_count, output_count in stages
+    ]
+    loss = CoverageStageV7.RECOMMENDATION
+    if expected_abstention and not recommended:
+        loss = CoverageStageV7.TRUE_INSUFFICIENT
+    elif not initial_files and not recovery.get("succeeded"):
+        loss = CoverageStageV7.INITIAL_RETRIEVAL
+    elif not final_atoms:
+        loss = CoverageStageV7.EVIDENCE_LEDGER
+    elif not causal.get("failure_site_id"):
+        loss = CoverageStageV7.CAUSAL_SLICE
+    elif not roots:
+        loss = CoverageStageV7.ROOT_CANDIDATES
+    elif not selected:
+        loss = CoverageStageV7.ROOT_SELECTION
+    elif not strategies:
+        loss = CoverageStageV7.REPAIR_STRATEGIES
+    elif not targets:
+        loss = CoverageStageV7.REPAIR_TARGETS
+    elif not eligible:
+        loss = CoverageStageV7.ELIGIBILITY
+    elif not recommended:
+        loss = CoverageStageV7.RANKING
+    return {
+        "stages": rows,
+        "loss_stage": loss.value,
+        "failure_reason": actual.get("failure_reason"),
+        "recovery_attempted": bool(recovery.get("attempted")),
+        "recovery_outcome": recovery.get("outcome"),
+    }
+
+
+def coverage_funnel_v7(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    traces = [coverage_trace_v7(item) for item in results]
+    losses = Counter(item["loss_stage"] for item in traces)
+    stage_names = (
+        "initial_retrieval", "evidence_ledger", "causal_slice",
+        "root_candidates", "root_selection", "repair_strategies",
+        "repair_targets", "eligible_candidates", "recommendation",
+    )
+    return {
+        "n_total": len(results),
+        "stage_output_counts": {
+            stage: sum(
+                int(next(row["output_count"] for row in trace["stages"] if row["stage"] == stage) > 0)
+                for trace in traces
+            )
+            for stage in stage_names
+        },
+        "loss_stage_counts": dict(sorted(losses.items())),
+        "cases": {
+            str(result.get("id") or result.get("case_id")): trace
+            for result, trace in zip(results, traces)
+        },
     }
 
 

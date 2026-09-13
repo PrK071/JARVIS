@@ -16,7 +16,7 @@ from ..decision_observability import estimate_tokens, latency_summary
 from ..project_intelligence_v2 import ProjectCandidateGenerator, ProjectIndexBuilderV2
 from ..security import PathPolicy
 from .analysis import PredictiveAnalysisResult, StructuredReasoner
-from .causal import RepairStrategyKind, build_causal_slice, expand_context_for_causal_flow
+from .causal import RepairStrategyKind, build_causal_slice
 from .grounding import build_evidence_ledger
 from .models import (
     ChangeKind,
@@ -30,6 +30,7 @@ from .models import (
 )
 from .scoring import SCORE_WEIGHTS
 from .service import PredictiveDecisionService, build_problem_context
+from .recovery import StructuralRecoveryService
 
 
 CORPUS_ROOT = Path(__file__).resolve().parents[3] / "tests" / "data" / "predictive"
@@ -41,12 +42,14 @@ VALID_SPLITS = frozenset({
     "holdout_v4",
     "holdout_v5",
     "holdout_v6",
+    "holdout_v7",
 })
 SPLIT_ALIASES = {
     "holdout_v2": "historical_holdout_v2",
     "historical_holdout_v3": "holdout_v3",
     "historical_holdout_v4": "holdout_v4",
     "historical_holdout_v5": "holdout_v5",
+    "historical_holdout_v6": "holdout_v6",
 }
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
@@ -283,7 +286,7 @@ def load_predictive_cases(
     split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5, 6}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5, 6, 7}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
@@ -308,7 +311,10 @@ def load_predictive_cases(
     adversarial_counts = Counter(tag for case in values for tag in case.adversarial_tags)
     if dict(manifest.get("adversarial_tags") or {}) != dict(sorted(adversarial_counts.items())):
         raise ValueError("predictive corpus adversarial counts do not match manifest")
-    for sealed_split in ("historical_holdout_v2", "holdout_v3", "holdout_v4", "holdout_v5"):
+    for sealed_split in (
+        "historical_holdout_v2", "holdout_v3", "holdout_v4", "holdout_v5",
+        "holdout_v7",
+    ):
         sealed_hash = manifest.get(f"{sealed_split}_sha256")
         if sealed_hash and predictive_corpus_hash(root, split=sealed_split) != sealed_hash:
             raise ValueError(f"predictive {sealed_split} hash mismatch")
@@ -396,9 +402,13 @@ def _retrieval(case: PredictiveCase) -> tuple[ProblemContext, dict[str, Any]]:
     snapshot = ProjectIndexBuilderV2(case.fixture_root, path_policy=policy).build()
     selection = ProjectCandidateGenerator().generate(case.problem, snapshot)
     context = build_problem_context(case.problem, snapshot, selection, policy)
-    context = expand_context_for_causal_flow(context, snapshot, policy)
     context = replace(context, evidence_ledger=build_evidence_ledger(context, snapshot, policy))
-    causal_slice, root_causes = build_causal_slice(context, snapshot, policy)
+    initial_slice, initial_roots = build_causal_slice(context, snapshot, policy)
+    recovery = StructuralRecoveryService().recover(
+        context, snapshot, policy, initial_slice, initial_roots
+    )
+    context = replace(recovery.context, recovery_trace=recovery.trace)
+    causal_slice, root_causes = recovery.causal_slice, recovery.root_causes
     context = replace(
         context, causal_slice=causal_slice, root_cause_candidates=root_causes
     )
@@ -463,6 +473,25 @@ def _retrieval(case: PredictiveCase) -> tuple[ProblemContext, dict[str, Any]]:
             sum(len(item.causal_path) for item in root_causes) / len(root_causes)
             if root_causes else 0.0
         ),
+        "initial_context_files": len(recovery.trace.initial_files),
+        "initial_evidence_atoms": recovery.trace.initial_evidence_atom_count,
+        "initial_root_candidates": recovery.trace.initial_root_count,
+        "recovery_attempted": recovery.trace.attempted,
+        "recovery_succeeded": recovery.trace.succeeded,
+        "recovery_outcome": recovery.trace.outcome.value,
+        "recovery_extra_files": len(
+            set(recovery.trace.final_files) - set(recovery.trace.initial_files)
+        ),
+        "recovery_extra_symbols": len({
+            symbol
+            for action in recovery.trace.actions
+            for symbol in action.added_symbols
+        }),
+        "recovery_extra_evidence_atoms": max(
+            0,
+            recovery.trace.final_evidence_atom_count
+            - recovery.trace.initial_evidence_atom_count,
+        ),
     }
     return context, {
         "retrieved_files": retrieved,
@@ -471,6 +500,7 @@ def _retrieval(case: PredictiveCase) -> tuple[ProblemContext, dict[str, Any]]:
         "evidence_ledger": context.evidence_ledger.as_dict(include_snippets=False),
         "causal_slice": causal_slice.as_dict(),
         "root_cause_candidates": [item.as_dict() for item in root_causes],
+        "recovery": recovery.trace.as_dict(),
         "metrics": metrics,
         "failure_codes": failures,
     }

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .causal import CausalSlice, RepairStrategy, RootCauseCandidate, RootCauseSelection
+    from .recovery import StructuralRecoveryTrace
     from .repair import RepairTarget
 
 
@@ -42,6 +43,10 @@ class PredictiveFailureReason(str, Enum):
     ROOT_CAUSE_AMBIGUOUS = "ROOT_CAUSE_AMBIGUOUS"
     REPAIR_STRATEGY_ERROR = "REPAIR_STRATEGY_ERROR"
     REPAIR_TARGET_ERROR = "REPAIR_TARGET_ERROR"
+    RECOVERY_BUDGET_EXHAUSTED = "RECOVERY_BUDGET_EXHAUSTED"
+    RECOVERY_NO_NEW_EVIDENCE = "RECOVERY_NO_NEW_EVIDENCE"
+    RECOVERY_INSUFFICIENT = "RECOVERY_INSUFFICIENT"
+    TRUE_INSUFFICIENT_EVIDENCE = "TRUE_INSUFFICIENT_EVIDENCE"
 
 
 @dataclass(frozen=True)
@@ -243,6 +248,7 @@ class ProblemContext:
     causal_slice: CausalSlice | None = None
     root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
+    recovery_trace: StructuralRecoveryTrace | None = None
 
     def __post_init__(self) -> None:
         if not self.problem.strip():
@@ -470,6 +476,7 @@ class DecisionReport:
     repair_strategies: tuple[RepairStrategy, ...] = ()
     root_cause_selections: tuple[RootCauseSelection, ...] = ()
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
+    recovery_trace: StructuralRecoveryTrace | None = None
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -498,6 +505,7 @@ class DecisionReport:
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": 5,
+            "recovery_schema_version": 1,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
             "candidates": [item.as_dict() for item in self.candidates],
@@ -515,6 +523,7 @@ class DecisionReport:
             "repair_strategies": [item.as_dict() for item in self.repair_strategies],
             "root_cause_selections": [item.as_dict() for item in self.root_cause_selections],
             "retrieval_escalation": self.retrieval_escalation.as_dict(),
+            "recovery": self.recovery_trace.as_dict() if self.recovery_trace else None,
             "dry_run": self.dry_run,
             "execution_authorized": self.execution_authorized,
         }

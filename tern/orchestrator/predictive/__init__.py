@@ -35,6 +35,17 @@ from .models import (
 )
 from .service import PredictiveDecisionService
 from .repair import RepairTarget, RepairTargetKind, target_refines, targets_compatible
+from .recovery import (
+    CausalSufficiency,
+    RecoveryAction,
+    RecoveryBudget,
+    RecoveryOutcome,
+    RecoveryReason,
+    StructuralRecoveryService,
+    StructuralRecoveryTrace,
+    UnresolvedCausalFrontier,
+    UnresolvedRelation,
+)
 
 __all__ = [
     "CausalEdge",
@@ -71,4 +82,13 @@ __all__ = [
     "RepairTargetKind",
     "target_refines",
     "targets_compatible",
+    "CausalSufficiency",
+    "RecoveryAction",
+    "RecoveryBudget",
+    "RecoveryOutcome",
+    "RecoveryReason",
+    "StructuralRecoveryService",
+    "StructuralRecoveryTrace",
+    "UnresolvedCausalFrontier",
+    "UnresolvedRelation",
 ]

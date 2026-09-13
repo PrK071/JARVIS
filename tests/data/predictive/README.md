@@ -1,5 +1,12 @@
 # Predictive evaluation corpus v4
 
+## Structural recovery v7
+
+O v7 adiciona 15 casos development e 20 casos `holdout_v7` com ground truth
+estrutural. O evaluator preserva contexto inicial, frontiers, acoes de recovery,
+slice recuperado e o estagio exato de perda no coverage funnel. Consulte
+`v7/README.md` para budgets e definicoes das metricas.
+
 The v3 corpus and all historical reports remain intact. Version 4 adds a
 structural adjudication overlay under `v4/` and a sealed `holdout_v4`. See
 `v4/README.md` for validity-versus-preference metrics and status semantics.
