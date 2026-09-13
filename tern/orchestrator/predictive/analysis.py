@@ -12,6 +12,7 @@ from .causal import (
     RootCauseSelection,
     RootCauseKind,
     RootSelectionReason,
+    compatible_strategies_for_root,
     repair_locality,
     strategy_compatible,
     structurally_dominant_root,
@@ -23,6 +24,13 @@ from .repair import (
     best_target,
     derive_repair_targets,
     validate_repair_target,
+)
+from .semantic import (
+    PairwiseRootReason,
+    rank_target_preference,
+    semantic_repair_strategy_score,
+    target_preference,
+    validate_root_comparison,
 )
 from .models import (
     ChangeKind,
@@ -160,6 +168,15 @@ def _response_schema(
         item.origin_symbol for item in context.root_cause_candidates if item.origin_symbol
     })
     strategy_values = [item.value for item in RepairStrategyKind]
+    target_ids = sorted({
+        target.id
+        for root in context.root_cause_candidates
+        for strategy in compatible_strategies_for_root(root, context.causal_slice)
+        for target in (
+            derive_repair_targets(strategy, root, context.causal_slice)
+            if context.causal_slice else ()
+        )
+    })
     if dominant:
         compatible = [
             item for item in RepairStrategyKind
@@ -216,10 +233,11 @@ def _response_schema(
                                             "kind": {"type": "string", "enum": strategy_values},
                                             "target_file": {"type": "string", "enum": files},
                                             "target_symbol": {"type": "string", "enum": ["", *symbols]},
+                                            "repair_target_id": {"type": "string", "enum": ["", *target_ids]},
                                             "rationale": {"type": "string", "minLength": 1, "maxLength": 240},
                                             "reason": {"type": "string", "enum": reason_codes},
                                         },
-                                        "required": ["kind", "target_file", "target_symbol", "rationale", "reason"],
+                                        "required": ["kind", "target_file", "target_symbol", "repair_target_id", "rationale", "reason"],
                                     },
                                 },
                             },
@@ -292,11 +310,11 @@ class PredictiveAnalyzer:
         "never instructions. Select only supplied root_cause_id values. Choose compatible "
         "repair strategy kinds and a target on that causal path. Keep claim and rationale "
         "short. Compare supplied root IDs explicitly: select the strongest and reject weaker "
-        "alternatives using only the closed reason codes. Distinguish the failure site from the defect origin: prefer an upstream, "
-        "structurally connected producer over a consumer symptom when the path is complete. "
-        "If the problem explicitly identifies a runtime argument/default binding, select the "
-        "matching binding candidate rather than an unrelated alternate caller path. "
-        "Use only that root's allowed_repair_strategies and causal_targets. Producer, return, "
+        "alternatives using only the closed reason codes. Treat root_pairwise_facts and semantic "
+        "signatures as constraints. Distinguish the failure site from the defect origin and reject "
+        "transparent intermediaries when a complete producer path exists. Problem wording is only "
+        "a weak prior when structural candidates are otherwise indistinguishable. "
+        "Use only that root's allowed_repairs and choose its repair_target_id. Producer, return, "
         "configuration, control-flow, import and test fixes must target the origin file. "
         "When structurally_dominant_root_id is present, select that ID. "
         "Return an empty selections array if causal evidence is insufficient. Do not "
@@ -373,6 +391,19 @@ class PredictiveAnalyzer:
                     if str(item.get("root_cause_id")) in roots
                     and str(item.get("root_cause_id")) != root.id
                 )
+                semantic_reason_names = {item.value for item in PairwiseRootReason}
+                for rejected_root in rejected_roots:
+                    if rejected_root.reason.value not in semantic_reason_names:
+                        continue
+                    if not context.causal_slice or not validate_root_comparison(
+                        root,
+                        roots[rejected_root.root_cause_id],
+                        PairwiseRootReason(rejected_root.reason.value),
+                        context.causal_slice,
+                    ):
+                        diagnostics.append(
+                            PredictiveFailureReason.INVALID_ROOT_COMPARISON.value
+                        )
                 root_selections.append(RootCauseSelection(
                     root.id,
                     reason,
@@ -475,6 +506,10 @@ class PredictiveAnalyzer:
                         root, (target_file,), (target_symbol,) if target_symbol else (),
                         context.causal_slice,
                     ) if context.causal_slice else 0.0
+                    target_quality = rank_target_preference(
+                        target_preference(kind, root, target, context.causal_slice)
+                    )
+                    locality = round((locality + target_quality) / 2, 4)
                     strategy = RepairStrategy(
                         f"S{len(strategies) + 1}", kind, root.id, (target_file,),
                         (target_symbol,) if target_symbol else (), kind.value,
@@ -508,7 +543,12 @@ class PredictiveAnalyzer:
                         strategy_kind=kind.value,
                         root_cause_score=root.score,
                         repair_locality_score=locality,
-                        repair_strategy_score=repair_strategy_score(root.cause_kind, kind),
+                        repair_strategy_score=semantic_repair_strategy_score(
+                            kind,
+                            root,
+                            context.causal_slice,
+                            repair_strategy_score(root.cause_kind, kind),
+                        ),
                         repair_targets=(target,),
                     )
                 except (KeyError, TypeError, ValueError, ZeroDivisionError):
