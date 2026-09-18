@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Iterable, Mapping, Sequence
 
 from .causal import (
+    CausalResponsibilityKind,
     CausalEdgeKind,
     CausalNode,
     CausalNodeKind,
@@ -29,6 +30,7 @@ class CausalRole(str, Enum):
     IMPORT_SOURCE = "IMPORT_SOURCE"
     FAILURE_SITE = "FAILURE_SITE"
     INTERMEDIATE_WRAPPER = "INTERMEDIATE_WRAPPER"
+    IMPORT_CYCLE = "IMPORT_CYCLE"
 
 
 class OriginRole(str, Enum):
@@ -64,6 +66,14 @@ class PairwiseRootReason(str, Enum):
     STRONGER_STRUCTURAL_PATH = "STRONGER_STRUCTURAL_PATH"
     STRONGER_TEST_SUPPORT = "STRONGER_TEST_SUPPORT"
     INSUFFICIENT_TO_DISTINGUISH = "INSUFFICIENT_TO_DISTINGUISH"
+    ACTUAL_ARGUMENT_IS_DEFECT_SOURCE = "ACTUAL_ARGUMENT_IS_DEFECT_SOURCE"
+    BINDING_RELATION_VIOLATED = "BINDING_RELATION_VIOLATED"
+    RETURN_PRODUCER_IS_DEFECT_SOURCE = "RETURN_PRODUCER_IS_DEFECT_SOURCE"
+    RETURN_CONTRACT_VIOLATED = "RETURN_CONTRACT_VIOLATED"
+    MANIFESTATION_NOT_ORIGIN = "MANIFESTATION_NOT_ORIGIN"
+    INSUFFICIENT_CONTRACT_EVIDENCE = "INSUFFICIENT_CONTRACT_EVIDENCE"
+    INSUFFICIENT_BINDING_EVIDENCE = "INSUFFICIENT_BINDING_EVIDENCE"
+    IMPORT_SCC_IS_CAUSAL_ENTITY = "IMPORT_SCC_IS_CAUSAL_ENTITY"
 
 
 class TargetRelation(str, Enum):
@@ -87,6 +97,9 @@ class RootCauseSignature:
     origin_role: OriginRole
     relation_to_failure: RelationToFailure
     contract_role: ContractRole
+    entity_identity: str | None = None
+    responsibility_kind: CausalResponsibilityKind = CausalResponsibilityKind.UNKNOWN
+    defect_bearing_relation: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -95,6 +108,9 @@ class RootCauseSignature:
             "origin_role": self.origin_role.value,
             "relation_to_failure": self.relation_to_failure.value,
             "contract_role": self.contract_role.value,
+            "entity_identity": self.entity_identity,
+            "responsibility_kind": self.responsibility_kind.value,
+            "defect_bearing_relation": self.defect_bearing_relation,
         }
 
 
@@ -280,6 +296,8 @@ def root_cause_signature(
         roles.add(CausalRole.FAILURE_SITE)
     if root.cause_kind is RootCauseKind.IMPORT_RESOLUTION:
         roles.add(CausalRole.IMPORT_SOURCE)
+        if root.import_scc:
+            roles.add(CausalRole.IMPORT_CYCLE)
     elif root.cause_kind is RootCauseKind.CONFIGURATION:
         roles.update({CausalRole.CONFIG_SOURCE, CausalRole.PRODUCER})
     elif node and node.kind in {CausalNodeKind.RETURN_VALUE, CausalNodeKind.LITERAL}:
@@ -329,6 +347,19 @@ def root_cause_signature(
         origin_role,
         relation,
         contract,
+        (
+            f"IMPORT_SCC:{len(root.import_scc.member_modules)}:"
+            f"{len(root.import_scc.production_edges)}"
+            if root.import_scc else
+            f"ARGUMENT_SLOT:{root.responsibility.parameter_ordinal}:"
+            f"{'KEYWORD' if root.responsibility.keyword_binding else 'POSITIONAL'}"
+            if root.responsibility and root.responsibility.binding_id else
+            f"{root.cause_kind.value}:{origin_role.value}:{contract.value}"
+        ),
+        root.responsibility.kind
+        if root.responsibility else CausalResponsibilityKind.UNKNOWN,
+        root.responsibility.defect_bearing_relation
+        if root.responsibility else None,
     )
 
 
@@ -342,6 +373,92 @@ def compare_root_candidates(
 
     def result(preferred: RootCauseCandidate, rejected: RootCauseCandidate, reason: PairwiseRootReason) -> RootPairwiseComparison:
         return RootPairwiseComparison(preferred.id, rejected.id, reason, True)
+
+    left_scc = left.import_scc is not None
+    right_scc = right.import_scc is not None
+    if left_scc != right_scc and (
+        left.cause_kind is RootCauseKind.IMPORT_RESOLUTION
+        and right.cause_kind is RootCauseKind.IMPORT_RESOLUTION
+    ):
+        return result(
+            left if left_scc else right,
+            right if left_scc else left,
+            PairwiseRootReason.IMPORT_SCC_IS_CAUSAL_ENTITY,
+        )
+
+    argument_responsibilities = {
+        CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT,
+        CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+        CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT,
+    }
+    left_responsibility = (
+        left.responsibility.kind
+        if left.responsibility else CausalResponsibilityKind.UNKNOWN
+    )
+    right_responsibility = (
+        right.responsibility.kind
+        if right.responsibility else CausalResponsibilityKind.UNKNOWN
+    )
+    left_argument = left_responsibility in argument_responsibilities
+    right_argument = right_responsibility in argument_responsibilities
+    left_return = left_responsibility is CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
+    right_return = right_responsibility is CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
+    if (left_argument and right_return) or (right_argument and left_return):
+        argument = left if left_argument else right
+        returned = right if left_argument else left
+        argument_profile = argument.responsibility
+        returned_profile = returned.responsibility
+        causally_connected = bool(
+            argument_profile
+            and returned_profile
+            and (
+                argument_profile.boundary_id in returned.causal_path
+                or argument_profile.actual_argument_id in returned.causal_path
+                or returned_profile.return_site_id in argument.causal_path
+            )
+        )
+        if not causally_connected:
+            return RootPairwiseComparison(
+                None,
+                None,
+                PairwiseRootReason.INSUFFICIENT_TO_DISTINGUISH,
+                True,
+            )
+        return_proven = bool(
+            (
+                returned.contract_demonstrated
+                or returned.cause_kind in {
+                    RootCauseKind.NULL_FLOW,
+                    RootCauseKind.TYPE_FLOW,
+                }
+            )
+            and returned.responsibility
+            and returned.responsibility.return_site_id
+        )
+        binding_proven = bool(
+            argument.responsibility and argument.responsibility.binding_id
+        )
+        if return_proven:
+            return result(
+                returned,
+                argument,
+                PairwiseRootReason.RETURN_CONTRACT_VIOLATED,
+            )
+        if binding_proven:
+            reason = (
+                PairwiseRootReason.ACTUAL_ARGUMENT_IS_DEFECT_SOURCE
+                if argument.responsibility
+                and argument.responsibility.kind
+                is CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT
+                else PairwiseRootReason.BINDING_RELATION_VIOLATED
+            )
+            return result(argument, returned, reason)
+        return RootPairwiseComparison(
+            None,
+            None,
+            PairwiseRootReason.INSUFFICIENT_TO_DISTINGUISH,
+            True,
+        )
 
     left_wrapper = CausalRole.INTERMEDIATE_WRAPPER in left_signature.causal_roles
     right_wrapper = CausalRole.INTERMEDIATE_WRAPPER in right_signature.causal_roles
@@ -648,13 +765,18 @@ def repair_target_signature(
         or ""
     ).rsplit(".", 1)[-1]
     same_owner_scope = bool(target_owner and root_owner and target_owner == root_owner)
+    binding_target = bool(
+        root.responsibility
+        and root.responsibility.binding_id
+        and target.expression_id == root.responsibility.producer_id
+    )
     relation_to_root = (
         TargetRelation.ROOT
         if node and root.causal_path and node.id == root.causal_path[0]
         else TargetRelation.ROOT_SCOPE
         if target.path == root.origin_path and same_owner_scope
         else TargetRelation.CAUSAL_PATH
-        if node and node.id in root.causal_path
+        if binding_target or node and node.id in root.causal_path
         else TargetRelation.UNRELATED
     )
     relation_to_failure = (
@@ -664,7 +786,10 @@ def repair_target_signature(
         if node and node.id in root.causal_path
         else TargetRelation.UNRELATED
     )
-    distance = root.causal_path.index(node.id) if node and node.id in root.causal_path else None
+    distance = (
+        root.causal_path.index(node.id)
+        if node and node.id in root.causal_path else 0 if binding_target else None
+    )
     return RepairTargetSignature(
         target.scope_kind,
         tuple(sorted(roles, key=lambda item: item.value)),

@@ -32,6 +32,9 @@ def _signature_key(value: Mapping[str, Any] | None) -> tuple[object, ...] | None
         value.get("origin_role"),
         value.get("relation_to_failure"),
         value.get("contract_role"),
+        value.get("entity_identity"),
+        value.get("responsibility_kind"),
+        value.get("defect_bearing_relation"),
     )
 
 
@@ -74,6 +77,23 @@ def _semantic_root_metrics(
             for item in truth.acceptable_root_causes
         )
     }
+    for root_id, root in roots.items():
+        identity = root.get("import_scc") or {}
+        members = set(identity.get("member_modules") or ())
+        edge_symbols = {
+            str(edge.get("symbol") or "").rsplit(".", 1)[-1]
+            for edge in identity.get("production_edges") or ()
+        }
+        if any(
+            item.cause_kind == root.get("cause_kind") == "IMPORT_RESOLUTION"
+            and item.path in members
+            and (
+                item.symbol is None
+                or item.symbol.rsplit(".", 1)[-1] in edge_symbols
+            )
+            for item in truth.acceptable_root_causes
+        ):
+            expected_ids.add(root_id)
     nodes = {
         item["id"]: item
         for item in ((actual.get("causal_slice") or {}).get("nodes") or ())

@@ -241,6 +241,54 @@ def load_benchmark_v4_adjudications(
             if case_id not in case_lookup:
                 continue
             values.append(_adjudication_from_dict(raw, case_lookup[case_id], f"{path.name}:{number}"))
+    recorded_ids = {item.case_id for item in values}
+    for case in cases:
+        if case.id in recorded_ids or case.expected.get("v9") is None:
+            continue
+        expected = case.expected
+        roots = tuple(
+            CausalTruth(
+                str(item["path"]),
+                item.get("symbol"),
+                str(item["kind"]),
+                (),
+                True,
+            )
+            for item in expected.get("causal_origins") or ()
+        )
+        target_files = tuple(str(item) for item in expected.get("repair_targets") or ())
+        strategies = tuple(str(item) for item in expected.get("acceptable_repair_strategies") or ())
+        preferred = tuple(str(item) for item in expected.get("preferred_repair_strategies") or ())
+        target_symbols = tuple(
+            str(item)
+            for item in ((expected.get("v9") or {}).get("target_symbols") or ())
+        )
+        repairs = tuple(
+            RepairTruth(
+                strategy,
+                target_files,
+                target_symbols,
+                strategy in preferred,
+            )
+            for strategy in strategies
+        )
+        values.append(BenchmarkAdjudication(
+            case_id=case.id,
+            status=EvaluationStatus.CANONICAL,
+            failure_site=None,
+            acceptable_root_causes=roots,
+            required_causal_edges=(),
+            optional_causal_edges=(),
+            acceptable_repairs=repairs,
+            acceptable_repair_strategies=strategies,
+            preferred_repair_strategies=preferred,
+            acceptable_target_files=target_files,
+            acceptable_target_symbols=target_symbols,
+            forbidden_strategies=(),
+            abstention_expected=bool(expected.get("insufficient_evidence")),
+            notes="v9 structural ground truth compatibility adapter",
+            legacy_expectation="v9 structural ground truth",
+        ))
     ids = [item.case_id for item in values]
     if len(ids) != len(set(ids)):
         duplicate = next(item for item, count in Counter(ids).items() if count > 1)

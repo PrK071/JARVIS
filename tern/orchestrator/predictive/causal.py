@@ -10,8 +10,14 @@ from typing import Iterable, Mapping, Sequence
 
 from ..project_intelligence_v2 import ProjectSnapshotV2
 from ..security import PathPolicy
-from .import_graph import find_import_cycles
-from .models import EvidenceExcerpt, EvidenceLedger, ProblemContext, RetrievalEscalation
+from .import_graph import ImportSCCIdentity, find_import_cycles
+from .models import (
+    EvidenceExcerpt,
+    EvidenceKind,
+    EvidenceLedger,
+    ProblemContext,
+    RetrievalEscalation,
+)
 
 
 class CausalNodeKind(str, Enum):
@@ -24,6 +30,7 @@ class CausalNodeKind(str, Enum):
     EXCEPTION_SITE = "EXCEPTION_SITE"
     CONFIG_VALUE = "CONFIG_VALUE"
     IMPORT = "IMPORT"
+    IMPORT_CYCLE = "IMPORT_CYCLE"
     TEST_EXPECTATION = "TEST_EXPECTATION"
     LITERAL = "LITERAL"
 
@@ -51,6 +58,17 @@ class RootCauseKind(str, Enum):
     IMPORT_RESOLUTION = "IMPORT_RESOLUTION"
     STATE_PROPAGATION = "STATE_PROPAGATION"
     TEST_EXPECTATION = "TEST_EXPECTATION"
+    UNKNOWN = "UNKNOWN"
+
+
+class CausalResponsibilityKind(str, Enum):
+    ARGUMENT_SOURCE_DEFECT = "ARGUMENT_SOURCE_DEFECT"
+    ARGUMENT_BINDING_DEFECT = "ARGUMENT_BINDING_DEFECT"
+    RETURN_CONTRACT_DEFECT = "RETURN_CONTRACT_DEFECT"
+    CONSUMER_CONTRACT_DEFECT = "CONSUMER_CONTRACT_DEFECT"
+    CONFIG_SOURCE_DEFECT = "CONFIG_SOURCE_DEFECT"
+    IMPORT_GRAPH_DEFECT = "IMPORT_GRAPH_DEFECT"
+    MANIFESTATION_ONLY = "MANIFESTATION_ONLY"
     UNKNOWN = "UNKNOWN"
 
 
@@ -138,6 +156,69 @@ def _stable(prefix: str, *parts: object) -> str:
 
 
 @dataclass(frozen=True)
+class ArgumentBindingIdentity:
+    call_site_id: str
+    callee_id: str
+    actual_argument_id: str
+    formal_parameter_id: str
+    parameter_ordinal: int
+    keyword_binding: str | None = None
+
+    @property
+    def id(self) -> str:
+        return _stable(
+            "B", self.call_site_id, self.callee_id, self.actual_argument_id,
+            self.formal_parameter_id, self.parameter_ordinal,
+            self.keyword_binding,
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "call_site_id": self.call_site_id,
+            "callee_id": self.callee_id,
+            "actual_argument_id": self.actual_argument_id,
+            "formal_parameter_id": self.formal_parameter_id,
+            "parameter_ordinal": self.parameter_ordinal,
+            "keyword_binding": self.keyword_binding,
+        }
+
+
+@dataclass(frozen=True)
+class CausalResponsibilityProfile:
+    kind: CausalResponsibilityKind
+    value_origin_id: str | None = None
+    boundary_id: str | None = None
+    defect_bearing_relation: str | None = None
+    producer_id: str | None = None
+    consumer_id: str | None = None
+    actual_argument_id: str | None = None
+    formal_parameter_id: str | None = None
+    return_site_id: str | None = None
+    contract_evidence_ids: tuple[str, ...] = ()
+    binding_id: str | None = None
+    parameter_ordinal: int | None = None
+    keyword_binding: str | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "kind": self.kind.value,
+            "value_origin_id": self.value_origin_id,
+            "boundary_id": self.boundary_id,
+            "defect_bearing_relation": self.defect_bearing_relation,
+            "producer_id": self.producer_id,
+            "consumer_id": self.consumer_id,
+            "actual_argument_id": self.actual_argument_id,
+            "formal_parameter_id": self.formal_parameter_id,
+            "return_site_id": self.return_site_id,
+            "contract_evidence_ids": list(self.contract_evidence_ids),
+            "binding_id": self.binding_id,
+            "parameter_ordinal": self.parameter_ordinal,
+            "keyword_binding": self.keyword_binding,
+        }
+
+
+@dataclass(frozen=True)
 class CausalNode:
     id: str
     kind: CausalNodeKind
@@ -163,12 +244,16 @@ class CausalEdge:
     kind: CausalEdgeKind
     deterministic: bool
     evidence_ids: tuple[str, ...] = ()
+    argument_binding: ArgumentBindingIdentity | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {"id": self.id, "source_id": self.source_id,
                 "target_id": self.target_id, "kind": self.kind.value,
                 "deterministic": self.deterministic,
-                "evidence_ids": list(self.evidence_ids)}
+                "evidence_ids": list(self.evidence_ids),
+                "argument_binding": (
+                    self.argument_binding.as_dict() if self.argument_binding else None
+                )}
 
 
 @dataclass(frozen=True)
@@ -214,6 +299,8 @@ class RootCauseCandidate:
     score: float
     statement: str
     contract_demonstrated: bool = False
+    import_scc: ImportSCCIdentity | None = None
+    responsibility: CausalResponsibilityProfile | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {"id": self.id, "cause_kind": self.cause_kind.value,
@@ -224,7 +311,9 @@ class RootCauseCandidate:
                 "structural_support": self.structural_support,
                 "causal_distance": self.causal_distance, "completeness": self.completeness,
                 "score": self.score, "statement": self.statement,
-                "contract_demonstrated": self.contract_demonstrated}
+                "contract_demonstrated": self.contract_demonstrated,
+                "import_scc": self.import_scc.as_dict() if self.import_scc else None,
+                "responsibility": self.responsibility.as_dict() if self.responsibility else None}
 
 
 @dataclass(frozen=True)
@@ -283,6 +372,7 @@ class _Function:
     params: list[str]
     param_nodes: dict[str, str]
     returns: list[str]
+    return_annotation: str | None = None
 
 
 @dataclass
@@ -291,7 +381,7 @@ class _Call:
     path: str
     scope: str
     target: str
-    args: list[tuple[str | None, list[str]]]
+    args: list[tuple[int | None, str | None, list[str]]]
 
 
 def _expr(node: ast.AST | None) -> str:
@@ -491,6 +581,7 @@ class _FlowBuilder(ast.NodeVisitor):
         self.current: _Function | None = None
         self.attribute_reads: set[str] = set()
         self.attribute_writes: set[str] = set()
+        self.annotated_return_nodes: set[str] = set()
 
     def node(self, kind: CausalNodeKind, line: int, symbol: str | None, expression: str) -> str:
         node_id = _stable("N", kind.value, self.path, line, self.scope, symbol, expression)
@@ -519,6 +610,13 @@ class _FlowBuilder(ast.NodeVisitor):
         if isinstance(node, ast.Constant):
             kind = CausalNodeKind.CONFIG_VALUE if self.scope == "module" else CausalNodeKind.LITERAL
             return [self.node(kind, line, None, _expr(node))]
+        if isinstance(node, (ast.List, ast.Tuple, ast.Set, ast.Dict)):
+            empty = (
+                isinstance(node, ast.Dict) and not node.keys
+                or isinstance(node, (ast.List, ast.Tuple, ast.Set)) and not node.elts
+            )
+            if empty:
+                return [self.node(CausalNodeKind.LITERAL, line, None, _expr(node))]
         if isinstance(node, ast.Call):
             return [self._call(node)]
         if isinstance(node, ast.BinOp):
@@ -550,7 +648,16 @@ class _FlowBuilder(ast.NodeVisitor):
         self.scope = name
         positional = [*node.args.posonlyargs, *node.args.args]
         params = [item.arg for item in positional] + [item.arg for item in node.args.kwonlyargs]
-        function = _Function(f"{self.path}:{name}", name, self.path, node.lineno, params, {}, [])
+        function = _Function(
+            f"{self.path}:{name}",
+            name,
+            self.path,
+            node.lineno,
+            params,
+            {},
+            [],
+            _expr(node.returns) if node.returns is not None else None,
+        )
         self.current = function
         for parameter in params:
             function.param_nodes[parameter] = self.value(parameter, node.lineno, CausalNodeKind.PARAMETER)
@@ -578,12 +685,18 @@ class _FlowBuilder(ast.NodeVisitor):
         target = _expr(node.func)
         call_id = self.node(CausalNodeKind.CALL, node.lineno, target, f"{target}()")
         if not any(item.node_id == call_id for item in self.calls):
-            args = [(None, list(self.source_nodes(value, node.lineno))) for value in node.args]
-            args.extend((keyword.arg, list(self.source_nodes(keyword.value, node.lineno))) for keyword in node.keywords)
+            args = [
+                (index, None, list(self.source_nodes(value, node.lineno)))
+                for index, value in enumerate(node.args)
+            ]
+            args.extend(
+                (None, keyword.arg, list(self.source_nodes(keyword.value, node.lineno)))
+                for keyword in node.keywords
+            )
             if isinstance(node.func, ast.Attribute):
-                args.append((None, list(self.source_nodes(node.func.value, node.lineno))))
+                args.append((None, None, list(self.source_nodes(node.func.value, node.lineno))))
             self.calls.append(_Call(call_id, self.path, self.scope, target, args))
-            for _keyword, sources in args:
+            for _ordinal, _keyword, sources in args:
                 for source in sources:
                     self.edge(source, call_id, CausalEdgeKind.PASSED_AS_ARGUMENT)
         return call_id
@@ -620,6 +733,8 @@ class _FlowBuilder(ast.NodeVisitor):
             self.edge(source, return_id, CausalEdgeKind.RETURNED_FROM)
         if self.current:
             self.current.returns.append(return_id)
+            if self.current.return_annotation:
+                self.annotated_return_nodes.add(return_id)
         if node.value:
             self.generic_visit(node.value)
 
@@ -683,7 +798,7 @@ def _node_kind_for_cause(node: CausalNode, problem: str) -> RootCauseKind:
         return RootCauseKind.ATTRIBUTE_VALUE
     if node.kind is CausalNodeKind.CONDITION:
         return RootCauseKind.CONTROL_FLOW
-    if node.kind is CausalNodeKind.IMPORT:
+    if node.kind in {CausalNodeKind.IMPORT, CausalNodeKind.IMPORT_CYCLE}:
         return RootCauseKind.IMPORT_RESOLUTION
     if node.kind is CausalNodeKind.TEST_EXPECTATION:
         return RootCauseKind.TEST_EXPECTATION
@@ -693,43 +808,257 @@ def _node_kind_for_cause(node: CausalNode, problem: str) -> RootCauseKind:
 
 
 def _return_contract_demonstrated(
-    problem: str,
     node: CausalNode,
     *,
-    reported_failure_site: bool,
+    path_ids: tuple[str, ...],
+    nodes: Mapping[str, CausalNode],
+    edges: Mapping[str, CausalEdge],
+    evidence_ledger: EvidenceLedger,
+    annotated_contract: bool = False,
 ) -> bool:
+    """Prove a return contract from structure, never from problem wording.
+
+    An annotation or a related test assertion is direct contract evidence.  A
+    producer return that crosses a resolved call boundary into the failing
+    consumer is also a structural contract signal, unless the return merely
+    forwards a concrete argument whose defect demonstrably predates the
+    producer.  Delegating wrappers are deliberately not promoted to contract
+    origins.
+    """
     if node.kind is not CausalNodeKind.RETURN_VALUE:
         return False
-    folded = problem.casefold()
-    symbol = (node.symbol or "").rsplit(".", 1)[-1].casefold()
-    symbol_contract = bool(
+    if annotated_contract:
+        return True
+    returned_expression = node.expression.removeprefix("return ").strip()
+    if re.search(r"(?:\s(?:\+|-|\*|/|%|//|\|)\s|\b(?:and|or)\b)", returned_expression):
+        return False
+    failure_node = nodes.get(path_ids[-1]) if path_ids else None
+    symbol = (node.symbol or "").rsplit(".", 1)[-1]
+    direct_test_contract = bool(
         symbol
-        and (
-            re.search(
-                rf"\b{re.escape(symbol)}\b[^.;\n]{{0,90}}(?:"
-                rf"\bviolat\w*\b[^.;\n]{{0,55}}\b(?:return|contract)\w*\b|"
-                rf"\b(?:producer|return)\s+contract\b)",
-                folded,
-            )
-            or re.search(
-                rf"\b{re.escape(symbol)}\b.{{0,70}}\bproducer\s+contract\b",
-                folded,
-            )
-            or re.search(
-                rf"\bexpect\w*\b[^.;\n]{{0,45}}\b{re.escape(symbol)}\b"
-                rf"[^.;\n]{{0,45}}\b(?:produc\w*|return\w*)\b",
-                folded,
-            )
+        and failure_node
+        and node.path == failure_node.path
+        and len(path_ids) == 2
+        and any(
+        atom.kind is EvidenceKind.STRUCTURAL_RELATION
+        and (atom.relation or "").rsplit(".", 1)[-1] == symbol
+        and "asserts behavior" in atom.statement
+        for atom in evidence_ledger.atoms
         )
     )
-    located_return = bool(
-        reported_failure_site
-        and re.search(
-            rf"{re.escape(node.path.casefold())}:{node.line}.{{0,55}}\breturn\w*\b",
-            folded,
-        )
+    path_set = set(path_ids)
+    crosses_call_boundary = any(
+        edge.source_id == node.id
+        and (edge.target_id in path_set or edge.target_id in nodes)
+        and edge.kind is CausalEdgeKind.RETURNED_FROM
+        and nodes.get(edge.target_id)
+        and nodes[edge.target_id].kind is CausalNodeKind.CALL
+        for edge in edges.values()
     )
-    return symbol_contract or located_return
+    if not crosses_call_boundary:
+        return direct_test_contract
+    returned_sources = tuple(
+        nodes[edge.source_id]
+        for edge in edges.values()
+        if edge.target_id == node.id
+        and edge.kind is CausalEdgeKind.RETURNED_FROM
+        and edge.source_id in nodes
+    )
+    if any(source.kind is CausalNodeKind.CALL for source in returned_sources):
+        return False
+    parameters = tuple(
+        source for source in returned_sources
+        if source.kind is CausalNodeKind.PARAMETER
+    )
+    bindings = tuple(
+        edge.argument_binding
+        for parameter in parameters
+        for edge in edges.values()
+        if edge.target_id == parameter.id
+        and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+        and edge.argument_binding is not None
+    )
+    def has_concrete_upstream(
+        node_id: str, depth: int = 0, visited: frozenset[str] = frozenset()
+    ) -> bool:
+        if depth > 3 or node_id in visited or node_id not in nodes:
+            return False
+        current = nodes[node_id]
+        if current.kind in {CausalNodeKind.LITERAL, CausalNodeKind.CONFIG_VALUE}:
+            return True
+        next_ids = {
+            edge.source_id
+            for edge in edges.values()
+            if edge.target_id == node_id
+            and edge.kind in {
+                CausalEdgeKind.ASSIGNED_FROM,
+                CausalEdgeKind.PASSED_AS_ARGUMENT,
+                CausalEdgeKind.RETURNED_FROM,
+            }
+        }
+        return any(
+            has_concrete_upstream(item, depth + 1, visited | {node_id})
+            for item in sorted(next_ids)
+        )
+
+    if bindings and any(
+        has_concrete_upstream(binding.actual_argument_id)
+        for binding in bindings
+    ):
+        return False
+    return True
+
+
+def _responsibility_profile(
+    node: CausalNode,
+    path_ids: tuple[str, ...],
+    nodes: Mapping[str, CausalNode],
+    edges: Mapping[str, CausalEdge],
+    *,
+    kind: RootCauseKind,
+    contract_demonstrated: bool,
+    import_scc: ImportSCCIdentity | None,
+    binding_override: ArgumentBindingIdentity | None = None,
+    parameter_ordinals: Mapping[str, int] | None = None,
+) -> CausalResponsibilityProfile:
+    if import_scc is not None:
+        return CausalResponsibilityProfile(
+            CausalResponsibilityKind.IMPORT_GRAPH_DEFECT,
+            value_origin_id=node.id,
+            boundary_id=node.id,
+            defect_bearing_relation="import_edge_to_module_initialization",
+        )
+    if kind is RootCauseKind.CONFIGURATION:
+        return CausalResponsibilityProfile(
+            CausalResponsibilityKind.CONFIG_SOURCE_DEFECT,
+            value_origin_id=node.id,
+            defect_bearing_relation="config_source_to_consumer",
+        )
+    incoming_bindings = sorted(
+        (
+            edge for edge in edges.values()
+            if edge.target_id == node.id
+            and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+            and edge.argument_binding is not None
+        ),
+        key=lambda edge: edge.argument_binding.id if edge.argument_binding else edge.id,
+    )
+    outgoing_bindings = sorted(
+        (
+            edge for edge in edges.values()
+            if edge.source_id == node.id
+            and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+            and edge.argument_binding is not None
+        ),
+        key=lambda edge: edge.argument_binding.id if edge.argument_binding else edge.id,
+    )
+    if kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW} and len(outgoing_bindings) == 1:
+        binding = outgoing_bindings[0].argument_binding
+        assert binding is not None
+        return CausalResponsibilityProfile(
+            CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT,
+            value_origin_id=node.id,
+            boundary_id=binding.formal_parameter_id,
+            defect_bearing_relation="actual_argument_to_formal_parameter",
+            producer_id=binding.call_site_id,
+            actual_argument_id=binding.actual_argument_id,
+            formal_parameter_id=binding.formal_parameter_id,
+            binding_id=binding.id,
+            parameter_ordinal=binding.parameter_ordinal,
+            keyword_binding=binding.keyword_binding,
+        )
+    if kind is RootCauseKind.ARGUMENT_BINDING:
+        binding = binding_override or (
+            incoming_bindings[0].argument_binding
+            if len(incoming_bindings) == 1 else None
+        )
+        if binding is None:
+            if node.expression.startswith("default ") and len(path_ids) > 1:
+                formal = nodes.get(path_ids[1])
+                literal = next((
+                    edge.source_id
+                    for edge in edges.values()
+                    if edge.target_id == node.id
+                    and edge.kind is CausalEdgeKind.ASSIGNED_FROM
+                    and nodes.get(edge.source_id)
+                    and nodes[edge.source_id].kind is CausalNodeKind.LITERAL
+                ), None)
+                if formal and formal.kind is CausalNodeKind.PARAMETER and literal:
+                    default_binding = ArgumentBindingIdentity(
+                        node.id,
+                        f"{node.path}:{node.scope or 'module'}",
+                        literal,
+                        formal.id,
+                        (parameter_ordinals or {}).get(formal.id),
+                        None,
+                    )
+                    return CausalResponsibilityProfile(
+                        CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+                        value_origin_id=literal,
+                        boundary_id=formal.id,
+                        defect_bearing_relation="default_argument_to_formal_parameter",
+                        producer_id=node.id,
+                        actual_argument_id=literal,
+                        formal_parameter_id=formal.id,
+                        binding_id=default_binding.id,
+                        parameter_ordinal=default_binding.parameter_ordinal,
+                    )
+            return CausalResponsibilityProfile(
+                CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT,
+                value_origin_id=node.id,
+                boundary_id=node.id,
+                formal_parameter_id=node.id,
+                defect_bearing_relation="external_input_to_formal_parameter",
+            )
+        actual = nodes.get(binding.actual_argument_id)
+        responsibility = (
+            CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT
+            if actual is not None
+            and actual.kind in {
+                CausalNodeKind.LITERAL,
+                CausalNodeKind.CONFIG_VALUE,
+                CausalNodeKind.LOCAL_VARIABLE,
+            }
+            else CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT
+        )
+        return CausalResponsibilityProfile(
+            responsibility,
+            value_origin_id=binding.actual_argument_id,
+            boundary_id=binding.formal_parameter_id,
+            defect_bearing_relation="actual_argument_to_formal_parameter",
+            producer_id=binding.call_site_id,
+            actual_argument_id=binding.actual_argument_id,
+            formal_parameter_id=binding.formal_parameter_id,
+            binding_id=binding.id,
+            parameter_ordinal=binding.parameter_ordinal,
+            keyword_binding=binding.keyword_binding,
+        )
+    return_site = next(
+        (
+            item_id for item_id in path_ids
+            if nodes[item_id].kind is CausalNodeKind.RETURN_VALUE
+        ),
+        None,
+    )
+    if kind is RootCauseKind.RETURN_CONTRACT or (
+        kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+        and return_site is not None
+    ):
+        return CausalResponsibilityProfile(
+            CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
+            if contract_demonstrated or kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+            else CausalResponsibilityKind.MANIFESTATION_ONLY,
+            value_origin_id=node.id,
+            defect_bearing_relation="return_site_to_caller_assignment",
+            producer_id=return_site,
+            return_site_id=return_site,
+            contract_evidence_ids=node.evidence_ids if contract_demonstrated else (),
+        )
+    return CausalResponsibilityProfile(
+        CausalResponsibilityKind.MANIFESTATION_ONLY,
+        value_origin_id=node.id,
+        defect_bearing_relation="observed_at_failure_path",
+    )
 
 
 def build_causal_slice(
@@ -764,19 +1093,51 @@ def build_causal_slice(
     for function in functions:
         by_name.setdefault(function.name.rsplit(".", 1)[-1], []).append(function)
     calls = [call for builder in builders for call in builder.calls]
+    annotated_return_nodes = {
+        node_id for builder in builders for node_id in builder.annotated_return_nodes
+    }
+    parameter_ordinals = {
+        node_id: ordinal
+        for function in functions
+        for ordinal, parameter in enumerate(function.params)
+        for node_id in (function.param_nodes.get(parameter),)
+        if node_id
+    }
     for call in calls:
         matches = by_name.get(call.target.rsplit(".", 1)[-1], ())
         if len(matches) != 1:
             continue
         callee = matches[0]
-        for index, (keyword, sources) in enumerate(call.args):
-            parameter = keyword or (callee.params[index] if index < len(callee.params) else None)
+        for positional_ordinal, keyword, sources in call.args:
+            parameter = keyword or (
+                callee.params[positional_ordinal]
+                if positional_ordinal is not None
+                and positional_ordinal < len(callee.params)
+                else None
+            )
             if parameter not in callee.param_nodes:
                 continue
+            parameter_ordinal = callee.params.index(parameter)
             for source in sources:
                 edge_id = _stable("G", source, callee.param_nodes[parameter], CausalEdgeKind.PASSED_AS_ARGUMENT.value)
                 evidence = tuple(dict.fromkeys((*nodes[source].evidence_ids, *nodes[callee.param_nodes[parameter]].evidence_ids)))
-                edges[edge_id] = CausalEdge(edge_id, source, callee.param_nodes[parameter], CausalEdgeKind.PASSED_AS_ARGUMENT, True, evidence)
+                binding = ArgumentBindingIdentity(
+                    call.node_id,
+                    callee.key,
+                    source,
+                    callee.param_nodes[parameter],
+                    parameter_ordinal,
+                    keyword,
+                )
+                edges[edge_id] = CausalEdge(
+                    edge_id,
+                    source,
+                    callee.param_nodes[parameter],
+                    CausalEdgeKind.PASSED_AS_ARGUMENT,
+                    True,
+                    evidence,
+                    binding,
+                )
         for returned in callee.returns:
             edge_id = _stable("G", returned, call.node_id, CausalEdgeKind.RETURNED_FROM.value)
             evidence = tuple(dict.fromkeys((*nodes[returned].evidence_ids, *nodes[call.node_id].evidence_ids)))
@@ -846,11 +1207,25 @@ def build_causal_slice(
     # "circular import" password in the problem statement.
     import_cycles = find_import_cycles(snapshot)
     related_paths = set(context.related_files)
+    import_investigation = _mentions_import_failure(context.problem)
     relevant_import_cycles = tuple(
         cycle for cycle in import_cycles
-        if len(set(cycle.strongly_connected_component) & related_paths) >= 2
+        if len(set(cycle.strongly_connected_component) & related_paths)
+        >= (1 if import_investigation else 2)
     )
     folded_problem = context.problem.casefold()
+    anchored_import_cycles = tuple(
+        cycle for cycle in relevant_import_cycles
+        if any(
+            re.search(
+                rf"\b{re.escape(member.removesuffix('.py').replace('/', '.').casefold())}\b",
+                folded_problem,
+            )
+            for member in cycle.strongly_connected_component
+        )
+    )
+    if anchored_import_cycles:
+        relevant_import_cycles = anchored_import_cycles
     mentions_cycle = "cycle" in folded_problem and _mentions_import_failure(
         context.problem
     ) or "partially initialized" in folded_problem
@@ -910,6 +1285,7 @@ def build_causal_slice(
     # Runtime import cycles are a graph property.  Test imports are observers;
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
     import_cycle_node_ids: set[str] = set()
+    import_scc_nodes: dict[str, ImportSCCIdentity] = {}
     import_failure = _mentions_import_failure(context.problem) or bool(relevant_import_cycles)
     if failure_id and import_failure:
         cycles = relevant_import_cycles or import_cycles
@@ -925,6 +1301,52 @@ def build_causal_slice(
             )
             if not relevant:
                 continue
+            triggering_module = (
+                failure_path
+                if failure_path in cycle.strongly_connected_component
+                else cycle.strongly_connected_component[0]
+            )
+            identity = cycle.identity(triggering_module=triggering_module)
+            trigger_edge = next(
+                (
+                    edge for edge in cycle.production_edges
+                    if edge.source == triggering_module
+                ),
+                cycle.production_edges[0],
+            )
+            scc_node_id = _stable(
+                "N", CausalNodeKind.IMPORT_CYCLE.value, identity.id,
+                identity.member_modules,
+            )
+            scc_evidence = tuple(dict.fromkeys(
+                evidence_id
+                for edge in cycle.production_edges
+                for evidence_id in _evidence_at(
+                    context.evidence_ledger, edge.source, edge.line
+                )
+            ))
+            nodes[scc_node_id] = CausalNode(
+                scc_node_id,
+                CausalNodeKind.IMPORT_CYCLE,
+                triggering_module,
+                trigger_edge.line,
+                identity.id,
+                "runtime import SCC(" + ", ".join(identity.member_modules) + ")",
+                scc_evidence,
+                "module",
+            )
+            import_scc_nodes[scc_node_id] = identity
+            scc_edge_id = _stable(
+                "G", scc_node_id, failure_id, CausalEdgeKind.RAISES_AT.value
+            )
+            edges[scc_edge_id] = CausalEdge(
+                scc_edge_id,
+                scc_node_id,
+                failure_id,
+                CausalEdgeKind.RAISES_AT,
+                True,
+                tuple(dict.fromkeys((*scc_evidence, *nodes[failure_id].evidence_ids))),
+            )
             for import_edge in cycle.production_edges:
                 node_id = _stable(
                     "N", CausalNodeKind.IMPORT.value, import_edge.source,
@@ -996,13 +1418,15 @@ def build_causal_slice(
         structural = deterministic_edges / max(1, distance)
         completeness = 1.0 if path_ids[-1] == failure_id else 0.0
         kind = _node_kind_for_cause(node, context.problem)
+        if node.kind is CausalNodeKind.IMPORT and import_scc_nodes:
+            # Import edges are evidence carried by the SCC root. They are not
+            # competing callable-like causes of the same graph defect.
+            continue
         if (
             node.kind is CausalNodeKind.IMPORT
             and import_failure
-            and (
-                (mentions_cycle and node.id not in import_cycle_node_ids)
-                or (import_cycle_node_ids and node.id not in import_cycle_node_ids)
-            )
+            and mentions_cycle
+            and node.id not in import_cycle_node_ids
         ):
             continue
         is_test_input = (
@@ -1030,9 +1454,28 @@ def build_causal_slice(
         }[kind]
         upstream = node.path != failure_path
         explicit_return_contract = _return_contract_demonstrated(
-            context.problem,
             node,
-            reported_failure_site=reported_failure_site,
+            path_ids=path_ids,
+            nodes=nodes,
+            edges=edges,
+            evidence_ledger=context.evidence_ledger,
+            annotated_contract=node.id in annotated_return_nodes,
+        )
+        strong_return_contract = bool(
+            node.id in annotated_return_nodes
+            or (
+                node.kind is CausalNodeKind.RETURN_VALUE
+                and node.path == failure_path
+                and node.line == failure_line
+                and (node.symbol or "")
+                and any(
+                    atom.kind is EvidenceKind.STRUCTURAL_RELATION
+                    and (atom.relation or "").rsplit(".", 1)[-1]
+                    == (node.symbol or "").rsplit(".", 1)[-1]
+                    and "asserts behavior" in atom.statement
+                    for atom in context.evidence_ledger.atoms
+                )
+            )
         )
         failure_manifestation = (
             node.path == failure_path
@@ -1052,7 +1495,7 @@ def build_causal_slice(
             + source_prior * (0.08 if is_test_input else 0.25)
             + (0.10 if upstream else 0.0)
             + min(distance, 8) / 8 * 0.10
-            + (0.20 if explicit_return_contract else 0.0)
+            + (0.20 if strong_return_contract else 0.0)
             - (0.20 if failure_manifestation else 0.0)
             - test_origin_penalty,
         ), 6)
@@ -1060,15 +1503,47 @@ def build_causal_slice(
         statement = (
             f"{node.expression} at {node.path}:{node.line} flows to the failure site: {flow}"
         )
-        root_candidates.append(RootCauseCandidate(
-            _stable("R", kind.value, node.path, node.line, node.symbol, path_ids),
-            kind, node.path, node.symbol, node.line, failure_path, failure_line,
-            path_ids, evidence_ids, round(direct, 4), round(structural, 4),
-            distance, completeness, score, statement,
-            explicit_return_contract,
-        ))
+        import_scc = import_scc_nodes.get(node_id)
+        binding_overrides: tuple[ArgumentBindingIdentity | None, ...] = (None,)
+        if kind is RootCauseKind.ARGUMENT_BINDING:
+            resolved_bindings = tuple(sorted(
+                (
+                    edge.argument_binding
+                    for edge in edges.values()
+                    if edge.target_id == node.id
+                    and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+                    and edge.argument_binding is not None
+                ),
+                key=lambda item: item.id,
+            ))
+            if resolved_bindings:
+                binding_overrides = resolved_bindings
+        for binding_override in binding_overrides:
+            responsibility = _responsibility_profile(
+                node,
+                path_ids,
+                nodes,
+                edges,
+                kind=kind,
+                contract_demonstrated=explicit_return_contract,
+                import_scc=import_scc,
+                binding_override=binding_override,
+                parameter_ordinals=parameter_ordinals,
+            )
+            root_candidates.append(RootCauseCandidate(
+                _stable(
+                    "R", kind.value, node.path, node.line, node.symbol, path_ids,
+                    responsibility.binding_id,
+                ),
+                kind, node.path, node.symbol, node.line, failure_path, failure_line,
+                path_ids, evidence_ids, round(direct, 4), round(structural, 4),
+                distance, completeness, score, statement,
+                explicit_return_contract,
+                import_scc,
+                responsibility,
+            ))
     distinct_candidates: dict[
-        tuple[RootCauseKind, str, str | None, int], RootCauseCandidate
+        tuple[RootCauseKind, str, str | None, int, str | None], RootCauseCandidate
     ] = {}
     for candidate in root_candidates:
         key = (
@@ -1076,6 +1551,7 @@ def build_causal_slice(
             candidate.origin_path,
             candidate.origin_symbol,
             candidate.origin_line,
+            candidate.responsibility.binding_id if candidate.responsibility else None,
         )
         current = distinct_candidates.get(key)
         if current is None or (
@@ -1090,11 +1566,59 @@ def build_causal_slice(
             current.id,
         ):
             distinct_candidates[key] = candidate
-    ordered = sorted(
+
+    def structural_anchor(candidate: RootCauseCandidate) -> int:
+        """Prioritize resolved entities named by the observation, not keywords.
+
+        This only controls the bounded candidate window.  It cannot create a
+        candidate, change responsibility, or prove a relation.
+        """
+        node_ids = {
+            candidate.causal_path[0] if candidate.causal_path else None,
+            candidate.responsibility.producer_id
+            if candidate.responsibility else None,
+            candidate.responsibility.formal_parameter_id
+            if candidate.responsibility else None,
+        }
+        names = {
+            part
+            for node_id in node_ids
+            if node_id and node_id in nodes
+            for part in (
+                (nodes[node_id].scope or "").rsplit(".", 1)[-1],
+                (nodes[node_id].symbol or "").rsplit(".", 1)[-1],
+            )
+            if part and part != "module"
+        }
+        folded = context.problem.casefold()
+        return int(any(
+            re.search(rf"\b{re.escape(name.casefold())}\b", folded)
+            for name in names
+        ))
+
+    baseline_order = sorted(
         distinct_candidates.values(),
-        key=lambda item: (-item.score, item.causal_distance, item.origin_path, item.origin_line, item.id),
+        key=lambda item: (
+            -item.score, item.causal_distance,
+            item.origin_path, item.origin_line, item.id,
+        ),
     )
-    return causal_slice, tuple(ordered[:8])
+    anchored_order = sorted(
+        distinct_candidates.values(),
+        key=lambda item: (
+            -structural_anchor(item), -item.score, item.causal_distance,
+            item.origin_path, item.origin_line, item.id,
+        ),
+    )
+    selected = list(baseline_order[:8])
+    selected_ids = {item.id for item in selected}
+    for item in anchored_order:
+        if len(selected) >= 12:
+            break
+        if item.id not in selected_ids and structural_anchor(item):
+            selected.append(item)
+            selected_ids.add(item.id)
+    return causal_slice, tuple(selected)
 
 
 def structurally_dominant_root(

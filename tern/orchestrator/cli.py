@@ -39,6 +39,10 @@ from .predictive.benchmark_v8 import (
     format_robustness_v8,
     summarize_robustness_v8,
 )
+from .predictive.benchmark_v9 import (
+    evaluate_predictive_cases_v9,
+    format_benchmark_v9,
+)
 from .predictive.robustness import (
     evaluate_counterfactual_suite,
     evaluate_robustness_suite,
@@ -852,16 +856,18 @@ def build_parser() -> argparse.ArgumentParser:
             "holdout_v7",
             "historical_holdout_v7",
             "holdout_v8",
+            "historical_holdout_v8",
+            "holdout_v9",
         ),
         default="development",
     )
     predictive_eval.add_argument("--runs", type=int, default=1)
     predictive_eval.add_argument(
         "--benchmark-version",
-        choices=(3, 4, 5, 6, 7, 8),
+        choices=(3, 4, 5, 6, 7, 8, 9),
         type=int,
         default=3,
-        help="v8 mede selecao semantica; v6 audita robustez; v5 separa target",
+        help="v9 mede identidade/responsabilidade; v8 mede selecao semantica",
     )
     predictive_eval.add_argument(
         "--live-qwen",
@@ -1251,7 +1257,7 @@ def main(argv: list[str] | None = None) -> int:
                     limit=args.limit,
                     corpus_root=args.corpus,
                     order_bias_limit=args.order_bias_limit,
-                    suite_version=8 if args.benchmark_version == 8 else 6,
+                    suite_version=args.benchmark_version if args.benchmark_version >= 8 else 6,
                 )
                 counterfactual = evaluate_counterfactual_suite(
                     split=args.split,
@@ -1261,11 +1267,11 @@ def main(argv: list[str] | None = None) -> int:
                     limit=args.limit,
                     corpus_root=args.corpus,
                     known_signatures=metamorphic.get("base_signatures"),
-                    suite_version=8 if args.benchmark_version == 8 else 6,
+                    suite_version=args.benchmark_version if args.benchmark_version >= 8 else 6,
                 )
                 report = (
                     summarize_robustness_v8(metamorphic, counterfactual)
-                    if args.benchmark_version == 8
+                    if args.benchmark_version >= 8
                     else summarize_robustness_gate(metamorphic, counterfactual)
                 )
             else:
@@ -1277,7 +1283,15 @@ def main(argv: list[str] | None = None) -> int:
                 else "retrieval" if args.mode == "recovery"
                 else args.mode
             )
-            if args.mode != "robustness" and args.benchmark_version == 8:
+            if args.mode != "robustness" and args.benchmark_version == 9:
+                report = evaluate_predictive_cases_v9(
+                    cases,
+                    corpus_root=args.corpus,
+                    mode=evaluation_mode,
+                    reasoner=reasoner,
+                    runs=args.runs,
+                )
+            elif args.mode != "robustness" and args.benchmark_version == 8:
                 report = evaluate_predictive_cases_v8(
                     cases,
                     corpus_root=args.corpus,
@@ -1335,9 +1349,11 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(
                     format_robustness_v8(report)
-                    if args.mode == "robustness" and args.benchmark_version == 8
+                    if args.mode == "robustness" and args.benchmark_version >= 8
                     else format_robustness_evaluation(report)
                     if args.mode == "robustness"
+                    else format_benchmark_v9(report)
+                    if args.benchmark_version == 9
                     else format_benchmark_v8(report)
                     if args.benchmark_version == 8
                     else format_benchmark_v7(report)

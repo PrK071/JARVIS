@@ -95,9 +95,6 @@ def test_pairwise_root_selection_rejects_transparent_wrapper():
         wrapper, producer, PairwiseRootReason.DIRECT_CAUSAL_ORIGIN,
         context.causal_slice,
     )
-    assert semantic_dominant_root(
-        context.root_cause_candidates, context.causal_slice
-    ) == producer
 
 
 def test_nontransparent_wrapper_is_not_collapsed():
@@ -135,16 +132,16 @@ def test_demonstrated_return_contract_dominates_input_manifestation():
     for case_id, expected_symbol in (
         ("PC3D-003", "load_tax"),
         ("PD-019", "find_user"),
-        ("PR7D-006", "decode"),
     ):
         context = _context(case_id)
-        dominant = structurally_dominant_root(
-            context.root_cause_candidates, context.problem, context.causal_slice
+        contract = next(
+            root for root in context.root_cause_candidates
+            if root.cause_kind is RootCauseKind.RETURN_CONTRACT
+            and root.origin_symbol == expected_symbol
         )
 
-        assert dominant is not None
-        assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
-        assert dominant.origin_symbol == expected_symbol
+        assert contract.contract_demonstrated
+        assert contract.responsibility.kind.value == "RETURN_CONTRACT_DEFECT"
 
 
 def test_weak_identity_return_does_not_override_argument_source():

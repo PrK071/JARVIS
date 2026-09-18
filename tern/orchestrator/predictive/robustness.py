@@ -588,6 +588,9 @@ def structural_decision_signature(
             semantic_root.get("origin_role"),
             semantic_root.get("relation_to_failure"),
             semantic_root.get("contract_role"),
+            semantic_root.get("entity_identity"),
+            semantic_root.get("responsibility_kind"),
+            semantic_root.get("defect_bearing_relation"),
         ) if semantic_root else None,
         "target_signature": (
             semantic_target.get("target_kind"),

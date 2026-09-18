@@ -149,6 +149,43 @@ def _adapt_v4(case: PredictiveCase, value: Any) -> BenchmarkAdjudicationV5:
     )
 
 
+def _adapt_v9_expected(case: PredictiveCase) -> BenchmarkAdjudicationV5:
+    expected = case.expected
+    abstention = bool(expected.get("insufficient_evidence"))
+    roots = tuple(
+        CausalTruth(
+            str(item["path"]), item.get("symbol"), str(item["kind"]), (),
+            True,
+        )
+        for item in expected.get("causal_origins") or ()
+    )
+    binding = (expected.get("v9") or {}).get("binding") or {}
+    targets: list[RepairTarget] = []
+    for path in expected.get("repair_targets") or ():
+        targets.append(RepairTarget(path, RepairTargetKind.MODULE))
+        if binding.get("parameter"):
+            targets.append(RepairTarget(
+                path,
+                RepairTargetKind.PARAMETER,
+                parameter=str(binding["parameter"]),
+            ))
+    strategies = tuple(expected.get("acceptable_repair_strategies") or ())
+    preferred = set(expected.get("preferred_repair_strategies") or ())
+    repairs = tuple(
+        RepairTruthV5(strategy, tuple(targets), strategy in preferred)
+        for strategy in strategies
+    )
+    return BenchmarkAdjudicationV5(
+        case.id,
+        EvaluationStatus.CANONICAL,
+        None,
+        roots,
+        repairs,
+        abstention,
+        "v9 structural ground truth",
+    )
+
+
 def load_benchmark_v5_adjudications(
     cases: Sequence[PredictiveCase],
     corpus_root: str | Path = CORPUS_ROOT,
@@ -170,6 +207,9 @@ def load_benchmark_v5_adjudications(
         case_id: _from_v5(raw, case_lookup[case_id])
         for case_id, raw in raw_values.items()
     }
+    for case in cases:
+        if case.id not in result and case.expected.get("v9") is not None:
+            result[case.id] = _adapt_v9_expected(case)
     legacy_cases = [case for case in cases if case.id not in result]
     if legacy_cases:
         for item in load_benchmark_v4_adjudications(legacy_cases, root):

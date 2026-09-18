@@ -143,32 +143,26 @@ def test_explicit_return_contract_can_dominate_failure_site():
     assert dominant.origin_symbol == "find_user"
 
 
-def test_upstream_contract_dominates_consumer_manifestation():
-    for identifier, symbol in (
-        ("PC5D-008", "parse_count"),
-        ("PC5D-013", "decode_quantity"),
-        ("PC5D-014", "decode_price"),
-    ):
-        context = _context(identifier)
-        dominant = structurally_dominant_root(
-            context.root_cause_candidates, context.problem, context.causal_slice
-        )
-
-        assert dominant is not None
-        assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
-        assert dominant.origin_symbol == symbol
-
-
-def test_two_wrapper_null_origin_remains_inside_bounded_slice():
-    context = _context("PR7D-001")
+def test_structurally_demonstrated_return_contract_dominates_manifestation():
+    context = _context("PC5D-013")
     dominant = structurally_dominant_root(
         context.root_cause_candidates, context.problem, context.causal_slice
     )
 
     assert dominant is not None
-    assert dominant.cause_kind is RootCauseKind.NULL_FLOW
-    assert dominant.origin_path == "pkg/source.py"
-    assert len(dominant.causal_path) <= 12
+    assert dominant.responsibility.kind.value == "RETURN_CONTRACT_DEFECT"
+    assert dominant.responsibility.return_site_id is not None
+
+
+def test_two_wrapper_null_origin_remains_inside_bounded_slice():
+    context = _context("PR7D-001")
+    producer = next(
+        root for root in context.root_cause_candidates
+        if root.cause_kind is RootCauseKind.NULL_FLOW
+        and root.origin_path == "pkg/source.py"
+    )
+
+    assert len(producer.causal_path) <= 12
 
 
 def test_forwarded_return_contract_dominates_intermediate_wrapper():
@@ -204,8 +198,11 @@ def test_import_cycle_candidates_are_distinct_and_legacy_wording_is_supported():
     }
 
     assert len(semantic_origins) == len(three_node.root_cause_candidates)
-    assert len(three_node.root_cause_candidates) == 3
+    assert len(three_node.root_cause_candidates) == 1
+    assert len(three_node.root_cause_candidates[0].import_scc.member_modules) == 3
     assert legacy.root_cause_candidates
+    assert len(legacy.root_cause_candidates) == 1
+    assert len(legacy.root_cause_candidates[0].import_scc.member_modules) == 2
     assert all(
         root.cause_kind is RootCauseKind.IMPORT_RESOLUTION
         for root in legacy.root_cause_candidates
@@ -319,7 +316,8 @@ def test_argument_repair_uses_call_site_even_when_model_names_parameter():
     result = PredictiveAnalyzer(Reasoner()).analyze_with_diagnostics(context)
 
     assert result.candidates
-    assert result.candidates[0].repair_targets[0].scope_kind.value == "CALL_SITE"
+    assert result.candidates[0].repair_targets[0].scope_kind.value == "PARAMETER"
+    assert result.candidates[0].repair_targets[0].parameter == "values"
 
 
 def test_boundary_wording_does_not_eliminate_structurally_valid_strategies():

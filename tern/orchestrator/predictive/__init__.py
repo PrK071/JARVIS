@@ -1,11 +1,14 @@
 """Read-only comparative reasoning for technical project decisions."""
 
 from .causal import (
+    ArgumentBindingIdentity,
     CausalEdge,
     CausalEdgeKind,
     CausalNode,
     CausalNodeKind,
     CausalSlice,
+    CausalResponsibilityKind,
+    CausalResponsibilityProfile,
     RepairStrategy,
     RepairStrategyKind,
     RejectedRootCause,
@@ -19,6 +22,7 @@ from .causal import (
     repair_target_compatible,
     structurally_dominant_root,
 )
+from .import_graph import ImportEdgeProvenance, ImportSCCIdentity
 from .models import (
     ChangeKind,
     ClaimSupport,
@@ -68,6 +72,11 @@ __all__ = [
     "CausalNode",
     "CausalNodeKind",
     "CausalSlice",
+    "ArgumentBindingIdentity",
+    "CausalResponsibilityKind",
+    "CausalResponsibilityProfile",
+    "ImportEdgeProvenance",
+    "ImportSCCIdentity",
     "ChangeKind",
     "ClaimSupport",
     "DecisionReport",

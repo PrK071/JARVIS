@@ -139,17 +139,50 @@ def validate_repair_target(
         RepairStrategyKind.VALIDATE_BOUNDARY: {RepairTargetKind.FUNCTION, RepairTargetKind.METHOD, RepairTargetKind.PARAMETER, RepairTargetKind.CALL_SITE},
         RepairStrategyKind.CORRECT_CONTROL_FLOW: {RepairTargetKind.FUNCTION, RepairTargetKind.METHOD, RepairTargetKind.RETURN_SITE},
         RepairStrategyKind.CORRECT_CONFIGURATION: {RepairTargetKind.CONFIG_VALUE, RepairTargetKind.MODULE},
-        RepairStrategyKind.CORRECT_IMPORT: {RepairTargetKind.IMPORT_EDGE},
+        RepairStrategyKind.CORRECT_IMPORT: {
+            RepairTargetKind.IMPORT_EDGE,
+            RepairTargetKind.MODULE,
+        },
         RepairStrategyKind.CORRECT_TEST_EXPECTATION: {RepairTargetKind.TEST_EXPECTATION},
         RepairStrategyKind.ERROR_HANDLING: {RepairTargetKind.FUNCTION, RepairTargetKind.METHOD},
         RepairStrategyKind.OTHER: set(RepairTargetKind),
     }
     if target.scope_kind not in allowed_kinds[strategy]:
         return False
+    if strategy is RepairStrategyKind.CORRECT_IMPORT and root.import_scc:
+        return (
+            target.path in root.import_scc.member_modules
+            and target.scope_kind in {
+                RepairTargetKind.IMPORT_EDGE,
+                RepairTargetKind.MODULE,
+            }
+        )
     path_nodes = [node for node in causal_slice.nodes if node.id in root.causal_path]
     path_files = {node.path for node in path_nodes}
-    if target.path not in path_files:
+    responsibility_nodes = {
+        item
+        for item in (
+            root.responsibility.actual_argument_id if root.responsibility else None,
+            root.responsibility.formal_parameter_id if root.responsibility else None,
+            root.responsibility.producer_id if root.responsibility else None,
+        )
+        if item
+    }
+    responsibility_files = {
+        node.path for node in causal_slice.nodes if node.id in responsibility_nodes
+    }
+    if target.path not in path_files | responsibility_files:
         return False
+    if strategy is RepairStrategyKind.CORRECT_ARGUMENT and root.responsibility:
+        binding = root.responsibility
+        if target.scope_kind is RepairTargetKind.CALL_SITE:
+            return target.expression_id == binding.producer_id
+        if target.scope_kind is RepairTargetKind.PARAMETER:
+            formal = next((
+                node for node in causal_slice.nodes
+                if node.id == binding.formal_parameter_id
+            ), None)
+            return bool(formal and target.parameter == formal.symbol)
     if strategy is RepairStrategyKind.CORRECT_RETURN_VALUE:
         return any(
             node.path == target.path and node.kind is CausalNodeKind.RETURN_VALUE
@@ -168,9 +201,58 @@ def derive_repair_targets(
     causal_slice: CausalSlice,
 ) -> tuple[RepairTarget, ...]:
     """Derive typed repair scopes from nodes on the proven causal path."""
-    from .causal import CausalNodeKind
+    from .causal import CausalNodeKind, RepairStrategyKind
 
     result: dict[str, RepairTarget] = {}
+    if strategy is RepairStrategyKind.CORRECT_IMPORT and root.import_scc:
+        for edge in root.import_scc.production_edges:
+            target = RepairTarget(
+                edge.source,
+                RepairTargetKind.IMPORT_EDGE,
+                symbol=edge.target,
+                expression_id="->".join(
+                    path.removesuffix(".py").replace("/", ".")
+                    for path in (edge.source, edge.target)
+                ),
+                line=edge.line,
+            )
+            result[target.id] = target
+        return tuple(sorted(
+            result.values(), key=lambda item: (item.path, item.line or 0, item.id)
+        ))
+    if root.responsibility and root.responsibility.binding_id:
+        call_site = next((
+            node for node in causal_slice.nodes
+            if node.id == root.responsibility.producer_id
+            and node.kind is CausalNodeKind.CALL
+        ), None)
+        formal = next((
+            node for node in causal_slice.nodes
+            if node.id == root.responsibility.formal_parameter_id
+            and node.kind is CausalNodeKind.PARAMETER
+        ), None)
+        binding_targets: list[RepairTarget] = []
+        if call_site is not None:
+            scope = call_site.scope if call_site.scope != "module" else None
+            binding_targets.append(RepairTarget(
+                call_site.path,
+                RepairTargetKind.CALL_SITE,
+                scope,
+                expression_id=call_site.id,
+                line=call_site.line,
+            ))
+        if formal is not None:
+            scope = formal.scope if formal.scope != "module" else None
+            binding_targets.append(RepairTarget(
+                formal.path,
+                RepairTargetKind.PARAMETER,
+                scope,
+                parameter=formal.symbol,
+                line=formal.line,
+            ))
+        for target in binding_targets:
+            if validate_repair_target(strategy, root, target, causal_slice):
+                result[target.id] = target
     for node in causal_slice.nodes:
         if node.id not in root.causal_path:
             continue

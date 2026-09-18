@@ -61,9 +61,10 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     historical_holdout_v4 = load_predictive_cases(split="historical_holdout_v4")
     holdout_v5 = load_predictive_cases(split="holdout_v5")
     holdout_v8 = load_predictive_cases(split="holdout_v8")
+    holdout_v9 = load_predictive_cases(split="holdout_v9")
 
-    assert len(all_cases) == 197
-    assert len(development) == 87
+    assert len(all_cases) == 239
+    assert len(development) == 105
     assert len(holdout) == 10
     assert len(holdout_v2) == 12
     assert holdout_v2_alias == holdout_v2
@@ -73,6 +74,7 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     assert historical_holdout_v4 == holdout_v4
     assert len(holdout_v5) == 18
     assert len(holdout_v8) == 20
+    assert len(holdout_v9) == 24
     assert [case.id for case in all_cases] == sorted(case.id for case in all_cases)
     assert {case.split for case in development} == {"development"}
     assert {case.split for case in holdout} == {"historical_holdout_v1"}
@@ -81,6 +83,7 @@ def test_corpus_loads_versioned_development_and_holdout_splits():
     assert {case.split for case in holdout_v4} == {"holdout_v4"}
     assert {case.split for case in holdout_v5} == {"holdout_v5"}
     assert {case.split for case in holdout_v8} == {"holdout_v8"}
+    assert {case.split for case in holdout_v9} == {"holdout_v9"}
 
 
 def test_holdout_v2_matches_sealed_manifest_hash():

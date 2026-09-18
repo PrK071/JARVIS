@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import hashlib
 from typing import Iterable
 
 from tern.orchestrator.project_intelligence_v2 import (
@@ -16,6 +17,15 @@ class ImportSourceKind(str, Enum):
     TEST = "TEST"
     CONFIG = "CONFIG"
     SCRIPT = "SCRIPT"
+
+
+class ImportEdgeProvenance(str, Enum):
+    PRODUCTION_IMPORT = "PRODUCTION_IMPORT"
+    TEST_IMPORT = "TEST_IMPORT"
+    SCRIPT_IMPORT = "SCRIPT_IMPORT"
+    CONFIG_IMPORT = "CONFIG_IMPORT"
+    TYPE_CHECKING_IMPORT = "TYPE_CHECKING_IMPORT"
+    LOCAL_RUNTIME_IMPORT = "LOCAL_RUNTIME_IMPORT"
 
 
 @dataclass(frozen=True)
@@ -36,12 +46,93 @@ class ImportEdge:
             and not self.type_checking_only
         )
 
+    @property
+    def provenance(self) -> ImportEdgeProvenance:
+        if self.type_checking_only:
+            return ImportEdgeProvenance.TYPE_CHECKING_IMPORT
+        if self.scope != "module":
+            return ImportEdgeProvenance.LOCAL_RUNTIME_IMPORT
+        return {
+            ImportSourceKind.PRODUCTION: ImportEdgeProvenance.PRODUCTION_IMPORT,
+            ImportSourceKind.TEST: ImportEdgeProvenance.TEST_IMPORT,
+            ImportSourceKind.SCRIPT: ImportEdgeProvenance.SCRIPT_IMPORT,
+            ImportSourceKind.CONFIG: ImportEdgeProvenance.CONFIG_IMPORT,
+        }[self.source_kind]
+
+
+@dataclass(frozen=True)
+class ImportSCCIdentity:
+    """Stable causal identity for a runtime production import component."""
+
+    id: str
+    member_modules: tuple[str, ...]
+    production_edges: tuple[ImportEdge, ...]
+    observer_edges: tuple[ImportEdge, ...]
+    triggering_module: str | None = None
+
+    @classmethod
+    def build(
+        cls,
+        members: Iterable[str],
+        production_edges: Iterable[ImportEdge],
+        observer_edges: Iterable[ImportEdge],
+        *,
+        triggering_module: str | None = None,
+    ) -> "ImportSCCIdentity":
+        ordered_members = tuple(sorted(set(members)))
+        ordered_edges = tuple(sorted(
+            production_edges,
+            key=lambda edge: (edge.source, edge.target, edge.line, edge.scope),
+        ))
+        observers = tuple(sorted(
+            observer_edges,
+            key=lambda edge: (edge.source, edge.target, edge.line, edge.scope),
+        ))
+        material = "\0".join((
+            *ordered_members,
+            *(f"{edge.source}->{edge.target}" for edge in ordered_edges),
+        )).encode("utf-8")
+        return cls(
+            "SCC" + hashlib.sha256(material).hexdigest()[:12].upper(),
+            ordered_members,
+            ordered_edges,
+            observers,
+            triggering_module,
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        def edge_value(edge: ImportEdge) -> dict[str, object]:
+            return {
+                "source": edge.source,
+                "target": edge.target,
+                "line": edge.line,
+                "scope": edge.scope,
+                "symbol": edge.symbol,
+                "provenance": edge.provenance.value,
+            }
+
+        return {
+            "id": self.id,
+            "member_modules": list(self.member_modules),
+            "production_edges": [edge_value(edge) for edge in self.production_edges],
+            "observer_edges": [edge_value(edge) for edge in self.observer_edges],
+            "triggering_module": self.triggering_module,
+        }
+
 
 @dataclass(frozen=True)
 class ImportCycleCause:
     strongly_connected_component: tuple[str, ...]
     production_edges: tuple[ImportEdge, ...]
     observer_edges: tuple[ImportEdge, ...]
+
+    def identity(self, *, triggering_module: str | None = None) -> ImportSCCIdentity:
+        return ImportSCCIdentity.build(
+            self.strongly_connected_component,
+            self.production_edges,
+            self.observer_edges,
+            triggering_module=triggering_module,
+        )
 
 
 def _kind(indexed: IndexedFile) -> ImportSourceKind:

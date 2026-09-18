@@ -134,7 +134,7 @@ def test_predictive_json_v6_keeps_legacy_report_fields(tmp_path):
     ).predict('File "pkg/calc.py", line 2\nTypeError', root).as_dict()
 
     assert report["schema_version"] == 6
-    assert report["semantic_schema_version"] == 1
+    assert report["semantic_schema_version"] == 2
     assert "root_cause_selections" in report
     assert {
         "problem", "hypotheses", "candidates", "recommended_candidate_id",

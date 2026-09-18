@@ -552,7 +552,7 @@ class DecisionReport:
                 ]
         return {
             "schema_version": 6,
-            "semantic_schema_version": 1,
+            "semantic_schema_version": 2,
             "recovery_schema_version": 1,
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],

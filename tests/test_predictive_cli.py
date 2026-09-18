@@ -61,6 +61,16 @@ def test_predictive_eval_parser_accepts_v8_holdout():
     assert args.benchmark_version == 8
 
 
+def test_predictive_eval_parser_accepts_v9_holdout():
+    args = cli.build_parser().parse_args([
+        "predictive-eval", "--mode", "live", "--split", "holdout_v9",
+        "--benchmark-version", "9", "--json",
+    ])
+
+    assert args.split == "holdout_v9"
+    assert args.benchmark_version == 9
+
+
 def test_predict_cli_is_read_only_and_emits_structured_report(monkeypatch, capsys, tmp_path):
     root = tmp_path / "repo"
     root.mkdir()

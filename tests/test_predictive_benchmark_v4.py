@@ -25,7 +25,7 @@ from tern.orchestrator.predictive.evaluation import (
 def test_all_development_cases_have_individual_v4_adjudications():
     cases = tuple(
         case for case in load_predictive_cases(split="development")
-        if not case.id.startswith(("PC5D-", "PR7D-", "SV8D-"))
+        if not case.id.startswith(("PC5D-", "PR7D-", "SV8D-", "CI9D-"))
     )
     adjudications = load_benchmark_v4_adjudications(cases)
 
@@ -50,7 +50,10 @@ def test_holdout_v4_is_complete_and_matches_sealed_hash():
 
 
 def test_adjudication_loader_rejects_missing_records():
-    cases = load_predictive_cases(split="development")[:2]
+    cases = tuple(
+        case for case in load_predictive_cases(split="development")
+        if case.id.startswith("PC3D-")
+    )[:2]
 
     with pytest.raises(ValueError, match="missing benchmark v4 adjudications"):
         load_benchmark_v4_adjudications(cases, CORPUS_ROOT / "missing")
@@ -119,7 +122,7 @@ def test_strategy_target_pair_prevents_unrelated_valid_strategy():
 def test_v4_summary_separates_benchmark_and_engine_errors():
     cases = tuple(
         case for case in load_predictive_cases(split="development")
-        if not case.id.startswith(("PC5D-", "PR7D-", "SV8D-"))
+        if not case.id.startswith(("PC5D-", "PR7D-", "SV8D-", "CI9D-"))
     )
     truths = load_benchmark_v4_adjudications(cases)
     base = evaluate_predictive_cases(cases, mode="retrieval")
