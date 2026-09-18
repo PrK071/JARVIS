@@ -523,10 +523,12 @@ def materialize_metamorphic_case(
             if len(lines) == 1:
                 lines[0] = str(params.get("message") or f"Equivalent report: {lines[0]}")
             else:
-                error_kind = lines[-1].split(":", 1)[0] if ":" in lines[-1] else "RuntimeError"
+                error_kind, separator, detail = lines[-1].partition(":")
+                if not separator:
+                    error_kind, detail = "RuntimeError", lines[-1]
                 lines[-1] = str(
                     params.get("message")
-                    or f"{error_kind}: equivalent failure while processing the same data flow"
+                    or f"{error_kind}: equivalent report of{detail}"
                 )
         problem = "\n".join(lines)
     for path, offset in line_offsets.items():
@@ -1001,6 +1003,25 @@ def evaluate_robustness_suite(
             base_adjudication = adjudicate_predictive_result_v5(
                 base_result, base_truths[base.id]
             )
+            if suite_version >= 8:
+                # v8 canonical evaluation recognizes semantically equivalent
+                # causal representations (for example TYPE_FLOW and
+                # RETURN_CONTRACT at one producer site).  Robustness must use
+                # the same definition or renamed variants become false
+                # failures under the legacy exact matcher.
+                from .benchmark_v8 import _metrics_v8
+
+                adjudication = _metrics_v8(
+                    {"actual": result["actual"], "metrics_v5": adjudication},
+                    truth,
+                )
+                base_adjudication = _metrics_v8(
+                    {
+                        "actual": base_result["actual"],
+                        "metrics_v5": base_adjudication,
+                    },
+                    base_truths[base.id],
+                )
             if truth.status is EvaluationStatus.MULTIPLE_VALID_ANSWERS:
                 if base_adjudication["root_cause_validity"] and adjudication["root_cause_validity"]:
                     checks["root_cause_invariance"] = True

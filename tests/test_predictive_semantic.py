@@ -424,6 +424,24 @@ def test_v8_metamorphic_and_counterfactual_suites_are_versioned(tmp_path):
         assert truth.acceptable_root_causes
 
 
+def test_error_paraphrase_preserves_causal_detail(tmp_path):
+    root = Path(__file__).parent / "data" / "predictive" / "v8"
+    spec = next(
+        item for item in load_metamorphic_cases(root, split="development")
+        if item.base_case_id == "SV8D-011"
+        and item.transformation.value == "ERROR_PARAPHRASE"
+    )
+    case = _case(spec.base_case_id)
+    truth = next(item for item in load_benchmark_v5_adjudications((case,)))
+
+    transformed, _truth, _mapping = materialize_metamorphic_case(
+        spec, case, truth, tmp_path
+    )
+
+    assert "equivalent report" in transformed.problem.casefold()
+    assert "count zero" in transformed.problem.casefold()
+
+
 def test_comment_and_docstring_distractors_do_not_change_root_signature(tmp_path):
     root = Path(__file__).parent / "data" / "predictive" / "v8"
     specs = load_metamorphic_cases(root, split="development")
