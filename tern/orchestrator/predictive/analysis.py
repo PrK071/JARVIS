@@ -29,6 +29,7 @@ from .repair import (
 from .semantic import (
     PairwiseRootReason,
     rank_target_preference,
+    semantic_repair_pair_score,
     semantic_repair_strategy_score,
     target_preference,
     validate_root_comparison,
@@ -629,9 +630,10 @@ class PredictiveAnalyzer:
                         strategy_kind=kind.value,
                         root_cause_score=root.score,
                         repair_locality_score=locality,
-                        repair_strategy_score=semantic_repair_strategy_score(
+                        repair_strategy_score=semantic_repair_pair_score(
                             kind,
                             root,
+                            target,
                             context.causal_slice,
                             repair_strategy_score(root.cause_kind, kind),
                         ),

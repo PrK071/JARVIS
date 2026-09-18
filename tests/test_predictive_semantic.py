@@ -40,6 +40,8 @@ from tern.orchestrator.predictive.semantic import (
     repair_target_signature,
     root_cause_signature,
     semantic_dominant_root,
+    semantic_repair_strategy_score,
+    semantic_repair_pair_score,
     semantic_target_equivalent,
     target_preference,
     validate_root_comparison,
@@ -155,6 +157,66 @@ def test_weak_identity_return_does_not_override_argument_source():
     assert dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
 
 
+def test_repair_strategy_follows_structural_producer_kind():
+    null_context = _context("SV8D-001")
+    null_root = _root(
+        null_context, kind=RootCauseKind.NULL_FLOW, path="commerce/source.py"
+    )
+    type_context = _context("SV8D-007")
+    type_root = _root(
+        type_context, kind=RootCauseKind.TYPE_FLOW, path="commerce/source.py"
+    )
+
+    assert semantic_repair_strategy_score(
+        RepairStrategyKind.FIX_PRODUCER,
+        null_root,
+        null_context.causal_slice,
+        0.5,
+    ) > semantic_repair_strategy_score(
+        RepairStrategyKind.CORRECT_RETURN_VALUE,
+        null_root,
+        null_context.causal_slice,
+        0.5,
+    )
+    assert semantic_repair_strategy_score(
+        RepairStrategyKind.CORRECT_RETURN_VALUE,
+        type_root,
+        type_context.causal_slice,
+        0.5,
+    ) > semantic_repair_strategy_score(
+        RepairStrategyKind.CORRECT_ARGUMENT,
+        type_root,
+        type_context.causal_slice,
+        0.5,
+    )
+
+
+def test_fix_producer_requires_a_producer_scope_to_outrank_return_fix():
+    context = _context("PC5D-010")
+    root = _root(context, kind=RootCauseKind.NULL_FLOW, path="app/storage.py")
+    targets = derive_repair_targets(
+        RepairStrategyKind.FIX_PRODUCER, root, context.causal_slice
+    )
+    return_site = next(
+        item for item in targets if item.scope_kind is RepairTargetKind.RETURN_SITE
+    )
+    function = next(
+        item for item in targets if item.scope_kind is RepairTargetKind.FUNCTION
+    )
+
+    assert semantic_repair_pair_score(
+        RepairStrategyKind.FIX_PRODUCER,
+        root,
+        function,
+        context.causal_slice,
+        0.5,
+    ) > semantic_repair_pair_score(
+        RepairStrategyKind.FIX_PRODUCER,
+        root,
+        return_site,
+        context.causal_slice,
+        0.5,
+    )
 def test_compound_return_keeps_upstream_producer_in_causal_candidates():
     context = _context("SV8D-007")
 

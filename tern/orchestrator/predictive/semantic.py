@@ -769,6 +769,25 @@ def semantic_repair_strategy_score(
     fallback: float,
 ) -> float:
     """Refine strategy quality only when a causal role resolves ownership."""
+    signature = root_cause_signature(root, causal_slice)
+    producer_return = {
+        CausalRole.PRODUCER,
+        CausalRole.RETURN_SOURCE,
+    } <= set(signature.causal_roles)
+    if producer_return and root.cause_kind is RootCauseKind.NULL_FLOW:
+        return {
+            RepairStrategyKind.FIX_PRODUCER: 1.0,
+            RepairStrategyKind.CORRECT_RETURN_VALUE: 0.92,
+            RepairStrategyKind.VALIDATE_BOUNDARY: 0.65,
+        }.get(strategy, fallback)
+    if producer_return and root.cause_kind is RootCauseKind.TYPE_FLOW:
+        return {
+            RepairStrategyKind.CORRECT_RETURN_VALUE: 1.0,
+            RepairStrategyKind.FIX_PRODUCER: 0.92,
+            RepairStrategyKind.FIX_CONSUMER_CONTRACT: 0.60,
+            RepairStrategyKind.VALIDATE_BOUNDARY: 0.55,
+            RepairStrategyKind.CORRECT_ARGUMENT: 0.40,
+        }.get(strategy, fallback)
     if root.cause_kind is not RootCauseKind.ARGUMENT_BINDING or not root.causal_path:
         return fallback
     nodes = {item.id: item for item in causal_slice.nodes}
@@ -801,6 +820,29 @@ def semantic_repair_strategy_score(
         RepairStrategyKind.VALIDATE_BOUNDARY: 1.0,
         RepairStrategyKind.CORRECT_ARGUMENT: 0.70,
     }.get(strategy, fallback)
+
+
+def semantic_repair_pair_score(
+    strategy: RepairStrategyKind,
+    root: RootCauseCandidate,
+    target: RepairTarget,
+    causal_slice: CausalSlice,
+    fallback: float,
+) -> float:
+    """Score strategy and target as one structural repair decision."""
+    score = semantic_repair_strategy_score(
+        strategy, root, causal_slice, fallback
+    )
+    if (
+        root.cause_kind is RootCauseKind.NULL_FLOW
+        and strategy is RepairStrategyKind.FIX_PRODUCER
+        and target.scope_kind is RepairTargetKind.RETURN_SITE
+    ):
+        # At a return site this strategy is merely a less precise spelling of
+        # CORRECT_RETURN_VALUE.  Reserve producer preference for a producer
+        # scope (function/method/attribute), where ownership is explicit.
+        return min(score, 0.90)
+    return score
 
 
 def pairwise_root_matrix(
