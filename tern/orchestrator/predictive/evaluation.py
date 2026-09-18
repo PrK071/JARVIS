@@ -44,6 +44,7 @@ VALID_SPLITS = frozenset({
     "holdout_v6",
     "holdout_v7",
     "holdout_v8",
+    "holdout_v9",
 })
 SPLIT_ALIASES = {
     "holdout_v2": "historical_holdout_v2",
@@ -52,6 +53,7 @@ SPLIT_ALIASES = {
     "historical_holdout_v5": "holdout_v5",
     "historical_holdout_v6": "holdout_v6",
     "historical_holdout_v7": "holdout_v7",
+    "historical_holdout_v8": "holdout_v8",
 }
 VALID_MODES = frozenset({"retrieval", "baseline", "live"})
 GLOBAL_DESTRUCTIVE_SIGNALS = (
@@ -288,7 +290,7 @@ def load_predictive_cases(
     split = SPLIT_ALIASES.get(split, split)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5, 6, 7, 8}:
+    if not isinstance(manifest, dict) or int(manifest.get("version") or 0) not in {1, 2, 3, 4, 5, 6, 7, 8, 9}:
         raise ValueError("invalid predictive corpus manifest")
     if split not in {*VALID_SPLITS, "all"}:
         raise ValueError(f"invalid predictive split: {split}")
@@ -317,6 +319,7 @@ def load_predictive_cases(
         "historical_holdout_v2", "holdout_v3", "holdout_v4", "holdout_v5",
         "holdout_v7",
         "holdout_v8",
+        "holdout_v9",
     ):
         sealed_hash = manifest.get(f"{sealed_split}_sha256")
         if sealed_hash and predictive_corpus_hash(root, split=sealed_split) != sealed_hash:
@@ -363,15 +366,16 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
             if line.strip()
         ):
             selected_files.append(path)
-    for path in sorted((root / "v8").glob("*.jsonl")):
-        for line in path.read_text(encoding="utf-8-sig").splitlines():
-            if not line.strip():
-                continue
-            value = json.loads(line)
-            if value.get("split") == split:
-                robustness_rows.append(
-                    json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
-                )
+    for suite_dir in ("v8", "v9"):
+        for path in sorted((root / suite_dir).glob("*.jsonl")):
+            for line in path.read_text(encoding="utf-8-sig").splitlines():
+                if not line.strip():
+                    continue
+                value = json.loads(line)
+                if value.get("split") == split:
+                    robustness_rows.append(
+                        json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                    )
     digest = hashlib.sha256()
     for path in sorted(selected_files):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))

@@ -1,0 +1,12 @@
+{"id":"MI9D-001","base_case_id":"CI9D-001","split":"development","transformations":[{"kind":"FILE_RENAME"},{"kind":"SYMBOL_RENAME"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9D-002","base_case_id":"CI9D-003","split":"development","transformations":[{"kind":"FILE_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9D-003","base_case_id":"CI9D-007","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9D-004","base_case_id":"CI9D-009","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9D-005","base_case_id":"CI9D-012","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9D-006","base_case_id":"CI9D-013","split":"development","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-001","base_case_id":"CI9H-001","split":"holdout_v9","transformations":[{"kind":"FILE_RENAME"},{"kind":"SYMBOL_RENAME"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-002","base_case_id":"CI9H-003","split":"holdout_v9","transformations":[{"kind":"FILE_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-003","base_case_id":"CI9H-007","split":"holdout_v9","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-004","base_case_id":"CI9H-009","split":"holdout_v9","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"HARMLESS_COMMENT"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-005","base_case_id":"CI9H-013","split":"holdout_v9","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}
+{"id":"MI9H-006","base_case_id":"CI9H-014","split":"holdout_v9","transformations":[{"kind":"SYMBOL_RENAME"},{"kind":"DOCSTRING_DISTRACTOR"},{"kind":"ERROR_PARAPHRASE"}]}

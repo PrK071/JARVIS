@@ -1,0 +1,8 @@
+{"id":"XI9D-001","base_case_id":"CI9D-007","counterfactual_case_id":"CI9D-009","split":"development","responsibility_must_change":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9D-002","base_case_id":"CI9D-009","counterfactual_case_id":"CI9D-007","split":"development","responsibility_must_change":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9D-003","base_case_id":"CI9D-001","counterfactual_case_id":"CI9D-005","split":"development","scc_must_disappear":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9D-004","base_case_id":"CI9D-005","counterfactual_case_id":"CI9D-001","split":"development","scc_must_appear":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9H-001","base_case_id":"CI9H-007","counterfactual_case_id":"CI9H-009","split":"holdout_v9","responsibility_must_change":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9H-002","base_case_id":"CI9H-009","counterfactual_case_id":"CI9H-007","split":"holdout_v9","responsibility_must_change":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9H-003","base_case_id":"CI9H-001","counterfactual_case_id":"CI9H-005","split":"holdout_v9","scc_must_disappear":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}
+{"id":"XI9H-004","base_case_id":"CI9H-005","counterfactual_case_id":"CI9H-001","split":"holdout_v9","scc_must_appear":true,"root_must_change":true,"repair_must_change":true,"target_must_change":true}

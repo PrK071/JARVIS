@@ -3,6 +3,11 @@
 ## Semantic selection v8
 
 O v8 acrescenta 15 casos development e um `holdout_v8` selado com 20 casos.
+
+O v9 acrescenta 18 casos development de identidade/responsabilidade causal e
+um `holdout_v9` selado com 24 casos. A verdade estrutural diferencia identidade
+de SCC, responsabilidade de argumento/retorno e slot de binding. O hash final
+foi registrado antes da execução live e o holdout não pode ser ajustado depois.
 As decisões passam a ser comparadas por papel causal e assinatura de alvo, não
 por nomes literais. As métricas par-a-par têm numerador e denominador explícitos.
 O hash do holdout inclui casos, fixtures e adjudicações estruturais.
