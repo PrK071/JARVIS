@@ -311,13 +311,26 @@ def root_cause_signature(
     if transparent:
         roles.add(CausalRole.INTERMEDIATE_WRAPPER)
 
+    responsibility = (
+        root.responsibility.kind
+        if root.responsibility else CausalResponsibilityKind.UNKNOWN
+    )
     demonstrated_return = bool(
         at_failure
         and root.cause_kind is RootCauseKind.RETURN_CONTRACT
         and root.contract_demonstrated
         and not transparent
     )
-    if transparent:
+    if responsibility in {
+        CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+        CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT,
+    }:
+        origin_role = OriginRole.BOUNDARY
+        relation = RelationToFailure.DIRECT if at_failure else RelationToFailure.UPSTREAM
+    elif responsibility is CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT:
+        origin_role = OriginRole.SOURCE
+        relation = RelationToFailure.DIRECT if at_failure else RelationToFailure.UPSTREAM
+    elif transparent:
         origin_role = OriginRole.INTERMEDIARY
         relation = RelationToFailure.INTERMEDIATE
     elif at_failure and not demonstrated_return:
@@ -412,8 +425,7 @@ def compare_root_candidates(
             argument_profile
             and returned_profile
             and (
-                argument_profile.boundary_id in returned.causal_path
-                or argument_profile.actual_argument_id in returned.causal_path
+                argument_profile.actual_argument_id in returned.causal_path
                 or returned_profile.return_site_id in argument.causal_path
             )
         )
@@ -470,6 +482,31 @@ def compare_root_candidates(
         and left.causal_path
         and right.causal_path
     ):
+        left_binding = (
+            left.responsibility.binding_id if left.responsibility else None
+        )
+        right_binding = (
+            right.responsibility.binding_id if right.responsibility else None
+        )
+        same_formal_parameter = bool(
+            left.responsibility
+            and right.responsibility
+            and left.responsibility.formal_parameter_id
+            and left.responsibility.formal_parameter_id
+            == right.responsibility.formal_parameter_id
+        )
+        if (
+            left_binding
+            and right_binding
+            and left_binding != right_binding
+            and same_formal_parameter
+        ):
+            return RootPairwiseComparison(
+                None,
+                None,
+                PairwiseRootReason.INSUFFICIENT_TO_DISTINGUISH,
+                True,
+            )
         left_origin, right_origin = left.causal_path[0], right.causal_path[0]
         if right_origin in left.causal_path[1:]:
             return result(left, right, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN)
@@ -554,7 +591,56 @@ def compare_root_candidates(
     direct_source_kinds = {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
     if (left.cause_kind in direct_source_kinds) != (right.cause_kind in direct_source_kinds):
         source, alternate = (left, right) if left.cause_kind in direct_source_kinds else (right, left)
+        source_binding = (
+            source.responsibility.binding_id if source.responsibility else None
+        )
+        alternate_binding = (
+            alternate.responsibility.binding_id
+            if alternate.responsibility else None
+        )
+        same_binding = bool(
+            source_binding
+            and alternate_binding
+            and source_binding == alternate_binding
+        )
+        structurally_connected = bool(
+            alternate.causal_path
+            and source.causal_path
+            and (
+                alternate.causal_path[0] in source.causal_path
+                or source.causal_path[0] in alternate.causal_path
+            )
+        )
+        slice_nodes = {item.id: item for item in causal_slice.nodes}
+        actual_argument = (
+            slice_nodes.get(alternate.responsibility.actual_argument_id)
+            if alternate.responsibility else None
+        )
+        source_boundary = next((
+            slice_nodes.get(node_id)
+            for node_id in source.causal_path[1:]
+            if slice_nodes.get(node_id)
+            and slice_nodes[node_id].kind is CausalNodeKind.PARAMETER
+        ), None)
+        constructor_default_relation = bool(
+            actual_argument
+            and actual_argument.kind is CausalNodeKind.CALL
+            and source_boundary
+            and source_boundary.scope
+            and source_boundary.scope.rsplit(".", 1)[0].rsplit(".", 1)[-1]
+            == str(actual_argument.symbol or "").rsplit(".", 1)[-1]
+        )
+        unrelated_argument_bindings = bool(
+            alternate.cause_kind is RootCauseKind.ARGUMENT_BINDING
+            and not (
+                same_binding
+                or structurally_connected
+                or constructor_default_relation
+            )
+        )
         if (
+            not unrelated_argument_bindings
+            and
             (source.origin_path, source.origin_line)
             != (alternate.origin_path, alternate.origin_line)
             and
@@ -657,7 +743,7 @@ def semantic_dominant_root(
                 and binding.origin_line == literal.origin_line
                 and binding.causal_path
                 and len(literal.causal_path) > 1
-                and literal.causal_path[1] == binding.causal_path[0]
+                and binding.causal_path[0] in literal.causal_path[1:]
             ):
                 if binding.id not in rejected:
                     rejected.add(binding.id)

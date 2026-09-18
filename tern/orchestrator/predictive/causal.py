@@ -132,6 +132,20 @@ def compatible_strategies(cause: RootCauseKind) -> tuple[RepairStrategyKind, ...
 def compatible_strategies_for_root(
     root: RootCauseCandidate, causal_slice: CausalSlice | None
 ) -> tuple[RepairStrategyKind, ...]:
+    responsibility = (
+        root.responsibility.kind
+        if root.responsibility else CausalResponsibilityKind.UNKNOWN
+    )
+    if responsibility in {
+        CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT,
+        CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+    }:
+        return (RepairStrategyKind.CORRECT_ARGUMENT,)
+    if responsibility is CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT:
+        return (
+            RepairStrategyKind.FIX_CONSUMER_CONTRACT,
+            RepairStrategyKind.VALIDATE_BOUNDARY,
+        )
     strategies = list(compatible_strategies(root.cause_kind))
     if (
         root.cause_kind is RootCauseKind.NULL_FLOW
@@ -1629,7 +1643,8 @@ def structurally_dominant_root(
     """Return a root only when deterministic evidence makes alternatives weaker."""
     folded = problem.casefold()
     binding_hint = bool(re.search(
-        r"\b(?:argument|parameter|input|default|passed|supplied)\b",
+        r"\b(?:argument|parameter|input|default|passed|"
+        r"suppl(?:y|ies|ied)|receiv(?:e|es|ed)|bind(?:s|ing)?|bound)\b",
         folded,
     ) or re.search(
         r"\bboundary\s+(?:owned|handled|validated)\s+by\b",
@@ -1711,8 +1726,17 @@ def structurally_dominant_root(
         binding_scores: dict[str, int] = {}
         bindings: dict[str, RootCauseCandidate] = {}
         for item in candidates:
+            equivalent_flow = any(
+                alternate.cause_kind
+                in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+                and alternate.responsibility
+                and item.responsibility
+                and alternate.responsibility.binding_id
+                == item.responsibility.binding_id
+                for alternate in candidates
+            )
             if (
-                item.id in semantically_rejected
+                item.id in semantically_rejected and not equivalent_flow
                 or
                 item.cause_kind is not RootCauseKind.ARGUMENT_BINDING
                 or item.structural_support != 1.0
@@ -1722,7 +1746,11 @@ def structurally_dominant_root(
                 continue
             origin = nodes.get(item.causal_path[0]) if item.causal_path else None
             scope = origin.scope if origin else None
+            profile = item.responsibility
+            actual = nodes.get(profile.actual_argument_id) if profile else None
             score = 0
+            if profile and profile.binding_id:
+                score += 1
             if re.search(
                 rf"\b{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}\b",
                 folded,
@@ -1743,6 +1771,34 @@ def structurally_dominant_root(
                 folded,
             ):
                 score += 3
+            if (
+                profile
+                and profile.keyword_binding
+                and actual
+                and scope
+                and re.search(
+                    rf"\b{re.escape(scope.rsplit('.', 1)[-1].casefold())}\b",
+                    folded,
+                )
+                and re.search(
+                    rf"\b{re.escape(profile.keyword_binding.casefold())}\s*=\s*"
+                    rf"{re.escape(actual.expression.casefold())}\b",
+                    folded,
+                )
+            ):
+                score += 4
+            if item.origin_symbol and re.search(
+                rf"\b(?:invalid|wrong|bad|incorrect|defective)\s+"
+                rf"{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}\b",
+                folded,
+            ):
+                score += 2
+            if item.origin_symbol and re.search(
+                rf"\b{re.escape(item.origin_symbol.rsplit('.', 1)[-1].casefold())}"
+                rf"\s+is\s+(?:valid|correct)\b",
+                folded,
+            ):
+                score -= 5
             if score:
                 binding_scores[item.id] = score
                 bindings[item.id] = item
@@ -1757,10 +1813,26 @@ def structurally_dominant_root(
                 (item.origin_path, item.origin_symbol) for item in strongest
             }
             if len(semantic_origins) == 1:
-                return sorted(
+                selected = sorted(
                     strongest,
                     key=lambda item: (-item.score, item.causal_distance, item.origin_line, item.id),
                 )[0]
+                binding_id = (
+                    selected.responsibility.binding_id
+                    if selected.responsibility else None
+                )
+                equivalent_values = [
+                    item for item in candidates
+                    if binding_id
+                    and item.responsibility
+                    and item.responsibility.binding_id == binding_id
+                    and item.cause_kind
+                    in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+                ]
+                return sorted(
+                    equivalent_values,
+                    key=lambda item: (-item.score, item.causal_distance, item.id),
+                )[0] if equivalent_values else selected
 
     if causal_slice:
         from .semantic import equivalent_root_origin

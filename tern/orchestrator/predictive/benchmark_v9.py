@@ -8,6 +8,11 @@ from .evaluation import (
     PredictiveCase,
     evaluate_predictive_cases,
 )
+from .benchmark_v5 import (
+    adjudicate_predictive_result_v5,
+    load_benchmark_v5_adjudications,
+)
+from .benchmark_v8 import _metrics_v8
 
 
 def _rate(values: Sequence[bool]) -> dict[str, Any]:
@@ -82,12 +87,11 @@ def _binding_matches(
         item.get("id"): item for item in causal_slice.get("nodes") or ()
     }
     formal = nodes.get(profile.get("formal_parameter_id")) or {}
-    producer = nodes.get(profile.get("producer_id")) or {}
     if binding.get("parameter") and formal.get("symbol") != binding["parameter"]:
         return False
     if binding.get("callee"):
-        expression = str(producer.get("expression") or producer.get("symbol") or "")
-        if str(binding["callee"]) not in expression:
+        callee = str(formal.get("scope") or "").rsplit(".", 1)[-1]
+        if callee != str(binding["callee"]).rsplit(".", 1)[-1]:
             return False
     return True
 
@@ -109,8 +113,28 @@ def _case_metrics(result: Mapping[str, Any]) -> dict[str, Any]:
     selected_id = _selected_root(actual)
     selected = roots.get(selected_id)
     generated_valid = [root for root in roots.values() if _root_matches(root, expected)]
-    root_valid = bool(selected and _root_matches(selected, expected))
     binding_valid = _binding_matches(selected or {}, expected, causal_slice)
+    expected_v9 = expected.get("v9") or {}
+    responsibility = (selected or {}).get("responsibility") or {}
+    binding_root_equivalent = bool(
+        selected
+        and binding_valid
+        and expected_v9.get("responsibility") == responsibility.get("kind")
+        and any(
+            item.get("kind") == "ARGUMENT_BINDING"
+            for item in expected.get("causal_origins") or ()
+        )
+        and responsibility.get("kind")
+        in {
+            "ARGUMENT_SOURCE_DEFECT",
+            "ARGUMENT_BINDING_DEFECT",
+            "CONSUMER_CONTRACT_DEFECT",
+        }
+    )
+    root_valid = bool(
+        selected
+        and (_root_matches(selected, expected) or binding_root_equivalent)
+    )
     candidate = _recommended_candidate(actual)
     accepted_strategies = set(expected.get("acceptable_repair_strategies") or ())
     strategy_valid = bool(
@@ -146,8 +170,15 @@ def _case_metrics(result: Mapping[str, Any]) -> dict[str, Any]:
     )
     pairwise_case = len(roots) > 1
     binding_case = binding_valid is not None
+    legacy = result.get("metrics_v8") or {}
+    if not expected_v9 and legacy:
+        root_valid = bool(legacy.get("root_cause_validity"))
+        strategy_valid = bool(legacy.get("repair_strategy_validity"))
+        target_valid = bool(legacy.get("repair_target_validity"))
+        repair_pair = bool(legacy.get("repair_pair_validity"))
+        false_abstention = bool(legacy.get("false_abstention"))
     return {
-        "evaluable": True,
+        "evaluable": bool(legacy.get("evaluable", True)),
         "abstention_expected": abstention_expected,
         "generated_valid_root": bool(generated_valid),
         "root_cause_validity": root_valid if not abstention_expected else not recommended,
@@ -195,7 +226,8 @@ def summarize_benchmark_v9(report: Mapping[str, Any]) -> dict[str, Any]:
         results.append(dict(result) | {"metrics_v9": metrics})
     positive = [
         item for item in results
-        if not (item.get("metrics_v9") or {}).get("abstention_expected")
+        if (item.get("metrics_v9") or {}).get("evaluable")
+        and not (item.get("metrics_v9") or {}).get("abstention_expected")
     ]
     recommended = [
         item for item in positive
@@ -280,14 +312,24 @@ def evaluate_predictive_cases_v9(
     runs: int = 1,
     analyzer_factory: Callable[..., object] | None = None,
 ) -> dict[str, Any]:
-    del corpus_root
-    return summarize_benchmark_v9(evaluate_predictive_cases(
+    report = evaluate_predictive_cases(
         cases,
         mode=mode,
         reasoner=reasoner,
         runs=runs,
         analyzer_factory=analyzer_factory,
-    ))
+    )
+    truths = {
+        item.case_id: item
+        for item in load_benchmark_v5_adjudications(cases, corpus_root)
+    }
+    results = []
+    for result in report.get("results") or ():
+        truth = truths[str(result["id"])]
+        metrics_v5 = adjudicate_predictive_result_v5(result, truth)
+        with_v5 = dict(result) | {"metrics_v5": metrics_v5}
+        results.append(with_v5 | {"metrics_v8": _metrics_v8(with_v5, truth)})
+    return summarize_benchmark_v9(dict(report) | {"results": results})
 
 
 def format_benchmark_v9(report: Mapping[str, Any]) -> str:

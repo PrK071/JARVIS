@@ -4,6 +4,7 @@ from tern.orchestrator.predictive.causal import (
     CausalResponsibilityKind,
     RepairStrategyKind,
     RootCauseKind,
+    compatible_strategies_for_root,
 )
 from tern.orchestrator.predictive.benchmark_v9 import summarize_benchmark_v9
 from tern.orchestrator.predictive.evaluation import _retrieval, load_predictive_cases
@@ -142,6 +143,19 @@ def test_correct_argument_targets_exact_binding_not_sibling():
         target.scope_kind is RepairTargetKind.PARAMETER
         and target.parameter == "total"
         for target in targets
+    )
+
+
+def test_argument_responsibility_restricts_repair_family_before_ranking():
+    context = _context("CI9D-007")
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.responsibility.kind is CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT
+        and item.cause_kind is RootCauseKind.TYPE_FLOW
+    )
+
+    assert compatible_strategies_for_root(root, context.causal_slice) == (
+        RepairStrategyKind.CORRECT_ARGUMENT,
     )
 
 
