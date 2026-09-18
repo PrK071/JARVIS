@@ -147,41 +147,107 @@ def _incoming(causal_slice: CausalSlice) -> Mapping[str, tuple[object, ...]]:
     return {key: tuple(sorted(items, key=lambda item: item.id)) for key, items in values.items()}
 
 
-def _transparent_expression(expression: str) -> bool:
+def _transparent_forwarded_names(expression: str) -> tuple[str, ...] | None:
     value = expression.strip()
     if not value.startswith("return "):
-        return False
+        return None
     returned = value[7:].strip()
     if not returned:
-        return False
+        return None
     try:
         parsed = ast.parse(value).body[0]
     except (SyntaxError, IndexError):
-        return False
+        return None
     if not isinstance(parsed, ast.Return) or parsed.value is None:
-        return False
+        return None
     if isinstance(parsed.value, (ast.Name, ast.Attribute)):
-        return True
+        name = parsed.value.id if isinstance(parsed.value, ast.Name) else None
+        return (name,) if name else ()
     if not isinstance(parsed.value, ast.Call):
-        return False
+        return None
     forwarded = (*parsed.value.args, *(item.value for item in parsed.value.keywords))
-    return all(isinstance(item, (ast.Name, ast.Attribute)) for item in forwarded)
+    if not all(isinstance(item, (ast.Name, ast.Attribute)) for item in forwarded):
+        return None
+    names: list[str] = []
+    for item in forwarded:
+        current = item
+        while isinstance(current, ast.Attribute):
+            current = current.value
+        if isinstance(current, ast.Name):
+            names.append(current.id)
+    return tuple(names)
 
 
 def is_transparent_wrapper(root: RootCauseCandidate, causal_slice: CausalSlice) -> bool:
     node = _origin_node(root, causal_slice)
     if node is None or node.kind is not CausalNodeKind.RETURN_VALUE:
         return False
-    if not _transparent_expression(node.expression):
+    forwarded_names = _transparent_forwarded_names(node.expression)
+    if forwarded_names is None:
+        return False
+    try:
+        returned = ast.parse(node.expression).body[0]
+        returns_call = isinstance(returned, ast.Return) and isinstance(
+            returned.value, ast.Call
+        )
+    except (SyntaxError, IndexError):
         return False
     nodes = {item.id: item for item in causal_slice.nodes}
+    parameters = {
+        item.symbol
+        for item in nodes.values()
+        if item.path == node.path
+        and item.scope == node.scope
+        and item.kind is CausalNodeKind.PARAMETER
+        and item.symbol
+    }
+    # A forwarding wrapper passes its own inputs unchanged.  A call fed by a
+    # local value (for example ``merged = ...; return parse(merged)``) is a
+    # transformation boundary and may itself violate the return contract.
     incoming = _incoming(causal_slice)
+    for name in forwarded_names:
+        if name in parameters:
+            # ``return parameter`` may own a broken return contract.  Only a
+            # direct delegated call can transparently forward parameters.
+            if not returns_call:
+                return False
+            continue
+        local_nodes = [
+            item for item in nodes.values()
+            if item.path == node.path
+            and item.scope == node.scope
+            and item.kind is CausalNodeKind.LOCAL_VARIABLE
+            and item.symbol == name
+        ]
+        if len(local_nodes) != 1:
+            return False
+        producers = [
+            edge for edge in incoming.get(local_nodes[0].id, ())
+            if edge.deterministic
+            and edge.kind is CausalEdgeKind.RETURNED_FROM
+            and nodes[edge.source_id].kind is CausalNodeKind.CALL
+        ]
+        if len(producers) != 1:
+            return False
+        call_inputs = [
+            edge for edge in incoming.get(producers[0].source_id, ())
+            if edge.deterministic
+            and edge.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+        ]
+        if any(
+            nodes[edge.source_id].kind is not CausalNodeKind.PARAMETER
+            or nodes[edge.source_id].path != node.path
+            or nodes[edge.source_id].scope != node.scope
+            for edge in call_inputs
+        ):
+            return False
     queue: deque[tuple[str, int]] = deque([(node.id, 0)])
     visited = {node.id}
     allowed = {
         CausalEdgeKind.ASSIGNED_FROM,
         CausalEdgeKind.RETURNED_FROM,
         CausalEdgeKind.CALLS,
+        CausalEdgeKind.PASSED_AS_ARGUMENT,
     }
     while queue:
         current, depth = queue.popleft()
@@ -227,10 +293,16 @@ def root_cause_signature(
     if transparent:
         roles.add(CausalRole.INTERMEDIATE_WRAPPER)
 
+    demonstrated_return = bool(
+        at_failure
+        and root.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and root.contract_demonstrated
+        and not transparent
+    )
     if transparent:
         origin_role = OriginRole.INTERMEDIARY
         relation = RelationToFailure.INTERMEDIATE
-    elif at_failure:
+    elif at_failure and not demonstrated_return:
         origin_role = OriginRole.MANIFESTATION
         relation = RelationToFailure.MANIFESTATION
     elif node and node.kind is CausalNodeKind.PARAMETER:
@@ -304,9 +376,63 @@ def compare_root_candidates(
     right_config = CausalRole.CONFIG_SOURCE in right_signature.causal_roles
     if left_config != right_config:
         source, alternate = (left, right) if left_config else (right, left)
-        if source.structural_support == 1.0 and source.completeness == 1.0:
+        alternate_signature = right_signature if left_config else left_signature
+        if (
+            source.structural_support == 1.0
+            and source.completeness == 1.0
+            and not (
+                alternate.cause_kind is RootCauseKind.RETURN_CONTRACT
+                and alternate_signature.contract_role is ContractRole.RETURN
+                and alternate.contract_demonstrated
+            )
+        ):
             return result(
                 source, alternate, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN
+            )
+    left_return = (
+        left.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and CausalRole.RETURN_SOURCE in left_signature.causal_roles
+        and CausalRole.INTERMEDIATE_WRAPPER not in left_signature.causal_roles
+    )
+    right_return = (
+        right.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and CausalRole.RETURN_SOURCE in right_signature.causal_roles
+        and CausalRole.INTERMEDIATE_WRAPPER not in right_signature.causal_roles
+    )
+    if left_return != right_return:
+        source, alternate = (left, right) if left_return else (right, left)
+        alternate_signature = right_signature if left_return else left_signature
+        if (
+            source.structural_support == source.completeness == 1.0
+            and (
+                source.score >= 0.80
+                and source.score - alternate.score >= 0.05
+                or (
+                    source.contract_demonstrated
+                    and alternate_signature.origin_role
+                    in {OriginRole.BOUNDARY, OriginRole.MANIFESTATION}
+                )
+                or (
+                    source.contract_demonstrated
+                    and CausalRole.CONFIG_SOURCE in alternate_signature.causal_roles
+                )
+            )
+        ):
+            return result(
+                source, alternate, PairwiseRootReason.UPSTREAM_CONTRACT_ORIGIN
+            )
+    if left_return and right_return:
+        stronger, weaker = (
+            (left, right) if left.score > right.score else (right, left)
+        )
+        if (
+            stronger.contract_demonstrated
+            and not weaker.contract_demonstrated
+        ) or (
+            stronger.score >= 0.90 and stronger.score - weaker.score >= 0.08
+        ):
+            return result(
+                stronger, weaker, PairwiseRootReason.STRONGER_STRUCTURAL_PATH
             )
     direct_source_kinds = {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
     if (left.cause_kind in direct_source_kinds) != (right.cause_kind in direct_source_kinds):
@@ -379,7 +505,7 @@ def semantic_dominant_root(
             <= set(signature.causal_roles)
         ):
             groups.setdefault((item.origin_path, item.origin_line), []).append(item)
-    deferred_representations: set[str] = set()
+    grouped_representations = 0
     for values in groups.values():
         if len(values) < 2:
             continue
@@ -391,9 +517,35 @@ def semantic_dominant_root(
                 item.id,
             ),
         )[0]
-        deferred_representations.add(representative.id)
-        rejected.update(item.id for item in values if item.id != representative.id)
-    decisive = 0
+        duplicates = {item.id for item in values if item.id != representative.id}
+        rejected.update(duplicates)
+        grouped_representations += len(duplicates)
+
+    # A literal default and its parameter node are two AST views of one
+    # origin.  Prefer the concrete value-flow representation only when the
+    # deterministic path directly binds that literal to that parameter.
+    nodes = {item.id: item for item in causal_slice.nodes}
+    for literal in production:
+        if literal.cause_kind not in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}:
+            continue
+        if not literal.causal_path:
+            continue
+        origin = nodes.get(literal.causal_path[0])
+        if origin is None or origin.kind is not CausalNodeKind.LITERAL:
+            continue
+        for binding in production:
+            if (
+                binding.cause_kind is RootCauseKind.ARGUMENT_BINDING
+                and binding.origin_path == literal.origin_path
+                and binding.origin_line == literal.origin_line
+                and binding.causal_path
+                and len(literal.causal_path) > 1
+                and literal.causal_path[1] == binding.causal_path[0]
+            ):
+                if binding.id not in rejected:
+                    rejected.add(binding.id)
+                    grouped_representations += 1
+    decisive = grouped_representations
     for index, left in enumerate(production):
         for right in production[index + 1 :]:
             comparison = compare_root_candidates(left, right, causal_slice)
@@ -402,8 +554,6 @@ def semantic_dominant_root(
                 rejected.add(comparison.rejected_id)
     unbeaten = [item for item in production if item.id not in rejected]
     if decisive and len(unbeaten) == 1:
-        if unbeaten[0].id in deferred_representations:
-            return None
         return unbeaten[0]
     return None
 

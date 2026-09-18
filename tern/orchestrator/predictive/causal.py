@@ -213,6 +213,7 @@ class RootCauseCandidate:
     completeness: float
     score: float
     statement: str
+    contract_demonstrated: bool = False
 
     def as_dict(self) -> dict[str, object]:
         return {"id": self.id, "cause_kind": self.cause_kind.value,
@@ -222,7 +223,8 @@ class RootCauseCandidate:
                 "evidence_ids": list(self.evidence_ids), "direct_support": self.direct_support,
                 "structural_support": self.structural_support,
                 "causal_distance": self.causal_distance, "completeness": self.completeness,
-                "score": self.score, "statement": self.statement}
+                "score": self.score, "statement": self.statement,
+                "contract_demonstrated": self.contract_demonstrated}
 
 
 @dataclass(frozen=True)
@@ -690,6 +692,46 @@ def _node_kind_for_cause(node: CausalNode, problem: str) -> RootCauseKind:
     return RootCauseKind.STATE_PROPAGATION
 
 
+def _return_contract_demonstrated(
+    problem: str,
+    node: CausalNode,
+    *,
+    reported_failure_site: bool,
+) -> bool:
+    if node.kind is not CausalNodeKind.RETURN_VALUE:
+        return False
+    folded = problem.casefold()
+    symbol = (node.symbol or "").rsplit(".", 1)[-1].casefold()
+    symbol_contract = bool(
+        symbol
+        and (
+            re.search(
+                rf"\b{re.escape(symbol)}\b[^.;\n]{{0,90}}(?:"
+                rf"\bviolat\w*\b[^.;\n]{{0,55}}\b(?:return|contract)\w*\b|"
+                rf"\b(?:producer|return)\s+contract\b)",
+                folded,
+            )
+            or re.search(
+                rf"\b{re.escape(symbol)}\b.{{0,70}}\bproducer\s+contract\b",
+                folded,
+            )
+            or re.search(
+                rf"\bexpect\w*\b[^.;\n]{{0,45}}\b{re.escape(symbol)}\b"
+                rf"[^.;\n]{{0,45}}\b(?:produc\w*|return\w*)\b",
+                folded,
+            )
+        )
+    )
+    located_return = bool(
+        reported_failure_site
+        and re.search(
+            rf"{re.escape(node.path.casefold())}:{node.line}.{{0,55}}\breturn\w*\b",
+            folded,
+        )
+    )
+    return symbol_contract or located_return
+
+
 def build_causal_slice(
     context: ProblemContext,
     snapshot: ProjectSnapshotV2,
@@ -788,6 +830,7 @@ def build_causal_slice(
         )
 
     failure_path, failure_line = _traceback(context.problem)
+    reported_failure_site = failure_path is not None
     if failure_path and failure_path not in snapshot.file_index:
         suffix = failure_path.removeprefix("./")
         path_matches = tuple(sorted(
@@ -807,12 +850,31 @@ def build_causal_slice(
         cycle for cycle in import_cycles
         if len(set(cycle.strongly_connected_component) & related_paths) >= 2
     )
+    folded_problem = context.problem.casefold()
+    mentions_cycle = "cycle" in folded_problem and _mentions_import_failure(
+        context.problem
+    ) or "partially initialized" in folded_problem
+    explicit_import_nodes = sorted(
+        (
+            node for node in nodes.values()
+            if node.kind is CausalNodeKind.IMPORT
+            and node.path.casefold() in folded_problem
+            and node.symbol
+            and re.search(
+                rf"\b{re.escape(node.symbol.rsplit('.', 1)[-1].casefold())}\b",
+                folded_problem,
+            )
+        ),
+        key=lambda item: (item.path, item.line, item.id),
+    )
+    if failure_path is None and len(explicit_import_nodes) == 1:
+        failure_path = explicit_import_nodes[0].path
+        failure_line = explicit_import_nodes[0].line
     if failure_path is None and relevant_import_cycles:
         first_edge = relevant_import_cycles[0].production_edges[0]
         failure_path, failure_line = first_edge.source, first_edge.line
     symbolic_failure_nodes: list[CausalNode] = []
     if failure_path is None:
-        folded_problem = context.problem.casefold()
         import_failure = "importerror" in folded_problem or "modulenotfounderror" in folded_problem or "import cycle" in folded_problem
         symbolic_failure_nodes = [
             node for node in nodes.values()
@@ -848,14 +910,17 @@ def build_causal_slice(
     # Runtime import cycles are a graph property.  Test imports are observers;
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
     import_cycle_node_ids: set[str] = set()
-    folded_problem = context.problem.casefold()
     import_failure = _mentions_import_failure(context.problem) or bool(relevant_import_cycles)
     if failure_id and import_failure:
         cycles = relevant_import_cycles or import_cycles
         for cycle in cycles:
             relevant = bool(
-                set(cycle.strongly_connected_component) & set(context.related_files)
-                or any(edge.source == failure_path for edge in cycle.observer_edges)
+                any(
+                    edge.source == failure_path
+                    and edge.source_kind.value == "TEST"
+                    and edge.scope == "module"
+                    for edge in cycle.observer_edges
+                )
                 or failure_path in cycle.strongly_connected_component
             )
             if not relevant:
@@ -934,8 +999,10 @@ def build_causal_slice(
         if (
             node.kind is CausalNodeKind.IMPORT
             and import_failure
-            and import_cycle_node_ids
-            and node.id not in import_cycle_node_ids
+            and (
+                (mentions_cycle and node.id not in import_cycle_node_ids)
+                or (import_cycle_node_ids and node.id not in import_cycle_node_ids)
+            )
         ):
             continue
         is_test_input = (
@@ -962,12 +1029,10 @@ def build_causal_slice(
             RootCauseKind.UNKNOWN: 0.0,
         }[kind]
         upstream = node.path != failure_path
-        explicit_return_contract = bool(
-            kind is RootCauseKind.RETURN_CONTRACT
-            and node.path == failure_path
-            and node.line == failure_line
-            and re.search(r"\breturn(?:s|ed|ing)?\b", context.problem, re.IGNORECASE)
-            and re.search(r"\b(?:expect(?:s|ed)?|contract|caller)\b", context.problem, re.IGNORECASE)
+        explicit_return_contract = _return_contract_demonstrated(
+            context.problem,
+            node,
+            reported_failure_site=reported_failure_site,
         )
         failure_manifestation = (
             node.path == failure_path
@@ -1000,6 +1065,7 @@ def build_causal_slice(
             kind, node.path, node.symbol, node.line, failure_path, failure_line,
             path_ids, evidence_ids, round(direct, 4), round(structural, 4),
             distance, completeness, score, statement,
+            explicit_return_contract,
         ))
     distinct_candidates: dict[
         tuple[RootCauseKind, str, str | None, int], RootCauseCandidate

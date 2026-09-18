@@ -74,6 +74,25 @@ def _semantic_root_metrics(
             for item in truth.acceptable_root_causes
         )
     }
+    nodes = {
+        item["id"]: item
+        for item in ((actual.get("causal_slice") or {}).get("nodes") or ())
+    }
+    flow_family = {"NULL_FLOW", "TYPE_FLOW", "RETURN_CONTRACT"}
+    for root_id, root in roots.items():
+        path_nodes = [nodes.get(item) for item in root.get("causal_path") or ()]
+        path_symbols = {
+            str(item.get("symbol") or "").rsplit(".", 1)[-1]
+            for item in path_nodes if item
+        }
+        if any(
+            item.path == root.get("origin_path")
+            and item.cause_kind in flow_family
+            and root.get("cause_kind") in flow_family
+            and (item.symbol is None or item.symbol.rsplit(".", 1)[-1] in path_symbols)
+            for item in truth.acceptable_root_causes
+        ):
+            expected_ids.add(root_id)
     valid_ids = set(expected_ids)
     for root_id, root in roots.items():
         if root_id in valid_ids:

@@ -19,7 +19,12 @@ from tern.orchestrator.predictive.evaluation import (
     load_predictive_cases,
     predictive_corpus_hash,
 )
-from tern.orchestrator.predictive.repair import derive_repair_targets
+from tern.orchestrator.predictive.repair import (
+    RepairTarget,
+    RepairTargetKind,
+    derive_repair_targets,
+    targets_compatible,
+)
 from tern.orchestrator.predictive.benchmark_v5 import load_benchmark_v5_adjudications
 from tern.orchestrator.predictive.robustness import (
     load_counterfactual_cases,
@@ -103,6 +108,53 @@ def test_nontransparent_wrapper_is_not_collapsed():
     assert not is_transparent_wrapper(wrapper, context.causal_slice)
 
 
+def test_call_with_locally_transformed_input_is_not_transparent_wrapper():
+    context = _context("PD-012")
+    transformed = _root(
+        context, kind=RootCauseKind.RETURN_CONTRACT,
+        path="pkg/loader.py", symbol="load",
+    )
+
+    assert not is_transparent_wrapper(transformed, context.causal_slice)
+
+
+def test_literal_default_and_parameter_share_one_semantic_origin():
+    context = _context("PC5D-007")
+    dominant = semantic_dominant_root(
+        context.root_cause_candidates, context.causal_slice
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.NULL_FLOW
+    assert dominant.origin_line == 19
+
+
+def test_demonstrated_return_contract_dominates_input_manifestation():
+    for case_id, expected_symbol in (
+        ("PC3D-003", "load_tax"),
+        ("PD-019", "find_user"),
+        ("PR7D-006", "decode"),
+    ):
+        context = _context(case_id)
+        dominant = structurally_dominant_root(
+            context.root_cause_candidates, context.problem, context.causal_slice
+        )
+
+        assert dominant is not None
+        assert dominant.cause_kind is RootCauseKind.RETURN_CONTRACT
+        assert dominant.origin_symbol == expected_symbol
+
+
+def test_weak_identity_return_does_not_override_argument_source():
+    context = _context("PC5D-009")
+    dominant = structurally_dominant_root(
+        context.root_cause_candidates, context.problem, context.causal_slice
+    )
+
+    assert dominant is not None
+    assert dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
+
+
 def test_compound_return_keeps_upstream_producer_in_causal_candidates():
     context = _context("SV8D-007")
 
@@ -161,6 +213,17 @@ def test_target_signature_normalizes_boundary_scope_granularity():
     )
 
     assert semantic_target_equivalent(left, right)
+
+
+def test_callable_target_compatibility_normalizes_method_qualification():
+    expected = RepairTarget(
+        "pkg/models.py", RepairTargetKind.FUNCTION, "__init__"
+    )
+    actual = RepairTarget(
+        "pkg/models.py", RepairTargetKind.METHOD, "Profile.__init__"
+    )
+
+    assert targets_compatible(actual, expected)
 
 
 def test_semantic_signature_is_unchanged_by_problem_wording():

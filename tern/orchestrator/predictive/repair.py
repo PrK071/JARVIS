@@ -111,6 +111,15 @@ def target_refines(actual: RepairTarget, expected: RepairTarget) -> bool:
 
 
 def targets_compatible(actual: RepairTarget, expected: RepairTarget) -> bool:
+    callable_scopes = {RepairTargetKind.FUNCTION, RepairTargetKind.METHOD}
+    if (
+        actual.path == expected.path
+        and actual.scope_kind in callable_scopes
+        and expected.scope_kind in callable_scopes
+        and (actual.symbol or "").rsplit(".", 1)[-1]
+        == (expected.symbol or "").rsplit(".", 1)[-1]
+    ):
+        return True
     return target_refines(actual, expected) or target_refines(expected, actual)
 
 

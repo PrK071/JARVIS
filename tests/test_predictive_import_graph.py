@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tern.orchestrator.predictive.import_graph import find_import_cycles, import_edges
 from tern.orchestrator.project_intelligence_v2 import ProjectIndexBuilderV2
+from tern.orchestrator.predictive.evaluation import _retrieval, load_predictive_cases
 
 
 def _project(tmp_path, files):
@@ -55,3 +56,17 @@ def test_type_checking_and_local_imports_are_not_runtime_cycle_edges(tmp_path):
     assert any(edge.type_checking_only for edge in edges)
     assert any(edge.scope == "load" for edge in edges)
     assert find_import_cycles(snapshot) == ()
+
+
+def test_cycle_claim_does_not_promote_type_checking_import_to_root():
+    case = next(item for item in load_predictive_cases() if item.id == "PC5D-003")
+    context, _latency = _retrieval(case)
+
+    assert not context.root_cause_candidates
+
+
+def test_local_import_anchor_does_not_attach_unrelated_runtime_scc():
+    case = next(item for item in load_predictive_cases() if item.id == "PC5D-004")
+    context, _latency = _retrieval(case)
+
+    assert not context.root_cause_candidates
