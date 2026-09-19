@@ -1,0 +1,30 @@
+{
+  "argument_slot_identity": {
+    "argument_binding_identity_validity": 0.0,
+    "argument_slot_target_accuracy": 0.0,
+    "argument_vs_return_accuracy": 0.6666666666666666,
+    "import_scc_identity_validity": 1.0,
+    "root_cause_validity": 0.8
+  },
+  "features_on": {
+    "argument_binding_identity_validity": 1.0,
+    "argument_slot_target_accuracy": 1.0,
+    "argument_vs_return_accuracy": 1.0,
+    "import_scc_identity_validity": 1.0,
+    "root_cause_validity": 1.0
+  },
+  "responsibility_profile": {
+    "argument_binding_identity_validity": 0.0,
+    "argument_slot_target_accuracy": 0.0,
+    "argument_vs_return_accuracy": 0.0,
+    "import_scc_identity_validity": 0.0,
+    "root_cause_validity": 0.0
+  },
+  "scc_identity": {
+    "argument_binding_identity_validity": 1.0,
+    "argument_slot_target_accuracy": 1.0,
+    "argument_vs_return_accuracy": 1.0,
+    "import_scc_identity_validity": 0.0,
+    "root_cause_validity": 0.6666666666666666
+  }
+}
