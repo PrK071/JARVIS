@@ -4,7 +4,11 @@ import ast
 import json
 from pathlib import Path
 
-from tern.orchestrator.predictive.evaluation import _retrieval, load_predictive_cases
+from tern.orchestrator.predictive.evaluation import (
+    CORPUS_ROOT,
+    _retrieval,
+    load_predictive_cases,
+)
 from tern.orchestrator.predictive.benchmark_v5 import load_benchmark_v5_adjudications
 from tern.orchestrator.predictive.robustness import (
     AbstentionStage,
@@ -96,6 +100,27 @@ def test_symbol_and_file_renames_update_structural_truth(tmp_path):
     assert values[0][2].symbols
     assert values[1][2].paths
     assert all(item.acceptable_root_causes for _case, item, _mapping in values)
+
+
+def test_symbol_rename_can_use_top_level_callable_in_import_scc(tmp_path):
+    spec = next(
+        item for item in load_metamorphic_cases(
+            CORPUS_ROOT / "v9", split="development"
+        )
+        if item.id.startswith("MI9D-001::2:SYMBOL_RENAME")
+    )
+    case = _case(spec.base_case_id)
+    truth = load_benchmark_v5_adjudications((case,))[0]
+
+    transformed, _truth, mapping = materialize_metamorphic_case(
+        spec, case, truth, tmp_path
+    )
+
+    assert mapping.symbols
+    assert all(
+        ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for path in transformed.fixture_root.rglob("*.py")
+    )
 
 
 def test_abstention_funnel_identifies_exact_loss_stage():

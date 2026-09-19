@@ -453,7 +453,16 @@ def materialize_metamorphic_case(
                 ),
                 next(
                     (arg.arg for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) for arg in node.args.args),
-                    "",
+                    next(
+                        (
+                            node.name for node in ast.walk(tree)
+                            if isinstance(
+                                node,
+                                (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef),
+                            )
+                        ),
+                        "",
+                    ),
                 ),
             )
         if not old:
