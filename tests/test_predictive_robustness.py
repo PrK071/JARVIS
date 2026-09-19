@@ -123,6 +123,73 @@ def test_symbol_rename_can_use_top_level_callable_in_import_scc(tmp_path):
     )
 
 
+def test_v9_robustness_uses_responsibility_aware_root_adjudication(
+    monkeypatch,
+):
+    from tern.orchestrator.predictive import robustness
+
+    case = _case("CI9D-007")
+    context = _retrieval(case)[0]
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.responsibility.kind.value == "ARGUMENT_SOURCE_DEFECT"
+        and item.cause_kind.value == "TYPE_FLOW"
+    )
+    actual = {
+        "hypotheses": [{"root_cause_id": root.id}],
+        "root_cause_candidates": [root.as_dict()],
+        "causal_slice": context.causal_slice.as_dict(),
+        "candidates": [{
+            "id": "C1",
+            "strategy_kind": "CORRECT_ARGUMENT",
+            "repair_targets": [{
+                "path": "flow/operations.py",
+                "scope_kind": "CALL_SITE",
+                "symbol": "caller_supplies_text",
+            }],
+        }],
+        "recommended_candidate_id": "C1",
+    }
+    result = {
+        "id": case.id,
+        "expected": case.expected,
+        "actual": actual,
+        "diagnostics": {
+            "deterministic_across_runs": True,
+            "decision_stable_across_runs": True,
+        },
+        "safety": {},
+        "telemetry": {},
+    }
+    monkeypatch.setattr(
+        robustness,
+        "evaluate_predictive_cases",
+        lambda *_args, **_kwargs: {
+            "results": [result],
+            "safety": {"passed": True},
+        },
+    )
+    monkeypatch.setattr(
+        robustness,
+        "materialize_metamorphic_case",
+        lambda _spec, base, truth, _destination: (
+            base,
+            truth,
+            robustness.TransformationMap({}, {}, {}),
+        ),
+    )
+
+    report = robustness.evaluate_robustness_suite(
+        split="development",
+        mode="baseline",
+        suite_version=9,
+        base_case_ids=(case.id,),
+        limit=1,
+    )
+
+    assert report["variant_quality"]["root_cause_validity"] == 1.0
+
+
 def test_abstention_funnel_identifies_exact_loss_stage():
     results = [
         {"actual": {"root_cause_candidates": []}, "retrieval": {"failure_codes": []}},

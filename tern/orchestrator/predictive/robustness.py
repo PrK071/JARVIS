@@ -1015,7 +1015,17 @@ def evaluate_robustness_suite(
             base_adjudication = adjudicate_predictive_result_v5(
                 base_result, base_truths[base.id]
             )
-            if suite_version >= 8:
+            if suite_version >= 9:
+                # v9 evaluates entity identity and causal responsibility. A
+                # TYPE_FLOW root can be the exact structural representation
+                # of an expected ARGUMENT_BINDING when its slot identity and
+                # responsibility match; the v5/v8 lexical-kind matcher cannot
+                # express that equivalence.
+                from .benchmark_v9 import _case_metrics
+
+                adjudication = _case_metrics(result)
+                base_adjudication = _case_metrics(base_result)
+            elif suite_version >= 8:
                 # v8 canonical evaluation recognizes semantically equivalent
                 # causal representations (for example TYPE_FLOW and
                 # RETURN_CONTRACT at one producer site).  Robustness must use
