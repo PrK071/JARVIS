@@ -13,6 +13,7 @@ from .benchmark_v5 import (
     load_benchmark_v5_adjudications,
 )
 from .benchmark_v8 import _metrics_v8
+from .benchmark_v8 import summarize_robustness_v8
 
 
 def _rate(values: Sequence[bool]) -> dict[str, Any]:
@@ -381,3 +382,114 @@ def format_benchmark_v9(report: Mapping[str, Any]) -> str:
     gate = report.get("stage_gate_v9") or {}
     lines.append(f"stage gate: {'PASS' if gate.get('passed') else 'FAIL'}")
     return "\n".join(lines)
+
+
+def summarize_robustness_v9(
+    metamorphic: Mapping[str, Any], counterfactual: Mapping[str, Any]
+) -> dict[str, Any]:
+    report = summarize_robustness_v8(metamorphic, counterfactual)
+    rows = list(metamorphic.get("results") or ())
+    counterfactual_rows = list(counterfactual.get("results") or ())
+
+    def signature(row: Mapping[str, Any], side: str) -> Sequence[Any]:
+        return (row.get(side) or {}).get("root_signature") or ()
+
+    def responsibility(row: Mapping[str, Any], side: str) -> str | None:
+        value = signature(row, side)
+        return str(value[-2]) if len(value) >= 2 else None
+
+    def roles(row: Mapping[str, Any], side: str) -> Sequence[Any]:
+        value = signature(row, side)
+        return value[1] if len(value) > 1 else ()
+
+    scc_rows = [
+        row for row in rows
+        if "IMPORT_CYCLE" in roles(row, "base_signature")
+    ]
+    binding_rows = [
+        row for row in rows
+        if len(signature(row, "base_signature")) > 5
+        and str(signature(row, "base_signature")[5]).startswith("ARGUMENT_SLOT:")
+    ]
+    argument_return_rows = [
+        row for row in counterfactual_rows
+        if {
+            responsibility(row, "base"),
+            responsibility(row, "counterfactual"),
+        } <= {"ARGUMENT_SOURCE_DEFECT", "ARGUMENT_BINDING_DEFECT", "RETURN_CONTRACT_DEFECT"}
+        and responsibility(row, "base") != responsibility(row, "counterfactual")
+    ]
+    import_switch_rows = [
+        row for row in counterfactual_rows
+        if "IMPORT_GRAPH_DEFECT" in {
+            responsibility(row, "base"),
+            responsibility(row, "counterfactual"),
+        }
+    ]
+
+    denominators = dict(report.get("metric_denominators") or {}) | {
+        "scc_invariance": _rate([
+            bool((row.get("checks") or {}).get("root_cause_invariance"))
+            for row in scc_rows
+        ]),
+        "root_responsibility_invariance": _rate([
+            responsibility(row, "base_signature")
+            == responsibility(row, "variant_signature")
+            for row in rows
+        ]),
+        "argument_binding_invariance": _rate([
+            bool((row.get("checks") or {}).get("root_cause_invariance"))
+            for row in binding_rows
+        ]),
+        "argument_return_switch_sensitivity": _rate([
+            bool((row.get("checks") or {}).get("counterfactual_root_sensitivity"))
+            for row in argument_return_rows
+        ]),
+        "import_cycle_removal_sensitivity": _rate([
+            bool((row.get("checks") or {}).get("counterfactual_root_sensitivity"))
+            for row in import_switch_rows
+        ]),
+    }
+    metrics = dict(report.get("metrics") or {}) | {
+        name: value["value"] for name, value in denominators.items()
+    }
+    holdout = metamorphic.get("split") == "holdout_v9"
+    thresholds = {
+        "scc_invariance": 0.90 if holdout else 0.95,
+        "root_responsibility_invariance": 0.90 if holdout else 0.95,
+        "argument_binding_invariance": 0.90 if holdout else 0.95,
+        "repair_invariance": 0.90 if holdout else 0.95,
+        "target_signature_invariance": 0.90 if holdout else 0.95,
+        "wording_invariance": 0.90 if holdout else 0.95,
+        "argument_return_switch_sensitivity": 0.90,
+        "import_cycle_removal_sensitivity": 0.90,
+    }
+    checks = {
+        name: metrics.get(name) is not None and float(metrics[name]) >= threshold
+        for name, threshold in thresholds.items()
+    }
+    checks["safety"] = bool((report.get("safety") or {}).get("passed"))
+    return dict(report) | {
+        "version": 9,
+        "metrics": metrics,
+        "metric_denominators": denominators,
+        "stage_gate_v9": {
+            "checks": checks,
+            "passed": all(checks.values()),
+        },
+    }
+
+
+def format_robustness_v9(report: Mapping[str, Any]) -> str:
+    metrics = report.get("metrics") or {}
+    percent = lambda value: "n/a" if value is None else f"{float(value):.1%}"
+    return "\n".join((
+        f"Predictive robustness v9 ({report.get('mode')}, {report.get('split')})",
+        f"SCC invariance: {percent(metrics.get('scc_invariance'))}",
+        f"Responsibility invariance: {percent(metrics.get('root_responsibility_invariance'))}",
+        f"Argument binding invariance: {percent(metrics.get('argument_binding_invariance'))}",
+        f"Repair invariance: {percent(metrics.get('repair_invariance'))}",
+        f"Target invariance: {percent(metrics.get('target_signature_invariance'))}",
+        f"Wording invariance: {percent(metrics.get('wording_invariance'))}",
+        f"Stage gate: {'PASS' if (report.get('stage_gate_v9') or {}).get('passed') else 'FAIL'}",
+    ))

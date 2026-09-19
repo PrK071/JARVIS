@@ -6,7 +6,10 @@ from tern.orchestrator.predictive.causal import (
     RootCauseKind,
     compatible_strategies_for_root,
 )
-from tern.orchestrator.predictive.benchmark_v9 import summarize_benchmark_v9
+from tern.orchestrator.predictive.benchmark_v9 import (
+    summarize_benchmark_v9,
+    summarize_robustness_v9,
+)
 from tern.orchestrator.predictive.evaluation import _retrieval, load_predictive_cases
 from tern.orchestrator.predictive.repair import (
     RepairTargetKind,
@@ -371,3 +374,65 @@ def test_external_boundary_is_not_counted_as_argument_binding_identity():
     assert report["metric_denominators_v9"][
         "argument_binding_identity_validity"
     ]["denominator"] == 0
+
+
+def test_v9_robustness_gate_uses_identity_metrics_not_wrapper_population():
+    signature = [
+        "IMPORT_RESOLUTION",
+        ["IMPORT_CYCLE", "IMPORT_SOURCE"],
+        "SOURCE",
+        "UPSTREAM",
+        "IMPORT",
+        "IMPORT_SCC:2:2",
+        "IMPORT_GRAPH_DEFECT",
+        "import_edge_to_module_initialization",
+    ]
+    checks = {
+        "root_cause_invariance": True,
+        "repair_strategy_invariance": True,
+        "repair_target_invariance": True,
+        "recommendation_invariance": True,
+        "abstention_invariance": True,
+        "causal_path_invariance": True,
+    }
+    metamorphic = {
+        "mode": "live",
+        "split": "development",
+        "metrics": {
+            "root_cause_invariance": 1.0,
+            "repair_strategy_invariance": 1.0,
+            "repair_target_invariance": 1.0,
+            "problem_wording_invariance": 1.0,
+            "variant_root_cause_validity": 1.0,
+            "variant_repair_pair_validity": 1.0,
+            "variant_top1_validity": 1.0,
+        },
+        "metric_denominators": {},
+        "results": [{
+            "transformation": "FILE_RENAME",
+            "checks": checks,
+            "base_signature": {"root_signature": signature},
+            "variant_signature": {"root_signature": signature},
+        }],
+        "safety": {"passed": True},
+    }
+    counterfactual = {
+        "metrics": {
+            "counterfactual_root_sensitivity": 1.0,
+            "counterfactual_repair_sensitivity": 1.0,
+            "counterfactual_target_sensitivity": 1.0,
+        },
+        "metric_denominators": {},
+        "results": [{
+            "base": {"root_signature": signature},
+            "counterfactual": {"root_signature": None},
+            "checks": {"counterfactual_root_sensitivity": True},
+        }],
+        "safety": {"passed": True},
+    }
+
+    report = summarize_robustness_v9(metamorphic, counterfactual)
+
+    assert report["metrics"]["scc_invariance"] == 1.0
+    assert report["metrics"]["import_cycle_removal_sensitivity"] == 1.0
+    assert "wrapper_invariance" not in report["stage_gate_v9"]["checks"]

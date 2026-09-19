@@ -42,6 +42,8 @@ from .predictive.benchmark_v8 import (
 from .predictive.benchmark_v9 import (
     evaluate_predictive_cases_v9,
     format_benchmark_v9,
+    format_robustness_v9,
+    summarize_robustness_v9,
 )
 from .predictive.robustness import (
     evaluate_counterfactual_suite,
@@ -1275,8 +1277,10 @@ def main(argv: list[str] | None = None) -> int:
                     suite_version=args.benchmark_version if args.benchmark_version >= 8 else 6,
                 )
                 report = (
-                    summarize_robustness_v8(metamorphic, counterfactual)
-                    if args.benchmark_version >= 8
+                    summarize_robustness_v9(metamorphic, counterfactual)
+                    if args.benchmark_version == 9
+                    else summarize_robustness_v8(metamorphic, counterfactual)
+                    if args.benchmark_version == 8
                     else summarize_robustness_gate(metamorphic, counterfactual)
                 )
             else:
@@ -1362,8 +1366,10 @@ def main(argv: list[str] | None = None) -> int:
                 _print(report)
             else:
                 print(
-                    format_robustness_v8(report)
-                    if args.mode == "robustness" and args.benchmark_version >= 8
+                    format_robustness_v9(report)
+                    if args.mode == "robustness" and args.benchmark_version == 9
+                    else format_robustness_v8(report)
+                    if args.mode == "robustness" and args.benchmark_version == 8
                     else format_robustness_evaluation(report)
                     if args.mode == "robustness"
                     else format_benchmark_v9(report)
