@@ -77,6 +77,15 @@ def _binding_matches(
     if not binding:
         return None
     profile = root.get("responsibility") or {}
+    if (
+        expected.get("v9", {}).get("responsibility")
+        == "CONSUMER_CONTRACT_DEFECT"
+        and not profile.get("binding_id")
+    ):
+        # An external boundary has a formal parameter but no resolved
+        # actual-argument/call-site pair. It remains evaluable as a consumer
+        # contract, not as an ArgumentBindingIdentity.
+        return None
     if not profile.get("binding_id"):
         return False
     if "ordinal" in binding and profile.get("parameter_ordinal") != binding["ordinal"]:
@@ -179,6 +188,7 @@ def _case_metrics(result: Mapping[str, Any]) -> dict[str, Any]:
         false_abstention = bool(legacy.get("false_abstention"))
     return {
         "evaluable": bool(legacy.get("evaluable", True)),
+        "v9_evaluable": bool(expected_v9),
         "abstention_expected": abstention_expected,
         "generated_valid_root": bool(generated_valid),
         "root_cause_validity": root_valid if not abstention_expected else not recommended,
@@ -224,10 +234,14 @@ def summarize_benchmark_v9(report: Mapping[str, Any]) -> dict[str, Any]:
     for result in report.get("results") or ():
         metrics = _case_metrics(result)
         results.append(dict(result) | {"metrics_v9": metrics})
-    positive = [
+    regression_positive = [
         item for item in results
         if (item.get("metrics_v9") or {}).get("evaluable")
         and not (item.get("metrics_v9") or {}).get("abstention_expected")
+    ]
+    positive = [
+        item for item in regression_positive
+        if (item.get("metrics_v9") or {}).get("v9_evaluable")
     ]
     recommended = [
         item for item in positive
@@ -262,6 +276,16 @@ def summarize_benchmark_v9(report: Mapping[str, Any]) -> dict[str, Any]:
         for item in recommended
     ])
     quality = {name: item["value"] for name, item in denominators.items()}
+    regression_denominators = {
+        name: _rate([
+            bool((item.get("metrics_v9") or {}).get(name))
+            for item in regression_positive
+        ])
+        for name in (
+            "root_cause_validity", "repair_strategy_validity",
+            "repair_target_validity", "repair_pair_validity", "top1_validity",
+        )
+    }
     split = str(report.get("split") or "")
     holdout = split == "holdout_v9"
     thresholds = {
@@ -299,6 +323,7 @@ def summarize_benchmark_v9(report: Mapping[str, Any]) -> dict[str, Any]:
         "quality": quality,
         "grounding": grounding,
         "metric_denominators_v9": denominators,
+        "historical_regression_denominators": regression_denominators,
         "stage_gate_v9": {"checks": checks, "passed": all(checks.values())},
     }
 

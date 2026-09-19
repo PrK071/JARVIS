@@ -15,7 +15,9 @@ from tern.orchestrator.predictive.repair import (
 )
 from tern.orchestrator.predictive.semantic import (
     CausalRole,
+    TargetPreference,
     root_cause_signature,
+    target_preference,
 )
 
 
@@ -159,6 +161,74 @@ def test_argument_responsibility_restricts_repair_family_before_ranking():
     )
 
 
+def test_argument_source_prefers_call_site_over_formal_parameter():
+    context = _context("CI9D-012")
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.origin_symbol == "slots"
+        and item.responsibility.keyword_binding == "slots"
+    )
+    targets = derive_repair_targets(
+        RepairStrategyKind.CORRECT_ARGUMENT, root, context.causal_slice
+    )
+    call_site = next(
+        item for item in targets
+        if item.scope_kind is RepairTargetKind.CALL_SITE
+    )
+    parameter = next(
+        item for item in targets
+        if item.scope_kind is RepairTargetKind.PARAMETER
+    )
+
+    assert target_preference(
+        RepairStrategyKind.CORRECT_ARGUMENT,
+        root,
+        call_site,
+        context.causal_slice,
+    ) is TargetPreference.PREFERRED
+    assert target_preference(
+        RepairStrategyKind.CORRECT_ARGUMENT,
+        root,
+        parameter,
+        context.causal_slice,
+    ) is TargetPreference.COMPATIBLE
+
+
+def test_default_binding_prefers_its_exact_formal_parameter():
+    context = _context("CI9D-014")
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.responsibility.defect_bearing_relation
+        == "default_argument_to_formal_parameter"
+    )
+    targets = derive_repair_targets(
+        RepairStrategyKind.CORRECT_ARGUMENT, root, context.causal_slice
+    )
+    default_parameter = next(
+        item for item in targets
+        if item.scope_kind is RepairTargetKind.PARAMETER
+        and item.symbol == "defaulted"
+    )
+    downstream_parameter = next(
+        item for item in targets
+        if item.scope_kind is RepairTargetKind.PARAMETER
+        and item.symbol == "divide"
+    )
+
+    assert target_preference(
+        RepairStrategyKind.CORRECT_ARGUMENT,
+        root,
+        default_parameter,
+        context.causal_slice,
+    ) is TargetPreference.PREFERRED
+    assert target_preference(
+        RepairStrategyKind.CORRECT_ARGUMENT,
+        root,
+        downstream_parameter,
+        context.causal_slice,
+    ) is TargetPreference.COMPATIBLE
+
+
 def test_scc_and_binding_ids_are_reproducible():
     first_scc = _context("CI9D-001").root_cause_candidates[0].import_scc.id
     second_scc = _context("CI9D-001").root_cause_candidates[0].import_scc.id
@@ -212,3 +282,92 @@ def test_v9_metrics_report_explicit_denominators():
     assert "root_pairwise_accuracy" in report["metric_denominators_v9"]
     assert "argument_slot_target_accuracy" in report["metric_denominators_v9"]
     assert "production_scc_precision" in report["metric_denominators_v9"]
+
+
+def test_v9_gate_population_is_separate_from_historical_regressions():
+    context = _context("CI9D-001")
+    root = context.root_cause_candidates[0]
+    v9 = {
+        "id": "CI9D-001",
+        "expected": _case("CI9D-001").expected,
+        "actual": {
+            "hypotheses": [{"root_cause_id": root.id}],
+            "root_cause_candidates": [root.as_dict()],
+            "causal_slice": context.causal_slice.as_dict(),
+            "candidates": [{
+                "id": "C1",
+                "strategy_kind": "CORRECT_IMPORT",
+                "repair_targets": [{"path": "cycle2/alpha.py"}],
+            }],
+            "recommended_candidate_id": "C1",
+        },
+        "retrieval": {},
+    }
+    legacy = {
+        "id": "legacy",
+        "expected": {"insufficient_evidence": False},
+        "actual": {},
+        "retrieval": {},
+        "metrics_v8": {
+            "evaluable": True,
+            "root_cause_validity": False,
+            "repair_strategy_validity": False,
+            "repair_target_validity": False,
+            "repair_pair_validity": False,
+            "false_abstention": True,
+        },
+    }
+
+    report = summarize_benchmark_v9({
+        "mode": "live",
+        "split": "development",
+        "results": [v9, legacy],
+        "safety": {"passed": True},
+        "retrieval": {"evidence_ref_validity": 1.0},
+        "reasoning": {"unsupported_claim_rate": 0.0},
+    })
+
+    assert report["metric_denominators_v9"]["root_cause_validity"] == {
+        "value": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+    }
+    assert report["historical_regression_denominators"][
+        "root_cause_validity"
+    ]["denominator"] == 2
+
+
+def test_external_boundary_is_not_counted_as_argument_binding_identity():
+    context = _context("CI9D-011")
+    root = next(
+        item for item in context.root_cause_candidates
+        if item.responsibility.kind
+        is CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT
+    )
+    report = summarize_benchmark_v9({
+        "mode": "live",
+        "split": "development",
+        "results": [{
+            "id": "CI9D-011",
+            "expected": _case("CI9D-011").expected,
+            "actual": {
+                "hypotheses": [{"root_cause_id": root.id}],
+                "root_cause_candidates": [root.as_dict()],
+                "causal_slice": context.causal_slice.as_dict(),
+                "candidates": [{
+                    "id": "C1",
+                    "strategy_kind": "VALIDATE_BOUNDARY",
+                    "repair_targets": [{"path": "flow/operations.py"}],
+                }],
+                "recommended_candidate_id": "C1",
+            },
+            "retrieval": {},
+        }],
+        "safety": {"passed": True},
+        "retrieval": {"evidence_ref_validity": 1.0},
+        "reasoning": {"unsupported_claim_rate": 0.0},
+    })
+
+    assert report["metric_denominators_v9"][
+        "argument_binding_identity_validity"
+    ]["denominator"] == 0

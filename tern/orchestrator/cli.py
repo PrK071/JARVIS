@@ -888,6 +888,11 @@ def build_parser() -> argparse.ArgumentParser:
     predictive_eval.add_argument(
         "--limit", type=int, default=None, help="limita casos para smoke live explícito"
     )
+    predictive_eval.add_argument(
+        "--case-prefix",
+        default=None,
+        help="limita a casos cujo ID comece com o prefixo informado",
+    )
     predictive_eval.add_argument("--corpus", type=Path, default=CORPUS_ROOT)
     predictive_eval.add_argument(
         "--output",
@@ -1276,6 +1281,15 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 cases = load_predictive_cases(args.corpus, split=args.split)
+                if args.case_prefix is not None:
+                    cases = tuple(
+                        case for case in cases
+                        if case.id.startswith(args.case_prefix)
+                    )
+                    if not cases:
+                        raise ValueError(
+                            f"nenhum caso encontrado para --case-prefix {args.case_prefix!r}"
+                        )
                 if args.limit is not None:
                     cases = cases[: args.limit]
             evaluation_mode = (

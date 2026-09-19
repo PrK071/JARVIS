@@ -903,6 +903,10 @@ def target_preference(
         RepairStrategyKind.CORRECT_TEST_EXPECTATION: {RepairTargetKind.TEST_EXPECTATION},
     }.get(strategy, set())
     if strategy is RepairStrategyKind.CORRECT_ARGUMENT:
+        responsibility = (
+            root.responsibility.kind
+            if root.responsibility else CausalResponsibilityKind.UNKNOWN
+        )
         nodes = {item.id: item for item in causal_slice.nodes}
         incoming_argument = any(
             edge.target_id == root.causal_path[0]
@@ -925,6 +929,20 @@ def target_preference(
             for edge in causal_slice.edges
         ) if root.causal_path else False
         preferred = (
+            {RepairTargetKind.CALL_SITE}
+            if responsibility is CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT
+            else {RepairTargetKind.PARAMETER}
+            if (
+                responsibility is CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT
+                and root.responsibility is not None
+                and root.responsibility.defect_bearing_relation
+                == "default_argument_to_formal_parameter"
+            )
+            else {RepairTargetKind.CALL_SITE}
+            if responsibility is CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT
+            else {RepairTargetKind.PARAMETER}
+            if responsibility is CausalResponsibilityKind.CONSUMER_CONTRACT_DEFECT
+            else
             {RepairTargetKind.CALL_SITE, RepairTargetKind.PARAMETER}
             if forwarded_argument
             else {RepairTargetKind.CALL_SITE}
@@ -937,7 +955,16 @@ def target_preference(
         and target.scope_kind is RepairTargetKind.CALL_SITE
     ):
         preferred_relations.add(TargetRelation.CAUSAL_PATH)
-    if target.scope_kind in preferred and signature.relation_to_root in preferred_relations:
+    test_only_call_site = (
+        strategy is RepairStrategyKind.CORRECT_ARGUMENT
+        and target.scope_kind is RepairTargetKind.CALL_SITE
+        and (target.path.startswith("tests/") or "/test" in target.path)
+    )
+    if (
+        target.scope_kind in preferred
+        and signature.relation_to_root in preferred_relations
+        and not test_only_call_site
+    ):
         return TargetPreference.PREFERRED
     if signature.relation_to_root is TargetRelation.UNRELATED:
         return TargetPreference.INVALID

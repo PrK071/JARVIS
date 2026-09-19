@@ -71,6 +71,15 @@ def test_predictive_eval_parser_accepts_v9_holdout():
     assert args.benchmark_version == 9
 
 
+def test_predictive_eval_parser_accepts_case_prefix():
+    args = cli.build_parser().parse_args([
+        "predictive-eval", "--benchmark-version", "9",
+        "--case-prefix", "CI9D-",
+    ])
+
+    assert args.case_prefix == "CI9D-"
+
+
 def test_predict_cli_is_read_only_and_emits_structured_report(monkeypatch, capsys, tmp_path):
     root = tmp_path / "repo"
     root.mkdir()
