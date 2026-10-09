@@ -1,0 +1,96 @@
+{
+  "version": 10,
+  "generator_version": 4,
+  "engine_base_commit": "ef3bcb1d17f4c467e05b721bbef269561a3f64a0",
+  "development_structural": {
+    "cases": 172,
+    "oracle_root_candidate_recall": {"numerator": 172, "denominator": 172, "value": 1.0},
+    "oracle_relation_recall": {"numerator": 172, "denominator": 172, "value": 1.0},
+    "argument_binding_identity_recall": {"numerator": 102, "denominator": 102, "value": 1.0},
+    "import_scc_recall": {"numerator": 10, "denominator": 10, "value": 1.0}
+  },
+  "v9_engine_frozen_live": {
+    "cases": 42,
+    "root_validity": {"numerator": 38, "denominator": 42, "value": 0.9047619048},
+    "repair_pair_validity": {"numerator": 38, "denominator": 42, "value": 0.9047619048},
+    "top1_validity": {"numerator": 38, "denominator": 42, "value": 0.9047619048},
+    "recommendation_precision": {"numerator": 31, "denominator": 35, "value": 0.8857142857},
+    "argument_vs_return_accuracy": {"numerator": 3, "denominator": 6, "value": 0.5}
+  },
+  "development_after": {
+    "cases": 42,
+    "root_validity": {"numerator": 42, "denominator": 42, "value": 1.0},
+    "repair_pair_validity": {"numerator": 42, "denominator": 42, "value": 1.0},
+    "top1_validity": {"numerator": 42, "denominator": 42, "value": 1.0},
+    "recommendation_precision": {"numerator": 35, "denominator": 35, "value": 1.0},
+    "false_abstention": {"numerator": 0, "denominator": 42, "value": 0.0},
+    "avg_qwen_latency_seconds": 46.6283773371
+  },
+  "compositional_generalization": {
+    "cases": 54,
+    "root_validity": {"numerator": 54, "denominator": 54, "value": 1.0},
+    "repair_pair_validity": {"numerator": 54, "denominator": 54, "value": 1.0},
+    "top1_validity": {"numerator": 54, "denominator": 54, "value": 1.0},
+    "recommendation_precision": {"numerator": 48, "denominator": 48, "value": 1.0},
+    "false_abstention": {"numerator": 0, "denominator": 54, "value": 0.0},
+    "avg_qwen_latency_seconds": 64.7186972063
+  },
+  "counterfactual": {
+    "pairs": 24,
+    "cases": 48,
+    "root_sensitivity": {"numerator": 24, "denominator": 24, "value": 1.0},
+    "repair_sensitivity": {"numerator": 24, "denominator": 24, "value": 1.0},
+    "target_sensitivity": {"numerator": 24, "denominator": 24, "value": 1.0}
+  },
+  "holdout_v10": {
+    "original": {
+      "cases": 48,
+      "sha256": "771bacacbd7fad5e8121d929eadd1d2ba5ce5cb948782a6083675dc91e080d89"
+    },
+    "supplement": {
+      "cases": 12,
+      "sha256": "c551126a926763ea2e49d15c29bea18f6c6c0d4c996a009c28149415dae52cf9"
+    },
+    "combined": {
+      "cases": 60,
+      "sha256": "c706b90f35e8e0cc93762a42bf7ddbbd60bc0cb65036eca0bdab71145fec4706",
+      "root_validity": {"numerator": 60, "denominator": 60, "value": 1.0},
+      "repair_pair_validity": {"numerator": 60, "denominator": 60, "value": 1.0},
+      "top1_validity": {"numerator": 60, "denominator": 60, "value": 1.0},
+      "recommendation_precision": {"numerator": 54, "denominator": 54, "value": 1.0},
+      "recommendation_coverage": {"numerator": 54, "denominator": 60, "value": 0.9},
+      "false_abstention": {"numerator": 0, "denominator": 60, "value": 0.0},
+      "argument_vs_return_accuracy": {"numerator": 6, "denominator": 6, "value": 1.0},
+      "argument_slot_accuracy": {"numerator": 34, "denominator": 34, "value": 1.0},
+      "import_scc_precision": {"numerator": 4, "denominator": 4, "value": 1.0},
+      "import_scc_recall": {"numerator": 4, "denominator": 4, "value": 1.0},
+      "observer_exclusion_accuracy": {"numerator": 2, "denominator": 2, "value": 1.0},
+      "avg_qwen_latency_seconds": 59.1190064574
+    }
+  },
+  "regressions": {
+    "evidence_reference_validity": 1.0,
+    "unsupported_claim_rate": 0.0,
+    "recovery_precision": 1.0,
+    "recovery_noise_rate": 0.0,
+    "forbidden_recommendations": 0
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0
+  },
+  "gates": {
+    "structural_generation": true,
+    "development_quality": true,
+    "compositional_generalization": true,
+    "counterfactual_sensitivity": true,
+    "holdout_quality": true,
+    "grounding_and_safety": true,
+    "latency_under_45_seconds": false
+  },
+  "PREDICTIVE_QUALITY_READY": true,
+  "SIMULATION_RUNTIME_READY": false
+}
