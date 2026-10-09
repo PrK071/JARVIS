@@ -416,6 +416,38 @@ def compare_root_candidates(
     right_argument = right_responsibility in argument_responsibilities
     left_return = left_responsibility is CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
     right_return = right_responsibility is CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
+    left_satisfied_return = (
+        left.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and left_responsibility is CausalResponsibilityKind.MANIFESTATION_ONLY
+        and left.contract_demonstrated
+    )
+    right_satisfied_return = (
+        right.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and right_responsibility is CausalResponsibilityKind.MANIFESTATION_ONLY
+        and right.contract_demonstrated
+    )
+    if left_argument and right_satisfied_return:
+        return result(left, right, PairwiseRootReason.MANIFESTATION_NOT_ORIGIN)
+    if right_argument and left_satisfied_return:
+        return result(right, left, PairwiseRootReason.MANIFESTATION_NOT_ORIGIN)
+    left_concrete_origin = (
+        left.cause_kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+        and left_responsibility is not CausalResponsibilityKind.MANIFESTATION_ONLY
+    )
+    right_concrete_origin = (
+        right.cause_kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+        and right_responsibility is not CausalResponsibilityKind.MANIFESTATION_ONLY
+    )
+    if (
+        left_concrete_origin
+        and right_responsibility is CausalResponsibilityKind.MANIFESTATION_ONLY
+    ):
+        return result(left, right, PairwiseRootReason.MANIFESTATION_NOT_ORIGIN)
+    if (
+        right_concrete_origin
+        and left_responsibility is CausalResponsibilityKind.MANIFESTATION_ONLY
+    ):
+        return result(right, left, PairwiseRootReason.MANIFESTATION_NOT_ORIGIN)
     if (left_argument and right_return) or (right_argument and left_return):
         argument = left if left_argument else right
         returned = right if left_argument else left
@@ -430,6 +462,27 @@ def compare_root_candidates(
             )
         )
         if not causally_connected:
+            # A demonstrated producer contract is stronger than a generic
+            # sibling-parameter hypothesis.  The absence of a shared slot is
+            # expected here: the sibling is an alternate operand, while the
+            # typed return origin is the only relation with contract evidence.
+            if (
+                returned.contract_demonstrated
+                and returned_profile
+                and returned_profile.return_site_id
+                and returned.cause_kind in {
+                    RootCauseKind.NULL_FLOW,
+                    RootCauseKind.TYPE_FLOW,
+                    RootCauseKind.RETURN_CONTRACT,
+                }
+                and argument_profile
+                and argument_profile.binding_id
+            ):
+                return result(
+                    returned,
+                    argument,
+                    PairwiseRootReason.RETURN_CONTRACT_VIOLATED,
+                )
             return RootPairwiseComparison(
                 None,
                 None,
@@ -545,11 +598,23 @@ def compare_root_candidates(
             )
     left_return = (
         left.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and left.responsibility is not None
+        and not (
+            left.responsibility.kind
+            is CausalResponsibilityKind.MANIFESTATION_ONLY
+            and left.contract_demonstrated
+        )
         and CausalRole.RETURN_SOURCE in left_signature.causal_roles
         and CausalRole.INTERMEDIATE_WRAPPER not in left_signature.causal_roles
     )
     right_return = (
         right.cause_kind is RootCauseKind.RETURN_CONTRACT
+        and right.responsibility is not None
+        and not (
+            right.responsibility.kind
+            is CausalResponsibilityKind.MANIFESTATION_ONLY
+            and right.contract_demonstrated
+        )
         and CausalRole.RETURN_SOURCE in right_signature.causal_roles
         and CausalRole.INTERMEDIATE_WRAPPER not in right_signature.causal_roles
     )
@@ -719,6 +784,42 @@ def semantic_dominant_root(
                 -item.score,
                 item.id,
             ),
+        )[0]
+        duplicates = {item.id for item in values if item.id != representative.id}
+        rejected.update(duplicates)
+        grouped_representations += len(duplicates)
+
+    # TYPE/NULL flow and ARGUMENT_BINDING roots can be two views of the same
+    # actual-to-formal relation.  Collapse by stable binding identity so an
+    # artificial tie cannot keep a satisfied return manifestation alive.
+    binding_groups: dict[str, list[RootCauseCandidate]] = {}
+    argument_responsibilities = {
+        CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT,
+        CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+    }
+    for item in production:
+        if (
+            item.responsibility
+            and item.responsibility.binding_id
+            and item.responsibility.kind in argument_responsibilities
+            and item.cause_kind in {
+                RootCauseKind.NULL_FLOW,
+                RootCauseKind.TYPE_FLOW,
+                RootCauseKind.ARGUMENT_BINDING,
+            }
+        ):
+            binding_groups.setdefault(item.responsibility.binding_id, []).append(item)
+    binding_priority = {
+        RootCauseKind.NULL_FLOW: 0,
+        RootCauseKind.TYPE_FLOW: 1,
+        RootCauseKind.ARGUMENT_BINDING: 2,
+    }
+    for values in binding_groups.values():
+        if len(values) < 2:
+            continue
+        representative = sorted(
+            values,
+            key=lambda item: (binding_priority[item.cause_kind], -item.score, item.id),
         )[0]
         duplicates = {item.id for item in values if item.id != representative.id}
         rejected.update(duplicates)

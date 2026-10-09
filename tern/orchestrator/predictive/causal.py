@@ -595,7 +595,7 @@ class _FlowBuilder(ast.NodeVisitor):
         self.current: _Function | None = None
         self.attribute_reads: set[str] = set()
         self.attribute_writes: set[str] = set()
-        self.annotated_return_nodes: set[str] = set()
+        self.annotated_return_nodes: dict[str, str] = {}
 
     def node(self, kind: CausalNodeKind, line: int, symbol: str | None, expression: str) -> str:
         node_id = _stable("N", kind.value, self.path, line, self.scope, symbol, expression)
@@ -748,7 +748,7 @@ class _FlowBuilder(ast.NodeVisitor):
         if self.current:
             self.current.returns.append(return_id)
             if self.current.return_annotation:
-                self.annotated_return_nodes.add(return_id)
+                self.annotated_return_nodes[return_id] = self.current.return_annotation
         if node.value:
             self.generic_visit(node.value)
 
@@ -923,6 +923,82 @@ def _return_contract_demonstrated(
     return True
 
 
+def _annotated_return_contract_violated(
+    node: CausalNode,
+    *,
+    path_ids: tuple[str, ...],
+    nodes: Mapping[str, CausalNode],
+    edges: Mapping[str, CausalEdge],
+    return_annotations: Mapping[str, str],
+) -> bool | None:
+    """Return a deterministic annotation verdict for simple concrete flows.
+
+    ``None`` means the static slice cannot decide.  This deliberately handles
+    only literal/alias chains; calls and dynamic values remain unknown rather
+    than being guessed from names or problem wording.
+    """
+    return_site = next((
+        item_id for item_id in path_ids
+        if nodes[item_id].kind is CausalNodeKind.RETURN_VALUE
+        and nodes[item_id].scope == node.scope
+        and item_id in return_annotations
+    ), None)
+    if return_site is None:
+        return None
+
+    annotation = return_annotations[return_site].casefold().replace("builtins.", "")
+    expected = {
+        "str": "str",
+        "int": "int",
+        "float": "float",
+        "bool": "bool",
+        "none": "none",
+        "nonetype": "none",
+    }.get(annotation)
+    if expected is None:
+        return None
+
+    incoming: dict[str, tuple[str, ...]] = {}
+    for edge in edges.values():
+        if edge.kind in {
+            CausalEdgeKind.ASSIGNED_FROM,
+            CausalEdgeKind.RETURNED_FROM,
+        }:
+            incoming[edge.target_id] = tuple(sorted({
+                *incoming.get(edge.target_id, ()), edge.source_id,
+            }))
+
+    def literal_type(node_id: str, depth: int = 0) -> str | None:
+        if depth > 3 or node_id not in nodes:
+            return None
+        current = nodes[node_id]
+        expression = current.expression.casefold()
+        if current.kind is CausalNodeKind.LITERAL:
+            if expression.startswith("str["):
+                return "str"
+            if expression in {"true", "false"}:
+                return "bool"
+            if expression in {"none", "null"}:
+                return "none"
+            if re.fullmatch(r"[-+]?\d+", expression):
+                return "int"
+            if re.fullmatch(r"[-+]?(?:\d+\.\d*|\d*\.\d+)", expression):
+                return "float"
+        sources = incoming.get(node_id, ())
+        resolved = {
+            value for source in sources
+            if (value := literal_type(source, depth + 1)) is not None
+        }
+        return next(iter(resolved)) if len(resolved) == 1 else None
+
+    actual = literal_type(return_site)
+    if actual is None:
+        return None
+    if expected == "float" and actual == "int":
+        return False
+    return actual != expected
+
+
 def _responsibility_profile(
     node: CausalNode,
     path_ids: tuple[str, ...],
@@ -931,9 +1007,11 @@ def _responsibility_profile(
     *,
     kind: RootCauseKind,
     contract_demonstrated: bool,
+    contract_violated: bool | None,
     import_scc: ImportSCCIdentity | None,
     binding_override: ArgumentBindingIdentity | None = None,
     parameter_ordinals: Mapping[str, int] | None = None,
+    satisfied_return_sites: frozenset[str] = frozenset(),
 ) -> CausalResponsibilityProfile:
     if import_scc is not None:
         return CausalResponsibilityProfile(
@@ -966,8 +1044,31 @@ def _responsibility_profile(
         ),
         key=lambda edge: edge.argument_binding.id if edge.argument_binding else edge.id,
     )
-    if kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW} and len(outgoing_bindings) == 1:
-        binding = outgoing_bindings[0].argument_binding
+    # Preserve the first call-boundary identity on a concrete value's path.
+    # A temporary assignment (or a forwarding wrapper) may sit between the
+    # literal and the actual argument, so looking only at edges adjacent to
+    # ``node`` loses the defective slot.  Stop at a return site: bindings
+    # after that point belong to the returned producer value, not to the
+    # producer's own input lineage.
+    path_binding: ArgumentBindingIdentity | None = None
+    ordered_edges = tuple(sorted(edges.values(), key=lambda item: item.id))
+    for source_id, target_id in zip(path_ids, path_ids[1:]):
+        if nodes[source_id].kind is CausalNodeKind.RETURN_VALUE:
+            break
+        edge = next((
+            item for item in ordered_edges
+            if item.source_id == source_id
+            and item.target_id == target_id
+            and item.kind is CausalEdgeKind.PASSED_AS_ARGUMENT
+            and item.argument_binding is not None
+        ), None)
+        if edge is not None:
+            path_binding = edge.argument_binding
+            break
+    if kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW} and (
+        path_binding is not None or len(outgoing_bindings) == 1
+    ):
+        binding = path_binding or outgoing_bindings[0].argument_binding
         assert binding is not None
         return CausalResponsibilityProfile(
             CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT,
@@ -1025,6 +1126,29 @@ def _responsibility_profile(
                 defect_bearing_relation="external_input_to_formal_parameter",
             )
         actual = nodes.get(binding.actual_argument_id)
+        actual_from_satisfied_return = bool(
+            actual is not None
+            and actual.kind is CausalNodeKind.CALL
+            and any(
+                edge.source_id in satisfied_return_sites
+                and edge.target_id == actual.id
+                and edge.kind is CausalEdgeKind.RETURNED_FROM
+                for edge in edges.values()
+            )
+        )
+        if actual_from_satisfied_return:
+            return CausalResponsibilityProfile(
+                CausalResponsibilityKind.MANIFESTATION_ONLY,
+                value_origin_id=binding.actual_argument_id,
+                boundary_id=binding.formal_parameter_id,
+                defect_bearing_relation="satisfied_return_to_formal_parameter",
+                producer_id=binding.call_site_id,
+                actual_argument_id=binding.actual_argument_id,
+                formal_parameter_id=binding.formal_parameter_id,
+                binding_id=binding.id,
+                parameter_ordinal=binding.parameter_ordinal,
+                keyword_binding=binding.keyword_binding,
+            )
         responsibility = (
             CausalResponsibilityKind.ARGUMENT_SOURCE_DEFECT
             if actual is not None
@@ -1047,10 +1171,59 @@ def _responsibility_profile(
             parameter_ordinal=binding.parameter_ordinal,
             keyword_binding=binding.keyword_binding,
         )
+    # The concrete literal behind a default parameter is intentionally kept as
+    # the strongest value-flow representation.  Preserve the relation that
+    # actually bears the defect; a later return expression is only where the
+    # bad default manifests, not evidence of a return-contract violation.
+    if kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW} and len(path_ids) > 2:
+        default_node = nodes.get(path_ids[1])
+        formal = nodes.get(path_ids[2])
+        if (
+            node.kind is CausalNodeKind.LITERAL
+            and default_node is not None
+            and default_node.expression.startswith("default ")
+            and formal is not None
+            and formal.kind is CausalNodeKind.PARAMETER
+            and any(
+                edge.source_id == node.id
+                and edge.target_id == default_node.id
+                and edge.kind is CausalEdgeKind.ASSIGNED_FROM
+                for edge in edges.values()
+            )
+            and any(
+                edge.source_id == default_node.id
+                and edge.target_id == formal.id
+                and edge.kind is CausalEdgeKind.ASSIGNED_FROM
+                for edge in edges.values()
+            )
+        ):
+            binding = ArgumentBindingIdentity(
+                default_node.id,
+                f"{node.path}:{formal.scope or 'module'}",
+                node.id,
+                formal.id,
+                (parameter_ordinals or {}).get(formal.id),
+                None,
+            )
+            return CausalResponsibilityProfile(
+                CausalResponsibilityKind.ARGUMENT_BINDING_DEFECT,
+                value_origin_id=node.id,
+                boundary_id=formal.id,
+                defect_bearing_relation="default_argument_to_formal_parameter",
+                producer_id=default_node.id,
+                actual_argument_id=node.id,
+                formal_parameter_id=formal.id,
+                binding_id=binding.id,
+                parameter_ordinal=binding.parameter_ordinal,
+            )
     return_site = next(
         (
             item_id for item_id in path_ids
             if nodes[item_id].kind is CausalNodeKind.RETURN_VALUE
+            and (
+                kind is RootCauseKind.RETURN_CONTRACT
+                or nodes[item_id].scope == node.scope
+            )
         ),
         None,
     )
@@ -1058,9 +1231,17 @@ def _responsibility_profile(
         kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
         and return_site is not None
     ):
+        defect_demonstrated = (
+            contract_violated
+            if contract_violated is not None
+            else contract_demonstrated or kind in {
+                RootCauseKind.NULL_FLOW,
+                RootCauseKind.TYPE_FLOW,
+            }
+        )
         return CausalResponsibilityProfile(
             CausalResponsibilityKind.RETURN_CONTRACT_DEFECT
-            if contract_demonstrated or kind in {RootCauseKind.NULL_FLOW, RootCauseKind.TYPE_FLOW}
+            if defect_demonstrated
             else CausalResponsibilityKind.MANIFESTATION_ONLY,
             value_origin_id=node.id,
             defect_bearing_relation="return_site_to_caller_assignment",
@@ -1108,7 +1289,9 @@ def build_causal_slice(
         by_name.setdefault(function.name.rsplit(".", 1)[-1], []).append(function)
     calls = [call for builder in builders for call in builder.calls]
     annotated_return_nodes = {
-        node_id for builder in builders for node_id in builder.annotated_return_nodes
+        node_id: annotation
+        for builder in builders
+        for node_id, annotation in builder.annotated_return_nodes.items()
     }
     parameter_ordinals = {
         node_id: ordinal
@@ -1410,6 +1593,18 @@ def build_causal_slice(
             queue.append(edge.source_id)
 
     root_candidates: list[RootCauseCandidate] = []
+    satisfied_return_sites = frozenset(
+        node_id
+        for node_id in annotated_return_nodes
+        if node_id in paths_to_failure
+        and _annotated_return_contract_violated(
+            nodes[node_id],
+            path_ids=paths_to_failure[node_id],
+            nodes=nodes,
+            edges=edges,
+            return_annotations=annotated_return_nodes,
+        ) is False
+    )
     for node_id, path_ids in paths_to_failure.items():
         if node_id == failure_id:
             continue
@@ -1474,6 +1669,13 @@ def build_causal_slice(
             edges=edges,
             evidence_ledger=context.evidence_ledger,
             annotated_contract=node.id in annotated_return_nodes,
+        )
+        annotated_contract_violated = _annotated_return_contract_violated(
+            node,
+            path_ids=path_ids,
+            nodes=nodes,
+            edges=edges,
+            return_annotations=annotated_return_nodes,
         )
         strong_return_contract = bool(
             node.id in annotated_return_nodes
@@ -1540,9 +1742,11 @@ def build_causal_slice(
                 edges,
                 kind=kind,
                 contract_demonstrated=explicit_return_contract,
+                contract_violated=annotated_contract_violated,
                 import_scc=import_scc,
                 binding_override=binding_override,
                 parameter_ordinals=parameter_ordinals,
+                satisfied_return_sites=satisfied_return_sites,
             )
             root_candidates.append(RootCauseCandidate(
                 _stable(

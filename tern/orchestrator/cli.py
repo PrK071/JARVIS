@@ -52,6 +52,17 @@ from .predictive.robustness import (
     summarize_robustness_gate,
 )
 from .predictive.simulation import detect_sandbox_provider
+from .predictive.testing import (
+    generate_counterfactual_pairs,
+    generate_suite,
+    stratified_sample,
+)
+from .predictive.testing.evaluation import (
+    evaluate_generated_counterfactuals,
+    evaluate_generated_live,
+    evaluate_generated_structural,
+    format_generated_evaluation,
+)
 from .semantic_pass import QwenSemanticInterpreter
 from .routing_eval import (
     balanced_live_sample,
@@ -903,6 +914,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="grava o relatÃ³rio estruturado em um arquivo JSON",
     )
     predictive_eval.add_argument("--json", action="store_true", dest="json_output")
+    generated_eval = sub.add_parser(
+        "predictive-generated-eval",
+        help="avalia generalizacao causal em programas Python gerados deterministicamente",
+    )
+    generated_eval.add_argument(
+        "--mode", choices=("structural", "live"), default="structural",
+        help="structural nao consulta Qwen; live faz uma chamada por caso",
+    )
+    generated_eval.add_argument(
+        "--split", choices=(
+            "development", "compositional", "counterfactual",
+            "holdout_v10", "holdout_v10_supplement",
+        ),
+        default="development",
+    )
+    generated_eval.add_argument("--runs", type=int, default=1)
+    generated_eval.add_argument("--limit", type=int, default=None)
+    generated_eval.add_argument("--output", type=Path, default=None)
+    generated_eval.add_argument("--json", action="store_true", dest="json_output")
     sandbox_check = sub.add_parser(
         "predictive-sandbox-check",
         help="verifica isolamento seguro usando apenas um workload controlado do JARVIS",
@@ -1387,6 +1417,63 @@ def main(argv: list[str] | None = None) -> int:
                     else format_predictive_evaluation(report)
                 )
             return 0 if report["safety"]["passed"] else 1
+        elif args.command == "predictive-generated-eval":
+            if args.runs <= 0:
+                raise ValueError("--runs deve ser positivo")
+            if args.limit is not None and args.limit <= 0:
+                raise ValueError("--limit deve ser positivo")
+            pairs = (
+                generate_counterfactual_pairs()
+                if args.split == "counterfactual" else ()
+            )
+            if pairs and args.limit is not None:
+                pairs = pairs[:args.limit]
+            specs = (
+                tuple(spec for pair in pairs for spec in pair)
+                if pairs else generate_suite(args.split)
+            )
+            if not pairs and args.limit is not None:
+                specs = stratified_sample(specs, args.limit)
+            if args.mode == "live":
+                manager.ensure_llama_server(240)
+                workspace_root = (
+                    PROJECT_ROOT
+                    / ".orchestrator"
+                    / "predictive-generated"
+                    / f"{args.split}-{time.time_ns()}"
+                )
+                reasoner = LlamaClient(settings.base_url, settings.timeout)
+                report = (
+                    evaluate_generated_counterfactuals(
+                        pairs, reasoner=reasoner, runs=args.runs,
+                        workspace_root=workspace_root,
+                    )
+                    if pairs else evaluate_generated_live(
+                        specs, reasoner=reasoner, runs=args.runs,
+                        workspace_root=workspace_root,
+                    )
+                )
+            else:
+                report = evaluate_generated_structural(
+                    specs,
+                    output_root=(
+                        PROJECT_ROOT
+                        / ".orchestrator"
+                        / "predictive-generated"
+                        / f"{args.split}-structural-{time.time_ns()}"
+                    ),
+                )
+            if args.output is not None:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(
+                    json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
+            if args.json_output:
+                _print(report)
+            else:
+                print(format_generated_evaluation(report))
+            return 0
         elif args.command == "predictive-sandbox-check":
             provider = detect_sandbox_provider()
             capabilities = provider.capabilities()

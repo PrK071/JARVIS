@@ -15,7 +15,6 @@ from .causal import (
     RootSelectionReason,
     compatible_strategies_for_root,
     repair_locality,
-    strategy_compatible,
     structurally_dominant_root,
 )
 from .grounding import ground_claim
@@ -174,10 +173,9 @@ def _response_schema(
         )
     })
     if dominant:
-        compatible = [
-            item for item in RepairStrategyKind
-            if strategy_compatible(dominant.cause_kind, item)
-        ]
+        compatible = list(
+            compatible_strategies_for_root(dominant, context.causal_slice)
+        )
         if (
             lexical_strategy_restriction
             and dominant.cause_kind is RootCauseKind.ARGUMENT_BINDING
@@ -510,7 +508,9 @@ class PredictiveAnalyzer:
                     kind = RepairStrategyKind(str(raw_strategy["kind"]))
                     target_file = str(raw_strategy.get("target_file") or "")
                     target_symbol = str(raw_strategy.get("target_symbol") or "")
-                    if not strategy_compatible(root.cause_kind, kind):
+                    if kind not in compatible_strategies_for_root(
+                        root, context.causal_slice
+                    ):
                         diagnostics.append(PredictiveFailureReason.REPAIR_STRATEGY_ERROR.value)
                         continue
                     if not context.causal_slice:

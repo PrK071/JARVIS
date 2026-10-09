@@ -1,0 +1,39 @@
+{
+  "version": 10,
+  "generator_version": 4,
+  "created_at": "2026-10-05T00:00:00-03:00",
+  "discipline": {
+    "development": "generated structural combinations available for hardening",
+    "compositional": "unseen combinations of known structural factors",
+    "holdout_v10": "sealed before engine hardening; live execution is one-shot"
+  },
+  "development": {
+    "count": 172,
+    "sha256": "9a731fbffe99dcf9e19ee342ca9d77c940cf34941089dfb0e7336b8e88c7d5d4"
+  },
+  "compositional": {
+    "count": 54,
+    "sha256": "bf61c730f329d820becddc30c0da25d7f487dc17eb6704e73c3a954d1844d7fd"
+  },
+  "holdout_v10": {
+    "count": 48,
+    "sha256": "771bacacbd7fad5e8121d929eadd1d2ba5ce5cb948782a6083675dc91e080d89",
+    "live_executed": true,
+    "live_executed_at": "2026-10-09T14:39:00-03:00",
+    "coverage_note": "original positional cap has zero import/manifestation denominators"
+  },
+  "holdout_v10_supplement": {
+    "count": 12,
+    "sha256": "c551126a926763ea2e49d15c29bea18f6c6c0d4c996a009c28149415dae52cf9",
+    "seed_range": [3048, 3059],
+    "live_executed": true,
+    "live_executed_at": "2026-10-09T14:49:00-03:00",
+    "purpose": "complete import SCC, manifestation, and negative-control denominators without engine changes"
+  },
+  "holdout_v10_combined": {
+    "count": 60,
+    "sha256": "c706b90f35e8e0cc93762a42bf7ddbbd60bc0cb65036eca0bdab71145fec4706",
+    "execution_discipline": "48-case original followed by 12-case untouched seed tail; no engine changes between runs"
+  },
+  "counterfactual_pairs": 24
+}
