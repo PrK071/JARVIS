@@ -1,0 +1,846 @@
+{
+  "version": 12,
+  "source_trace_sha256": "f90b13ee7b95ed5f5e9c0c8a63d9a18d7d4760ae8121c6a0abeaef45da569bd7",
+  "independent_defects": 1,
+  "formulations": 2,
+  "results": [
+    {
+      "id": "requests-5667-wording-1",
+      "problem": "Requests 2.25.0: for an HTTP response with Content-Type application/json without charset, response.text decodes a short UTF-8 JSON body incorrectly while response.json() returns the expected Unicode. Adding an unrelated uuid field changes the result. Diagnose this encoding inconsistency.",
+      "initial_files": [
+        "requests/models.py",
+        "requests/_internal_utils.py",
+        "requests/auth.py",
+        "requests/compat.py",
+        "requests/cookies.py",
+        "requests/exceptions.py",
+        "requests/hooks.py",
+        "requests/status_codes.py",
+        "requests/structures.py",
+        "requests/utils.py",
+        "requests/__init__.py",
+        "requests/adapters.py"
+      ],
+      "correct_file_retrieved": true,
+      "correct_symbol_in_snapshot": true,
+      "correct_symbol_ledger_atoms": [],
+      "correct_origin_candidates": [],
+      "selected_root_ids": [
+        "R747E0D36EE2C"
+      ],
+      "failure_site": {
+        "id": "NBD57D8E4AF41",
+        "kind": "EXCEPTION_SITE",
+        "path": "requests/__init__.py",
+        "line": 123,
+        "symbol": null,
+        "expression": "exception at requests/__init__.py:123",
+        "evidence_ids": [
+          "E2179F8C08C45",
+          "E32F4FDF8CB08"
+        ],
+        "scope": null
+      },
+      "traceback_present": false,
+      "initial_evidence_refs": [
+        "requests/models.py:246-246",
+        "requests/_internal_utils.py:1-42",
+        "requests/auth.py:1-305",
+        "requests/compat.py:1-72",
+        "requests/cookies.py:1-355",
+        "requests/exceptions.py:1-123",
+        "requests/hooks.py:1-34",
+        "requests/status_codes.py:1-123",
+        "requests/structures.py:1-105",
+        "requests/utils.py:1-328",
+        "requests/__init__.py:1-3",
+        "requests/adapters.py:1-1"
+      ],
+      "domination": [
+        {
+          "selected_id": "R747E0D36EE2C",
+          "reason": "STRUCTURAL_DOMINANCE",
+          "rejected": [],
+          "structurally_dominant": true
+        }
+      ],
+      "fabricated_bridge_edges": [
+        {
+          "id": "G038E5C6B0BF3",
+          "source_id": "N4F113E6EF59E",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G04F06579685F",
+          "source_id": "N6729DE377608",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G14B9043E0164",
+          "source_id": "N339E23937AAD",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G1DCFF5A39C51",
+          "source_id": "N652CC4517D13",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G1EBCC57E9937",
+          "source_id": "N6A3DD46C84BD",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08",
+            "E0A05060630C4",
+            "E28D2342E1B95",
+            "EC16E5A09C78B",
+            "E11051CDC02A9",
+            "E4DA2A5283555",
+            "E5DD14FA4F4E4",
+            "E6B304DB48153",
+            "ECF366B061269"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G21690BAFCF00",
+          "source_id": "N8E998A64FECC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G28C3C17FD4DA",
+          "source_id": "NCDA40792C649",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G28CC2AC055AD",
+          "source_id": "N1D47DA077601",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G48877D929EE9",
+          "source_id": "N83EC4ACD1BDC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G5C57425A8829",
+          "source_id": "NFCBABF9848F0",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E28D2342E1B95",
+            "EC16E5A09C78B",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G66DC0B53FEE5",
+          "source_id": "N62573B4AF83A",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G78C847AEF15B",
+          "source_id": "NFB2FC37CDFF7",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G820AFA4401F9",
+          "source_id": "ND2C818F9CBF7",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E11051CDC02A9",
+            "E4DA2A5283555",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G8431EEDA49A4",
+          "source_id": "NF4C169E305F1",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G8E6A8127A811",
+          "source_id": "NA53C131AFCA5",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G925243868B95",
+          "source_id": "N3A6337B8A6D5",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E11051CDC02A9",
+            "E4DA2A5283555",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G9A1139EE493C",
+          "source_id": "N8D99840AA75C",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GA3A75F2995D4",
+          "source_id": "NAC8F030716AF",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GA77CAB9AF7F0",
+          "source_id": "N4B62BA845D9A",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GAA74A536AD7C",
+          "source_id": "N9B031E500C75",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GB480236853CC",
+          "source_id": "NC9D056F82B50",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GB911D88CD3DB",
+          "source_id": "NDBB0BC082B53",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GCECE8B41CCEB",
+          "source_id": "N35E0B1BE8EA0",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GE8D252DC5206",
+          "source_id": "N4B3BF70143CC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GEB7B9274F33D",
+          "source_id": "ND8AA8BF035BE",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GF2C1539B56D8",
+          "source_id": "N3D1475B7CDAB",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E5DD14FA4F4E4",
+            "E6B304DB48153",
+            "ECF366B061269",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GF8E761A96A05",
+          "source_id": "N7CD9F2880B15",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GFDC5B1318C1F",
+          "source_id": "NFDCBBF0D0130",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        }
+      ]
+    },
+    {
+      "id": "requests-5667-wording-2",
+      "problem": "Requests 2.25.0: the same Unicode JSON payload is read differently by Response.text and Response.json when the server sends application/json and omits the charset parameter. The result depends on payload length. What code causes this behavior?",
+      "initial_files": [
+        "requests/models.py",
+        "requests/_internal_utils.py",
+        "requests/auth.py",
+        "requests/compat.py",
+        "requests/cookies.py",
+        "requests/exceptions.py",
+        "requests/hooks.py",
+        "requests/status_codes.py",
+        "requests/structures.py",
+        "requests/utils.py",
+        "requests/__init__.py",
+        "requests/adapters.py"
+      ],
+      "correct_file_retrieved": true,
+      "correct_symbol_in_snapshot": true,
+      "correct_symbol_ledger_atoms": [],
+      "correct_origin_candidates": [],
+      "selected_root_ids": [
+        "R747E0D36EE2C"
+      ],
+      "failure_site": {
+        "id": "NBD57D8E4AF41",
+        "kind": "EXCEPTION_SITE",
+        "path": "requests/__init__.py",
+        "line": 123,
+        "symbol": null,
+        "expression": "exception at requests/__init__.py:123",
+        "evidence_ids": [
+          "E2179F8C08C45",
+          "E32F4FDF8CB08"
+        ],
+        "scope": null
+      },
+      "traceback_present": false,
+      "initial_evidence_refs": [
+        "requests/models.py:839-874",
+        "requests/_internal_utils.py:1-42",
+        "requests/auth.py:1-305",
+        "requests/compat.py:1-72",
+        "requests/cookies.py:1-355",
+        "requests/exceptions.py:1-123",
+        "requests/hooks.py:1-34",
+        "requests/status_codes.py:1-123",
+        "requests/structures.py:1-105",
+        "requests/utils.py:1-286",
+        "requests/__init__.py:1-3",
+        "requests/adapters.py:1-1"
+      ],
+      "domination": [
+        {
+          "selected_id": "R747E0D36EE2C",
+          "reason": "STRUCTURAL_DOMINANCE",
+          "rejected": [],
+          "structurally_dominant": true
+        }
+      ],
+      "fabricated_bridge_edges": [
+        {
+          "id": "G038E5C6B0BF3",
+          "source_id": "N4F113E6EF59E",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G04F06579685F",
+          "source_id": "N6729DE377608",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G14B9043E0164",
+          "source_id": "N339E23937AAD",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G1DCFF5A39C51",
+          "source_id": "N652CC4517D13",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G1EBCC57E9937",
+          "source_id": "N6A3DD46C84BD",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08",
+            "E0A05060630C4",
+            "E28D2342E1B95",
+            "EC16E5A09C78B",
+            "E00838EE0BE71",
+            "E19567CD1885A",
+            "E5DD14FA4F4E4",
+            "E85B94FFF6D6E",
+            "EAF805FA46CF7"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G21690BAFCF00",
+          "source_id": "N8E998A64FECC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G28C3C17FD4DA",
+          "source_id": "NCDA40792C649",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G28CC2AC055AD",
+          "source_id": "N1D47DA077601",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G48877D929EE9",
+          "source_id": "N83EC4ACD1BDC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G5C57425A8829",
+          "source_id": "NFCBABF9848F0",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E28D2342E1B95",
+            "EC16E5A09C78B",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G66DC0B53FEE5",
+          "source_id": "N62573B4AF83A",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G78C847AEF15B",
+          "source_id": "NFB2FC37CDFF7",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G820AFA4401F9",
+          "source_id": "ND2C818F9CBF7",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E00838EE0BE71",
+            "E19567CD1885A",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G8431EEDA49A4",
+          "source_id": "NF4C169E305F1",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G8E6A8127A811",
+          "source_id": "NA53C131AFCA5",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G925243868B95",
+          "source_id": "N3A6337B8A6D5",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E00838EE0BE71",
+            "E19567CD1885A",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "G9A1139EE493C",
+          "source_id": "N8D99840AA75C",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GA3A75F2995D4",
+          "source_id": "NAC8F030716AF",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GA77CAB9AF7F0",
+          "source_id": "N4B62BA845D9A",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GAA74A536AD7C",
+          "source_id": "N9B031E500C75",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GB480236853CC",
+          "source_id": "NC9D056F82B50",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GB911D88CD3DB",
+          "source_id": "NDBB0BC082B53",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GCECE8B41CCEB",
+          "source_id": "N35E0B1BE8EA0",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E0A05060630C4",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GE8D252DC5206",
+          "source_id": "N4B3BF70143CC",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GEB7B9274F33D",
+          "source_id": "ND8AA8BF035BE",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GF2C1539B56D8",
+          "source_id": "N3D1475B7CDAB",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E5DD14FA4F4E4",
+            "E85B94FFF6D6E",
+            "EAF805FA46CF7",
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GF8E761A96A05",
+          "source_id": "N7CD9F2880B15",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        },
+        {
+          "id": "GFDC5B1318C1F",
+          "source_id": "NFDCBBF0D0130",
+          "target_id": "NBD57D8E4AF41",
+          "kind": "RAISES_AT",
+          "deterministic": true,
+          "evidence_ids": [
+            "E2179F8C08C45",
+            "E32F4FDF8CB08"
+          ],
+          "argument_binding": null
+        }
+      ]
+    }
+  ]
+}

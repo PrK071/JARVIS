@@ -1,0 +1,526 @@
+[
+  {
+    "base_commit": "110048f9837f8441ea536804115e80b69f400277",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/1963",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "deb8b9018ea0271b2b9dc2d883bf5fb0ca9a721ecc9a93718065926fbec4ed74",
+    "gold_test_patch_sha256": "d54962cb131f871dcfb26c9d5b4518da0c701fd998915837bec0b3d80d9492a0",
+    "id": "psf__requests-1963",
+    "issue_url": "https://github.com/psf/requests/issues/1962",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "303 followed by 307 preserves GET after the first redirect.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Later redirect restores original POST.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW"
+      ],
+      "root_cause": "Redirect iterations copy the initial request instead of the latest prepared request.",
+      "root_path": "requests/sessions.py",
+      "root_symbol": "SessionRedirectMixin.resolve_redirects",
+      "source_locations": [
+        {
+          "end_line": 184,
+          "line": 84
+        }
+      ],
+      "target_paths": [
+        "requests/sessions.py"
+      ]
+    },
+    "problem_formulations": [
+      "`Session.resolve_redirects` copies the original request for all subsequent requests, can cause incorrect method selection\nConsider the following redirection chain:\n\n```\nPOST /do_something HTTP/1.1\nHost: server.example.com\n...\n\nHTTP/1.1 303 See Other\nLocation: /new_thing_1513\n\nGET /new_thing_1513\nHost: server.example.com\n...\n\nHTTP/1.1 307 Temporary Redirect\nLocation: //failover.example.com/new_thing_1513\n```\n\nThe intermediate 303 See Other has caused the POST to be converted to\na GET.  The subsequent 307 should preserve the GET.  However, because\n`Session.resolve_redirects` starts each iteration by copying the _original_\nrequest object, Requests will issue a POST!\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "6b57e47f3b319ad4483676cbd1448d331a893363c84c04bb2a18db209690dc36",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/110048f9837f8441ea536804115e80b69f400277",
+    "source_python_sha256": "c2de0ac8707c133d65142a586d1224ef026a2933f53ed79a4ae627c5f3efdf90",
+    "split": "development"
+  },
+  {
+    "base_commit": "091991be0da19de9108dbe5e3752917fea3d7fdc",
+    "category": "DATA_OR_RETURN_CONTRACT",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/2317",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "e6f1e63850e2a5eefcfe6b4bbc6ba39038372415633a328ba7afea001fcbd50e",
+    "gold_test_patch_sha256": "ff283039874db19ea594bda54c2aa6812eb25fea9881e2517c4a143805cdb552",
+    "id": "psf__requests-2317",
+    "issue_url": "https://github.com/psf/requests/issues/2316",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Bytes GET is sent as GET.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Method becomes literal b'GET' and receives 404.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "FIX_CONSUMER_CONTRACT",
+        "CORRECT_ARGUMENT"
+      ],
+      "root_cause": "Bytes method is stringified, not decoded to native text.",
+      "root_path": "requests/sessions.py",
+      "root_symbol": "Session.request",
+      "source_locations": [
+        {
+          "end_line": 459,
+          "line": 378
+        }
+      ],
+      "target_paths": [
+        "requests/sessions.py"
+      ]
+    },
+    "problem_formulations": [
+      "method = builtin_str(method) problem\nIn requests/sessions.py is a command:\n\nmethod = builtin_str(method)\nConverts method from\nb’GET’\nto\n\"b'GET’\"\n\nWhich is the literal string, no longer a binary string.  When requests tries to use the method \"b'GET’”, it gets a 404 Not Found response.\n\nI am using python3.4 and python-neutronclient (2.3.9) with requests (2.4.3).  neutronclient is broken because it uses this \"args = utils.safe_encode_list(args)\" command which converts all the values to binary string, including method.\n\nI'm not sure if this is a bug with neutronclient or a bug with requests, but I'm starting here.  Seems if requests handled the method value being a binary string, we wouldn't have any problem.\n\nAlso, I tried in python2.6 and this bug doesn't exist there. Some difference between 2.6 and 3.4 makes this not work right.\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "3163967c6ee3ea0ab1c0d1e780bb7002a68825f5b85ef36e1d3698ca117f4853",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/091991be0da19de9108dbe5e3752917fea3d7fdc",
+    "source_python_sha256": "0351056c45ca807ecd0a334953cc1153d5be6faa5da6d15073730afe817b7290",
+    "split": "development"
+  },
+  {
+    "base_commit": "0be38a0c37c59c4b66ce908731da15b401655113",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/2674",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "548962b377b03b6dc0095cc0336e26b7b9c52839e7be9383a50873ede44988c0",
+    "gold_test_patch_sha256": "ac74744ddcd4a449753944771e99f790e94f07040d7baa82d386ff1f7c4b05ae",
+    "id": "psf__requests-2674",
+    "issue_url": "https://github.com/psf/requests/pull/2674",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Closed pools produce requests ConnectionError.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "urllib3 ClosedPoolError escapes the public API.",
+      "repair_strategies": [
+        "ERROR_HANDLING",
+        "FIX_CONSUMER_CONTRACT"
+      ],
+      "root_cause": "ClosedPoolError is not translated at the adapter API boundary.",
+      "root_path": "requests/adapters.py",
+      "root_symbol": "HTTPAdapter.send",
+      "source_locations": [
+        {
+          "end_line": 435,
+          "line": 324
+        }
+      ],
+      "target_paths": [
+        "requests/adapters.py"
+      ]
+    },
+    "problem_formulations": [
+      "urllib3 exceptions passing through requests API\nI don't know if it's a design goal of requests to hide urllib3's exceptions and wrap them around requests.exceptions types.\n\n(If it's not IMHO it should be, but that's another discussion)\n\nIf it is, I have at least two of them passing through that I have to catch in addition to requests' exceptions. They are requests.packages.urllib3.exceptions.DecodeError and requests.packages.urllib3.exceptions.TimeoutError (this one I get when a proxy timeouts)\n\nThanks!\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "f91bf0c1463f0e1349c0c2aa8c0d547412694d0bd87870e774a582410cb9e7fc",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/0be38a0c37c59c4b66ce908731da15b401655113",
+    "source_python_sha256": "847ef2b22885f2f01204638633402ff81e9d50609c199812e685f53a63dce966",
+    "split": "development"
+  },
+  {
+    "base_commit": "36453b95b13079296776d11b09cab2567ea3e703",
+    "category": "DATA_OR_RETURN_CONTRACT",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/3362",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "23e64f2da841d5d49874221e915a084e9bb1def2fcd6d6a24fd8e7dce71fba8d",
+    "gold_test_patch_sha256": "cbb63761e0d50033c347fb0847126632ba4c8848db8bd7f598e21d3998d5c260",
+    "id": "psf__requests-3362",
+    "issue_url": "https://github.com/psf/requests/pull/3362",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "decode_unicode=True yields text even when encoding is None.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "iter_content yields bytes while text yields unicode.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_RETURN_VALUE",
+        "CORRECT_CONTROL_FLOW"
+      ],
+      "root_cause": "Unknown declared encoding bypasses unicode decoding instead of falling back to apparent encoding.",
+      "root_path": "requests/utils.py",
+      "root_symbol": "stream_decode_response_unicode",
+      "source_locations": [
+        {
+          "end_line": 374,
+          "line": 359
+        }
+      ],
+      "target_paths": [
+        "requests/utils.py"
+      ]
+    },
+    "problem_formulations": [
+      "Uncertain about content/text vs iter_content(decode_unicode=True/False)\nWhen requesting an application/json document, I'm seeing `next(r.iter_content(16*1024, decode_unicode=True))` returning bytes, whereas `r.text` returns unicode. My understanding was that both should return a unicode object. In essence, I thought \"iter_content\" was equivalent to \"iter_text\" when decode_unicode was True. Have I misunderstood something? I can provide an example if needed.\n\nFor reference, I'm using python 3.5.1 and requests 2.10.0.\n\nThanks!\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "156642dda5466fb67948b5ef0d2fe85c3387a09a7653e18ee99b2e000a0a74b2",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/36453b95b13079296776d11b09cab2567ea3e703",
+    "source_python_sha256": "9b3abca5100110c2696e6206072b7dcd607cf0da98d8434b8fcda7b5ee43e411",
+    "split": "development"
+  },
+  {
+    "base_commit": "fe693c492242ae532211e0c173324f09ca8cf227",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/2148",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "0c773284a62e168b99a78a22c778e4366861e5dac37e7ffb4ae85a680843fab5",
+    "gold_test_patch_sha256": "ad6a641480a841a4e54349518842cde8e7562813178057e5cd8b44e9e8af8e27",
+    "id": "psf__requests-2148",
+    "issue_url": "https://github.com/psf/requests/pull/2148",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Socket reset becomes requests ConnectionError.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Raw socket error escapes while consuming response content.",
+      "repair_strategies": [
+        "ERROR_HANDLING",
+        "FIX_CONSUMER_CONTRACT"
+      ],
+      "root_cause": "The streaming exception boundary does not wrap socket.error.",
+      "root_path": "requests/models.py",
+      "root_symbol": "Response.iter_content",
+      "source_locations": [
+        {
+          "end_line": 663,
+          "line": 623
+        }
+      ],
+      "target_paths": [
+        "requests/models.py"
+      ]
+    },
+    "problem_formulations": [
+      "socket.error exception not caught/wrapped in a requests exception (ConnectionError perhaps?)\nI just noticed a case where I had a socket reset on me, and was raised to me as a raw socket error as opposed to something like a requests.exceptions.ConnectionError:\n\n```\n  File \"/home/rtdean/***/***/***/***/***/***.py\", line 67, in dir_parse\n    root = ElementTree.fromstring(response.text)\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/requests-2.3.0-py2.7.egg/requests/models.py\", line 721, in text\n    if not self.content:\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/requests-2.3.0-py2.7.egg/requests/models.py\", line 694, in content\n    self._content = bytes().join(self.iter_content(CONTENT_CHUNK_SIZE)) or bytes()\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/requests-2.3.0-py2.7.egg/requests/models.py\", line 627, in generate\n    for chunk in self.raw.stream(chunk_size, decode_content=True):\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/requests-2.3.0-py2.7.egg/requests/packages/urllib3/response.py\", line 240, in stream\n    data = self.read(amt=amt, decode_content=decode_content)\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/requests-2.3.0-py2.7.egg/requests/packages/urllib3/response.py\", line 187, in read\n    data = self._fp.read(amt)\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/httplib.py\", line 543, in read\n    return self._read_chunked(amt)\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/httplib.py\", line 612, in _read_chunked\n    value.append(self._safe_read(chunk_left))\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/httplib.py\", line 658, in _safe_read\n    chunk = self.fp.read(min(amt, MAXAMOUNT))\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/socket.py\", line 380, in read\n    data = self._sock.recv(left)\n  File \"/home/rtdean/.pyenv/versions/2.7.6/lib/python2.7/site-packages/gevent-1.0.1-py2.7-linux-x86_64.egg/gevent/socket.py\", line 385, in recv\n    return sock.recv(*args)\nsocket.error: [Errno 104] Connection reset by peer\n```\n\nNot sure if this is by accident or design... in general, I guess I'd expect a requests exception when using requests, but I can start looking for socket errors and the like as well.\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "902da328ece356f063cb74e092e76a07d892d8916c38ad10a92cf6ce02713e36",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/fe693c492242ae532211e0c173324f09ca8cf227",
+    "source_python_sha256": "5231b9958b7ef2e8ac2f3cd2435b6463df5579c39598ff239a3c2ab64344eb3f",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "a0df2cbb10419037d11d04352b3175405ab52941",
+    "category": "DATA_OR_RETURN_CONTRACT",
+    "corrective_pr_url": "https://github.com/psf/requests/pull/863",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "1fe8ef6f159643d4f5c4d06ef1ceddc6d8fa789dfcc58cd5e52eef98e43985d2",
+    "gold_test_patch_sha256": "f4434a5d4d12fc75e4a008efc77f14b9f711b2200d4e05a3b5cd3b04deb29bf4",
+    "id": "psf__requests-863",
+    "issue_url": "https://github.com/psf/requests/issues/785",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Every registered hook is callable.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "List of hooks is nested inside the hook list.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "FIX_CONSUMER_CONTRACT",
+        "CORRECT_CONTROL_FLOW"
+      ],
+      "root_cause": "A collection of hooks is appended as a single non-callable element.",
+      "root_path": "requests/models.py",
+      "root_symbol": "Request.register_hook",
+      "source_locations": [
+        {
+          "end_line": 466,
+          "line": 463
+        }
+      ],
+      "target_paths": [
+        "requests/models.py"
+      ]
+    },
+    "problem_formulations": [
+      "Allow lists in the dict values of the hooks argument\nCurrently the Request class has a .register_hook() method but it parses the dictionary it expects from it's hooks argument weirdly: the argument can only specify one hook function per hook.  If you pass in a list of hook functions per hook the code in Request.**init**() will wrap the list in a list which then fails when the hooks are consumed (since a list is not callable).  This is especially annoying since you can not use multiple hooks from a session.  The only way to get multiple hooks now is to create the request object without sending it, then call .register_hook() multiple times and then finally call .send().\n\nThis would all be much easier if Request.**init**() parsed the hooks parameter in a way that it accepts lists as it's values.\n\n"
+    ],
+    "repo": "psf/requests",
+    "schema_version": 12,
+    "source_archive_sha256": "d80266cff495d9104c195e3fe0f89acda9ef7abfb3cf2bcec3f3912666547436",
+    "source_archive_url": "https://codeload.github.com/psf/requests/tar.gz/a0df2cbb10419037d11d04352b3175405ab52941",
+    "source_python_sha256": "5e05c328a18bba0df67ffd6fc6b52a1119236931178c229df3de373f0d6e5779",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "b40a0f4e33823e6d0f341f7e8684e359a99060d1",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/marshmallow-code/marshmallow/pull/1359",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "52c912ac74251dff9c92792f2ab2835f2ddfa9952062aa8eb4d2bf3b236167ee",
+    "gold_test_patch_sha256": "592ab3f3bcedb30423bdfbeb3aa277b21647333eabb53c318f5f0f20c197060d",
+    "id": "marshmallow-code__marshmallow-1359",
+    "issue_url": "https://github.com/marshmallow-code/marshmallow/issues/1357",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "DateTime inside List or Tuple inherits schema date format.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Container fields lack schema.opts and binding fails.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "FIX_CONSUMER_CONTRACT",
+        "CORRECT_ARGUMENT"
+      ],
+      "root_cause": "Nested DateTime reads opts from its container rather than root schema.",
+      "root_path": "src/marshmallow/fields.py",
+      "root_symbol": "DateTime._bind_to_schema",
+      "source_locations": [
+        {
+          "end_line": 1119,
+          "line": 1113
+        }
+      ],
+      "target_paths": [
+        "src/marshmallow/fields.py"
+      ]
+    },
+    "problem_formulations": [
+      "3.0: DateTime fields cannot be used as inner field for List or Tuple fields\nBetween releases 3.0.0rc8 and 3.0.0rc9, `DateTime` fields have started throwing an error when being instantiated as inner fields of container fields like `List` or `Tuple`. The snippet below works in <=3.0.0rc8 and throws the error below in >=3.0.0rc9 (and, worryingly, 3.0.0):\r\n\r\n```python\r\nfrom marshmallow import fields, Schema\r\n\r\nclass MySchema(Schema):\r\n    times = fields.List(fields.DateTime())\r\n\r\ns = MySchema()\r\n```\r\n\r\nTraceback:\r\n```\r\nTraceback (most recent call last):\r\n  File \"test-mm.py\", line 8, in <module>\r\n    s = MySchema()\r\n  File \"/Users/victor/.pyenv/versions/marshmallow/lib/python3.6/site-packages/marshmallow/schema.py\", line 383, in __init__\r\n    self.fields = self._init_fields()\r\n  File \"/Users/victor/.pyenv/versions/marshmallow/lib/python3.6/site-packages/marshmallow/schema.py\", line 913, in _init_fields\r\n    self._bind_field(field_name, field_obj)\r\n  File \"/Users/victor/.pyenv/versions/marshmallow/lib/python3.6/site-packages/marshmallow/schema.py\", line 969, in _bind_field\r\n    field_obj._bind_to_schema(field_name, self)\r\n  File \"/Users/victor/.pyenv/versions/marshmallow/lib/python3.6/site-packages/marshmallow/fields.py\", line 636, in _bind_to_schema\r\n    self.inner._bind_to_schema(field_name, self)\r\n  File \"/Users/victor/.pyenv/versions/marshmallow/lib/python3.6/site-packages/marshmallow/fields.py\", line 1117, in _bind_to_schema\r\n    or getattr(schema.opts, self.SCHEMA_OPTS_VAR_NAME)\r\nAttributeError: 'List' object has no attribute 'opts'\r\n```\r\n\r\nIt seems like it's treating the parent field as a Schema without checking that it is indeed a schema, so the `schema.opts` statement fails as fields don't have an `opts` attribute.\n"
+    ],
+    "repo": "marshmallow-code/marshmallow",
+    "schema_version": 12,
+    "source_archive_sha256": "b0d63822614239fc3a5c6eceade8c0517d6934b27b033417a665de66ad1dbe24",
+    "source_archive_url": "https://codeload.github.com/marshmallow-code/marshmallow/tar.gz/b40a0f4e33823e6d0f341f7e8684e359a99060d1",
+    "source_python_sha256": "21d93be5cf70a6778b95fe9bc90d81a2258b89b8570fb21e44ab2b102640bb69",
+    "split": "development"
+  },
+  {
+    "base_commit": "2be2d83a1a9a6d3d9b85804f3ab545cecc409bb0",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/marshmallow-code/marshmallow/pull/1343",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "fb93d3650801b4da32dce01c6f7cc72194236aa7445189dd5edfb9d5081d3ecf",
+    "gold_test_patch_sha256": "27c3bdd1020389c54802618a94d3d3b344f638d1542fcd85e898eb876f45c90d",
+    "id": "marshmallow-code__marshmallow-1343",
+    "issue_url": "https://github.com/marshmallow-code/marshmallow/issues/1342",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Invalid nested input produces ValidationError.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "None data indexing raises uncaught TypeError.",
+      "repair_strategies": [
+        "ERROR_HANDLING",
+        "FIX_CONSUMER_CONTRACT",
+        "VALIDATE_BOUNDARY"
+      ],
+      "root_cause": "Validators index invalid nested data but catch only KeyError, not TypeError.",
+      "root_path": "src/marshmallow/schema.py",
+      "root_symbol": "BaseSchema._invoke_field_validators",
+      "source_locations": [
+        {
+          "end_line": 905,
+          "line": 863
+        }
+      ],
+      "target_paths": [
+        "src/marshmallow/schema.py"
+      ]
+    },
+    "problem_formulations": [
+      "[version 2.20.0] TypeError: 'NoneType' object is not subscriptable\nAfter update from version 2.19.5 to 2.20.0 I got error for code like:\r\n\r\n```python\r\nfrom marshmallow import Schema, fields, validates\r\n\r\n\r\nclass Bar(Schema):\r\n    value = fields.String()\r\n\r\n    @validates('value')  # <- issue here\r\n    def validate_value(self, value):\r\n        pass\r\n\r\n\r\nclass Foo(Schema):\r\n    bar = fields.Nested(Bar)\r\n\r\n\r\nsch = Foo()\r\n\r\nsch.validate({\r\n    'bar': 'invalid',\r\n})\r\n```\r\n\r\n```\r\nTraceback (most recent call last):\r\n  File \"/_/bug_mschema.py\", line 19, in <module>\r\n    'bar': 'invalid',\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/schema.py\", line 628, in validate\r\n    _, errors = self._do_load(data, many, partial=partial, postprocess=False)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/schema.py\", line 670, in _do_load\r\n    index_errors=self.opts.index_errors,\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/marshalling.py\", line 292, in deserialize\r\n    index=(index if index_errors else None)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/marshalling.py\", line 65, in call_and_store\r\n    value = getter_func(data)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/marshalling.py\", line 285, in <lambda>\r\n    data\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/fields.py\", line 265, in deserialize\r\n    output = self._deserialize(value, attr, data)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/fields.py\", line 465, in _deserialize\r\n    data, errors = self.schema.load(value)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/schema.py\", line 588, in load\r\n    result, errors = self._do_load(data, many, partial=partial, postprocess=True)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/schema.py\", line 674, in _do_load\r\n    self._invoke_field_validators(unmarshal, data=result, many=many)\r\n  File \"/_/env/lib/python3.7/site-packages/marshmallow/schema.py\", line 894, in _invoke_field_validators\r\n    value = data[field_obj.attribute or field_name]\r\nTypeError: 'NoneType' object is not subscriptable\r\n```\n"
+    ],
+    "repo": "marshmallow-code/marshmallow",
+    "schema_version": 12,
+    "source_archive_sha256": "aada934a48e85bd261ef02e3afd4c34dafb307368b0725aeea2d783b690c9e8e",
+    "source_archive_url": "https://codeload.github.com/marshmallow-code/marshmallow/tar.gz/2be2d83a1a9a6d3d9b85804f3ab545cecc409bb0",
+    "source_python_sha256": "22ad013464694681d3fac3e63a52449fe65d7a5606624d6e87f308cf74cc8b06",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "6995257cf470d2143ad1683824962de4071c0eb7",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/11143",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "fa7c8fe4ef668668432882ab3397c23349d57de6f54919aeccbc851a79c3aca9",
+    "gold_test_patch_sha256": "ac7917b3fc8ece1dcdc386e506ca0f85153df928912f15cf264c46b3e08565f6",
+    "id": "pytest-dev__pytest-11143",
+    "issue_url": "https://github.com/pytest-dev/pytest/issues/11140",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "A test module beginning with a numeric expression can be rewritten.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Numeric constant is passed to string-oriented rewrite-disable handling.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "VALIDATE_BOUNDARY",
+        "FIX_CONSUMER_CONTRACT"
+      ],
+      "root_cause": "Any leading AST Constant is treated as a string docstring, including numbers.",
+      "root_path": "src/_pytest/assertion/rewrite.py",
+      "root_symbol": "AssertionRewriter.run",
+      "source_locations": [
+        {
+          "end_line": 742,
+          "line": 660
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/assertion/rewrite.py"
+      ]
+    },
+    "problem_formulations": [
+      "Rewrite fails when first expression of file is a number and mistaken as docstring \n<!--\r\nThanks for submitting an issue!\r\n\r\nQuick check-list while reporting bugs:\r\n-->\r\n\r\n- [x] a detailed description of the bug or problem you are having\r\n- [x] output of `pip list` from the virtual environment you are using\r\n- [x] pytest and operating system versions\r\n- [x] minimal example if possible\r\n```\r\nInstalling collected packages: zipp, six, PyYAML, python-dateutil, MarkupSafe, importlib-metadata, watchdog, tomli, soupsieve, pyyaml-env-tag, pycparser, pluggy, packaging, mergedeep, Markdown, jinja2, iniconfig, ghp-import, exceptiongroup, click, websockets, urllib3, tqdm, smmap, pytest, pyee, mkdocs, lxml, importlib-resources, idna, cssselect, charset-normalizer, cffi, certifi, beautifulsoup4, attrs, appdirs, w3lib, typing-extensions, texttable, requests, pyzstd, pytest-metadata, pyquery, pyppmd, pyppeteer, pynacl, pymdown-extensions, pycryptodomex, pybcj, pyasn1, py, psutil, parse, multivolumefile, mkdocs-autorefs, inflate64, gitdb, fake-useragent, cryptography, comtypes, bs4, brotli, bcrypt, allure-python-commons, xlwt, xlrd, rsa, requests-html, pywinauto, python-i18n, python-dotenv, pytest-rerunfailures, pytest-html, pytest-check, PySocks, py7zr, paramiko, mkdocstrings, loguru, GitPython, ftputil, crcmod, chardet, brotlicffi, allure-pytest\r\nSuccessfully installed GitPython-3.1.31 Markdown-3.3.7 MarkupSafe-2.1.3 PySocks-1.7.1 PyYAML-6.0 allure-pytest-2.13.2 allure-python-commons-2.13.2 appdirs-1.4.4 attrs-23.1.0 bcrypt-4.0.1 beautifulsoup4-4.12.2 brotli-1.0.9 brotlicffi-1.0.9.2 bs4-0.0.1 certifi-2023.5.7 cffi-1.15.1 chardet-5.1.0 charset-normalizer-3.1.0 click-8.1.3 comtypes-1.2.0 crcmod-1.7 cryptography-41.0.1 cssselect-1.2.0 exceptiongroup-1.1.1 fake-useragent-1.1.3 ftputil-5.0.4 ghp-import-2.1.0 gitdb-4.0.10 idna-3.4 importlib-metadata-6.7.0 importlib-resources-5.12.0 inflate64-0.3.1 iniconfig-2.0.0 jinja2-3.1.2 loguru-0.7.0 lxml-4.9.2 mergedeep-1.3.4 mkdocs-1.4.3 mkdocs-autorefs-0.4.1 mkdocstrings-0.22.0 multivolumefile-0.2.3 packaging-23.1 paramiko-3.2.0 parse-1.19.1 pluggy-1.2.0 psutil-5.9.5 py-1.11.0 py7zr-0.20.5 pyasn1-0.5.0 pybcj-1.0.1 pycparser-2.21 pycryptodomex-3.18.0 pyee-8.2.2 pymdown-extensions-10.0.1 pynacl-1.5.0 pyppeteer-1.0.2 pyppmd-1.0.0 pyquery-2.0.0 pytest-7.4.0 pytest-check-2.1.5 pytest-html-3.2.0 pytest-metadata-3.0.0 pytest-rerunfailures-11.1.2 python-dateutil-2.8.2 python-dotenv-1.0.0 python-i18n-0.3.9 pywinauto-0.6.6 pyyaml-env-tag-0.1 pyzstd-0.15.9 requests-2.31.0 requests-html-0.10.0 rsa-4.9 six-1.16.0 smmap-5.0.0 soupsieve-2.4.1 texttable-1.6.7 tomli-2.0.1 tqdm-4.65.0 typing-extensions-4.6.3 urllib3-1.26.16 w3lib-2.1.1 watchdog-3.0.0 websockets-10.4 xlrd-2.0.1 xlwt-1.3.0 zipp-3.15.0\r\n```\r\nuse `pytest -k xxx`， report an error：`TypeError: argument of type 'int' is not iterable`\r\n\r\nit seems a error in collecting testcase\r\n```\r\n==================================== ERRORS ====================================\r\n_ ERROR collecting testcases/基线/代理策略/SOCKS二级代理迭代二/在线用户/在线用户更新/上线用户/test_socks_user_011.py _\r\n/usr/local/lib/python3.8/site-packages/_pytest/runner.py:341: in from_call\r\n    result: Optional[TResult] = func()\r\n/usr/local/lib/python3.8/site-packages/_pytest/runner.py:372: in <lambda>\r\n    call = CallInfo.from_call(lambda: list(collector.collect()), \"collect\")\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:531: in collect\r\n    self._inject_setup_module_fixture()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:545: in _inject_setup_module_fixture\r\n    self.obj, (\"setUpModule\", \"setup_module\")\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:310: in obj\r\n    self._obj = obj = self._getobj()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:528: in _getobj\r\n    return self._importtestmodule()\r\n/usr/local/lib/python3.8/site-packages/_pytest/python.py:617: in _importtestmodule\r\n    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)\r\n/usr/local/lib/python3.8/site-packages/_pytest/pathlib.py:565: in import_path\r\n    importlib.import_module(module_name)\r\n/usr/local/lib/python3.8/importlib/__init__.py:127: in import_module\r\n    return _bootstrap._gcd_import(name[level:], package, level)\r\n<frozen importlib._bootstrap>:1014: in _gcd_import\r\n    ???\r\n<frozen importlib._bootstrap>:991: in _find_and_load\r\n    ???\r\n<frozen importlib._bootstrap>:975: in _find_and_load_unlocked\r\n    ???\r\n<frozen importlib._bootstrap>:671: in _load_unlocked\r\n    ???\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:169: in exec_module\r\n    source_stat, co = _rewrite_test(fn, self.config)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:352: in _rewrite_test\r\n    rewrite_asserts(tree, source, strfn, config)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:413: in rewrite_asserts\r\n    AssertionRewriter(module_path, config, source).run(mod)\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:695: in run\r\n    if self.is_rewrite_disabled(doc):\r\n/usr/local/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:760: in is_rewrite_disabled\r\n    return \"PYTEST_DONT_REWRITE\" in docstring\r\nE   TypeError: argument of type 'int' is not iterable\r\n```\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 12,
+    "source_archive_sha256": "ef5724765f1ee443c9882a9309ea4f097c6c0a82ab8aeafdb187d1d6cd9fdd5e",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/6995257cf470d2143ad1683824962de4071c0eb7",
+    "source_python_sha256": "9ba7974bc81881d02f92b082448443a5aa8a03e61454bb40d3a9b4697c45bb94",
+    "split": "development"
+  },
+  {
+    "base_commit": "450d2646233c670654744d3d24330b69895bb9d2",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/5413",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "34f5b421e92cf10334e75169f11e7f4a6e20cec510e6b679d26eb455e093e53f",
+    "gold_test_patch_sha256": "96a694cd889a4b1597e144bc9c0a127960111eab7621b805711b8ebe5ccad8f2",
+    "id": "pytest-dev__pytest-5413",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/5413",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "ExceptionInfo str and repr provide consistent exception description.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "str includes a location prefix and differs from expected presentation.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_RETURN_VALUE"
+      ],
+      "root_cause": "ExceptionInfo string formatting appends source location unlike expected exception representation.",
+      "root_path": "src/_pytest/_code/code.py",
+      "root_symbol": "ExceptionInfo.__str__",
+      "source_locations": [
+        {
+          "end_line": 542,
+          "line": 537
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/_code/code.py"
+      ]
+    },
+    "problem_formulations": [
+      "str() on the pytest.raises context variable doesn't behave same as normal exception catch\nPytest 4.6.2, macOS 10.14.5\r\n\r\n```Python\r\ntry:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\nexcept LookupError as e:\r\n    print(str(e))\r\n```\r\nprints\r\n\r\n> A\r\n> B\r\n> C\r\n\r\nBut\r\n\r\n```Python\r\nwith pytest.raises(LookupError) as e:\r\n    raise LookupError(\r\n        f\"A\\n\"\r\n        f\"B\\n\"\r\n        f\"C\"\r\n    )\r\n\r\nprint(str(e))\r\n```\r\n\r\nprints\r\n\r\n> <console>:3: LookupError: A\r\n\r\nIn order to get the full error message, one must do `str(e.value)`, which is documented, but this is a different interaction. Any chance the behavior could be changed to eliminate this gotcha?\r\n\r\n-----\r\n\r\nPip list gives\r\n\r\n```\r\nPackage            Version  Location\r\n------------------ -------- ------------------------------------------------------\r\napipkg             1.5\r\nasn1crypto         0.24.0\r\natomicwrites       1.3.0\r\nattrs              19.1.0\r\naws-xray-sdk       0.95\r\nboto               2.49.0\r\nboto3              1.9.51\r\nbotocore           1.12.144\r\ncertifi            2019.3.9\r\ncffi               1.12.3\r\nchardet            3.0.4\r\nClick              7.0\r\ncodacy-coverage    1.3.11\r\ncolorama           0.4.1\r\ncoverage           4.5.3\r\ncryptography       2.6.1\r\ndecorator          4.4.0\r\ndocker             3.7.2\r\ndocker-pycreds     0.4.0\r\ndocutils           0.14\r\necdsa              0.13.2\r\nexecnet            1.6.0\r\nfuture             0.17.1\r\nidna               2.8\r\nimportlib-metadata 0.17\r\nipaddress          1.0.22\r\nJinja2             2.10.1\r\njmespath           0.9.4\r\njsondiff           1.1.1\r\njsonpickle         1.1\r\njsonschema         2.6.0\r\nMarkupSafe         1.1.1\r\nmock               3.0.4\r\nmore-itertools     7.0.0\r\nmoto               1.3.7\r\nneobolt            1.7.10\r\nneotime            1.7.4\r\nnetworkx           2.1\r\nnumpy              1.15.0\r\npackaging          19.0\r\npandas             0.24.2\r\npip                19.1.1\r\npluggy             0.12.0\r\nprompt-toolkit     2.0.9\r\npy                 1.8.0\r\npy2neo             4.2.0\r\npyaml              19.4.1\r\npycodestyle        2.5.0\r\npycparser          2.19\r\npycryptodome       3.8.1\r\nPygments           2.3.1\r\npyOpenSSL          19.0.0\r\npyparsing          2.4.0\r\npytest             4.6.2\r\npytest-cache       1.0\r\npytest-codestyle   1.4.0\r\npytest-cov         2.6.1\r\npytest-forked      1.0.2\r\npython-dateutil    2.7.3\r\npython-jose        2.0.2\r\npytz               2018.5\r\nPyYAML             5.1\r\nrequests           2.21.0\r\nrequests-mock      1.5.2\r\nresponses          0.10.6\r\ns3transfer         0.1.13\r\nsetuptools         41.0.1\r\nsix                1.11.0\r\nsqlite3worker      1.1.7\r\ntabulate           0.8.3\r\nurllib3            1.24.3\r\nwcwidth            0.1.7\r\nwebsocket-client   0.56.0\r\nWerkzeug           0.15.2\r\nwheel              0.33.1\r\nwrapt              1.11.1\r\nxlrd               1.1.0\r\nxmltodict          0.12.0\r\nzipp               0.5.1\r\n```\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 12,
+    "source_archive_sha256": "5675b3a7fcdb847305c070821009cc1cb04bb1ff0a90a0cb7d48b68d505cbfe5",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/450d2646233c670654744d3d24330b69895bb9d2",
+    "source_python_sha256": "e0a52649b7e8005a7f24adb7c089e8765f56c5c697ead0dcbe90bb223ecd1389",
+    "split": "development"
+  },
+  {
+    "base_commit": "7b77fc086aab8b3a8ebc890200371884555eea1e",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/7373",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "1bba788edb0fbb9bdc5dbfe0b0bc0010211897a71d4a495b357ce73f4fef67ab",
+    "gold_test_patch_sha256": "719fb3fae7ff7c462720a835a75f832c88065202953d4db1ced554f3ee94c519",
+    "id": "pytest-dev__pytest-7373",
+    "issue_url": "https://github.com/pytest-dev/pytest/issues/7360",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Identical skipif expressions in different modules evaluate against each module's globals.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Cached result from the first module is reused in the second.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE"
+      ],
+      "root_cause": "Expression results are cached by text without the evaluation globals.",
+      "root_path": "src/_pytest/mark/evaluate.py",
+      "root_symbol": "cached_eval",
+      "source_locations": [
+        {
+          "end_line": 31,
+          "line": 21
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/mark/evaluate.py"
+      ]
+    },
+    "problem_formulations": [
+      "Incorrect caching of skipif/xfail string condition evaluation\nVersion: pytest 5.4.3, current master\r\n\r\npytest caches the evaluation of the string in e.g. `@pytest.mark.skipif(\"sys.platform == 'win32'\")`. The caching key is only the string itself (see `cached_eval` in `_pytest/mark/evaluate.py`). However, the evaluation also depends on the item's globals, so the caching can lead to incorrect results. Example:\r\n\r\n```py\r\n# test_module_1.py\r\nimport pytest\r\n\r\nskip = True\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_skip():\r\n    assert False\r\n```\r\n\r\n```py\r\n# test_module_2.py\r\nimport pytest\r\n\r\nskip = False\r\n\r\n@pytest.mark.skipif(\"skip\")\r\ndef test_should_not_skip():\r\n    assert False\r\n```\r\n\r\nRunning `pytest test_module_1.py test_module_2.py`.\r\n\r\nExpected: `test_should_skip` is skipped, `test_should_not_skip` is not skipped.\r\n\r\nActual: both are skipped.\r\n\r\n---\r\n\r\nI think the most appropriate fix is to simply remove the caching, which I don't think is necessary really, and inline `cached_eval` into `MarkEvaluator._istrue`.\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 12,
+    "source_archive_sha256": "9e01c9e5683890877c20a010408876a1346b80eb390325846d7f53e2c47e110a",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/7b77fc086aab8b3a8ebc890200371884555eea1e",
+    "source_python_sha256": "de0ae301b412c6d8ca476c3ab143d39142e0cff8fbb659b963eb9457d21b429f",
+    "split": "development"
+  },
+  {
+    "base_commit": "4964b468c83c06971eb743fbc57cc404f760c573",
+    "category": "CONFIGURATION_BEHAVIOR",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/8365",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "76ce3f1ddc6897eca565ebe7a5941ebb3072d21e4e78e01aff0a291ab8130944",
+    "gold_test_patch_sha256": "0164e4bc25dec4af25eac2025b51cfdc426b234640daaa7320e62bb255a8be5d",
+    "id": "pytest-dev__pytest-8365",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/8365",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original issue, pre-fix AST, production correction and added regression test; no model output used.",
+      "expected_behavior": "Temporary directory creation falls back to a usable name.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxies, not full semantic entailment; no upstream tests executed.",
+      "observed_behavior": "Invalid username characters cause directory creation to fail.",
+      "repair_strategies": [
+        "ERROR_HANDLING",
+        "CORRECT_CONFIGURATION",
+        "VALIDATE_BOUNDARY"
+      ],
+      "root_cause": "User-derived temp directory names are not guarded for invalid platform characters.",
+      "root_path": "src/_pytest/tmpdir.py",
+      "root_symbol": "TempPathFactory.getbasetemp",
+      "source_locations": [
+        {
+          "end_line": 125,
+          "line": 102
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/tmpdir.py"
+      ]
+    },
+    "problem_formulations": [
+      "tmpdir creation fails when the username contains illegal characters for directory names\n`tmpdir`, `tmpdir_factory` and `tmp_path_factory` rely on `getpass.getuser()` for determining the `basetemp` directory. I found that the user name returned by `getpass.getuser()` may return characters that are not allowed for directory names. This may lead to errors while creating the temporary directory.\r\n\r\nThe situation in which I reproduced this issue was while being logged in through an ssh connection into my Windows 10 x64 Enterprise version (1909) using an OpenSSH_for_Windows_7.7p1 server. In this configuration the command `python -c \"import getpass; print(getpass.getuser())\"` returns my domain username e.g. `contoso\\john_doe` instead of `john_doe` as when logged in regularly using a local session.\r\n\r\nWhen trying to create a temp directory in pytest through e.g. `tmpdir_factory.mktemp('foobar')` this fails with the following error message:\r\n```\r\nself = WindowsPath('C:/Users/john_doe/AppData/Local/Temp/pytest-of-contoso/john_doe')\r\nmode = 511, parents = False, exist_ok = True\r\n\r\n    def mkdir(self, mode=0o777, parents=False, exist_ok=False):\r\n        \"\"\"\r\n        Create a new directory at this given path.\r\n        \"\"\"\r\n        if self._closed:\r\n            self._raise_closed()\r\n        try:\r\n>           self._accessor.mkdir(self, mode)\r\nE           FileNotFoundError: [WinError 3] The system cannot find the path specified: 'C:\\\\Users\\\\john_doe\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-contoso\\\\john_doe'\r\n\r\nC:\\Python38\\lib\\pathlib.py:1266: FileNotFoundError\r\n```\r\n\r\nI could also reproduce this without the complicated ssh/windows setup with pytest 6.2.2 using the following commands from a `cmd`:\r\n```bat\r\necho def test_tmpdir(tmpdir):>test_tmp.py\r\necho   pass>>test_tmp.py\r\nset LOGNAME=contoso\\john_doe\r\npy.test test_tmp.py\r\n```\r\n\r\nThanks for having a look at this!\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 12,
+    "source_archive_sha256": "972e266e9e055878d90bac983c281243bc7169e70638c2ff9caa25fb61759fb5",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/4964b468c83c06971eb743fbc57cc404f760c573",
+    "source_python_sha256": "c34e5ee6ba75220cb7dd62e9f0af3de9483e6648e72c14fcc31b01756f934a38",
+    "split": "holdout"
+  }
+]

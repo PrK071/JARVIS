@@ -1,0 +1,22 @@
+{
+  "version": 12,
+  "adjudication_revision": 2,
+  "previous_pre_tuning_seal": "2900d7d765d5ea49585132f0adf44d16c17b88025965d5c7b385028adcbf76d5",
+  "revision_reason": "Disambiguate methods sharing a name using correction's owning class, before any engine changes or live evaluation.",
+  "frozen_at": "2026-10-10T16:40:01.606042+00:00",
+  "engine_commit": "601b4e697a0d0ee6d79ca716939e37a41d293902",
+  "dataset": "princeton-nlp/SWE-bench_Lite",
+  "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+  "cases_sha256": "1d7f4738b2f1ffed8031f0a7e60078f37b8918663e11d2b595c02973d510f2e0",
+  "independent_defects": 12,
+  "formulations": 12,
+  "development": 8,
+  "holdout": 4,
+  "repositories": [
+    "marshmallow-code/marshmallow",
+    "psf/requests",
+    "pytest-dev/pytest"
+  ],
+  "snapshot_policy": "Python source-only archive projection, pinned pre-fix commit; no imports, installs or project execution.",
+  "historical_requests_5667": "excluded from independent benchmark populations"
+}
