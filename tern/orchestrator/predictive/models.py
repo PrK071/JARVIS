@@ -284,6 +284,11 @@ class ProblemContext:
         return {
             "problem": self.problem,
             "project_id": self.project_id,
+            "symptom": {key: value for key, value in self.causal_slice.symptom.as_dict().items()
+                        if key != "report"}
+            if self.causal_slice and self.causal_slice.symptom else None,
+            "causal_relevance": [item.as_dict() for item in self.causal_slice.relevance_assessments]
+            if self.causal_slice else [],
             "structurally_dominant_root_id": dominant.id if dominant else None,
             "root_cause_candidates": [{
                 "id": item.id,

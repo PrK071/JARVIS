@@ -64,14 +64,13 @@ def test_type_checking_and_local_imports_do_not_create_runtime_scc():
     assert not any(root.import_scc for root in _context("CI9D-006").root_cause_candidates)
 
 
-def test_import_observer_wording_selects_the_anchored_production_scc():
+def test_structural_scc_observation_alone_does_not_establish_a_causal_origin():
     context = _context("CI9D-018")
-    identity = context.root_cause_candidates[0].import_scc
-
-    assert identity is not None
-    assert identity.member_modules == (
-        "cycle3/blue.py", "cycle3/green.py", "cycle3/red.py"
-    )
+    # v12 rejects the old assumption that observing a cycle is observing a
+    # defect caused by it. Historical corpus labels and reports are preserved.
+    assert all(root.import_scc is None for root in context.root_cause_candidates)
+    assert context.causal_slice.relevance_assessments
+    assert all(not item.defect_origin_supported for item in context.causal_slice.relevance_assessments)
 
 
 def test_argument_source_and_annotated_return_contract_are_distinct():

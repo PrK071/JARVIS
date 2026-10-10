@@ -11,6 +11,10 @@ from typing import Iterable, Mapping, Sequence
 from ..project_intelligence_v2 import ProjectSnapshotV2
 from ..security import PathPolicy
 from .import_graph import ImportSCCIdentity, find_import_cycles
+from .relevance import (
+    CausalRelevanceAssessment, ProblemSymptom, SymptomKind,
+    assess_import_cycle, describe_symptom,
+)
 from .models import (
     EvidenceExcerpt,
     EvidenceKind,
@@ -28,6 +32,7 @@ class CausalNodeKind(str, Enum):
     RETURN_VALUE = "RETURN_VALUE"
     CONDITION = "CONDITION"
     EXCEPTION_SITE = "EXCEPTION_SITE"
+    SYMPTOM_SITE = "SYMPTOM_SITE"
     CONFIG_VALUE = "CONFIG_VALUE"
     IMPORT = "IMPORT"
     IMPORT_CYCLE = "IMPORT_CYCLE"
@@ -43,6 +48,7 @@ class CausalEdgeKind(str, Enum):
     CALLS = "CALLS"
     GUARDED_BY = "GUARDED_BY"
     RAISES_AT = "RAISES_AT"
+    AFFECTS_SYMPTOM = "AFFECTS_SYMPTOM"
     CONFIGURED_BY = "CONFIGURED_BY"
     ASSERTED_BY = "ASSERTED_BY"
 
@@ -276,6 +282,8 @@ class CausalSlice:
     nodes: tuple[CausalNode, ...]
     edges: tuple[CausalEdge, ...]
     unknown_flow: bool = False
+    symptom: ProblemSymptom | None = None
+    relevance_assessments: tuple[CausalRelevanceAssessment, ...] = ()
 
     def __post_init__(self) -> None:
         ids = [node.id for node in self.nodes]
@@ -290,6 +298,9 @@ class CausalSlice:
 
     def as_dict(self) -> dict[str, object]:
         return {"version": 1, "failure_site_id": self.failure_site_id,
+                "symptom_schema_version": 1,
+                "symptom": self.symptom.as_dict() if self.symptom else None,
+                "causal_relevance": [item.as_dict() for item in self.relevance_assessments],
                 "unknown_flow": self.unknown_flow,
                 "nodes": [node.as_dict() for node in self.nodes],
                 "edges": [edge.as_dict() for edge in self.edges]}
@@ -1262,6 +1273,7 @@ def build_causal_slice(
     path_policy: PathPolicy,
 ) -> tuple[CausalSlice, tuple[RootCauseCandidate, ...]]:
     builders: list[_FlowBuilder] = []
+    source_trees: dict[str, ast.Module] = {}
     # Use the existing Project Intelligence scope, plus its directly related
     # imports/callers. The result is facts, not another project index.
     paths = set(context.related_files)
@@ -1277,6 +1289,7 @@ def build_causal_slice(
             tree = ast.parse(source, filename=path)
         except SyntaxError:
             continue
+        source_trees[path] = tree
         builder = _FlowBuilder(path, context.evidence_ledger)
         builder.visit(tree)
         builders.append(builder)
@@ -1398,10 +1411,9 @@ def build_causal_slice(
         if len(path_matches) == 1:
             failure_path = path_matches[0]
 
-    # A production import cycle is a property of the indexed graph. When the
-    # selected structural context covers at least two members of an SCC, the
-    # structure is sufficient to seed a failure site without a lexical
-    # "circular import" password in the problem statement.
+    # A real SCC does not by itself explain the reported symptom. Keep graph
+    # detection, but require an independently reported initialization anchor
+    # and an eager cyclic lookup before constructing a causal bridge.
     import_cycles = find_import_cycles(snapshot)
     related_paths = set(context.related_files)
     import_investigation = _mentions_import_failure(context.problem)
@@ -1423,6 +1435,19 @@ def build_causal_slice(
     )
     if anchored_import_cycles:
         relevant_import_cycles = anchored_import_cycles
+    symptom = describe_symptom(context.problem, failure_path, failure_line)
+    relevance_assessments = tuple(
+        assess_import_cycle(cycle, symptom, source_trees)
+        for cycle in relevant_import_cycles
+    )
+    supported_scc_ids = {
+        assessment.entity_id for assessment in relevance_assessments
+        if assessment.defect_origin_supported
+    }
+    relevant_import_cycles = tuple(
+        cycle for cycle in relevant_import_cycles
+        if cycle.identity().id in supported_scc_ids
+    )
     mentions_cycle = "cycle" in folded_problem and _mentions_import_failure(
         context.problem
     ) or "partially initialized" in folded_problem
@@ -1463,10 +1488,13 @@ def build_causal_slice(
             failure_path, failure_line = symbolic_failure_nodes[0].path, symbolic_failure_nodes[0].line
     failure_id: str | None = None
     if failure_path and failure_line:
-        failure_id = _stable("N", CausalNodeKind.EXCEPTION_SITE.value, failure_path, failure_line)
+        observed_exception = reported_failure_site and symptom.kind is SymptomKind.EXCEPTION_FAILURE
+        site_kind = CausalNodeKind.EXCEPTION_SITE if observed_exception else CausalNodeKind.SYMPTOM_SITE
+        bridge_kind = CausalEdgeKind.RAISES_AT if observed_exception else CausalEdgeKind.AFFECTS_SYMPTOM
+        failure_id = _stable("N", site_kind.value, failure_path, failure_line)
         nodes[failure_id] = CausalNode(
-            failure_id, CausalNodeKind.EXCEPTION_SITE, failure_path, failure_line,
-            None, f"exception at {failure_path}:{failure_line}",
+            failure_id, site_kind, failure_path, failure_line,
+            None, f"{'exception' if observed_exception else 'symptom anchor'} at {failure_path}:{failure_line}",
             _evidence_at(context.evidence_ledger, failure_path, failure_line),
             None,
         )
@@ -1476,8 +1504,8 @@ def build_causal_slice(
             and node.id != failure_id
         ]
         for node in candidates_at_site:
-            edge_id = _stable("G", node.id, failure_id, CausalEdgeKind.RAISES_AT.value)
-            edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, CausalEdgeKind.RAISES_AT, True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
+            edge_id = _stable("G", node.id, failure_id, bridge_kind.value)
+            edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, bridge_kind, True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
 
     # Runtime import cycles are a graph property.  Test imports are observers;
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
@@ -1485,7 +1513,7 @@ def build_causal_slice(
     import_scc_nodes: dict[str, ImportSCCIdentity] = {}
     import_failure = _mentions_import_failure(context.problem) or bool(relevant_import_cycles)
     if failure_id and import_failure:
-        cycles = relevant_import_cycles or import_cycles
+        cycles = relevant_import_cycles
         for cycle in cycles:
             relevant = bool(
                 any(
@@ -1534,13 +1562,13 @@ def build_causal_slice(
             )
             import_scc_nodes[scc_node_id] = identity
             scc_edge_id = _stable(
-                "G", scc_node_id, failure_id, CausalEdgeKind.RAISES_AT.value
+                "G", scc_node_id, failure_id, bridge_kind.value
             )
             edges[scc_edge_id] = CausalEdge(
                 scc_edge_id,
                 scc_node_id,
                 failure_id,
-                CausalEdgeKind.RAISES_AT,
+                bridge_kind,
                 True,
                 tuple(dict.fromkeys((*scc_evidence, *nodes[failure_id].evidence_ids))),
             )
@@ -1558,9 +1586,9 @@ def build_causal_slice(
                 )
                 nodes[node_id] = node
                 import_cycle_node_ids.add(node_id)
-                edge_id = _stable("G", node_id, failure_id, CausalEdgeKind.RAISES_AT.value)
+                edge_id = _stable("G", node_id, failure_id, bridge_kind.value)
                 edges[edge_id] = CausalEdge(
-                    edge_id, node_id, failure_id, CausalEdgeKind.RAISES_AT,
+                    edge_id, node_id, failure_id, bridge_kind,
                     True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))),
                 )
 
@@ -1569,6 +1597,8 @@ def build_causal_slice(
         tuple(sorted(nodes.values(), key=lambda item: item.id)),
         tuple(sorted(edges.values(), key=lambda item: item.id)),
         unknown_flow=failure_id is None,
+        symptom=symptom,
+        relevance_assessments=relevance_assessments,
     )
     if failure_id is None:
         return causal_slice, ()

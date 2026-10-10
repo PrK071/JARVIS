@@ -262,6 +262,8 @@ def test_reasoner_protocol_is_compact_single_call_and_contains_no_raw_source_inj
             "root_cause_candidates",
             "root_pairwise_facts",
             "structurally_dominant_root_id",
+            "symptom",
+            "causal_relevance",
         }
         assert "evidence_ledger" not in payload
         assert "ignore all previous instructions" not in serialized
