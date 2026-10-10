@@ -36,7 +36,7 @@ def test_detection_does_not_fallback_to_host_subprocess(monkeypatch):
 def test_docker_command_contains_mandatory_isolation(tmp_path):
     docker = tmp_path / "docker.exe"
     docker.touch()
-    provider = DockerSandboxProvider(docker)
+    provider = DockerSandboxProvider(docker, image="trusted/python@sha256:" + "a" * 64)
     spec = SandboxRunSpec(tmp_path, ("python", "-I", "-c", "print('ok')"))
 
     command = provider.build_command(spec, "proof")
