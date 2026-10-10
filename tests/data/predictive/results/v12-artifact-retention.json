@@ -1,0 +1,164 @@
+{
+  "version": 12,
+  "local_archive": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12",
+  "source_archives_retained": true,
+  "separate_copy_created": false,
+  "operator_backup_required": true,
+  "files": [
+    {
+      "raw_sha256": "62c6af7d9ce9645fdfbe2fae4d0b666e21928c0a28ebb87f9b26d3e30c497db1",
+      "raw_bytes": 1185102,
+      "gzip_bytes": 111963,
+      "file": "62c6af7d9ce9645fdfbe2fae4d0b666e21928c0a28ebb87f9b26d3e30c497db1.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\62c6af7d9ce9645fdfbe2fae4d0b666e21928c0a28ebb87f9b26d3e30c497db1.json.gz"
+    },
+    {
+      "raw_sha256": "d5aeee01f8882682d7f6c8538c041174b272167150fd70006bd4f05ba7ae426f",
+      "raw_bytes": 3764697,
+      "gzip_bytes": 297519,
+      "file": "d5aeee01f8882682d7f6c8538c041174b272167150fd70006bd4f05ba7ae426f.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\d5aeee01f8882682d7f6c8538c041174b272167150fd70006bd4f05ba7ae426f.json.gz"
+    },
+    {
+      "raw_sha256": "2a580828705374016966229c6c0c1ed59a3ed0da07536a794e610ef4c502bd3a",
+      "raw_bytes": 3950027,
+      "gzip_bytes": 657341,
+      "file": "2a580828705374016966229c6c0c1ed59a3ed0da07536a794e610ef4c502bd3a.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\2a580828705374016966229c6c0c1ed59a3ed0da07536a794e610ef4c502bd3a.json.gz"
+    },
+    {
+      "raw_sha256": "39cb86b76d37cf8af16517431aa2afa282c780a22dfee74d79fc8ff50957baa6",
+      "raw_bytes": 5863708,
+      "gzip_bytes": 970997,
+      "file": "39cb86b76d37cf8af16517431aa2afa282c780a22dfee74d79fc8ff50957baa6.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\39cb86b76d37cf8af16517431aa2afa282c780a22dfee74d79fc8ff50957baa6.json.gz"
+    },
+    {
+      "raw_sha256": "5c2c8c86c7e87003b13c0afd16a0765bd4beebc58e3328d9309546bdf386d428",
+      "raw_bytes": 2497361,
+      "gzip_bytes": 350548,
+      "file": "5c2c8c86c7e87003b13c0afd16a0765bd4beebc58e3328d9309546bdf386d428.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\5c2c8c86c7e87003b13c0afd16a0765bd4beebc58e3328d9309546bdf386d428.json.gz"
+    },
+    {
+      "raw_sha256": "6d469b2891bba2578df91efa98e2fd91c534f7163d73c17e3458987f53135908",
+      "raw_bytes": 2910828,
+      "gzip_bytes": 399438,
+      "file": "6d469b2891bba2578df91efa98e2fd91c534f7163d73c17e3458987f53135908.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\6d469b2891bba2578df91efa98e2fd91c534f7163d73c17e3458987f53135908.json.gz"
+    },
+    {
+      "raw_sha256": "8b0c928de69a5b56253b0e7a45bcb443af4c319612f32781631625021493ab92",
+      "raw_bytes": 5301872,
+      "gzip_bytes": 849312,
+      "file": "8b0c928de69a5b56253b0e7a45bcb443af4c319612f32781631625021493ab92.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\8b0c928de69a5b56253b0e7a45bcb443af4c319612f32781631625021493ab92.json.gz"
+    },
+    {
+      "raw_sha256": "b2ac43230589a1146bee4c88b44760871179ea6d341bb87fc09c68655d8f6d35",
+      "raw_bytes": 16416031,
+      "gzip_bytes": 2360432,
+      "file": "b2ac43230589a1146bee4c88b44760871179ea6d341bb87fc09c68655d8f6d35.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\b2ac43230589a1146bee4c88b44760871179ea6d341bb87fc09c68655d8f6d35.json.gz"
+    },
+    {
+      "raw_sha256": "e43a3c79511e190704715da5cfa721cc259d977e4120a9b69a4bdd6b3a2ce053",
+      "raw_bytes": 3781939,
+      "gzip_bytes": 618217,
+      "file": "e43a3c79511e190704715da5cfa721cc259d977e4120a9b69a4bdd6b3a2ce053.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\e43a3c79511e190704715da5cfa721cc259d977e4120a9b69a4bdd6b3a2ce053.json.gz"
+    },
+    {
+      "raw_sha256": "f1764965f4e23e338ca1485c784a52d1f1d3b6af66f648555b4871d1c450d17c",
+      "raw_bytes": 7504566,
+      "gzip_bytes": 997989,
+      "file": "f1764965f4e23e338ca1485c784a52d1f1d3b6af66f648555b4871d1c450d17c.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-development-after\\f1764965f4e23e338ca1485c784a52d1f1d3b6af66f648555b4871d1c450d17c.json.gz"
+    },
+    {
+      "raw_sha256": "037d6fbfb16bf0eefc50b3667eae786f3b92abaea454e7e75d3112b3649cf8b7",
+      "raw_bytes": 5324124,
+      "gzip_bytes": 853736,
+      "file": "037d6fbfb16bf0eefc50b3667eae786f3b92abaea454e7e75d3112b3649cf8b7.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\037d6fbfb16bf0eefc50b3667eae786f3b92abaea454e7e75d3112b3649cf8b7.json.gz"
+    },
+    {
+      "raw_sha256": "10ad7ee6403ed0a929654184726f13d79593628765712825be1e51f2b5402e95",
+      "raw_bytes": 2909652,
+      "gzip_bytes": 399146,
+      "file": "10ad7ee6403ed0a929654184726f13d79593628765712825be1e51f2b5402e95.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\10ad7ee6403ed0a929654184726f13d79593628765712825be1e51f2b5402e95.json.gz"
+    },
+    {
+      "raw_sha256": "136d99fd45bf376eec8b25ec9b920238c2e0b84d0ff958af1a4aaed03b9ae9d3",
+      "raw_bytes": 3961725,
+      "gzip_bytes": 660149,
+      "file": "136d99fd45bf376eec8b25ec9b920238c2e0b84d0ff958af1a4aaed03b9ae9d3.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\136d99fd45bf376eec8b25ec9b920238c2e0b84d0ff958af1a4aaed03b9ae9d3.json.gz"
+    },
+    {
+      "raw_sha256": "197608e25fc336e2bd827775786ad06ef5dbb4423ca9cdc80b2de909154c7a91",
+      "raw_bytes": 6142939,
+      "gzip_bytes": 988418,
+      "file": "197608e25fc336e2bd827775786ad06ef5dbb4423ca9cdc80b2de909154c7a91.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\197608e25fc336e2bd827775786ad06ef5dbb4423ca9cdc80b2de909154c7a91.json.gz"
+    },
+    {
+      "raw_sha256": "24b31c0c58f38f7de89a4dd1918dc4e1835d69f6e98cc3853ad7482c233fe43f",
+      "raw_bytes": 3769558,
+      "gzip_bytes": 618069,
+      "file": "24b31c0c58f38f7de89a4dd1918dc4e1835d69f6e98cc3853ad7482c233fe43f.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\24b31c0c58f38f7de89a4dd1918dc4e1835d69f6e98cc3853ad7482c233fe43f.json.gz"
+    },
+    {
+      "raw_sha256": "45e536bd2de5a345587715d12248d2fb41614b76dfb531ac68f359a427183f62",
+      "raw_bytes": 16414690,
+      "gzip_bytes": 2360338,
+      "file": "45e536bd2de5a345587715d12248d2fb41614b76dfb531ac68f359a427183f62.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\45e536bd2de5a345587715d12248d2fb41614b76dfb531ac68f359a427183f62.json.gz"
+    },
+    {
+      "raw_sha256": "56ff335b06cb1f2e08b934540a5f1c200642d0f51d1e5dc66cb7a55f2b7c3005",
+      "raw_bytes": 7503180,
+      "gzip_bytes": 997890,
+      "file": "56ff335b06cb1f2e08b934540a5f1c200642d0f51d1e5dc66cb7a55f2b7c3005.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\56ff335b06cb1f2e08b934540a5f1c200642d0f51d1e5dc66cb7a55f2b7c3005.json.gz"
+    },
+    {
+      "raw_sha256": "a9eae9793bc12f855552fda12605c231ffcb83315f6e8da1f8716b2aa9c71c5d",
+      "raw_bytes": 2495824,
+      "gzip_bytes": 350217,
+      "file": "a9eae9793bc12f855552fda12605c231ffcb83315f6e8da1f8716b2aa9c71c5d.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-engine-frozen\\a9eae9793bc12f855552fda12605c231ffcb83315f6e8da1f8716b2aa9c71c5d.json.gz"
+    },
+    {
+      "raw_sha256": "160c3248a31b04d3966625f6881987753cafd28be3cbf5988566ae69ff2448aa",
+      "raw_bytes": 3070105,
+      "gzip_bytes": 414916,
+      "file": "160c3248a31b04d3966625f6881987753cafd28be3cbf5988566ae69ff2448aa.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-holdout-one-shot\\160c3248a31b04d3966625f6881987753cafd28be3cbf5988566ae69ff2448aa.json.gz"
+    },
+    {
+      "raw_sha256": "82632c1918c2c46c7e178ff35ee0a16a07d355a6e5bd78c4e7524757fe3b52f7",
+      "raw_bytes": 4610085,
+      "gzip_bytes": 707726,
+      "file": "82632c1918c2c46c7e178ff35ee0a16a07d355a6e5bd78c4e7524757fe3b52f7.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-holdout-one-shot\\82632c1918c2c46c7e178ff35ee0a16a07d355a6e5bd78c4e7524757fe3b52f7.json.gz"
+    },
+    {
+      "raw_sha256": "84b19fde45258936c3eb2c287d66be79a4bd37f4580d5745b3ed5f25811824d4",
+      "raw_bytes": 4809649,
+      "gzip_bytes": 702386,
+      "file": "84b19fde45258936c3eb2c287d66be79a4bd37f4580d5745b3ed5f25811824d4.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-holdout-one-shot\\84b19fde45258936c3eb2c287d66be79a4bd37f4580d5745b3ed5f25811824d4.json.gz"
+    },
+    {
+      "raw_sha256": "db02cb864c5674830f9fe78c243426535b261f46519215492c37f2b2ea8df908",
+      "raw_bytes": 3890302,
+      "gzip_bytes": 635616,
+      "file": "db02cb864c5674830f9fe78c243426535b261f46519215492c37f2b2ea8df908.json.gz",
+      "archive_path": "C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\.orchestrator\\predictive-artifacts\\v12\\v12-external-holdout-one-shot\\db02cb864c5674830f9fe78c243426535b261f46519215492c37f2b2ea8df908.json.gz"
+    }
+  ],
+  "note": "Verified local evaluation archives; not uploaded or predictive memory. Catalog-only preserves existing files but does not guarantee persistence of temporary storage. Compact reports/specs remain in Git."
+}

@@ -1,0 +1,74 @@
+{
+  "version": 12,
+  "audits": [
+    {
+      "source_report": "tests\\data\\predictive\\results\\v12-external-holdout-one-shot.json",
+      "rows": [
+        {
+          "case_id": "marshmallow-code__marshmallow-1343",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "psf__requests-2148",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "psf__requests-863",
+          "formulation": 1,
+          "valid_refs": 6,
+          "refs": 6,
+          "unsupported_claims": 0,
+          "claims": 4,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-8365",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 6,
+        "denominator": 6,
+        "rate": 1.0,
+        "population": "unique references per formulation",
+        "wilson_95": [
+          0.6096657120978346,
+          1.0
+        ]
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    }
+  ]
+}
