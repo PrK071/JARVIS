@@ -1,0 +1,53 @@
+{
+  "version": 11,
+  "predictive_freeze": "6b288b84fed38ce0904f0535a1748472bae5a59d",
+  "predictive_quality_scope": "v10 validated synthetic causal/compositional/counterfactual population",
+  "provider": "unavailable",
+  "reason": "Docker executable unavailable",
+  "capability_verification": {
+    "write_confinement": "NOT_VERIFIED",
+    "network_denial": "NOT_VERIFIED",
+    "environment_sanitization": "NOT_VERIFIED",
+    "private_host_paths": "NOT_VERIFIED",
+    "traversal_symlinks": "NOT_VERIFIED",
+    "process_containment": "NOT_VERIFIED",
+    "resource_limits": "NOT_VERIFIED",
+    "timeout": "NOT_VERIFIED",
+    "cleanup": "NOT_VERIFIED"
+  },
+  "project_code_executions_on_host": 0,
+  "candidate_simulation_attempts": 0,
+  "sandbox_adversarial_live_attempts": 0,
+  "patch_applications": 0,
+  "unauthorized_original_worktree_mutations": 0,
+  "authority_grants": 0,
+  "auto_merge": 0,
+  "auto_commit_analyzed_project": 0,
+  "execution_authorized": false,
+  "requires_approval": true,
+  "external_shadow": {
+    "independent_defects": 1,
+    "wording_scenarios": 2,
+    "root_matches_upstream": 0,
+    "source_unchanged": true,
+    "engine_tuning": false,
+    "report": "v11-external-shadow.json"
+  },
+  "external_profiling_pass": {
+    "additional_scenarios": 1,
+    "qwen_calls": 1,
+    "report": "v11-external-profile.json"
+  },
+  "tests": {
+    "predictive_passed_in_full_suite": 255,
+    "predictive_skipped": 2,
+    "full_suite_passed": 1496,
+    "full_suite_skipped": 3,
+    "foundation_focused_passed": 44,
+    "foundation_focused_skipped": 2,
+    "host_test_runner_note": "Python 3.13 Windows managed ACL workaround ignores mkdir mode only in pytest process"
+  },
+  "PREDICTIVE_QUALITY_READY": true,
+  "SIMULATION_RUNTIME_READY": false,
+  "CANDIDATE_SIMULATION": "BLOCKED"
+}

@@ -52,6 +52,8 @@ from .predictive.robustness import (
     summarize_robustness_gate,
 )
 from .predictive.simulation import detect_sandbox_provider
+from .predictive.simulation.models import PatchProposal
+from .predictive.simulation.service import assess_proposal
 from .predictive.testing import (
     generate_counterfactual_pairs,
     generate_suite,
@@ -938,6 +940,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="verifica isolamento seguro usando apenas um workload controlado do JARVIS",
     )
     sandbox_check.add_argument("--json", action="store_true", dest="json_output")
+    patch_check = sub.add_parser(
+        "predictive-patch-check", help="valida proposta de diff sem aplicar ou executar codigo",
+    )
+    patch_check.add_argument("--project", type=Path, required=True)
+    patch_check.add_argument("--proposal", type=Path, required=True)
+    patch_check.add_argument("--json", action="store_true", dest="json_output")
     checkpoint = sub.add_parser(
         "git-checkpoint-push",
         help="cria checkpoint seguro e envia somente para origin/main do JARVIS",
@@ -1474,6 +1482,18 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(format_generated_evaluation(report))
             return 0
+        elif args.command == "predictive-patch-check":
+            if args.proposal.stat().st_size > 131_072:
+                raise ValueError("proposal file budget exceeded")
+            proposal = PatchProposal.from_dict(json.loads(args.proposal.read_text(encoding="utf-8")))
+            outcome = assess_proposal(proposal, args.project)
+            if args.json_output:
+                _print(outcome.as_dict())
+            else:
+                print(f"Patch validation: {'PASS' if outcome.validation.passed else 'FAIL'}")
+                print(f"status: {outcome.status.value}")
+                print(f"diagnostics: {', '.join(outcome.validation.failure_codes)}")
+            return 0 if outcome.validation.passed else 1
         elif args.command == "predictive-sandbox-check":
             provider = detect_sandbox_provider()
             capabilities = provider.capabilities()
@@ -1490,6 +1510,10 @@ def main(argv: list[str] | None = None) -> int:
                     ("environment isolation", capabilities.environment_sanitization_verified),
                     ("process cleanup", capabilities.child_process_containment_verified and capabilities.cleanup_verified),
                     ("resource limits", capabilities.resource_limits_verified),
+                    ("private host paths", capabilities.private_host_paths_verified),
+                    ("traversal and symlink", capabilities.traversal_symlink_verified),
+                    ("timeout", capabilities.timeout_verified),
+                    ("non-root and seccomp", capabilities.non_root_seccomp_verified),
                 ):
                     print(f"{label}: {'PASS' if passed else 'FAIL'}")
                 if capabilities.reason:
