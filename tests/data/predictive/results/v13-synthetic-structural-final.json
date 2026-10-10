@@ -1,0 +1,2601 @@
+{
+  "version": 10,
+  "generator_version": 4,
+  "mode": "structural",
+  "split": "development",
+  "cases": 172,
+  "suite_sha256": "9a731fbffe99dcf9e19ee342ca9d77c940cf34941089dfb0e7336b8e88c7d5d4",
+  "metrics": {
+    "retrieval_accuracy": {
+      "value": 1.0,
+      "numerator": 172,
+      "denominator": 172,
+      "population": "generated structural cases"
+    },
+    "oracle_root_candidate_recall": {
+      "value": 1.0,
+      "numerator": 172,
+      "denominator": 172,
+      "population": "generated structural cases"
+    },
+    "oracle_relation_recall": {
+      "value": 1.0,
+      "numerator": 172,
+      "denominator": 172,
+      "population": "generated structural cases"
+    },
+    "oracle_slot_identity_recall": {
+      "value": 1.0,
+      "numerator": 102,
+      "denominator": 102,
+      "population": "generated structural cases"
+    },
+    "oracle_scc_recall": {
+      "value": 1.0,
+      "numerator": 10,
+      "denominator": 10,
+      "population": "generated structural cases"
+    }
+  },
+  "family_metrics": {
+    "argument_binding": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 90,
+        "denominator": 90,
+        "population": "family=argument_binding"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 90,
+        "denominator": 90,
+        "population": "family=argument_binding"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 90,
+        "denominator": 90,
+        "population": "family=argument_binding"
+      },
+      "oracle_slot_identity_recall": {
+        "value": 1.0,
+        "numerator": 90,
+        "denominator": 90,
+        "population": "family=argument_binding"
+      },
+      "oracle_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      }
+    },
+    "argument_vs_return": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 16,
+        "denominator": 16,
+        "population": "family=argument_vs_return"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 16,
+        "denominator": 16,
+        "population": "family=argument_vs_return"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 16,
+        "denominator": 16,
+        "population": "family=argument_vs_return"
+      },
+      "oracle_slot_identity_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=argument_vs_return"
+      },
+      "oracle_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_vs_return"
+      }
+    },
+    "import_graph": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=import_graph"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=import_graph"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=import_graph"
+      },
+      "oracle_slot_identity_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=import_graph"
+      },
+      "oracle_scc_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=import_graph"
+      }
+    },
+    "negative_control": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=negative_control"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=negative_control"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=negative_control"
+      },
+      "oracle_slot_identity_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "oracle_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      }
+    },
+    "producer_manifestation": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 6,
+        "denominator": 6,
+        "population": "family=producer_manifestation"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 6,
+        "denominator": 6,
+        "population": "family=producer_manifestation"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 6,
+        "denominator": 6,
+        "population": "family=producer_manifestation"
+      },
+      "oracle_slot_identity_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "oracle_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      }
+    },
+    "repair_target": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=repair_target"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=repair_target"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 8,
+        "denominator": 8,
+        "population": "family=repair_target"
+      },
+      "oracle_slot_identity_recall": {
+        "value": 1.0,
+        "numerator": 4,
+        "denominator": 4,
+        "population": "family=repair_target"
+      },
+      "oracle_scc_recall": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      }
+    },
+    "return_contract": {
+      "retrieval_accuracy": {
+        "value": 1.0,
+        "numerator": 36,
+        "denominator": 36,
+        "population": "family=return_contract"
+      },
+      "oracle_root_candidate_recall": {
+        "value": 1.0,
+        "numerator": 36,
+        "denominator": 36,
+        "population": "family=return_contract"
+      },
+      "oracle_relation_recall": {
+        "value": 1.0,
+        "numerator": 36,
+        "denominator": 36,
+        "population": "family=return_contract"
+      },
+      "oracle_slot_identity_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "oracle_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      }
+    }
+  },
+  "argument_matrix": {
+    "default": {
+      "0": {
+        "value": 1.0,
+        "numerator": 12,
+        "denominator": 12,
+        "population": "argument_style=default,wrapper_depth=0"
+      },
+      "1": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "population": "argument_style=default,wrapper_depth=1"
+      },
+      "2": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "population": "argument_style=default,wrapper_depth=2"
+      }
+    },
+    "keyword": {
+      "0": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "population": "argument_style=keyword,wrapper_depth=0"
+      },
+      "1": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "population": "argument_style=keyword,wrapper_depth=1"
+      },
+      "2": {
+        "value": 1.0,
+        "numerator": 10,
+        "denominator": 10,
+        "population": "argument_style=keyword,wrapper_depth=2"
+      }
+    },
+    "positional": {
+      "0": {
+        "value": 1.0,
+        "numerator": 54,
+        "denominator": 54,
+        "population": "argument_style=positional,wrapper_depth=0"
+      },
+      "1": {
+        "value": 1.0,
+        "numerator": 32,
+        "denominator": 32,
+        "population": "argument_style=positional,wrapper_depth=1"
+      },
+      "2": {
+        "value": 1.0,
+        "numerator": 24,
+        "denominator": 24,
+        "population": "argument_style=positional,wrapper_depth=2"
+      }
+    }
+  },
+  "import_matrix": {
+    "2": {
+      "False": {
+        "value": 1.0,
+        "numerator": 4,
+        "denominator": 4,
+        "population": "scc_size=2,observer_import=False"
+      },
+      "True": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "scc_size=2,observer_import=True"
+      }
+    },
+    "3": {
+      "False": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "scc_size=3,observer_import=False"
+      },
+      "True": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "scc_size=3,observer_import=True"
+      }
+    }
+  },
+  "failure_fingerprints": [],
+  "case_index": [
+    {
+      "id": "V10-development-argument_binding-048c664fba",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-05ed1e5183",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-08821b572c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-096c0915fc",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-09f2ed01ec",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-0deccdd025",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-110b8c2a37",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-114c96ee83",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1327c82650",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1856c2bfa5",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1c935a78c5",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1d6841963b",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1dbea78728",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-1e2c696d97",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-24151cdb95",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-27d56cba13",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-2c3afba3d9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-2d2f343f44",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-2ee3a40c6a",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-2f6180d2bd",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3023822742",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3497680f24",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-34abf12838",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3508d598b6",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3ba6dc6319",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3daf7d88b0",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-3f28b8e76f",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-4058287ef7",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-42477f65b3",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-468c0bbed9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-49d7f6b687",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-4a4f3a0715",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-521994c758",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-524d56ac51",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-549d24900f",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-5b5254df90",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-5e96958217",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-60e062ab17",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-63901a02a1",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-6ce4bbe666",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-6dd1a2a96b",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-70bd01b03c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-7499aeb03c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-75beed5c1c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-791ca8c6d5",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-7b0de129a9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-7f34cda94a",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-7ffe49772d",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-81955a8976",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-82d0f703fc",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-864cf4591c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-88f74c30e7",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-8b8ec3576e",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-8c0d640a86",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-8eaafe77b9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-91869907a7",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-9869b17e44",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-9a5ca569c7",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-9fa23df032",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-a2bce273d1",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-a53bf9697c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-aa59e4e520",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-ac18381ed2",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-ad70e2e5a0",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-b1125fbf7a",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-b3f0f6145c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-b467515957",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-b4f44605d8",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-b534b8852b",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-bb4ace1539",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-bba6e535a9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-c188d604ec",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-c7b7f2a413",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-c9a0c68126",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-ce44185787",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-d928620609",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-da15804ff9",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-ddd9f18878",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-dfc8110aa2",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-dfdf46a9bf",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-e1cdd99e95",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-e38fe6dd9e",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-ed60bb4ae2",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-eea1cd89a4",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-f166ec51cf",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-f228d8e568",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-f45b6ce93a",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-faf6119c01",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-fb784dbb27",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-fcf686267c",
+      "family": "argument_binding",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-18536cfec2",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-1efcd6c986",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-293c96be8b",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-2c161e1c5c",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-3bc602d829",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-45ee9e399a",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-47eae30fba",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-4f4c9defae",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-4f60b02484",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-5af3e01aac",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-a48a5f15e3",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-b32982939e",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-c3c32cce43",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-c6809064d6",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-d0830ec803",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-f7900c786a",
+      "family": "argument_vs_return",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-18964c70c1",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-368accb891",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-53e72e94f7",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-5571494d10",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-5a0f93c262",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-9019b0be6d",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-970e281b76",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-af85a0fdf7",
+      "family": "import_graph",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-135df3d0cb",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-1fd7a30531",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-28a8a71584",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-2da4fe79bc",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-7910865761",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-ad7d82d295",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-c9bbda0518",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-ce977b6998",
+      "family": "negative_control",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 0
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-3d896c4f01",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-8c4095c291",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-ab9d4e6e55",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-c0c6b7d30d",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-c2a38e8a9d",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-d2465de1f7",
+      "family": "producer_manifestation",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-0f0117bb5f",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-13b76a3aaf",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-451bc823d4",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-4b49739198",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-68953daf39",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": true,
+        "root_candidates": 1
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-705323a083",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-a811e0a5dc",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 5
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-eb26c816c7",
+      "family": "repair_target",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": true,
+        "oracle_scc_recall": null,
+        "root_candidates": 4
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-022205e3ad",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-07558b46e7",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-099fd47ee4",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-0c12158a73",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-0ed39db121",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-1b08fcb242",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-1d1061005e",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-2314401ede",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-233d07fe1f",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-2b81801b1f",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-4bbd48e7ae",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-4bc006da59",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-4dffa5135c",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-5c530d74a5",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-62ecefc15b",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 12
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-6fe4bd262f",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-771078565b",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-7988b88907",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-7e19261533",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-862714aff7",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-920bf38c91",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-a17c3a0104",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-adafdc947c",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-b147802122",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-b6d82543b2",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-b7eee64631",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-b8c5f1bcae",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-b9d121511d",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-bdae76750b",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-c549f3b843",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 8
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-c7802108f6",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 10
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-d8b2f3afda",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-e21fb32ebb",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-e2ef8dfed0",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 11
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-f8d2d4e2e3",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 6
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-fa52c7e612",
+      "family": "return_contract",
+      "metrics": {
+        "retrieval_accuracy": true,
+        "oracle_root_candidate_recall": true,
+        "oracle_relation_recall": true,
+        "oracle_slot_identity_recall": null,
+        "oracle_scc_recall": null,
+        "root_candidates": 7
+      },
+      "failure_fingerprint": null
+    }
+  ],
+  "failures": [],
+  "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\c55a7eb560d138ee3aac9adeaadf146283cdc189c7e500901ba6d3dbb070c462.json.gz",
+  "raw_trace_sha256": "c55a7eb560d138ee3aac9adeaadf146283cdc189c7e500901ba6d3dbb070c462",
+  "scope": "v10 regression only; does not establish external readiness"
+}

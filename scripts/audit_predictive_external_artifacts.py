@@ -9,7 +9,7 @@ from pathlib import Path
 from tern.orchestrator.predictive.external_evaluation import rate
 
 
-def audit(report_path: Path) -> dict:
+def audit(report_path: Path, *, snapshots: Path = Path(".orchestrator/external-v12/snapshots")) -> dict:
     report = json.loads(report_path.read_text(encoding="utf-8"))
     rows = []
     for row in report["results"]:
@@ -17,7 +17,7 @@ def audit(report_path: Path) -> dict:
         if hashlib.sha256(raw).hexdigest() != row["raw_trace_sha256"]:
             raise ValueError("Trace preservado adulterado.")
         decision = json.loads(raw)["decision"]
-        root = Path(".orchestrator/external-v12/snapshots")/row["case_id"]
+        root = snapshots/row["case_id"]
         hypotheses = decision.get("hypotheses", [])
         candidates = decision.get("candidates", [])
         refs = sorted({ref for item in (*hypotheses, *candidates, *decision.get("rejected_candidates", []))
@@ -48,7 +48,9 @@ def audit(report_path: Path) -> dict:
             "unsupported_claim_rate": rate(unsupported, claims, "claims classified by deterministic grounding; not causal semantic support"),
             "forbidden_recommendations": sum(row["forbidden_recommendations"] for row in rows),
             "read_only_contract": all(row["read_only_contract"] for row in rows),
-            "passed": valid == refs and unsupported == 0 and all(row["read_only_contract"] for row in rows),
+            "passed": valid == refs and unsupported == 0
+            and not any(row["forbidden_recommendations"] for row in rows)
+            and all(row["read_only_contract"] for row in rows),
             "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."}
 
 
@@ -56,10 +58,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("reports", nargs="+", type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--snapshots", type=Path, default=Path(".orchestrator/external-v12/snapshots"))
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("Nao sobrescrever auditoria preservada.")
-    args.output.write_text(json.dumps({"version": 12, "audits": [audit(path) for path in args.reports]}, indent=2)+"\n", encoding="utf-8")
+    args.output.write_text(json.dumps({"version": 13, "audits": [audit(path, snapshots=args.snapshots) for path in args.reports]}, indent=2)+"\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

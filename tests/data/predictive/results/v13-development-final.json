@@ -1,0 +1,1695 @@
+{
+  "schema_version": 13,
+  "summary": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 4,
+        "denominator": 5,
+        "rate": 0.8,
+        "population": "formulations",
+        "wilson_95": [
+          0.37553462976252533,
+          0.9637758913675698
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "recommendations only",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "recommendation_coverage": {
+        "numerator": 2,
+        "denominator": 5,
+        "rate": 0.4,
+        "population": "live formulations",
+        "wilson_95": [
+          0.11762077423264783,
+          0.769275718723987
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 3,
+        "denominator": 5,
+        "rate": 0.6,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.2307242812760128,
+          0.882379225767352
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "n_independent_defects": 5,
+    "n_formulations": 5,
+    "n_recommended": 2,
+    "n_abstained": 3,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 5,
+      "FALSE_ABSTENTION": 3,
+      "RELEVANT_FILE_MISSED": 1,
+      "WRONG_REPAIR_PAIR": 2
+    },
+    "qwen_requests": 2,
+    "avg_qwen_seconds": 50.97208960000034,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 5,
+          "denominator": 5,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5655175352168251,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 5,
+          "denominator": 5,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5655175352168251,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 5,
+          "rate": 0.8,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.37553462976252533,
+            0.9637758913675698
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 4,
+          "denominator": 5,
+          "rate": 0.8,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.37553462976252533,
+            0.9637758913675698
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 2,
+          "denominator": 2,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_GENERATED": 2,
+        "FILE_NOT_RETRIEVED": 1,
+        "SYMBOL_WINDOW_MISSED": 2
+      }
+    },
+    "n_total_defects": 6,
+    "n_evaluable_defects": 5,
+    "n_incomplete_defects": 1
+  },
+  "results": [
+    {
+      "case_id": "pallets__flask-4045",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "src/flask/app.py",
+        "src/flask/scaffold.py",
+        "src/flask/typing.py",
+        "src/flask/__init__.py",
+        "src/flask/debughelpers.py",
+        "src/flask/blueprints.py",
+        "tests/test_blueprints.py",
+        "tests/test_user_error_handler.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": true,
+      "correct_candidate_exists": false,
+      "selected_root": true,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [
+        {
+          "id": "R5D59AAD520C0",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": "Scaffold.endpoint",
+          "origin_line": 527
+        }
+      ],
+      "root_candidates": [
+        {
+          "id": "R5D59AAD520C0",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": "Scaffold.endpoint",
+          "origin_line": 527
+        },
+        {
+          "id": "RBFCFA61FDA9A",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": "Flask.name",
+          "origin_line": 540
+        },
+        {
+          "id": "R09F34E86C220",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": "Flask.name",
+          "origin_line": 541
+        },
+        {
+          "id": "RBD867A15C72B",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": "Flask.name",
+          "origin_line": 542
+        },
+        {
+          "id": "R3CBF9A862D98",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/wrappers.py",
+          "origin_symbol": "Request.endpoint",
+          "origin_line": 68
+        },
+        {
+          "id": "RC9837D1476F1",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/wrappers.py",
+          "origin_symbol": "Request.endpoint",
+          "origin_line": 70
+        },
+        {
+          "id": "R9EAF05ABD8EE",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/wrappers.py",
+          "origin_symbol": "Request.blueprint",
+          "origin_line": 76
+        },
+        {
+          "id": "R6FA6B35507B8",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/wrappers.py",
+          "origin_symbol": "Request.blueprint",
+          "origin_line": 78
+        },
+        {
+          "id": "R3F5F297776E7",
+          "cause_kind": "NULL_FLOW",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": null,
+          "origin_line": 538
+        },
+        {
+          "id": "RA27D1DE04E0A",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": null,
+          "origin_line": 538
+        },
+        {
+          "id": "R00103CC578CE",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": null,
+          "origin_line": 540
+        },
+        {
+          "id": "R14F894BC944E",
+          "cause_kind": "CONTROL_FLOW",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": "Flask.name",
+          "origin_line": 537
+        }
+      ],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": true,
+      "abstention_expected": false,
+      "winner": {
+        "id": "C1",
+        "hypothesis_id": "H1",
+        "action": "Fix the return value at the method level to include validation logic.",
+        "expected_outcome": "Address RETURN_CONTRACT at its causal origin",
+        "evidence_refs": [
+          "src/flask/scaffold.py:59-735",
+          "src/flask/app.py:101-2076"
+        ],
+        "required_tests": [],
+        "evidence_score": 0.8,
+        "risk_score": 0.25,
+        "cost_score": 0.2,
+        "reversibility_score": 0.825,
+        "estimated_success_score": 1.0,
+        "confidence": 1.0,
+        "test_support_score": 0.0,
+        "ranking_score": 0.839,
+        "score_explanation": "score=0.839; causa=+0.250; estrategia=+0.200; evidencia=+0.080; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+        "change_kind": "RETURN_VALUE",
+        "target_files": [
+          "src/flask/scaffold.py"
+        ],
+        "target_symbols": [
+          "Scaffold.endpoint"
+        ],
+        "mechanism": "CORRECT_RETURN_VALUE",
+        "evidence_ids": [
+          "EF5B3B521D75D",
+          "EEE14E20A4F38"
+        ],
+        "test_support_level": "NONE",
+        "eligible": true,
+        "rejection_reasons": [],
+        "root_cause_id": "R5D59AAD520C0",
+        "strategy_kind": "CORRECT_RETURN_VALUE",
+        "root_cause_score": 1.0,
+        "repair_locality_score": 1.0,
+        "repair_strategy_score": 1.0,
+        "repair_targets": [
+          {
+            "id": "T0802DE777ED9",
+            "path": "src/flask/scaffold.py",
+            "scope_kind": "RETURN_SITE",
+            "symbol": "Scaffold.endpoint",
+            "parameter": null,
+            "attribute": null,
+            "expression_id": "NBA1DA536AED4",
+            "line": 527
+          }
+        ]
+      },
+      "failure_reason": null,
+      "failure_codes": [
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "WRONG_REPAIR_PAIR"
+      ],
+      "wall_seconds": 29.597132699999747,
+      "phase_seconds": {
+        "index": 1.3121741,
+        "retrieval": 0.15794760000000002,
+        "context_inclusive": 0.3434141,
+        "symbol_selection": 0.3279475,
+        "ledger": 1.0223288000000001,
+        "causal": 3.246915,
+        "recovery_inclusive": 2.5440663000000003,
+        "scoring": 0.0003039
+      },
+      "qwen": {
+        "requests": 1,
+        "request_ms": [
+          19624.434700000165
+        ],
+        "prompt_tokens": 7215,
+        "response_tokens": 406
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "279d31aa292e22150415ff17feb99e7bcca9e078f0b8e393306122e82567240d",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-final\\pallets__flask-4045\\result\\279d31aa292e22150415ff17feb99e7bcca9e078f0b8e393306122e82567240d.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "VALIDATE_BOUNDARY",
+          "FIX_CONSUMER_CONTRACT"
+        ],
+        "root_cause": "Blueprint name accepts dots despite nested blueprint namespace contract.",
+        "root_path": "src/flask/blueprints.py",
+        "root_symbol": "Blueprint.__init__",
+        "source_locations": [
+          {
+            "end_line": 201,
+            "line": 171
+          }
+        ],
+        "target_paths": [
+          "src/flask/blueprints.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": true,
+          "correct_symbol_in_context": true,
+          "correct_symbol_in_ledger": true,
+          "correct_symbol_facts_in_ledger": true,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+        "reason_codes": [
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "__init__",
+            "qualified_name": "Blueprint.__init__",
+            "kind": "method",
+            "file": "src/flask/blueprints.py",
+            "line": 171,
+            "end_line": 201,
+            "module": "src.flask.blueprints"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 1,
+            "end_line": 305
+          }
+        ],
+        "local_fact_ids": [
+          "E5529C0EE0AB5",
+          "E5A598CB25BAD",
+          "E8BFD992B0435",
+          "E8ED1A1E675BE",
+          "E99F3398E259B",
+          "EC251BEB7178D",
+          "EC89CFE3E6737",
+          "ECF3F1A2D88FE",
+          "ED6CD0A066486",
+          "ED8150B374093",
+          "EE3957308B2BC"
+        ],
+        "local_causal_node_ids": [
+          "N08D7A8BE7F36",
+          "N14FE5C1B380C",
+          "N158E646BF57D",
+          "N197D8BFA7D35",
+          "N1DD610EAC8EC",
+          "N27B30C93C7C4",
+          "N32CA8F88192D",
+          "N356B137E7393",
+          "N3640A87F4935",
+          "N365B6ADE731C",
+          "N366FC68CD288",
+          "N3C3E1D95901F",
+          "N4CBE46E5924D",
+          "N580BE074DA6F",
+          "N58E9F1360924",
+          "N5B98C836974A",
+          "N5BC78C07D08D",
+          "N6195CFBA4F90",
+          "N63A271B669E9",
+          "N69DFCF7D4517",
+          "N6E2B47B4E2EE",
+          "N73228F5A25E7",
+          "N7CEDACB9BB09",
+          "N9C244A345470",
+          "NA5C9ACBFCAF5",
+          "NB1F596A6687B",
+          "NB9362DC0409F",
+          "ND2CB36D80117",
+          "ND31C0F354CB9",
+          "ND44C7FA2A696",
+          "ND77FE6F7A8DF",
+          "NDC22E21EBF2C",
+          "NDF80B5D64AA2",
+          "NE92ACE757F30",
+          "NE9B7D5AE1721",
+          "NEAB5B12AF0F7",
+          "NED9506486109",
+          "NF4C03F4D5DC6",
+          "NF929EF44D8E2",
+          "NFD922E98D2E6"
+        ],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-11148",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "src/_pytest/logging.py",
+        "testing/code/test_source.py",
+        "src/_pytest/_code/code.py",
+        "src/_pytest/_py/path.py",
+        "src/_pytest/junitxml.py",
+        "doc/en/example/assertion/test_setup_flow_example.py",
+        "src/_pytest/debugging.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/mark/expression.py",
+        "src/_pytest/pathlib.py",
+        "src/_pytest/python_api.py",
+        "src/_pytest/terminal.py",
+        "testing/example_scripts/collect/package_infinite_recursion/tests/test_basic.py",
+        "testing/example_scripts/fixtures/custom_item/foo/test_foo.py",
+        "testing/example_scripts/fixtures/fill_fixtures/test_detect_recursive_dependency_error.py",
+        "testing/example_scripts/fixtures/test_fixture_named_request.py",
+        "testing/example_scripts/fixtures/test_getfixturevalue_dynamic.py",
+        "testing/example_scripts/unittest/test_setup_skip_module.py",
+        "testing/test_unittest.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": false,
+      "correct_candidate_exists": false,
+      "selected_root": false,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [],
+      "root_candidates": [],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "abstention_expected": false,
+      "winner": null,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "failure_codes": [
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "FALSE_ABSTENTION"
+      ],
+      "wall_seconds": 40.87857899999926,
+      "phase_seconds": {
+        "index": 8.4379034,
+        "retrieval": 0.470324,
+        "context_inclusive": 1.7359212000000002,
+        "symbol_selection": 1.6665674000000001,
+        "ledger": 20.2423986,
+        "causal": 3.8839129000000003,
+        "recovery_inclusive": 20.643179,
+        "scoring": 0
+      },
+      "qwen": {
+        "requests": 0,
+        "request_ms": [],
+        "prompt_tokens": 0,
+        "response_tokens": 0
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "2d185ecdb6e61eaa34bb712da7cf28f0f5d9616df47eed29bdeba9a912c1aa63",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-final\\pytest-dev__pytest-11148\\result\\2d185ecdb6e61eaa34bb712da7cf28f0f5d9616df47eed29bdeba9a912c1aa63.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER"
+        ],
+        "root_cause": "Importlib mode loads an already cached module again instead of returning sys.modules entry.",
+        "root_path": "src/_pytest/pathlib.py",
+        "root_symbol": "import_path",
+        "source_locations": [
+          {
+            "end_line": 590,
+            "line": 486
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/pathlib.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": false,
+          "correct_symbol_in_context": false,
+          "correct_symbol_in_ledger": false,
+          "correct_symbol_facts_in_ledger": false,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "first_loss": "SYMBOL_WINDOW_MISSED",
+        "reason_codes": [
+          "SYMBOL_WINDOW_MISSED",
+          "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+          "SYMBOL_FACTS_NOT_MATERIALIZED",
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "import_path",
+            "qualified_name": "import_path",
+            "kind": "function",
+            "file": "src/_pytest/pathlib.py",
+            "line": 486,
+            "end_line": 590,
+            "module": "src._pytest.pathlib"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 474,
+            "end_line": 474
+          }
+        ],
+        "local_fact_ids": [],
+        "local_causal_node_ids": [
+          "N000145B9B062",
+          "N0A7F437E095E",
+          "N0AAB12B9B910",
+          "N0CE7CC4B2367",
+          "N11B154E0A673",
+          "N11DD0C8C3E4C",
+          "N12102372FC02",
+          "N1235F5411152",
+          "N148417C256FC",
+          "N17A18A3ED189",
+          "N1AFA6A9AED44",
+          "N1B095B638834",
+          "N1D4B9B0E4947",
+          "N22A52DEC09C6",
+          "N2558FC9989A4",
+          "N281E1BC38334",
+          "N2A1C645ECD89",
+          "N2FF8C71A89A0",
+          "N396393C0A1B0",
+          "N3B346ECBD161",
+          "N3B3AEBE7AD3E",
+          "N3FBFD59E2B91",
+          "N4227047D252D",
+          "N4245F32AE35E",
+          "N4540F81129D2",
+          "N4674971A32A0",
+          "N4733CACFB851",
+          "N48AEF0AB0860",
+          "N4913B2645B54",
+          "N4FC805FA3A0F",
+          "N53C64BA99C29",
+          "N544074DEEC5E",
+          "N57D31BCBA799",
+          "N5AB9D208213C",
+          "N5CA53704472D",
+          "N61DC51F79641",
+          "N62D958B4035A",
+          "N6478F8605403",
+          "N668171FB1566",
+          "N66B46069F17C",
+          "N675627062D06",
+          "N6B8AEE150829",
+          "N6FA47B1E5701",
+          "N716E816E384E",
+          "N77F86B04A3B4",
+          "N7A2401917D1E",
+          "N7B5E7A2B0B1B",
+          "N7C0E84296553",
+          "N7C2CFA0F9284",
+          "N828BE130140E",
+          "N861EE5C4BC19",
+          "N89A29AA354DE",
+          "N8A42F68BC728",
+          "N8A4D5CD75F7F",
+          "N8CFA4E90FD7E",
+          "N8D46DDA9449D",
+          "N8F90983FE011",
+          "N92C51EB222A6",
+          "N931598DBB28E",
+          "N949C81937EE9",
+          "N96C3A878E4BE",
+          "N9736B0A46F66",
+          "N98DC4AC72176",
+          "N992342CDD735",
+          "N9ED5A9E86727",
+          "NA0A7A352052E",
+          "NA3BD9CB36DB0",
+          "NA7E5AF65C368",
+          "NB1CC2EB3BF6A",
+          "NB2846029030C",
+          "NB67C0D7FE742",
+          "NB77C34CF7F03",
+          "NBA83971DC9C9",
+          "NBB4403688BC2",
+          "NBDB497CD4E48",
+          "NBE05E87956CF",
+          "NC3678CAB30CF",
+          "NC45EDFE92B75",
+          "NC655E76841FB",
+          "NC66CDAF4CE76",
+          "NC9AEBD74BA42",
+          "NCD072C8912C4",
+          "ND239600A8C31",
+          "ND3D40714BA47",
+          "ND43377189774",
+          "ND6E773E6B9EF",
+          "NDB6A419897BA",
+          "NDE3ADF3ACF1A",
+          "NE19AFD09674B",
+          "NE1EB73FB8B7B",
+          "NE20DCA072D1D",
+          "NE393C97EAAB1",
+          "NE699C79266C8",
+          "NE7FAC4C58D33",
+          "NEAD3EA4A7353",
+          "NEEA4CF0EE6A3",
+          "NF4666CE78669",
+          "NF5533F9D2DD9",
+          "NF9835B40153D",
+          "NFA0A4854A8E0",
+          "NFA9E91919E43",
+          "NFCF8B92D195F"
+        ],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-5495",
+      "formulation": 1,
+      "mode": "live",
+      "category": "DATA_OR_RETURN_CONTRACT",
+      "correct_file_retrieved": false,
+      "initial_files": [
+        "testing/example_scripts/fixtures/test_getfixturevalue_dynamic.py",
+        "doc/en/example/assertion/test_setup_flow_example.py",
+        "testing/example_scripts/dataclasses/test_compare_dataclasses_field_comparison_off.py",
+        "testing/example_scripts/unittest/test_parametrized_fixture_error_message.py",
+        "testing/example_scripts/warnings/test_group_warnings_by_message.py",
+        "testing/test_assertion.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": false,
+      "correct_candidate_exists": false,
+      "selected_root": false,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [],
+      "root_candidates": [],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "abstention_expected": false,
+      "winner": null,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "failure_codes": [
+        "RELEVANT_FILE_MISSED",
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "FALSE_ABSTENTION"
+      ],
+      "wall_seconds": 13.529103099999702,
+      "phase_seconds": {
+        "index": 4.8039286,
+        "retrieval": 0.23883210000000002,
+        "context_inclusive": 0.17824140000000002,
+        "symbol_selection": 0.1666226,
+        "ledger": 2.0598518,
+        "causal": 0.505206,
+        "recovery_inclusive": 7.8918162,
+        "scoring": 0
+      },
+      "qwen": {
+        "requests": 0,
+        "request_ms": [],
+        "prompt_tokens": 0,
+        "response_tokens": 0
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "87a2c0773b616c2c59e70445c334b9b751b2cf792f18a8abd18f49a4c6c593d6",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-final\\pytest-dev__pytest-5495\\result\\87a2c0773b616c2c59e70445c334b9b751b2cf792f18a8abd18f49a4c6c593d6.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER",
+          "CORRECT_RETURN_VALUE"
+        ],
+        "root_cause": "Bytes indexing gives integers, causing misleading character comparison output.",
+        "root_path": "src/_pytest/assertion/util.py",
+        "root_symbol": "_compare_eq_sequence",
+        "source_locations": [
+          {
+            "end_line": 286,
+            "line": 256
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/assertion/util.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": false,
+          "correct_symbol_selected": false,
+          "correct_symbol_in_context": false,
+          "correct_symbol_in_ledger": false,
+          "correct_symbol_facts_in_ledger": false,
+          "correct_relation_in_causal_slice": false,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "first_loss": "FILE_NOT_RETRIEVED",
+        "reason_codes": [
+          "FILE_NOT_RETRIEVED",
+          "SYMBOL_WINDOW_MISSED",
+          "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+          "SYMBOL_FACTS_NOT_MATERIALIZED",
+          "LOCAL_CAUSAL_RELATION_NOT_REPRESENTED",
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "_compare_eq_sequence",
+            "qualified_name": "_compare_eq_sequence",
+            "kind": "function",
+            "file": "src/_pytest/assertion/util.py",
+            "line": 256,
+            "end_line": 286,
+            "module": "src._pytest.assertion.util"
+          }
+        ],
+        "selected_windows": [],
+        "local_fact_ids": [],
+        "local_causal_node_ids": [],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-7168",
+      "formulation": 1,
+      "mode": "live",
+      "category": "EXCEPTION_FAILURE",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "src/_pytest/_code/code.py",
+        "src/_pytest/runner.py",
+        "src/_pytest/nodes.py",
+        "src/_pytest/_io/saferepr.py",
+        "src/_pytest/main.py",
+        "src/_pytest/python.py",
+        "src/_pytest/reports.py",
+        "src/_pytest/skipping.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/fixtures.py",
+        "src/_pytest/mark/structures.py",
+        "src/_pytest/python_api.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/junitxml.py",
+        "src/_pytest/outcomes.py",
+        "doc/en/example/nonpython/conftest.py",
+        "src/_pytest/assertion/__init__.py",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/config/argparsing.py",
+        "src/_pytest/doctest.py",
+        "src/_pytest/faulthandler.py",
+        "src/_pytest/logging.py",
+        "src/_pytest/warnings.py",
+        "testing/test_junitxml.py",
+        "doc/en/example/assertion/test_setup_flow_example.py",
+        "src/_pytest/_argcomplete.py",
+        "src/_pytest/helpconfig.py",
+        "src/_pytest/monkeypatch.py",
+        "src/_pytest/terminal.py",
+        "testing/example_scripts/collect/package_infinite_recursion/tests/test_basic.py",
+        "testing/example_scripts/collect/package_init_given_as_arg/pkg/test_foo.py",
+        "testing/example_scripts/fixtures/custom_item/foo/test_foo.py",
+        "testing/example_scripts/fixtures/fill_fixtures/test_detect_recursive_dependency_error.py",
+        "testing/example_scripts/fixtures/test_fixture_named_request.py",
+        "testing/example_scripts/fixtures/test_getfixturevalue_dynamic.py",
+        "testing/example_scripts/unittest/test_setup_skip_module.py",
+        "testing/test_argcomplete.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": true,
+      "correct_candidate_exists": false,
+      "selected_root": false,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [],
+      "root_candidates": [],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "abstention_expected": false,
+      "winner": null,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "failure_codes": [
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "FALSE_ABSTENTION"
+      ],
+      "wall_seconds": 39.51292060000014,
+      "phase_seconds": {
+        "index": 5.3322251000000005,
+        "retrieval": 0.4893409,
+        "context_inclusive": 2.3832322,
+        "symbol_selection": 2.3115934,
+        "ledger": 19.5689913,
+        "causal": 6.863174900000001,
+        "recovery_inclusive": 21.2211623,
+        "scoring": 0
+      },
+      "qwen": {
+        "requests": 0,
+        "request_ms": [],
+        "prompt_tokens": 0,
+        "response_tokens": 0
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "61f89f4379aefde86c8f6bf2dabc3cbafaadd172f657be959e4413fe1fac8352",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-final\\pytest-dev__pytest-7168\\result\\61f89f4379aefde86c8f6bf2dabc3cbafaadd172f657be959e4413fe1fac8352.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "FIX_CONSUMER_CONTRACT",
+          "FIX_PRODUCER",
+          "CORRECT_RETURN_VALUE"
+        ],
+        "root_cause": "Reading obj.__class__ invokes broken __getattribute__ while formatting repr failure.",
+        "root_path": "src/_pytest/_io/saferepr.py",
+        "root_symbol": "_format_repr_exception",
+        "source_locations": [
+          {
+            "end_line": 24,
+            "line": 15
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/_io/saferepr.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": true,
+          "correct_symbol_in_context": true,
+          "correct_symbol_in_ledger": true,
+          "correct_symbol_facts_in_ledger": true,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+        "reason_codes": [
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "_format_repr_exception",
+            "qualified_name": "_format_repr_exception",
+            "kind": "function",
+            "file": "src/_pytest/_io/saferepr.py",
+            "line": 15,
+            "end_line": 24,
+            "module": "src._pytest._io.saferepr"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 15,
+            "end_line": 24
+          },
+          {
+            "start_line": 45,
+            "end_line": 52
+          },
+          {
+            "start_line": 54,
+            "end_line": 61
+          },
+          {
+            "start_line": 75,
+            "end_line": 82
+          }
+        ],
+        "local_fact_ids": [
+          "E149F7A82B81A",
+          "E30BB64F8F391",
+          "E3530516808D1",
+          "E57D4DBF309CE",
+          "E653F579CF2E9",
+          "E852F085599CC",
+          "EA92C2D1FCCCA",
+          "EE8C4FFBC56A9"
+        ],
+        "local_causal_node_ids": [
+          "N3F370869238C",
+          "N407C13422E76",
+          "N534CB63D325C",
+          "N5B3317BE31EC",
+          "N5BE40C62CF5D",
+          "N72DA5792489E",
+          "N77561E36A9CA",
+          "N7C77B90BC483",
+          "N800D84C36E55",
+          "NB433532D9CFA",
+          "NB9653F2DE86D",
+          "NBEF2A182FB59",
+          "NE3CE9BC087F0",
+          "NF275661CCA25"
+        ],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-11445",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "tests/roots/test-add_enumerable_node/conf.py",
+        "tests/roots/test-add_source_parser-conflicts-with-users-setting/conf.py",
+        "tests/roots/test-add_source_parser/conf.py",
+        "tests/roots/test-api-set-translator/conf.py",
+        "tests/roots/test-api-set-translator/nonext/conf.py",
+        "tests/roots/test-autosummary/conf.py",
+        "tests/roots/test-basic/conf.py",
+        "tests/roots/test-build-html-theme-having-multiple-stylesheets/conf.py",
+        "tests/roots/test-build-html-translator/conf.py",
+        "tests/roots/test-build-text/conf.py",
+        "tests/roots/test-builder-dirhtml/conf.py",
+        "tests/roots/test-builder-gettext-dont-rebuild-mo/conf.py",
+        "tests/roots/test-changes/conf.py",
+        "tests/roots/test-circular/conf.py",
+        "tests/roots/test-config/conf.py",
+        "tests/roots/test-copyright-multiline/conf.py",
+        "tests/roots/test-correct-year/conf.py",
+        "tests/roots/test-default_role/conf.py",
+        "tests/roots/test-directive-code/conf.py",
+        "tests/roots/test-directive-csv-table/conf.py",
+        "tests/roots/test-directive-only/conf.py",
+        "tests/roots/test-directives-raw/conf.py",
+        "tests/roots/test-docutilsconf/conf.py",
+        "tests/roots/test-domain-c-c_maximum_signature_line_length/conf.py",
+        "tests/roots/test-domain-c-intersphinx/conf.py",
+        "tests/roots/test-domain-c/conf.py",
+        "tests/roots/test-domain-cpp-cpp_maximum_signature_line_length/conf.py",
+        "tests/roots/test-domain-cpp-intersphinx/conf.py",
+        "tests/roots/test-domain-cpp/conf.py",
+        "tests/roots/test-domain-js-javascript_maximum_signature_line_length/conf.py",
+        "tests/roots/test-domain-js/conf.py",
+        "tests/roots/test-domain-py-python_maximum_signature_line_length/conf.py",
+        "tests/roots/test-domain-py-python_use_unqualified_type_names/conf.py",
+        "tests/roots/test-domain-py-xref-warning/conf.py",
+        "tests/roots/test-domain-py/conf.py",
+        "tests/roots/test-double-inheriting-theme/conf.py",
+        "tests/roots/test-environment-record-dependencies/conf.py",
+        "tests/roots/test-epub-anchor-id/conf.py",
+        "tests/roots/test-ext-autodoc/conf.py",
+        "tests/roots/test-ext-autosectionlabel-prefix-document/conf.py",
+        "tests/roots/test-ext-autosectionlabel/conf.py",
+        "tests/roots/test-ext-autosummary-filename-map/conf.py",
+        "tests/roots/test-ext-autosummary-imported_members/conf.py",
+        "tests/roots/test-ext-autosummary-mock_imports/conf.py",
+        "tests/roots/test-ext-autosummary-module_all/conf.py",
+        "tests/roots/test-ext-autosummary-recursive/conf.py",
+        "tests/roots/test-ext-autosummary-skip-member/conf.py",
+        "tests/roots/test-ext-autosummary-template/conf.py",
+        "tests/roots/test-ext-autosummary/conf.py",
+        "tests/roots/test-ext-coverage/conf.py",
+        "tests/roots/test-ext-doctest-skipif/conf.py",
+        "tests/roots/test-ext-doctest-with-autodoc/conf.py",
+        "tests/roots/test-ext-doctest/conf.py",
+        "tests/roots/test-ext-extlinks-hardcoded-urls-multiple-replacements/conf.py",
+        "tests/roots/test-ext-extlinks-hardcoded-urls/conf.py",
+        "tests/roots/test-ext-githubpages/conf.py",
+        "tests/roots/test-ext-graphviz/conf.py",
+        "tests/roots/test-ext-ifconfig/conf.py",
+        "tests/roots/test-ext-imgconverter/conf.py",
+        "tests/roots/test-ext-imgmockconverter/conf.py",
+        "tests/roots/test-ext-inheritance_diagram/conf.py",
+        "tests/roots/test-ext-intersphinx-cppdomain/conf.py",
+        "tests/roots/test-ext-intersphinx-role/conf.py",
+        "tests/roots/test-ext-math-compat/conf.py",
+        "tests/roots/test-ext-math-simple/conf.py",
+        "tests/roots/test-ext-math/conf.py",
+        "tests/roots/test-ext-napoleon/conf.py",
+        "tests/roots/test-ext-todo/conf.py",
+        "tests/roots/test-ext-viewcode-find/conf.py",
+        "tests/roots/test-ext-viewcode/conf.py",
+        "tests/roots/test-extensions/conf.py",
+        "tests/roots/test-footnotes/conf.py",
+        "tests/roots/test-gettext-template/conf.py",
+        "tests/roots/test-glossary/conf.py",
+        "tests/roots/test-highlight_options/conf.py",
+        "tests/roots/test-html_assets/conf.py",
+        "tests/roots/test-html_entity/conf.py",
+        "tests/roots/test-html_scaled_image_link/conf.py",
+        "tests/roots/test-html_signaturereturn_icon/conf.py",
+        "tests/roots/test-html_style/conf.py",
+        "tests/roots/test-image-escape/conf.py",
+        "tests/roots/test-image-in-parsed-literal/conf.py",
+        "tests/roots/test-image-in-section/conf.py",
+        "tests/roots/test-images/conf.py",
+        "tests/roots/test-index_on_title/conf.py",
+        "tests/roots/test-inheritance/conf.py",
+        "tests/roots/test-intl/conf.py",
+        "tests/roots/test-keep_warnings/conf.py",
+        "tests/roots/test-latex-babel/conf.py",
+        "tests/roots/test-latex-container/conf.py",
+        "tests/roots/test-latex-equations/conf.py",
+        "tests/roots/test-latex-figure-in-admonition/conf.py",
+        "tests/roots/test-latex-includegraphics/conf.py",
+        "tests/roots/test-latex-index/conf.py",
+        "tests/roots/test-latex-labels-before-module/conf.py",
+        "tests/roots/test-latex-labels/conf.py",
+        "tests/roots/test-latex-numfig/conf.py",
+        "tests/roots/test-latex-table/conf.py",
+        "tests/roots/test-latex-theme/conf.py",
+        "tests/roots/test-latex-title/conf.py",
+        "tests/roots/test-latex-unicode/conf.py",
+        "tests/roots/test-linkcheck-anchors-ignore/conf.py",
+        "tests/roots/test-linkcheck-documents_exclude/conf.py",
+        "tests/roots/test-linkcheck-localserver-anchor/conf.py",
+        "tests/roots/test-linkcheck-localserver-https/conf.py",
+        "tests/roots/test-linkcheck-localserver-warn-redirects/conf.py",
+        "tests/roots/test-linkcheck-localserver/conf.py",
+        "tests/roots/test-linkcheck-raw-node/conf.py",
+        "tests/roots/test-linkcheck-too-many-retries/conf.py",
+        "tests/roots/test-linkcheck/conf.py",
+        "tests/roots/test-local-logo/conf.py",
+        "tests/roots/test-manpage_url/conf.py",
+        "tests/roots/test-markup-citation/conf.py",
+        "tests/roots/test-markup-rubric/conf.py",
+        "tests/roots/test-maxlistdepth/conf.py",
+        "tests/roots/test-metadata/conf.py",
+        "tests/roots/test-need-escaped/conf.py",
+        "tests/roots/test-nested-enumerated-list/conf.py",
+        "tests/roots/test-nested-tables/conf.py",
+        "tests/roots/test-nitpicky-warnings/conf.py",
+        "tests/roots/test-numbered-circular/conf.py",
+        "tests/roots/test-numfig/conf.py",
+        "tests/roots/test-object-description-sections/conf.py",
+        "tests/roots/test-productionlist/conf.py",
+        "tests/roots/test-prolog/conf.py",
+        "tests/roots/test-refonly_bullet_list/conf.py",
+        "tests/roots/test-remote-logo/conf.py",
+        "tests/roots/test-reST-code-block/conf.py",
+        "tests/roots/test-reST-code-role/conf.py",
+        "tests/roots/test-roles-download/conf.py",
+        "tests/roots/test-root/conf.py",
+        "tests/roots/test-search/conf.py",
+        "tests/roots/test-smartquotes/conf.py",
+        "tests/roots/test-stylesheets/conf.py",
+        "tests/roots/test-templating/conf.py",
+        "tests/roots/test-theming/conf.py",
+        "tests/roots/test-tocdepth/conf.py",
+        "tests/roots/test-toctree-domain-objects/conf.py",
+        "tests/roots/test-toctree-duplicated/conf.py",
+        "tests/roots/test-toctree-empty/conf.py",
+        "tests/roots/test-toctree-glob/conf.py",
+        "tests/roots/test-toctree-index/conf.py",
+        "tests/roots/test-toctree-maxdepth/conf.py",
+        "tests/roots/test-toctree/conf.py",
+        "tests/roots/test-transforms-post_transforms-keyboard/conf.py",
+        "tests/roots/test-transforms-post_transforms-missing-reference/conf.py",
+        "tests/roots/test-trim_doctest_flags/conf.py",
+        "tests/roots/test-versioning/conf.py",
+        "tests/roots/test-warnings/conf.py",
+        "doc/conf.py",
+        "sphinx/util/rst.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": false,
+      "correct_candidate_exists": false,
+      "selected_root": true,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [
+        {
+          "id": "R77D395F63CFD",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "heading",
+          "origin_line": 60
+        }
+      ],
+      "root_candidates": [
+        {
+          "id": "R77D395F63CFD",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "heading",
+          "origin_line": 60
+        },
+        {
+          "id": "RA2514847D7B9",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "textwidth",
+          "origin_line": 51
+        },
+        {
+          "id": "R2263FB2E548F",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": null,
+          "origin_line": 43
+        },
+        {
+          "id": "R6B3CEA6A7B99",
+          "cause_kind": "CONFIGURATION",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "WIDECHARS",
+          "origin_line": 33
+        },
+        {
+          "id": "R6E4D26AADD74",
+          "cause_kind": "CONFIGURATION",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "SECTIONING_CHARS",
+          "origin_line": 30
+        },
+        {
+          "id": "R8511EF62BD5A",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "widechars",
+          "origin_line": 43
+        },
+        {
+          "id": "R2C4B51D0AC39",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "text",
+          "origin_line": 43
+        },
+        {
+          "id": "R2CF3807134CB",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "text",
+          "origin_line": 43
+        },
+        {
+          "id": "R35F623BB6F12",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "widechars",
+          "origin_line": 43
+        },
+        {
+          "id": "R62F5D6885D6E",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "text",
+          "origin_line": 43
+        },
+        {
+          "id": "R631FC9A59B09",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "widechars",
+          "origin_line": 43
+        },
+        {
+          "id": "R9759BBA9BE9A",
+          "cause_kind": "ARGUMENT_BINDING",
+          "origin_path": "sphinx/util/rst.py",
+          "origin_symbol": "widechars",
+          "origin_line": 43
+        }
+      ],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": true,
+      "abstention_expected": false,
+      "winner": {
+        "id": "C1",
+        "hypothesis_id": "H1",
+        "action": "Fix the return value of the `heading` function to properly include domain directives in the heading text.",
+        "expected_outcome": "Address RETURN_CONTRACT at its causal origin",
+        "evidence_refs": [
+          "sphinx/util/rst.py:55-60",
+          "sphinx/util/rst.py:60-60"
+        ],
+        "required_tests": [
+          "tests/test_util_rst.py"
+        ],
+        "evidence_score": 0.8,
+        "risk_score": 0.25,
+        "cost_score": 0.2,
+        "reversibility_score": 0.825,
+        "estimated_success_score": 1.0,
+        "confidence": 1.0,
+        "test_support_score": 1.0,
+        "ranking_score": 0.939,
+        "score_explanation": "score=0.939; causa=+0.250; estrategia=+0.200; evidencia=+0.080; testes=+0.100; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+        "change_kind": "RETURN_VALUE",
+        "target_files": [
+          "sphinx/util/rst.py"
+        ],
+        "target_symbols": [
+          "heading"
+        ],
+        "mechanism": "CORRECT_RETURN_VALUE",
+        "evidence_ids": [
+          "E1A9F396EC019",
+          "EECB352B2BC42"
+        ],
+        "test_support_level": "DIRECT_BEHAVIORAL",
+        "eligible": true,
+        "rejection_reasons": [],
+        "root_cause_id": "R77D395F63CFD",
+        "strategy_kind": "CORRECT_RETURN_VALUE",
+        "root_cause_score": 1.0,
+        "repair_locality_score": 1.0,
+        "repair_strategy_score": 1.0,
+        "repair_targets": [
+          {
+            "id": "TB368B2A91881",
+            "path": "sphinx/util/rst.py",
+            "scope_kind": "RETURN_SITE",
+            "symbol": "heading",
+            "parameter": null,
+            "attribute": null,
+            "expression_id": "N6055E15EA7B7",
+            "line": 60
+          }
+        ]
+      },
+      "failure_reason": null,
+      "failure_codes": [
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "WRONG_REPAIR_PAIR"
+      ],
+      "wall_seconds": 110.01972209999985,
+      "phase_seconds": {
+        "index": 12.678535700000001,
+        "retrieval": 0.6976100000000001,
+        "context_inclusive": 0.3080204,
+        "symbol_selection": 0.0754853,
+        "ledger": 0.2815901,
+        "causal": 6.138977400000001,
+        "recovery_inclusive": 1.5919743000000002,
+        "scoring": 0.0003108
+      },
+      "qwen": {
+        "requests": 1,
+        "request_ms": [
+          82319.74450000052
+        ],
+        "prompt_tokens": 6246,
+        "response_tokens": 516
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "5514229151b0f1446cc6f7fd4873542dff240566770dfe589dfcd78771bc4413",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-final\\sphinx-doc__sphinx-11445\\result\\5514229151b0f1446cc6f7fd4873542dff240566770dfe589dfcd78771bc4413.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER",
+          "CORRECT_CONFIGURATION"
+        ],
+        "root_cause": "Broad docinfo regex mistakes domain roles for metadata, inserting prolog inside heading structure.",
+        "root_path": "sphinx/util/rst.py",
+        "root_symbol": "prepend_prolog",
+        "source_locations": [
+          {
+            "end_line": 97,
+            "line": 78
+          }
+        ],
+        "target_paths": [
+          "sphinx/util/rst.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": false,
+          "correct_symbol_in_context": false,
+          "correct_symbol_in_ledger": false,
+          "correct_symbol_facts_in_ledger": false,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "first_loss": "SYMBOL_WINDOW_MISSED",
+        "reason_codes": [
+          "SYMBOL_WINDOW_MISSED",
+          "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+          "SYMBOL_FACTS_NOT_MATERIALIZED",
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "prepend_prolog",
+            "qualified_name": "prepend_prolog",
+            "kind": "function",
+            "file": "sphinx/util/rst.py",
+            "line": 78,
+            "end_line": 97,
+            "module": "sphinx.util.rst"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 55,
+            "end_line": 60
+          },
+          {
+            "start_line": 43,
+            "end_line": 51
+          }
+        ],
+        "local_fact_ids": [],
+        "local_causal_node_ids": [
+          "N17B60B572D82",
+          "N1D749E24C315",
+          "N286D1B761110",
+          "N3387AA82883F",
+          "N42EC97396D8A",
+          "N48F2B9D032EF",
+          "N4B51168A2888",
+          "N590318C1382F",
+          "N5DBC3540E3D3",
+          "N61F4B5531477",
+          "N736340BC7CEC",
+          "N77533DEE8B7D",
+          "N79F36F379FFA",
+          "N868FEAE6C791",
+          "N8E8140E65E11",
+          "N99D40F738E26",
+          "NA6F36CF74AE2",
+          "NB2F0CC9B7060",
+          "NBA241DEFE77C",
+          "NCE65CC0ED244",
+          "ND63F16BD69E4",
+          "NDFFF786B08B6",
+          "NF38BF0D517BC",
+          "NF4393D650334"
+        ],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      }
+    }
+  ],
+  "operational_failures": [
+    {
+      "id": "sphinx-doc__sphinx-7738",
+      "status": "NOT_COMPLETED_OPERATIONAL_LIMIT",
+      "budget_seconds": 240.0,
+      "excluded_from_quality_metrics": true
+    }
+  ],
+  "case_budget_seconds": 240.0,
+  "population_note": "Incomplete cases excluded explicitly, not counted as engine errors. Readiness requires complete coverage.",
+  "engine_commit": "0e30bfec179b5c4900324befbde67502b71587d1",
+  "corpus_seal": "8579df1e5991831dd30607deddab615658f11246c27b8d0a192209f1eff2af21",
+  "split": "development",
+  "runtime_source_sha256": {
+    "tern\\orchestrator\\predictive\\__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern\\orchestrator\\predictive\\analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern\\orchestrator\\predictive\\causal.py": "45f2dde66a68aa1260274e0c2aea2f9d88679d187af17e5ad2b81f93e6256da2",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "e6fbb0abc61abf7d3d56b735d4fe3726156e480659d3bd72b9d248a2fff316f3",
+    "tern\\orchestrator\\predictive\\evaluation.py": "3c874b44f60b521aea0c5a886602942e988772467572fd6752f03f2448775eef",
+    "tern\\orchestrator\\predictive\\grounding.py": "51cd1afc8db25ae12fe64b92a800cde65c68b131d941ff513d63596c19dbe3ad",
+    "tern\\orchestrator\\predictive\\import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern\\orchestrator\\predictive\\models.py": "566f4d063dd16c555a0a79a40ea3e2a3e5f1ffca3c87abdf91efb99596f67c8b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern\\orchestrator\\predictive\\recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern\\orchestrator\\predictive\\robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern\\orchestrator\\predictive\\scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern\\orchestrator\\predictive\\semantic.py": "6b90db7a02f871aa3eb0c9445561851591d60fee711fb3f25ff368cee7836b48",
+    "tern\\orchestrator\\predictive\\service.py": "095c09fa7e3d7341119ce4aa62014ba8311412fb8d8ac9f40182695aaf4cb974",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}

@@ -1,0 +1,657 @@
+{
+  "version": 13,
+  "completed_at": "2026-10-10T20:04:11.922800+00:00",
+  "runtime_unchanged_since_freeze": true,
+  "corpus_seal": "8579df1e5991831dd30607deddab615658f11246c27b8d0a192209f1eff2af21",
+  "holdout_live_executions": 1,
+  "post_holdout_tuning": false,
+  "coverage_checks": {
+    "development_complete": false,
+    "development_symbol_ledger": false,
+    "development_root_candidate": false,
+    "holdout_complete": true,
+    "holdout_symbol_ledger": false,
+    "holdout_root_candidate": false
+  },
+  "decision_checks": {
+    "development_root_validity": false,
+    "holdout_root_validity": false
+  },
+  "gates": {
+    "PREDICTIVE_SYNTHETIC_READY": true,
+    "PREDICTIVE_EXTERNAL_COVERAGE_READY": false,
+    "PREDICTIVE_EXTERNAL_DECISION_READY": false,
+    "SIMULATION_RUNTIME_READY": false
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "authority_grants": 0,
+    "execution_authorized": 0,
+    "destructive_actions": 0,
+    "forbidden_recommendations": 0,
+    "unsupported_claims": 0,
+    "claims": 6,
+    "valid_evidence_references": 4,
+    "evidence_references": 4
+  },
+  "development": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 4,
+        "denominator": 5,
+        "rate": 0.8,
+        "population": "formulations",
+        "wilson_95": [
+          0.37553462976252533,
+          0.9637758913675698
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "recommendations only",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "recommendation_coverage": {
+        "numerator": 2,
+        "denominator": 5,
+        "rate": 0.4,
+        "population": "live formulations",
+        "wilson_95": [
+          0.11762077423264783,
+          0.769275718723987
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 3,
+        "denominator": 5,
+        "rate": 0.6,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.2307242812760128,
+          0.882379225767352
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          5.551115123125783e-17,
+          0.5614970317550454
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 5,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.43448246478317476
+        ]
+      }
+    },
+    "n_independent_defects": 5,
+    "n_formulations": 5,
+    "n_recommended": 2,
+    "n_abstained": 3,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 5,
+      "FALSE_ABSTENTION": 3,
+      "RELEVANT_FILE_MISSED": 1,
+      "WRONG_REPAIR_PAIR": 2
+    },
+    "qwen_requests": 2,
+    "avg_qwen_seconds": 50.97208960000034,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 5,
+          "denominator": 5,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5655175352168251,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 5,
+          "denominator": 5,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5655175352168251,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 5,
+          "rate": 0.8,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.37553462976252533,
+            0.9637758913675698
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 2,
+          "denominator": 5,
+          "rate": 0.4,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.11762077423264783,
+            0.769275718723987
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 4,
+          "denominator": 5,
+          "rate": 0.8,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.37553462976252533,
+            0.9637758913675698
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.43448246478317476
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 2,
+          "denominator": 2,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_GENERATED": 2,
+        "FILE_NOT_RETRIEVED": 1,
+        "SYMBOL_WINDOW_MISSED": 2
+      }
+    },
+    "n_total_defects": 6,
+    "n_evaluable_defects": 5,
+    "n_incomplete_defects": 1
+  },
+  "holdout": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 2,
+        "denominator": 4,
+        "rate": 0.5,
+        "population": "formulations",
+        "wilson_95": [
+          0.15003898915214947,
+          0.8499610108478506
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "recommendations only",
+        "wilson_95": null
+      },
+      "recommendation_coverage": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "live formulations",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 4,
+        "denominator": 4,
+        "rate": 1.0,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.5101091635454027,
+          1.0
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": null
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      }
+    },
+    "n_independent_defects": 4,
+    "n_formulations": 4,
+    "n_recommended": 0,
+    "n_abstained": 4,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 4,
+      "FALSE_ABSTENTION": 4,
+      "RELEVANT_FILE_MISSED": 2
+    },
+    "qwen_requests": 0,
+    "avg_qwen_seconds": null,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": null
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": null
+        }
+      },
+      "first_loss_counts": {
+        "FILE_NOT_RETRIEVED": 2,
+        "SYMBOL_WINDOW_MISSED": 2
+      }
+    },
+    "n_total_defects": 4,
+    "n_evaluable_defects": 4,
+    "n_incomplete_defects": 0
+  },
+  "limitations": [
+    "Four independent holdout defects, not a population-level production claim.",
+    "Root-location matching and local AST edge coverage are proxies, not entailment proofs.",
+    "Operationally incomplete cases are excluded from rates and block promotion.",
+    "Oracle interventions excluded from real accuracy.",
+    "Timing observations include profiling and colocated evaluation load.",
+    "Off-oracle symbols are not automatically irrelevant; semantic noise not adjudicated.",
+    "Synthetic regression is a 172-case offline run and a 14-case live sample; not a new exhaustive live qualification."
+  ]
+}

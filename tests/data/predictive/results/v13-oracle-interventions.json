@@ -1,0 +1,2108 @@
+{
+  "version": 13,
+  "experimental_only": true,
+  "corpus_seal": "8579df1e5991831dd30607deddab615658f11246c27b8d0a192209f1eff2af21",
+  "split": "development",
+  "results": [
+    {
+      "id": "pallets__flask-4045",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "__init__",
+                "qualified_name": "Blueprint.__init__",
+                "kind": "method",
+                "file": "src/flask/blueprints.py",
+                "line": 171,
+                "end_line": 201,
+                "module": "src.flask.blueprints"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 1,
+                "end_line": 305
+              }
+            ],
+            "local_fact_ids": [
+              "E5529C0EE0AB5",
+              "E5A598CB25BAD",
+              "E8BFD992B0435",
+              "E8ED1A1E675BE",
+              "E99F3398E259B",
+              "EC251BEB7178D",
+              "EC89CFE3E6737",
+              "ECF3F1A2D88FE",
+              "ED6CD0A066486",
+              "ED8150B374093",
+              "EE3957308B2BC"
+            ],
+            "local_causal_node_ids": [
+              "N08D7A8BE7F36",
+              "N14FE5C1B380C",
+              "N158E646BF57D",
+              "N197D8BFA7D35",
+              "N1DD610EAC8EC",
+              "N27B30C93C7C4",
+              "N32CA8F88192D",
+              "N356B137E7393",
+              "N3640A87F4935",
+              "N365B6ADE731C",
+              "N366FC68CD288",
+              "N3C3E1D95901F",
+              "N4CBE46E5924D",
+              "N580BE074DA6F",
+              "N58E9F1360924",
+              "N5B98C836974A",
+              "N5BC78C07D08D",
+              "N6195CFBA4F90",
+              "N63A271B669E9",
+              "N69DFCF7D4517",
+              "N6E2B47B4E2EE",
+              "N73228F5A25E7",
+              "N7CEDACB9BB09",
+              "N9C244A345470",
+              "NA5C9ACBFCAF5",
+              "NB1F596A6687B",
+              "NB9362DC0409F",
+              "ND2CB36D80117",
+              "ND31C0F354CB9",
+              "ND44C7FA2A696",
+              "ND77FE6F7A8DF",
+              "NDC22E21EBF2C",
+              "NDF80B5D64AA2",
+              "NE92ACE757F30",
+              "NE9B7D5AE1721",
+              "NEAB5B12AF0F7",
+              "NED9506486109",
+              "NF4C03F4D5DC6",
+              "NF929EF44D8E2",
+              "NFD922E98D2E6"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "__init__",
+                "qualified_name": "Blueprint.__init__",
+                "kind": "method",
+                "file": "src/flask/blueprints.py",
+                "line": 171,
+                "end_line": 201,
+                "module": "src.flask.blueprints"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 1,
+                "end_line": 305
+              },
+              {
+                "start_line": 171,
+                "end_line": 201
+              }
+            ],
+            "local_fact_ids": [
+              "E5529C0EE0AB5",
+              "E5A598CB25BAD",
+              "E8BFD992B0435",
+              "E8ED1A1E675BE",
+              "E99F3398E259B",
+              "EC251BEB7178D",
+              "EC89CFE3E6737",
+              "ECF3F1A2D88FE",
+              "ED6CD0A066486",
+              "ED8150B374093",
+              "EE3957308B2BC"
+            ],
+            "local_causal_node_ids": [
+              "N08D7A8BE7F36",
+              "N14FE5C1B380C",
+              "N158E646BF57D",
+              "N197D8BFA7D35",
+              "N1DD610EAC8EC",
+              "N27B30C93C7C4",
+              "N32CA8F88192D",
+              "N356B137E7393",
+              "N3640A87F4935",
+              "N365B6ADE731C",
+              "N366FC68CD288",
+              "N3C3E1D95901F",
+              "N4CBE46E5924D",
+              "N580BE074DA6F",
+              "N58E9F1360924",
+              "N5B98C836974A",
+              "N5BC78C07D08D",
+              "N6195CFBA4F90",
+              "N63A271B669E9",
+              "N69DFCF7D4517",
+              "N6E2B47B4E2EE",
+              "N73228F5A25E7",
+              "N7CEDACB9BB09",
+              "N9C244A345470",
+              "NA5C9ACBFCAF5",
+              "NB1F596A6687B",
+              "NB9362DC0409F",
+              "ND2CB36D80117",
+              "ND31C0F354CB9",
+              "ND44C7FA2A696",
+              "ND77FE6F7A8DF",
+              "NDC22E21EBF2C",
+              "NDF80B5D64AA2",
+              "NE92ACE757F30",
+              "NE9B7D5AE1721",
+              "NEAB5B12AF0F7",
+              "NED9506486109",
+              "NF4C03F4D5DC6",
+              "NF929EF44D8E2",
+              "NFD922E98D2E6"
+            ],
+            "correct_candidate_ids": [
+              "RD40BA58DF0BD"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 5,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "__init__",
+                "qualified_name": "Blueprint.__init__",
+                "kind": "method",
+                "file": "src/flask/blueprints.py",
+                "line": 171,
+                "end_line": 201,
+                "module": "src.flask.blueprints"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 1,
+                "end_line": 305
+              }
+            ],
+            "local_fact_ids": [
+              "E5529C0EE0AB5",
+              "E5A598CB25BAD",
+              "E8BFD992B0435",
+              "E8ED1A1E675BE",
+              "E99F3398E259B",
+              "EC251BEB7178D",
+              "EC89CFE3E6737",
+              "ECF3F1A2D88FE",
+              "ED6CD0A066486",
+              "ED8150B374093",
+              "EE3957308B2BC"
+            ],
+            "local_causal_node_ids": [
+              "N08D7A8BE7F36",
+              "N14FE5C1B380C",
+              "N158E646BF57D",
+              "N197D8BFA7D35",
+              "N1DD610EAC8EC",
+              "N27B30C93C7C4",
+              "N32CA8F88192D",
+              "N356B137E7393",
+              "N3640A87F4935",
+              "N365B6ADE731C",
+              "N366FC68CD288",
+              "N3C3E1D95901F",
+              "N4CBE46E5924D",
+              "N580BE074DA6F",
+              "N58E9F1360924",
+              "N5B98C836974A",
+              "N5BC78C07D08D",
+              "N6195CFBA4F90",
+              "N63A271B669E9",
+              "N69DFCF7D4517",
+              "N6E2B47B4E2EE",
+              "N73228F5A25E7",
+              "N7CEDACB9BB09",
+              "N9C244A345470",
+              "NA5C9ACBFCAF5",
+              "NB1F596A6687B",
+              "NB9362DC0409F",
+              "ND2CB36D80117",
+              "ND31C0F354CB9",
+              "ND44C7FA2A696",
+              "ND77FE6F7A8DF",
+              "NDC22E21EBF2C",
+              "NDF80B5D64AA2",
+              "NE92ACE757F30",
+              "NE9B7D5AE1721",
+              "NEAB5B12AF0F7",
+              "NED9506486109",
+              "NF4C03F4D5DC6",
+              "NF929EF44D8E2",
+              "NFD922E98D2E6"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E04068510E2DD",
+            "E3B6D7EBE97E2",
+            "E5529C0EE0AB5",
+            "E554D71BBAB46",
+            "E5A598CB25BAD",
+            "E61168C7F9717",
+            "E7E6B7619B5DE",
+            "E866242A73DFD",
+            "E8BFD992B0435",
+            "E8ED1A1E675BE",
+            "E99F3398E259B",
+            "EB30D00667505",
+            "EC251BEB7178D",
+            "EC89CFE3E6737",
+            "ECF3F1A2D88FE",
+            "ED6CD0A066486",
+            "ED8150B374093",
+            "EDC62FC5D4FC5",
+            "EE3957308B2BC"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [
+            "RD40BA58DF0BD"
+          ],
+          "status": "READY",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\31cd515a3ab3bb1aa4e4d3abd6b4c5786fb9233f82ac2e0ffd497c4920b74013.json.gz",
+      "raw_trace_sha256": "31cd515a3ab3bb1aa4e4d3abd6b4c5786fb9233f82ac2e0ffd497c4920b74013"
+    },
+    {
+      "id": "pytest-dev__pytest-11148",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": false,
+              "correct_symbol_facts_in_ledger": false,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "SYMBOL_WINDOW_MISSED",
+            "reason_codes": [
+              "SYMBOL_WINDOW_MISSED",
+              "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+              "SYMBOL_FACTS_NOT_MATERIALIZED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "import_path",
+                "qualified_name": "import_path",
+                "kind": "function",
+                "file": "src/_pytest/pathlib.py",
+                "line": 486,
+                "end_line": 590,
+                "module": "src._pytest.pathlib"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 474,
+                "end_line": 474
+              }
+            ],
+            "local_fact_ids": [],
+            "local_causal_node_ids": [
+              "N000145B9B062",
+              "N0A7F437E095E",
+              "N0AAB12B9B910",
+              "N0CE7CC4B2367",
+              "N11B154E0A673",
+              "N11DD0C8C3E4C",
+              "N12102372FC02",
+              "N1235F5411152",
+              "N148417C256FC",
+              "N17A18A3ED189",
+              "N1AFA6A9AED44",
+              "N1B095B638834",
+              "N1D4B9B0E4947",
+              "N22A52DEC09C6",
+              "N2558FC9989A4",
+              "N281E1BC38334",
+              "N2A1C645ECD89",
+              "N2FF8C71A89A0",
+              "N396393C0A1B0",
+              "N3B346ECBD161",
+              "N3B3AEBE7AD3E",
+              "N3FBFD59E2B91",
+              "N4227047D252D",
+              "N4245F32AE35E",
+              "N4540F81129D2",
+              "N4674971A32A0",
+              "N4733CACFB851",
+              "N48AEF0AB0860",
+              "N4913B2645B54",
+              "N4FC805FA3A0F",
+              "N53C64BA99C29",
+              "N544074DEEC5E",
+              "N57D31BCBA799",
+              "N5AB9D208213C",
+              "N5CA53704472D",
+              "N61DC51F79641",
+              "N62D958B4035A",
+              "N6478F8605403",
+              "N668171FB1566",
+              "N66B46069F17C",
+              "N675627062D06",
+              "N6B8AEE150829",
+              "N6FA47B1E5701",
+              "N716E816E384E",
+              "N77F86B04A3B4",
+              "N7A2401917D1E",
+              "N7B5E7A2B0B1B",
+              "N7C0E84296553",
+              "N7C2CFA0F9284",
+              "N828BE130140E",
+              "N861EE5C4BC19",
+              "N89A29AA354DE",
+              "N8A42F68BC728",
+              "N8A4D5CD75F7F",
+              "N8CFA4E90FD7E",
+              "N8D46DDA9449D",
+              "N8F90983FE011",
+              "N92C51EB222A6",
+              "N931598DBB28E",
+              "N949C81937EE9",
+              "N96C3A878E4BE",
+              "N9736B0A46F66",
+              "N98DC4AC72176",
+              "N992342CDD735",
+              "N9ED5A9E86727",
+              "NA0A7A352052E",
+              "NA3BD9CB36DB0",
+              "NA7E5AF65C368",
+              "NB1CC2EB3BF6A",
+              "NB2846029030C",
+              "NB67C0D7FE742",
+              "NB77C34CF7F03",
+              "NBA83971DC9C9",
+              "NBB4403688BC2",
+              "NBDB497CD4E48",
+              "NBE05E87956CF",
+              "NC3678CAB30CF",
+              "NC45EDFE92B75",
+              "NC655E76841FB",
+              "NC66CDAF4CE76",
+              "NC9AEBD74BA42",
+              "NCD072C8912C4",
+              "ND239600A8C31",
+              "ND3D40714BA47",
+              "ND43377189774",
+              "ND6E773E6B9EF",
+              "NDB6A419897BA",
+              "NDE3ADF3ACF1A",
+              "NE19AFD09674B",
+              "NE1EB73FB8B7B",
+              "NE20DCA072D1D",
+              "NE393C97EAAB1",
+              "NE699C79266C8",
+              "NE7FAC4C58D33",
+              "NEAD3EA4A7353",
+              "NEEA4CF0EE6A3",
+              "NF4666CE78669",
+              "NF5533F9D2DD9",
+              "NF9835B40153D",
+              "NFA0A4854A8E0",
+              "NFA9E91919E43",
+              "NFCF8B92D195F"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "import_path",
+                "qualified_name": "import_path",
+                "kind": "function",
+                "file": "src/_pytest/pathlib.py",
+                "line": 486,
+                "end_line": 590,
+                "module": "src._pytest.pathlib"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 474,
+                "end_line": 474
+              },
+              {
+                "start_line": 486,
+                "end_line": 590
+              }
+            ],
+            "local_fact_ids": [
+              "E01E0B4564C21",
+              "E0268611A6BFD",
+              "E1211BEEA759D",
+              "E13FB624DD722",
+              "E1B338577E178",
+              "E20947B9F6439",
+              "E223FA99DDC1A",
+              "E24F75D399F87",
+              "E266FFEA41420",
+              "E2A8F56EA53EB",
+              "E2B57EC75F953",
+              "E2DC2B2643288",
+              "E2E9ABEF609BB",
+              "E3177F1839647",
+              "E349324C1A00A",
+              "E3BE24D79CDCA",
+              "E3FF5FF74C7E9",
+              "E40E45FC5013E",
+              "E414452C56E62",
+              "E47F9110A1922",
+              "E48BE68F0D50B",
+              "E49E1ED6DAE5F",
+              "E4B23C67D9516",
+              "E4EB0DFBFC2D8",
+              "E5089398B479E",
+              "E54A73D0BE934",
+              "E568CE6476ADB",
+              "E5ACEB69BD24C",
+              "E5E1BF827174A",
+              "E5E966FC86272",
+              "E5F622559E17E",
+              "E5FE5158AE2DF",
+              "E60248FD27196",
+              "E6AA81A5F5D99",
+              "E73E77CC98DA6",
+              "E76738AC7110C",
+              "E7C881FA4B937",
+              "E7FDE5D68B61C",
+              "E808DF4A889F6",
+              "E863AD1085094",
+              "E8709D1A527AC",
+              "E88F12F3DB374",
+              "E8A031C2AD1C5",
+              "E8C69B4DE49AC",
+              "E9B1099F4347B",
+              "E9FFE6A357932",
+              "EA524062B5FAB",
+              "EA566A3CE20F9",
+              "EA882B0C3055F",
+              "EA9B4ABD074BE",
+              "EAB86239F470E",
+              "EADFDAD685FD1",
+              "EB6D3B973765A",
+              "EB76F18135AB3",
+              "EBC7A7A2DAFB8",
+              "EBE52BF54B2CE",
+              "EBEA49E39ACFC",
+              "EC0D24641941F",
+              "EC118C363FAF7",
+              "EC1C3C811494E",
+              "EC38138F081A2",
+              "EC4B5DBB6CFD6",
+              "EC99998AC83D1",
+              "EC9F4E6C4B95E",
+              "ED2C8153FE9AF",
+              "ED3FB98226D91",
+              "ED9CC49F70600",
+              "EDE6C3CC4F63A",
+              "EE2710C2AC4AD",
+              "EED37FA81107E",
+              "EEE604FFBE079",
+              "EEF5A24EDD82E",
+              "EF00A000C52FE",
+              "EF4BD79B4C990",
+              "EF5D3F48DFFA1"
+            ],
+            "local_causal_node_ids": [
+              "N000145B9B062",
+              "N0A7F437E095E",
+              "N0AAB12B9B910",
+              "N0CE7CC4B2367",
+              "N11B154E0A673",
+              "N11DD0C8C3E4C",
+              "N12102372FC02",
+              "N1235F5411152",
+              "N148417C256FC",
+              "N17A18A3ED189",
+              "N1AFA6A9AED44",
+              "N1B095B638834",
+              "N1D4B9B0E4947",
+              "N22A52DEC09C6",
+              "N2558FC9989A4",
+              "N281E1BC38334",
+              "N2A1C645ECD89",
+              "N2FF8C71A89A0",
+              "N396393C0A1B0",
+              "N3B346ECBD161",
+              "N3B3AEBE7AD3E",
+              "N3FBFD59E2B91",
+              "N4227047D252D",
+              "N4245F32AE35E",
+              "N4540F81129D2",
+              "N4674971A32A0",
+              "N4733CACFB851",
+              "N48AEF0AB0860",
+              "N4913B2645B54",
+              "N4FC805FA3A0F",
+              "N53C64BA99C29",
+              "N544074DEEC5E",
+              "N57D31BCBA799",
+              "N5AB9D208213C",
+              "N5CA53704472D",
+              "N61DC51F79641",
+              "N62D958B4035A",
+              "N6478F8605403",
+              "N668171FB1566",
+              "N66B46069F17C",
+              "N675627062D06",
+              "N6B8AEE150829",
+              "N6FA47B1E5701",
+              "N716E816E384E",
+              "N77F86B04A3B4",
+              "N7A2401917D1E",
+              "N7B5E7A2B0B1B",
+              "N7C0E84296553",
+              "N7C2CFA0F9284",
+              "N828BE130140E",
+              "N861EE5C4BC19",
+              "N89A29AA354DE",
+              "N8A42F68BC728",
+              "N8A4D5CD75F7F",
+              "N8CFA4E90FD7E",
+              "N8D46DDA9449D",
+              "N8F90983FE011",
+              "N92C51EB222A6",
+              "N931598DBB28E",
+              "N949C81937EE9",
+              "N96C3A878E4BE",
+              "N9736B0A46F66",
+              "N98DC4AC72176",
+              "N992342CDD735",
+              "N9ED5A9E86727",
+              "NA0A7A352052E",
+              "NA3BD9CB36DB0",
+              "NA7E5AF65C368",
+              "NB1CC2EB3BF6A",
+              "NB2846029030C",
+              "NB67C0D7FE742",
+              "NB77C34CF7F03",
+              "NBA83971DC9C9",
+              "NBB4403688BC2",
+              "NBDB497CD4E48",
+              "NBE05E87956CF",
+              "NC3678CAB30CF",
+              "NC45EDFE92B75",
+              "NC655E76841FB",
+              "NC66CDAF4CE76",
+              "NC9AEBD74BA42",
+              "NCD072C8912C4",
+              "ND239600A8C31",
+              "ND3D40714BA47",
+              "ND43377189774",
+              "ND6E773E6B9EF",
+              "NDB6A419897BA",
+              "NDE3ADF3ACF1A",
+              "NE19AFD09674B",
+              "NE1EB73FB8B7B",
+              "NE20DCA072D1D",
+              "NE393C97EAAB1",
+              "NE699C79266C8",
+              "NE7FAC4C58D33",
+              "NEAD3EA4A7353",
+              "NEEA4CF0EE6A3",
+              "NF4666CE78669",
+              "NF5533F9D2DD9",
+              "NF9835B40153D",
+              "NFA0A4854A8E0",
+              "NFA9E91919E43",
+              "NFCF8B92D195F"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "SYMBOL_WINDOW_MISSED",
+            "reason_codes": [
+              "SYMBOL_WINDOW_MISSED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "import_path",
+                "qualified_name": "import_path",
+                "kind": "function",
+                "file": "src/_pytest/pathlib.py",
+                "line": 486,
+                "end_line": 590,
+                "module": "src._pytest.pathlib"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 474,
+                "end_line": 474
+              }
+            ],
+            "local_fact_ids": [
+              "E01E0B4564C21",
+              "E0268611A6BFD",
+              "E1211BEEA759D",
+              "E13FB624DD722",
+              "E1B338577E178",
+              "E20947B9F6439",
+              "E223FA99DDC1A",
+              "E24F75D399F87",
+              "E266FFEA41420",
+              "E2A8F56EA53EB",
+              "E2B57EC75F953",
+              "E2DC2B2643288",
+              "E2E9ABEF609BB",
+              "E3177F1839647",
+              "E349324C1A00A",
+              "E3BE24D79CDCA",
+              "E3FF5FF74C7E9",
+              "E40E45FC5013E",
+              "E414452C56E62",
+              "E47F9110A1922",
+              "E48BE68F0D50B",
+              "E49E1ED6DAE5F",
+              "E4B23C67D9516",
+              "E4EB0DFBFC2D8",
+              "E5089398B479E",
+              "E54A73D0BE934",
+              "E568CE6476ADB",
+              "E5ACEB69BD24C",
+              "E5E1BF827174A",
+              "E5E966FC86272",
+              "E5F622559E17E",
+              "E5FE5158AE2DF",
+              "E60248FD27196",
+              "E6AA81A5F5D99",
+              "E73E77CC98DA6",
+              "E76738AC7110C",
+              "E7C881FA4B937",
+              "E7FDE5D68B61C",
+              "E808DF4A889F6",
+              "E863AD1085094",
+              "E8709D1A527AC",
+              "E88F12F3DB374",
+              "E8A031C2AD1C5",
+              "E8C69B4DE49AC",
+              "E9B1099F4347B",
+              "E9FFE6A357932",
+              "EA524062B5FAB",
+              "EA566A3CE20F9",
+              "EA882B0C3055F",
+              "EA9B4ABD074BE",
+              "EAB86239F470E",
+              "EADFDAD685FD1",
+              "EB6D3B973765A",
+              "EB76F18135AB3",
+              "EBC7A7A2DAFB8",
+              "EBE52BF54B2CE",
+              "EBEA49E39ACFC",
+              "EC0D24641941F",
+              "EC118C363FAF7",
+              "EC1C3C811494E",
+              "EC38138F081A2",
+              "EC4B5DBB6CFD6",
+              "EC99998AC83D1",
+              "EC9F4E6C4B95E",
+              "ED2C8153FE9AF",
+              "ED3FB98226D91",
+              "ED9CC49F70600",
+              "EDE6C3CC4F63A",
+              "EE2710C2AC4AD",
+              "EED37FA81107E",
+              "EEE604FFBE079",
+              "EEF5A24EDD82E",
+              "EF00A000C52FE",
+              "EF4BD79B4C990",
+              "EF5D3F48DFFA1"
+            ],
+            "local_causal_node_ids": [
+              "N000145B9B062",
+              "N0A7F437E095E",
+              "N0AAB12B9B910",
+              "N0CE7CC4B2367",
+              "N11B154E0A673",
+              "N11DD0C8C3E4C",
+              "N12102372FC02",
+              "N1235F5411152",
+              "N148417C256FC",
+              "N17A18A3ED189",
+              "N1AFA6A9AED44",
+              "N1B095B638834",
+              "N1D4B9B0E4947",
+              "N22A52DEC09C6",
+              "N2558FC9989A4",
+              "N281E1BC38334",
+              "N2A1C645ECD89",
+              "N2FF8C71A89A0",
+              "N396393C0A1B0",
+              "N3B346ECBD161",
+              "N3B3AEBE7AD3E",
+              "N3FBFD59E2B91",
+              "N4227047D252D",
+              "N4245F32AE35E",
+              "N4540F81129D2",
+              "N4674971A32A0",
+              "N4733CACFB851",
+              "N48AEF0AB0860",
+              "N4913B2645B54",
+              "N4FC805FA3A0F",
+              "N53C64BA99C29",
+              "N544074DEEC5E",
+              "N57D31BCBA799",
+              "N5AB9D208213C",
+              "N5CA53704472D",
+              "N61DC51F79641",
+              "N62D958B4035A",
+              "N6478F8605403",
+              "N668171FB1566",
+              "N66B46069F17C",
+              "N675627062D06",
+              "N6B8AEE150829",
+              "N6FA47B1E5701",
+              "N716E816E384E",
+              "N77F86B04A3B4",
+              "N7A2401917D1E",
+              "N7B5E7A2B0B1B",
+              "N7C0E84296553",
+              "N7C2CFA0F9284",
+              "N828BE130140E",
+              "N861EE5C4BC19",
+              "N89A29AA354DE",
+              "N8A42F68BC728",
+              "N8A4D5CD75F7F",
+              "N8CFA4E90FD7E",
+              "N8D46DDA9449D",
+              "N8F90983FE011",
+              "N92C51EB222A6",
+              "N931598DBB28E",
+              "N949C81937EE9",
+              "N96C3A878E4BE",
+              "N9736B0A46F66",
+              "N98DC4AC72176",
+              "N992342CDD735",
+              "N9ED5A9E86727",
+              "NA0A7A352052E",
+              "NA3BD9CB36DB0",
+              "NA7E5AF65C368",
+              "NB1CC2EB3BF6A",
+              "NB2846029030C",
+              "NB67C0D7FE742",
+              "NB77C34CF7F03",
+              "NBA83971DC9C9",
+              "NBB4403688BC2",
+              "NBDB497CD4E48",
+              "NBE05E87956CF",
+              "NC3678CAB30CF",
+              "NC45EDFE92B75",
+              "NC655E76841FB",
+              "NC66CDAF4CE76",
+              "NC9AEBD74BA42",
+              "NCD072C8912C4",
+              "ND239600A8C31",
+              "ND3D40714BA47",
+              "ND43377189774",
+              "ND6E773E6B9EF",
+              "NDB6A419897BA",
+              "NDE3ADF3ACF1A",
+              "NE19AFD09674B",
+              "NE1EB73FB8B7B",
+              "NE20DCA072D1D",
+              "NE393C97EAAB1",
+              "NE699C79266C8",
+              "NE7FAC4C58D33",
+              "NEAD3EA4A7353",
+              "NEEA4CF0EE6A3",
+              "NF4666CE78669",
+              "NF5533F9D2DD9",
+              "NF9835B40153D",
+              "NFA0A4854A8E0",
+              "NFA9E91919E43",
+              "NFCF8B92D195F"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E01E0B4564C21",
+            "E0268611A6BFD",
+            "E1211BEEA759D",
+            "E13FB624DD722",
+            "E1B338577E178",
+            "E20947B9F6439",
+            "E223FA99DDC1A",
+            "E24F75D399F87",
+            "E266FFEA41420",
+            "E2A8F56EA53EB",
+            "E2B57EC75F953",
+            "E2DC2B2643288",
+            "E2E9ABEF609BB",
+            "E3177F1839647",
+            "E349324C1A00A",
+            "E3BE24D79CDCA",
+            "E3FF5FF74C7E9",
+            "E40E45FC5013E",
+            "E414452C56E62",
+            "E47F9110A1922",
+            "E48BE68F0D50B",
+            "E49E1ED6DAE5F",
+            "E4B23C67D9516",
+            "E4EB0DFBFC2D8",
+            "E5089398B479E",
+            "E54A73D0BE934",
+            "E568CE6476ADB",
+            "E5ACEB69BD24C",
+            "E5E1BF827174A",
+            "E5E966FC86272",
+            "E5F622559E17E",
+            "E5FE5158AE2DF",
+            "E60248FD27196",
+            "E6AA81A5F5D99",
+            "E73E77CC98DA6",
+            "E76738AC7110C",
+            "E7C881FA4B937",
+            "E7FDE5D68B61C",
+            "E808DF4A889F6",
+            "E863AD1085094",
+            "E8709D1A527AC",
+            "E88F12F3DB374",
+            "E8A031C2AD1C5",
+            "E8C69B4DE49AC",
+            "E9B1099F4347B",
+            "E9FFE6A357932",
+            "EA524062B5FAB",
+            "EA566A3CE20F9",
+            "EA882B0C3055F",
+            "EA9B4ABD074BE",
+            "EAB86239F470E",
+            "EADFDAD685FD1",
+            "EB6D3B973765A",
+            "EB76F18135AB3",
+            "EBC7A7A2DAFB8",
+            "EBE52BF54B2CE",
+            "EBEA49E39ACFC",
+            "EC0D24641941F",
+            "EC118C363FAF7",
+            "EC1C3C811494E",
+            "EC38138F081A2",
+            "EC4B5DBB6CFD6",
+            "EC99998AC83D1",
+            "EC9F4E6C4B95E",
+            "ED2C8153FE9AF",
+            "ED3FB98226D91",
+            "ED9CC49F70600",
+            "EDE6C3CC4F63A",
+            "EE2710C2AC4AD",
+            "EE567D3A391A2",
+            "EED37FA81107E",
+            "EEE604FFBE079",
+            "EEF5A24EDD82E",
+            "EF00A000C52FE",
+            "EF4BD79B4C990",
+            "EF5D3F48DFFA1"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [],
+          "status": "ORACLE_ROOT_NOT_REPRESENTABLE",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\7d67bdd9403a37ed82a2169c365b14d6e26d77e504c55890fd4855f399938089.json.gz",
+      "raw_trace_sha256": "7d67bdd9403a37ed82a2169c365b14d6e26d77e504c55890fd4855f399938089"
+    },
+    {
+      "id": "pytest-dev__pytest-5495",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": false,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": false,
+              "correct_symbol_facts_in_ledger": false,
+              "correct_relation_in_causal_slice": false,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "FILE_NOT_RETRIEVED",
+            "reason_codes": [
+              "FILE_NOT_RETRIEVED",
+              "SYMBOL_WINDOW_MISSED",
+              "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+              "SYMBOL_FACTS_NOT_MATERIALIZED",
+              "LOCAL_CAUSAL_RELATION_NOT_REPRESENTED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_compare_eq_sequence",
+                "qualified_name": "_compare_eq_sequence",
+                "kind": "function",
+                "file": "src/_pytest/assertion/util.py",
+                "line": 256,
+                "end_line": 286,
+                "module": "src._pytest.assertion.util"
+              }
+            ],
+            "selected_windows": [],
+            "local_fact_ids": [],
+            "local_causal_node_ids": [],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "_compare_eq_sequence",
+                "qualified_name": "_compare_eq_sequence",
+                "kind": "function",
+                "file": "src/_pytest/assertion/util.py",
+                "line": 256,
+                "end_line": 286,
+                "module": "src._pytest.assertion.util"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 256,
+                "end_line": 286
+              }
+            ],
+            "local_fact_ids": [
+              "E0B79E2F5915C",
+              "E1566C7233A35",
+              "E15BD90879061",
+              "E16B5924352E4",
+              "E1A7C0C1106B1",
+              "E1DD2F0E299C4",
+              "E3753B87EA513",
+              "E4AE3100B1BC0",
+              "E5E8055DE6984",
+              "E6435EE2133E1",
+              "E6C3F797EF903",
+              "EA48FFD98A1F7",
+              "EA4B5D87954C7",
+              "EC7BE8F826BD8",
+              "ECBE7BDDB6578",
+              "ED71BC6F00B40",
+              "EDF34BD09EFB6",
+              "EE418919B30EA",
+              "EE6287EA12207",
+              "EF00860772699"
+            ],
+            "local_causal_node_ids": [
+              "N0434BBAB2D32",
+              "N092C3ECAF639",
+              "N234E6E05743A",
+              "N2941E8B6E505",
+              "N2BFB0C30DE2E",
+              "N3FFDE3827864",
+              "N442FC8A30DD6",
+              "N48CF951E45BC",
+              "N49F86EBC2CA5",
+              "N4F4BCE7A0ED7",
+              "N5267A377FDDC",
+              "N54293A1F0E1C",
+              "N64598B1773BC",
+              "N6F4161F698F8",
+              "N7754EB9445EC",
+              "N7B0838BBDF91",
+              "N90460BAFDBC5",
+              "N935FD085D7DF",
+              "N97225633EAD3",
+              "N9DE734450524",
+              "NAB7F7E834916",
+              "NAC28D1338474",
+              "NB8BCBCE2FF83",
+              "NC054AAED8CEE",
+              "NCC727132E46D",
+              "NCEB0C7FE3E27",
+              "ND08B6BD24165",
+              "ND5FA138553DC",
+              "NE2B6CCE7260D",
+              "NF6BCBCDE9C91",
+              "NFDD3A26A6290"
+            ],
+            "correct_candidate_ids": [
+              "R8F5489F865B3",
+              "RB4F0EBDAF91F"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 9,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": false,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": false,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "FILE_NOT_RETRIEVED",
+            "reason_codes": [
+              "FILE_NOT_RETRIEVED",
+              "SYMBOL_WINDOW_MISSED",
+              "LOCAL_CAUSAL_RELATION_NOT_REPRESENTED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_compare_eq_sequence",
+                "qualified_name": "_compare_eq_sequence",
+                "kind": "function",
+                "file": "src/_pytest/assertion/util.py",
+                "line": 256,
+                "end_line": 286,
+                "module": "src._pytest.assertion.util"
+              }
+            ],
+            "selected_windows": [],
+            "local_fact_ids": [
+              "E0B79E2F5915C",
+              "E1566C7233A35",
+              "E15BD90879061",
+              "E16B5924352E4",
+              "E1A7C0C1106B1",
+              "E1DD2F0E299C4",
+              "E3753B87EA513",
+              "E4AE3100B1BC0",
+              "E5E8055DE6984",
+              "E6435EE2133E1",
+              "E6C3F797EF903",
+              "EA48FFD98A1F7",
+              "EA4B5D87954C7",
+              "EC7BE8F826BD8",
+              "ECBE7BDDB6578",
+              "ED71BC6F00B40",
+              "EDF34BD09EFB6",
+              "EE418919B30EA",
+              "EE6287EA12207",
+              "EF00860772699"
+            ],
+            "local_causal_node_ids": [],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E0B79E2F5915C",
+            "E1566C7233A35",
+            "E15BD90879061",
+            "E16B5924352E4",
+            "E1A7C0C1106B1",
+            "E1DD2F0E299C4",
+            "E3753B87EA513",
+            "E4AE3100B1BC0",
+            "E5E8055DE6984",
+            "E6435EE2133E1",
+            "E66617BCE08AE",
+            "E6C3F797EF903",
+            "EA48FFD98A1F7",
+            "EA4B5D87954C7",
+            "EC7BE8F826BD8",
+            "ECBE7BDDB6578",
+            "ED71BC6F00B40",
+            "EDF34BD09EFB6",
+            "EE418919B30EA",
+            "EE6287EA12207",
+            "EF00860772699"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [
+            "RB4F0EBDAF91F",
+            "R8F5489F865B3"
+          ],
+          "status": "READY",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\771cc5e05525641fee5c9c6be7bb9190d1a4543da11c9f6889ac4f6a02e36e8b.json.gz",
+      "raw_trace_sha256": "771cc5e05525641fee5c9c6be7bb9190d1a4543da11c9f6889ac4f6a02e36e8b"
+    },
+    {
+      "id": "pytest-dev__pytest-7168",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_format_repr_exception",
+                "qualified_name": "_format_repr_exception",
+                "kind": "function",
+                "file": "src/_pytest/_io/saferepr.py",
+                "line": 15,
+                "end_line": 24,
+                "module": "src._pytest._io.saferepr"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 15,
+                "end_line": 24
+              },
+              {
+                "start_line": 45,
+                "end_line": 52
+              },
+              {
+                "start_line": 54,
+                "end_line": 61
+              },
+              {
+                "start_line": 75,
+                "end_line": 82
+              }
+            ],
+            "local_fact_ids": [
+              "E149F7A82B81A",
+              "E30BB64F8F391",
+              "E3530516808D1",
+              "E57D4DBF309CE",
+              "E653F579CF2E9",
+              "E852F085599CC",
+              "EA92C2D1FCCCA",
+              "EE8C4FFBC56A9"
+            ],
+            "local_causal_node_ids": [
+              "N3F370869238C",
+              "N407C13422E76",
+              "N534CB63D325C",
+              "N5B3317BE31EC",
+              "N5BE40C62CF5D",
+              "N72DA5792489E",
+              "N77561E36A9CA",
+              "N7C77B90BC483",
+              "N800D84C36E55",
+              "NB433532D9CFA",
+              "NB9653F2DE86D",
+              "NBEF2A182FB59",
+              "NE3CE9BC087F0",
+              "NF275661CCA25"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_format_repr_exception",
+                "qualified_name": "_format_repr_exception",
+                "kind": "function",
+                "file": "src/_pytest/_io/saferepr.py",
+                "line": 15,
+                "end_line": 24,
+                "module": "src._pytest._io.saferepr"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 15,
+                "end_line": 24
+              },
+              {
+                "start_line": 45,
+                "end_line": 52
+              },
+              {
+                "start_line": 54,
+                "end_line": 61
+              },
+              {
+                "start_line": 75,
+                "end_line": 82
+              },
+              {
+                "start_line": 15,
+                "end_line": 24
+              }
+            ],
+            "local_fact_ids": [
+              "E149F7A82B81A",
+              "E24AC5AC85DC3",
+              "E30BB64F8F391",
+              "E3530516808D1",
+              "E57D4DBF309CE",
+              "E653F579CF2E9",
+              "E852F085599CC",
+              "EA92C2D1FCCCA",
+              "EE8C4FFBC56A9"
+            ],
+            "local_causal_node_ids": [
+              "N3F370869238C",
+              "N407C13422E76",
+              "N534CB63D325C",
+              "N5B3317BE31EC",
+              "N5BE40C62CF5D",
+              "N72DA5792489E",
+              "N77561E36A9CA",
+              "N7C77B90BC483",
+              "N800D84C36E55",
+              "NB433532D9CFA",
+              "NB9653F2DE86D",
+              "NBEF2A182FB59",
+              "NE3CE9BC087F0",
+              "NF275661CCA25"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_format_repr_exception",
+                "qualified_name": "_format_repr_exception",
+                "kind": "function",
+                "file": "src/_pytest/_io/saferepr.py",
+                "line": 15,
+                "end_line": 24,
+                "module": "src._pytest._io.saferepr"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 15,
+                "end_line": 24
+              },
+              {
+                "start_line": 45,
+                "end_line": 52
+              },
+              {
+                "start_line": 54,
+                "end_line": 61
+              },
+              {
+                "start_line": 75,
+                "end_line": 82
+              }
+            ],
+            "local_fact_ids": [
+              "E149F7A82B81A",
+              "E24AC5AC85DC3",
+              "E30BB64F8F391",
+              "E3530516808D1",
+              "E57D4DBF309CE",
+              "E653F579CF2E9",
+              "E852F085599CC",
+              "EA92C2D1FCCCA",
+              "EE8C4FFBC56A9"
+            ],
+            "local_causal_node_ids": [
+              "N3F370869238C",
+              "N407C13422E76",
+              "N534CB63D325C",
+              "N5B3317BE31EC",
+              "N5BE40C62CF5D",
+              "N72DA5792489E",
+              "N77561E36A9CA",
+              "N7C77B90BC483",
+              "N800D84C36E55",
+              "NB433532D9CFA",
+              "NB9653F2DE86D",
+              "NBEF2A182FB59",
+              "NE3CE9BC087F0",
+              "NF275661CCA25"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 0,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E0E371EAE9AF1",
+            "E149F7A82B81A",
+            "E24AC5AC85DC3",
+            "E30BB64F8F391",
+            "E3530516808D1",
+            "E57D4DBF309CE",
+            "E653F579CF2E9",
+            "E852F085599CC",
+            "EA92C2D1FCCCA",
+            "EE8C4FFBC56A9"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [],
+          "status": "ORACLE_ROOT_NOT_REPRESENTABLE",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\9cf5166f97cf5b2769512d7d93df9d93cad9373a65ec445c814191e70f076eda.json.gz",
+      "raw_trace_sha256": "9cf5166f97cf5b2769512d7d93df9d93cad9373a65ec445c814191e70f076eda"
+    },
+    {
+      "id": "sphinx-doc__sphinx-11445",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": false,
+              "correct_symbol_facts_in_ledger": false,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "SYMBOL_WINDOW_MISSED",
+            "reason_codes": [
+              "SYMBOL_WINDOW_MISSED",
+              "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+              "SYMBOL_FACTS_NOT_MATERIALIZED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "prepend_prolog",
+                "qualified_name": "prepend_prolog",
+                "kind": "function",
+                "file": "sphinx/util/rst.py",
+                "line": 78,
+                "end_line": 97,
+                "module": "sphinx.util.rst"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 55,
+                "end_line": 60
+              },
+              {
+                "start_line": 43,
+                "end_line": 51
+              }
+            ],
+            "local_fact_ids": [],
+            "local_causal_node_ids": [
+              "N17B60B572D82",
+              "N1D749E24C315",
+              "N286D1B761110",
+              "N3387AA82883F",
+              "N42EC97396D8A",
+              "N48F2B9D032EF",
+              "N4B51168A2888",
+              "N590318C1382F",
+              "N5DBC3540E3D3",
+              "N61F4B5531477",
+              "N736340BC7CEC",
+              "N77533DEE8B7D",
+              "N79F36F379FFA",
+              "N868FEAE6C791",
+              "N8E8140E65E11",
+              "N99D40F738E26",
+              "NA6F36CF74AE2",
+              "NB2F0CC9B7060",
+              "NBA241DEFE77C",
+              "NCE65CC0ED244",
+              "ND63F16BD69E4",
+              "NDFFF786B08B6",
+              "NF38BF0D517BC",
+              "NF4393D650334"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "prepend_prolog",
+                "qualified_name": "prepend_prolog",
+                "kind": "function",
+                "file": "sphinx/util/rst.py",
+                "line": 78,
+                "end_line": 97,
+                "module": "sphinx.util.rst"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 55,
+                "end_line": 60
+              },
+              {
+                "start_line": 43,
+                "end_line": 51
+              },
+              {
+                "start_line": 78,
+                "end_line": 97
+              }
+            ],
+            "local_fact_ids": [
+              "E08AC37DF6C5C",
+              "E2575268EC025",
+              "E27D674A40380",
+              "E2EBB1CC75AAB",
+              "E398E647911B0",
+              "E3CCE4114D776",
+              "E7452CDA61FFF",
+              "E79F54025631F",
+              "E91B8BB3A57AA",
+              "ECA03DE3D2CE9",
+              "EF2D2275501AE"
+            ],
+            "local_causal_node_ids": [
+              "N17B60B572D82",
+              "N1D749E24C315",
+              "N286D1B761110",
+              "N3387AA82883F",
+              "N42EC97396D8A",
+              "N48F2B9D032EF",
+              "N4B51168A2888",
+              "N590318C1382F",
+              "N5DBC3540E3D3",
+              "N61F4B5531477",
+              "N736340BC7CEC",
+              "N77533DEE8B7D",
+              "N79F36F379FFA",
+              "N868FEAE6C791",
+              "N8E8140E65E11",
+              "N99D40F738E26",
+              "NA6F36CF74AE2",
+              "NB2F0CC9B7060",
+              "NBA241DEFE77C",
+              "NCE65CC0ED244",
+              "ND63F16BD69E4",
+              "NDFFF786B08B6",
+              "NF38BF0D517BC",
+              "NF4393D650334"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "SYMBOL_WINDOW_MISSED",
+            "reason_codes": [
+              "SYMBOL_WINDOW_MISSED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "prepend_prolog",
+                "qualified_name": "prepend_prolog",
+                "kind": "function",
+                "file": "sphinx/util/rst.py",
+                "line": 78,
+                "end_line": 97,
+                "module": "sphinx.util.rst"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 55,
+                "end_line": 60
+              },
+              {
+                "start_line": 43,
+                "end_line": 51
+              }
+            ],
+            "local_fact_ids": [
+              "E08AC37DF6C5C",
+              "E2575268EC025",
+              "E27D674A40380",
+              "E2EBB1CC75AAB",
+              "E398E647911B0",
+              "E3CCE4114D776",
+              "E7452CDA61FFF",
+              "E79F54025631F",
+              "E91B8BB3A57AA",
+              "ECA03DE3D2CE9",
+              "EF2D2275501AE"
+            ],
+            "local_causal_node_ids": [
+              "N17B60B572D82",
+              "N1D749E24C315",
+              "N286D1B761110",
+              "N3387AA82883F",
+              "N42EC97396D8A",
+              "N48F2B9D032EF",
+              "N4B51168A2888",
+              "N590318C1382F",
+              "N5DBC3540E3D3",
+              "N61F4B5531477",
+              "N736340BC7CEC",
+              "N77533DEE8B7D",
+              "N79F36F379FFA",
+              "N868FEAE6C791",
+              "N8E8140E65E11",
+              "N99D40F738E26",
+              "NA6F36CF74AE2",
+              "NB2F0CC9B7060",
+              "NBA241DEFE77C",
+              "NCE65CC0ED244",
+              "ND63F16BD69E4",
+              "NDFFF786B08B6",
+              "NF38BF0D517BC",
+              "NF4393D650334"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E08AC37DF6C5C",
+            "E2575268EC025",
+            "E27D674A40380",
+            "E2DA0E16F092E",
+            "E2EBB1CC75AAB",
+            "E398E647911B0",
+            "E3CCE4114D776",
+            "E7452CDA61FFF",
+            "E79F54025631F",
+            "E91B8BB3A57AA",
+            "ECA03DE3D2CE9",
+            "EF2D2275501AE"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [],
+          "status": "ORACLE_ROOT_NOT_REPRESENTABLE",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\57264266546d6e023d16c26e9b9180bf6f6d937a59e94faba022247eeebd3f46.json.gz",
+      "raw_trace_sha256": "57264266546d6e023d16c26e9b9180bf6f6d937a59e94faba022247eeebd3f46"
+    },
+    {
+      "id": "sphinx-doc__sphinx-7738",
+      "experiments": [
+        {
+          "mode": "A_NORMAL",
+          "experimental": false,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": false,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": false,
+              "correct_symbol_facts_in_ledger": false,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "FILE_NOT_RETRIEVED",
+            "reason_codes": [
+              "FILE_NOT_RETRIEVED",
+              "SYMBOL_WINDOW_MISSED",
+              "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+              "SYMBOL_FACTS_NOT_MATERIALIZED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_escape_args_and_kwargs",
+                "qualified_name": "GoogleDocstring._escape_args_and_kwargs",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 320,
+                "end_line": 329,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [],
+            "local_fact_ids": [],
+            "local_causal_node_ids": [
+              "N07A9AEF4AC7D",
+              "N3B764DCDCCE0",
+              "N62395C854D35",
+              "N77BD41F72C37",
+              "N78811BD5241E",
+              "N849664A14675",
+              "N8F3C656299A1",
+              "NBA8F6E98F05D",
+              "NCE536EBBABC6",
+              "NDF5D9BFADAA2",
+              "NE14BA46B8142",
+              "NF685596563A4",
+              "NFFB846DEE5D5"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "B_ORACLE_SYMBOL",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "_escape_args_and_kwargs",
+                "qualified_name": "GoogleDocstring._escape_args_and_kwargs",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 320,
+                "end_line": 329,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 320,
+                "end_line": 329
+              }
+            ],
+            "local_fact_ids": [
+              "E051B8BBF809B",
+              "E4ECAA9EAB9B6",
+              "E4FD6432DF605",
+              "E58590BAC7154",
+              "E73F4366297A5",
+              "EA11689E47758",
+              "EBFE4D705999A",
+              "EDEA16E6DB545",
+              "EF685536AD925"
+            ],
+            "local_causal_node_ids": [
+              "N07A9AEF4AC7D",
+              "N3B764DCDCCE0",
+              "N62395C854D35",
+              "N77BD41F72C37",
+              "N78811BD5241E",
+              "N849664A14675",
+              "N8F3C656299A1",
+              "NBA8F6E98F05D",
+              "NCE536EBBABC6",
+              "NDF5D9BFADAA2",
+              "NE14BA46B8142",
+              "NF685596563A4",
+              "NFFB846DEE5D5"
+            ],
+            "correct_candidate_ids": [
+              "R310BC20B1FB6",
+              "R56DECBDB13B1",
+              "R9BC2C25231AF",
+              "RE60BF035558C"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 9,
+          "qwen_requests": 0,
+          "inserted_fact_ids": []
+        },
+        {
+          "mode": "C_ORACLE_AST_FACTS",
+          "experimental": true,
+          "layer_coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": false,
+              "correct_symbol_selected": false,
+              "correct_symbol_in_context": false,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "first_loss": "FILE_NOT_RETRIEVED",
+            "reason_codes": [
+              "FILE_NOT_RETRIEVED",
+              "SYMBOL_WINDOW_MISSED",
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "_escape_args_and_kwargs",
+                "qualified_name": "GoogleDocstring._escape_args_and_kwargs",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 320,
+                "end_line": 329,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [],
+            "local_fact_ids": [
+              "E051B8BBF809B",
+              "E4ECAA9EAB9B6",
+              "E4FD6432DF605",
+              "E58590BAC7154",
+              "E73F4366297A5",
+              "EA11689E47758",
+              "EBFE4D705999A",
+              "EDEA16E6DB545",
+              "EF685536AD925"
+            ],
+            "local_causal_node_ids": [
+              "N07A9AEF4AC7D",
+              "N3B764DCDCCE0",
+              "N62395C854D35",
+              "N77BD41F72C37",
+              "N78811BD5241E",
+              "N849664A14675",
+              "N8F3C656299A1",
+              "NBA8F6E98F05D",
+              "NCE536EBBABC6",
+              "NDF5D9BFADAA2",
+              "NE14BA46B8142",
+              "NF685596563A4",
+              "NFFB846DEE5D5"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "root_count": 12,
+          "qwen_requests": 0,
+          "inserted_fact_ids": [
+            "E051B8BBF809B",
+            "E40E4C4D783C6",
+            "E4ECAA9EAB9B6",
+            "E4FD6432DF605",
+            "E58590BAC7154",
+            "E73F4366297A5",
+            "EA11689E47758",
+            "EBFE4D705999A",
+            "EDEA16E6DB545",
+            "EF685536AD925"
+          ]
+        },
+        {
+          "mode": "D_ORACLE_ROOT",
+          "experimental": true,
+          "oracle_candidate_ids": [
+            "R56DECBDB13B1",
+            "R9BC2C25231AF",
+            "R310BC20B1FB6",
+            "RE60BF035558C"
+          ],
+          "status": "READY",
+          "selected_correct": null,
+          "qwen_requests": 0
+        }
+      ],
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\oracle-study\\c25db4f3fd746cf7f7b16b9b1043615c0845def8e91e67204179792f3ff1c67b.json.gz",
+      "raw_trace_sha256": "c25db4f3fd746cf7f7b16b9b1043615c0845def8e91e67204179792f3ff1c67b"
+    }
+  ],
+  "limitation": "A location oracle cannot invent missing causal semantics. Mode D is unavailable when no correctly localized grounded root is representable."
+}

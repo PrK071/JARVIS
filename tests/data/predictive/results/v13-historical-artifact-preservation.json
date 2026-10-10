@@ -1,0 +1,82 @@
+{
+  "version": 13,
+  "destination": "C:\\Users\\User\\AppData\\Local\\JARVIS\\evaluation-artifacts\\v13\\historical-diagnostic",
+  "traces": [
+    {
+      "relative_path": "marshmallow-code__marshmallow-1343/result/2c2f31c4b12f15779cd78e3e09fde742012d7e3f88e556a844aff64765254de2.json.gz",
+      "raw_sha256": "2c2f31c4b12f15779cd78e3e09fde742012d7e3f88e556a844aff64765254de2",
+      "compressed_sha256": "d2136faf554e40e75dc61160313aa743ae55a999c175f4b5c5e577e4c953df12",
+      "compressed_bytes": 65578
+    },
+    {
+      "relative_path": "marshmallow-code__marshmallow-1359/result/e8df426e789aeae676f3681a17c0622a9b359fc29765a214c8972a7e3367a1af.json.gz",
+      "raw_sha256": "e8df426e789aeae676f3681a17c0622a9b359fc29765a214c8972a7e3367a1af",
+      "compressed_sha256": "5f2f473889772d4355b9a162ab54b49ef8012c6071d0505d51fb4d9f76a56970",
+      "compressed_bytes": 48246
+    },
+    {
+      "relative_path": "psf__requests-1963/result/0fb3dc4153350b8597a14f7e438af5de71c0f6a9c175f19a4d60fb95cfabd56b.json.gz",
+      "raw_sha256": "0fb3dc4153350b8597a14f7e438af5de71c0f6a9c175f19a4d60fb95cfabd56b",
+      "compressed_sha256": "6e43cc02ca779c317373841a244bcd05bb325cedb999f2e0579015f8b2772118",
+      "compressed_bytes": 65568
+    },
+    {
+      "relative_path": "psf__requests-2148/result/ae5bf2dc78fe1796879487793563e3c7b68354aa9a9bca59288e6dc08731f6f3.json.gz",
+      "raw_sha256": "ae5bf2dc78fe1796879487793563e3c7b68354aa9a9bca59288e6dc08731f6f3",
+      "compressed_sha256": "d47afb9941ef13703ee2e7d19ad8d93fe533d355efdb9965457f6244e96c9cc0",
+      "compressed_bytes": 68572
+    },
+    {
+      "relative_path": "psf__requests-2317/result/f2db28e34d361d8bee0cdac988455c117318ded682af7ea38765f1f2f47ca8e6.json.gz",
+      "raw_sha256": "f2db28e34d361d8bee0cdac988455c117318ded682af7ea38765f1f2f47ca8e6",
+      "compressed_sha256": "060940aa18535650dea5b0a6cbfdbdf40bff432a1760dd544868833af8b56d17",
+      "compressed_bytes": 81715
+    },
+    {
+      "relative_path": "psf__requests-2674/result/850bd5248a43a805e2fc1c8955ec09c047a989975e61f874a8e63b1ae3ca21c3.json.gz",
+      "raw_sha256": "850bd5248a43a805e2fc1c8955ec09c047a989975e61f874a8e63b1ae3ca21c3",
+      "compressed_sha256": "d4d84e2714bfc55e02f873c4d6165251aa5e237e40805a4ba127d6da0c79609d",
+      "compressed_bytes": 75035
+    },
+    {
+      "relative_path": "psf__requests-3362/result/f1f4406e4c8b6ca118340186a054984b2edf851994027a275eb9ad5a1c839c24.json.gz",
+      "raw_sha256": "f1f4406e4c8b6ca118340186a054984b2edf851994027a275eb9ad5a1c839c24",
+      "compressed_sha256": "ce4d467b58e6330b2005ed7f628214c637fb9cdde9e30f2c7b2737bce92373bb",
+      "compressed_bytes": 92571
+    },
+    {
+      "relative_path": "psf__requests-863/result/e55b0ba1521fc9d2875870d2a0c0503d16a6f260faf61bb980cb5fc05709b076.json.gz",
+      "raw_sha256": "e55b0ba1521fc9d2875870d2a0c0503d16a6f260faf61bb980cb5fc05709b076",
+      "compressed_sha256": "a99b6f266a3ee36b574c3687af2ebc7295514eafcc59dbe469b6c4fd57411c18",
+      "compressed_bytes": 74103
+    },
+    {
+      "relative_path": "pytest-dev__pytest-11143/result/d4da34a56832299b54717d398e942cc3ddd9da0fc129d9336eb14c7785cdc885.json.gz",
+      "raw_sha256": "d4da34a56832299b54717d398e942cc3ddd9da0fc129d9336eb14c7785cdc885",
+      "compressed_sha256": "e6370691aed4fc3d888c7a254c19f470c00bf5878c8bdc06a6ff471399e38d82",
+      "compressed_bytes": 278520
+    },
+    {
+      "relative_path": "pytest-dev__pytest-5413/result/5fdaf7d906476f3d0cc75b500196d69d990bce9a26cac02f22c5855fa31702b2.json.gz",
+      "raw_sha256": "5fdaf7d906476f3d0cc75b500196d69d990bce9a26cac02f22c5855fa31702b2",
+      "compressed_sha256": "eefd2db361fe63755a68c2e43486c710944d62063c233e6c508776777967c6ff",
+      "compressed_bytes": 64853
+    },
+    {
+      "relative_path": "pytest-dev__pytest-7373/result/27c63b7ea18e45c73ecaeee39355056650b363d5ddea019f26090677bd5b655d.json.gz",
+      "raw_sha256": "27c63b7ea18e45c73ecaeee39355056650b363d5ddea019f26090677bd5b655d",
+      "compressed_sha256": "9304f37b860b254dd748ef85eeb63cc036d504625048f0f175e84ea45a046327",
+      "compressed_bytes": 50289
+    },
+    {
+      "relative_path": "pytest-dev__pytest-8365/result/e10d108b8294466e08b514ee54f09bde83636c95d12a3897a43d3983346419f1.json.gz",
+      "raw_sha256": "e10d108b8294466e08b514ee54f09bde83636c95d12a3897a43d3983346419f1",
+      "compressed_sha256": "e71679b261186940c1398574084133f55c306eefaf7bc9d995db833839a9b006",
+      "compressed_bytes": 85278
+    }
+  ],
+  "count": 12,
+  "verified": true,
+  "originals_retained": true,
+  "limitation": "Verified same-host local backup, not off-machine disaster recovery."
+}

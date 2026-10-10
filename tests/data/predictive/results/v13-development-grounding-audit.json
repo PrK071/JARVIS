@@ -1,0 +1,84 @@
+{
+  "version": 13,
+  "audits": [
+    {
+      "source_report": "tests\\data\\predictive\\results\\v13-development-final.json",
+      "rows": [
+        {
+          "case_id": "pallets__flask-4045",
+          "formulation": 1,
+          "valid_refs": 2,
+          "refs": 2,
+          "unsupported_claims": 0,
+          "claims": 3,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-11148",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-5495",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-7168",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-11445",
+          "formulation": 1,
+          "valid_refs": 2,
+          "refs": 2,
+          "unsupported_claims": 0,
+          "claims": 3,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 4,
+        "denominator": 4,
+        "rate": 1.0,
+        "population": "unique references per formulation",
+        "wilson_95": [
+          0.5101091635454027,
+          1.0
+        ]
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 6,
+        "rate": 0.0,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": [
+          2.7755575615628914e-17,
+          0.3903342879021653
+        ]
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    }
+  ]
+}

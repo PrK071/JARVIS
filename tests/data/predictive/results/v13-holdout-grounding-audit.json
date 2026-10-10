@@ -1,0 +1,68 @@
+{
+  "version": 13,
+  "audits": [
+    {
+      "source_report": "tests\\data\\predictive\\results\\v13-holdout-one-shot.json",
+      "rows": [
+        {
+          "case_id": "pytest-dev__pytest-7220",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-7490",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-9359",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8595",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "unique references per formulation",
+        "wilson_95": null
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": null
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    }
+  ]
+}

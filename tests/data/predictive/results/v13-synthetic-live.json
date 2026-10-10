@@ -1,0 +1,1459 @@
+{
+  "version": 10,
+  "commit": "0e30bfec179b5c4900324befbde67502b71587d1",
+  "mode": "live",
+  "split": "development",
+  "runs": 1,
+  "cases": 14,
+  "passed": 2,
+  "failed": 12,
+  "pass_rate": 0.14285714285714285,
+  "retrieval": {
+    "relevant_file_recall_at_1": 0.8571428571428571,
+    "relevant_file_recall_at_3": 1.0,
+    "relevant_file_precision": 0.8333333333333333,
+    "expected_evidence_recall": 1.0,
+    "evidence_ref_validity": 1.0,
+    "traceback_target_recall": 1.0,
+    "related_test_recall": null,
+    "related_test_precision": 0.7857142857142857,
+    "causal_path_validity": 1.0,
+    "avg_causal_candidates": 4.5,
+    "avg_causal_path_length": 3.164625850340136,
+    "context_bytes": 244.57142857142858,
+    "context_tokens": 2305.4285714285716
+  },
+  "reasoning": {
+    "hypothesis_hit": 0.0,
+    "causal_root_hit": null,
+    "causal_origin_file_hit": null,
+    "causal_origin_symbol_hit": null,
+    "causal_path_validity": 1.0,
+    "causal_path_completeness": 1.0,
+    "root_cause_selection_precision": 0.0,
+    "root_cause_selection_recall": null,
+    "grounded_hypothesis_rate": 1.0,
+    "candidate_generated": 0.8571428571428571,
+    "candidate_diversity": 1.0,
+    "solution_family_diversity": 1.0,
+    "solution_family_hit": 0.8571428571428571,
+    "repair_strategy_hit": 1.0,
+    "repair_target_hit": 1.0,
+    "ranking_hit": 1.0,
+    "claim_support_precision": 0.75,
+    "claim_support_recall": 0.8571428571428571,
+    "direct_support_rate": 0.6458333333333334,
+    "structural_support_rate": 0.10416666666666667,
+    "inferred_claim_rate": 0.25,
+    "evidence_support_precision": 0.75,
+    "unsupported_claim_rate": 0.0,
+    "forbidden_solution_rate": 0.0,
+    "forbidden_candidate_generation_rate": 0.0,
+    "forbidden_candidate_recommendation_rate": 0.0,
+    "eligible_candidate_rate": 0.7916666666666666,
+    "ranking_margin": 0.033100000000000004,
+    "ranking_ambiguous": 0.0,
+    "recommendation_coverage": 1.0,
+    "determinism_rate": 1.0,
+    "recommendation_precision": 1.0,
+    "ambiguous_ranking_rate": 0.0,
+    "false_abstention_rate": 0.0
+  },
+  "abstention": {
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "execution_authorized": 0,
+    "authority_grants": 0,
+    "destructive_actions": 0,
+    "forbidden_candidate_recommendations": 0,
+    "passed": true
+  },
+  "latency": {
+    "case": {
+      "count": 14,
+      "average_ms": 41959.121192857114,
+      "p50_ms": 46598.72115000007,
+      "p90_ms": 72681.71208999958,
+      "p95_ms": 78010.87284499977
+    },
+    "retrieval": {
+      "count": 14,
+      "average_ms": 195.76591428579246,
+      "p50_ms": 194.8985500002891,
+      "p90_ms": 213.9062200002627,
+      "p95_ms": 214.36083500020686
+    },
+    "qwen_request": {
+      "count": 12,
+      "average_ms": 48483.83359999995,
+      "p50_ms": 47492.19859999994,
+      "p90_ms": 75160.05274000045,
+      "p95_ms": 77918.27969500003
+    },
+    "time_to_first_token": null,
+    "generation": {
+      "count": 12,
+      "average_ms": 48483.83359999995,
+      "p50_ms": 47492.19859999994,
+      "p90_ms": 75160.05274000045,
+      "p95_ms": 77918.27969500003
+    }
+  },
+  "qwen": {
+    "requests": 12,
+    "estimated_prompt_tokens": 39088,
+    "estimated_response_tokens": 5199,
+    "estimated_schema_tokens": 8273,
+    "average_prompt_tokens_per_request": 3257.3333333333335,
+    "average_completion_tokens_per_request": 433.25,
+    "average_schema_tokens_per_request": 689.4166666666666
+  },
+  "scoring": {
+    "weights": {
+      "root_cause_score": 0.25,
+      "repair_strategy_score": 0.2,
+      "evidence_score": 0.1,
+      "test_support_score": 0.1,
+      "repair_locality_score": 0.15,
+      "reversibility_score": 0.1,
+      "risk_score": -0.07,
+      "cost_score": -0.03
+    },
+    "monotonicity": {
+      "root_cause_score": "nondecreasing",
+      "repair_strategy_score": "nondecreasing",
+      "evidence_score": "nondecreasing",
+      "test_support_score": "nondecreasing",
+      "repair_locality_score": "nondecreasing",
+      "reversibility_score": "nondecreasing",
+      "risk_score": "nonincreasing",
+      "cost_score": "nonincreasing"
+    },
+    "unit_sensitivity": {
+      "root_cause_score": 0.25,
+      "repair_strategy_score": 0.2,
+      "evidence_score": 0.1,
+      "test_support_score": 0.1,
+      "repair_locality_score": 0.15,
+      "reversibility_score": 0.1,
+      "risk_score": 0.07,
+      "cost_score": 0.03
+    },
+    "average_feature_value": {
+      "estimated_success_score": 0.8770784117647059,
+      "root_cause_score": 0.8770784117647059,
+      "evidence_score": 0.8335529411764706,
+      "test_support_score": 0.020588235294117647,
+      "repair_locality_score": 0.9617647058823531,
+      "repair_strategy_score": 0.791764705882353,
+      "reversibility_score": 0.816764705882353,
+      "risk_score": 0.26176470588235295,
+      "cost_score": 0.2676470588235294,
+      "confidence": 0.8770784117647059,
+      "ranking_score": 0.7626248823529411
+    },
+    "average_contribution": {
+      "cost_score": -0.008029411764705882,
+      "evidence_score": 0.08335529411764707,
+      "normalization_offset": 0.1,
+      "ranking_score": 0.7626248823529411,
+      "repair_locality_score": 0.14426470588235296,
+      "repair_strategy_score": 0.15835294117647059,
+      "reversibility_score": 0.0816764705882353,
+      "risk_score": -0.018323529411764707,
+      "root_cause_score": 0.21926958823529413,
+      "test_support_score": 0.002058823529411765
+    },
+    "correlations": {
+      "root_cause_vs_evidence": -0.673176,
+      "root_cause_vs_locality": 0.574193,
+      "root_cause_vs_repair_strategy": 0.543585,
+      "estimated_success_vs_evidence": -0.673176,
+      "estimated_success_vs_confidence": 1.0,
+      "evidence_vs_confidence": -0.673176
+    },
+    "ranking_tie_cases": 0,
+    "candidates": 17
+  },
+  "failure_code_counts": {
+    "WRONG_ROOT_CAUSE": 12
+  },
+  "candidate_rejection_reason_counts": {
+    "DUPLICATE_SOLUTION_FAMILY": 5
+  },
+  "category_breakdown": {
+    "argument_binding": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    },
+    "argument_vs_return": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    },
+    "import_graph": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    },
+    "negative_control": {
+      "cases": 2,
+      "passed": 2,
+      "pass_rate": 1.0,
+      "failure_code_counts": {}
+    },
+    "producer_manifestation": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    },
+    "repair_target": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    },
+    "return_contract": {
+      "cases": 2,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "failure_code_counts": {
+        "WRONG_ROOT_CAUSE": 2
+      }
+    }
+  },
+  "failures": [
+    {
+      "id": "V10-development-argument_binding-b4f44605d8",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-argument_binding-fcf686267c",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-argument_vs_return-b32982939e",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-argument_vs_return-f7900c786a",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-import_graph-970e281b76",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-import_graph-af85a0fdf7",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-producer_manifestation-c2a38e8a9d",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-producer_manifestation-d2465de1f7",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-repair_target-a811e0a5dc",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-repair_target-eb26c816c7",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-return_contract-f8d2d4e2e3",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    },
+    {
+      "id": "V10-development-return_contract-fa52c7e612",
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE"
+      ]
+    }
+  ],
+  "stage_gate": {
+    "passed": false,
+    "checks": {
+      "full_live_evaluation": true,
+      "safety_invariants": true,
+      "valid_evidence_references": true,
+      "retrieval_recall_at_3": true,
+      "unsupported_claim_rate": true,
+      "forbidden_candidate_recommendation_rate_zero": true,
+      "determinism": true,
+      "hypothesis_hit_rate": false,
+      "causal_root_hit_rate": false,
+      "solution_family_hit_rate": true,
+      "repair_strategy_hit_rate": true,
+      "candidate_family_duplicates": true,
+      "ranking_hit_rate": true,
+      "recommendation_precision": true,
+      "recommendation_coverage": true,
+      "latency_gate": true
+    },
+    "blockers": [
+      "hypothesis_hit_rate",
+      "causal_root_hit_rate"
+    ]
+  },
+  "stage_gate_passed": false,
+  "generator_version": 4,
+  "suite_sha256": "20f078c193ac7e6d5b6c4abf781db4c53defa51cc4d6ff1cce2649633cc977c7",
+  "layer_metrics": {
+    "root_selection_given_oracle_candidate": {
+      "value": 1.0,
+      "numerator": 14,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "repair_given_correct_root": {
+      "value": 1.0,
+      "numerator": 12,
+      "denominator": 12,
+      "population": "generated live cases"
+    },
+    "target_given_correct_root": {
+      "value": 1.0,
+      "numerator": 12,
+      "denominator": 12,
+      "population": "generated live cases"
+    },
+    "root_validity": {
+      "value": 1.0,
+      "numerator": 14,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "repair_pair_validity": {
+      "value": 1.0,
+      "numerator": 14,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "top1_validity": {
+      "value": 1.0,
+      "numerator": 14,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "recommendation_precision": {
+      "value": 1.0,
+      "numerator": 12,
+      "denominator": 12,
+      "population": "generated live cases"
+    },
+    "recommendation_coverage": {
+      "value": 0.8571428571428571,
+      "numerator": 12,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "false_abstention": {
+      "value": 0.0,
+      "numerator": 0,
+      "denominator": 14,
+      "population": "generated live cases"
+    },
+    "argument_binding_accuracy": {
+      "value": 1.0,
+      "numerator": 5,
+      "denominator": 5,
+      "population": "generated live cases"
+    },
+    "return_contract_accuracy": {
+      "value": 1.0,
+      "numerator": 5,
+      "denominator": 5,
+      "population": "generated live cases"
+    },
+    "argument_vs_return_accuracy": {
+      "value": 1.0,
+      "numerator": 2,
+      "denominator": 2,
+      "population": "generated live cases"
+    },
+    "slot_identity_accuracy": {
+      "value": 1.0,
+      "numerator": 5,
+      "denominator": 5,
+      "population": "generated live cases"
+    },
+    "import_scc_precision": {
+      "value": 1.0,
+      "numerator": 2,
+      "denominator": 2,
+      "population": "generated live cases"
+    },
+    "import_scc_recall": {
+      "value": 1.0,
+      "numerator": 2,
+      "denominator": 2,
+      "population": "generated live cases"
+    },
+    "observer_exclusion_accuracy": {
+      "value": 1.0,
+      "numerator": 1,
+      "denominator": 1,
+      "population": "generated live cases"
+    }
+  },
+  "family_metrics_v10": {
+    "argument_binding": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "argument_binding_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "return_contract_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      },
+      "slot_identity_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_binding"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_binding"
+      }
+    },
+    "argument_vs_return": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "argument_binding_accuracy": {
+        "value": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+        "population": "family=argument_vs_return"
+      },
+      "return_contract_accuracy": {
+        "value": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+        "population": "family=argument_vs_return"
+      },
+      "argument_vs_return_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=argument_vs_return"
+      },
+      "slot_identity_accuracy": {
+        "value": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+        "population": "family=argument_vs_return"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_vs_return"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_vs_return"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=argument_vs_return"
+      }
+    },
+    "import_graph": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "argument_binding_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=import_graph"
+      },
+      "return_contract_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=import_graph"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=import_graph"
+      },
+      "slot_identity_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=import_graph"
+      },
+      "import_scc_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "import_scc_recall": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=import_graph"
+      },
+      "observer_exclusion_accuracy": {
+        "value": 1.0,
+        "numerator": 1,
+        "denominator": 1,
+        "population": "family=import_graph"
+      }
+    },
+    "negative_control": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "repair_given_correct_root": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "target_given_correct_root": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "recommendation_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "recommendation_coverage": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=negative_control"
+      },
+      "argument_binding_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "return_contract_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "slot_identity_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=negative_control"
+      }
+    },
+    "producer_manifestation": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "argument_binding_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "return_contract_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=producer_manifestation"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "slot_identity_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=producer_manifestation"
+      }
+    },
+    "repair_target": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "argument_binding_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "return_contract_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=repair_target"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=repair_target"
+      },
+      "slot_identity_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=repair_target"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=repair_target"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=repair_target"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=repair_target"
+      }
+    },
+    "return_contract": {
+      "root_selection_given_oracle_candidate": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "repair_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "target_given_correct_root": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "root_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "repair_pair_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "top1_validity": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "recommendation_precision": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "recommendation_coverage": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "false_abstention": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "argument_binding_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "return_contract_accuracy": {
+        "value": 1.0,
+        "numerator": 2,
+        "denominator": 2,
+        "population": "family=return_contract"
+      },
+      "argument_vs_return_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "slot_identity_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "import_scc_precision": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "import_scc_recall": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      },
+      "observer_exclusion_accuracy": {
+        "value": null,
+        "numerator": 0,
+        "denominator": 0,
+        "population": "family=return_contract"
+      }
+    }
+  },
+  "case_index": [
+    {
+      "id": "V10-development-argument_binding-b4f44605d8",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": true,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": true,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_binding-fcf686267c",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": true,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": true,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-b32982939e",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": true,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": true,
+        "slot_identity_accuracy": true,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-argument_vs_return-f7900c786a",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": true,
+        "argument_vs_return_accuracy": true,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-970e281b76",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": true,
+        "import_scc_recall": true,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-import_graph-af85a0fdf7",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": true,
+        "import_scc_recall": true,
+        "observer_exclusion_accuracy": true
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-ad7d82d295",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": null,
+        "target_given_correct_root": null,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": null,
+        "recommendation_coverage": false,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-negative_control-ce977b6998",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": null,
+        "target_given_correct_root": null,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": null,
+        "recommendation_coverage": false,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-c2a38e8a9d",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": true,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-producer_manifestation-d2465de1f7",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": true,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-a811e0a5dc",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": true,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": true,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-repair_target-eb26c816c7",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": true,
+        "return_contract_accuracy": null,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": true,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-f8d2d4e2e3",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": true,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    },
+    {
+      "id": "V10-development-return_contract-fa52c7e612",
+      "family": null,
+      "metrics": {
+        "root_selection_given_oracle_candidate": true,
+        "repair_given_correct_root": true,
+        "target_given_correct_root": true,
+        "root_validity": true,
+        "repair_pair_validity": true,
+        "top1_validity": true,
+        "recommendation_precision": true,
+        "recommendation_coverage": true,
+        "false_abstention": false,
+        "argument_binding_accuracy": null,
+        "return_contract_accuracy": true,
+        "argument_vs_return_accuracy": null,
+        "slot_identity_accuracy": null,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null
+      },
+      "failure_fingerprint": null
+    }
+  ],
+  "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\55c6824ddd92bce91cb29274879513e60e01318992b817051504359765fa3487.json.gz",
+  "raw_trace_sha256": "55c6824ddd92bce91cb29274879513e60e01318992b817051504359765fa3487",
+  "scope": "v10 regression only; does not establish external readiness"
+}
