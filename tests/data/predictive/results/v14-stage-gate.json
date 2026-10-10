@@ -1,0 +1,727 @@
+{
+  "version": 14,
+  "completed_at": "2026-10-10T23:20:37.506347+00:00",
+  "runtime_unchanged_since_freeze": true,
+  "corpus_seal": "ca35ac2aeef385022a3b6e6a6f6224a7dd9bfdf094180b3a0beb02347d3321b9",
+  "holdout_live_executions": 1,
+  "post_holdout_tuning": false,
+  "coverage_checks": {
+    "development_complete": false,
+    "development_candidate_recall": false,
+    "development_api_implementation_path": true,
+    "holdout_complete": false,
+    "holdout_candidate_recall": false,
+    "holdout_api_implementation_path": false,
+    "independent_defect_relation_and_noise_adjudicated": false,
+    "grounding_audited": true
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "authority_grants": 0,
+    "execution_authorized": 0,
+    "destructive_actions": 0,
+    "forbidden_recommendations": 0,
+    "unsupported_claims": 0,
+    "claims": 4,
+    "valid_evidence_references": 2,
+    "evidence_references": 2
+  },
+  "gates": {
+    "PREDICTIVE_SYNTHETIC_READY": true,
+    "PREDICTIVE_EXTERNAL_COVERAGE_READY": false,
+    "PREDICTIVE_EXTERNAL_DECISION_READY": false,
+    "SIMULATION_RUNTIME_READY": false
+  },
+  "development": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "recommendations only",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "recommendation_coverage": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "live formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      }
+    },
+    "n_independent_defects": 1,
+    "n_formulations": 1,
+    "n_recommended": 1,
+    "n_abstained": 0,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 1,
+      "WRONG_REPAIR_PAIR": 1
+    },
+    "qwen_requests": 1,
+    "avg_qwen_seconds": 15.12038229999962,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        }
+      },
+      "behavioral_metrics": {
+        "correct_api_available": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "implementation_path_available": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "behavioral_effect_available": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "defect_relation_representable": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_GENERATED": 1
+      }
+    },
+    "n_total_defects": 2,
+    "n_evaluable_defects": 1,
+    "n_incomplete_defects": 1
+  },
+  "holdout": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "recommendations only",
+        "wilson_95": null
+      },
+      "recommendation_coverage": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": null
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      }
+    },
+    "n_independent_defects": 1,
+    "n_formulations": 1,
+    "n_recommended": 0,
+    "n_abstained": 1,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 1,
+      "FALSE_ABSTENTION": 1
+    },
+    "qwen_requests": 0,
+    "avg_qwen_seconds": null,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        }
+      },
+      "behavioral_metrics": {
+        "correct_api_available": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        },
+        "implementation_path_available": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        },
+        "behavioral_effect_available": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "defect_relation_representable": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_GENERATED": 1
+      }
+    },
+    "n_total_defects": 2,
+    "n_evaluable_defects": 1,
+    "n_incomplete_defects": 1
+  },
+  "limitations": [
+    "Four independent defects/two held out; no broad generalization claim.",
+    "Operation reachability is not causal defect responsibility.",
+    "Contract relation and external semantic noise not fully adjudicated.",
+    "Oracle C paths not independently adjudicated; E selector not measured offline.",
+    "Synthetic regression: 172 offline cases and 14 live cases, not exhaustive live v10 rerun.",
+    "Working-set polling is sampled enforcement, not a hard memory allocation ceiling.",
+    "Profiling/colocated tests affect measured latency."
+  ]
+}

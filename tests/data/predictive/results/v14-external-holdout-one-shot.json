@@ -1,0 +1,765 @@
+{
+  "schema_version": 14,
+  "summary": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": null
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "recommendations only",
+        "wilson_95": null
+      },
+      "recommendation_coverage": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 1,
+        "denominator": 1,
+        "rate": 1.0,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.20654931437723745,
+          1.0
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": null
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      }
+    },
+    "n_independent_defects": 1,
+    "n_formulations": 1,
+    "n_recommended": 0,
+    "n_abstained": 1,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 1,
+      "FALSE_ABSTENTION": 1
+    },
+    "qwen_requests": 0,
+    "avg_qwen_seconds": null,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        }
+      },
+      "behavioral_metrics": {
+        "correct_api_available": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        },
+        "implementation_path_available": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        },
+        "behavioral_effect_available": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "defect_relation_representable": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_GENERATED": 1
+      }
+    },
+    "n_total_defects": 2,
+    "n_evaluable_defects": 1,
+    "n_incomplete_defects": 1
+  },
+  "results": [
+    {
+      "case_id": "sphinx-doc__sphinx-8721",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "sphinx/builders/_epub_base.py",
+        "sphinx/cmd/make_mode.py",
+        "sphinx/ext/viewcode.py",
+        "sphinx/writers/html.py",
+        "tests/roots/test-ext-inheritance_diagram/example/sphinx.py",
+        "tests/test_build_epub.py",
+        "tests/test_build_html.py",
+        "tests/test_environment.py",
+        "tests/test_environment_indexentries.py",
+        "tests/test_environment_toctree.py",
+        "tests/test_ext_viewcode.py",
+        "utils/bump_version.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": true,
+      "correct_candidate_exists": false,
+      "selected_root": false,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [],
+      "root_candidates": [],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "abstention_expected": false,
+      "winner": null,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "failure_codes": [
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "FALSE_ABSTENTION"
+      ],
+      "wall_seconds": 30.49643020000076,
+      "phase_seconds": {
+        "index": 15.504880900000002,
+        "retrieval": 0.8611119,
+        "context_inclusive": 1.1561925000000002,
+        "symbol_selection": 1.1041181,
+        "ledger": 0.7309433000000001,
+        "causal": 9.477430700000001,
+        "recovery_inclusive": 2.682414,
+        "scoring": 0
+      },
+      "qwen": {
+        "requests": 0,
+        "request_ms": [],
+        "prompt_tokens": 0,
+        "response_tokens": 0
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "5bf452ea2dc9d8f795e295705cb8a425bd6e9502476de280e91a109c87c37ea4",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v14\\holdout\\v14-external-holdout-one-shot\\sphinx-doc__sphinx-8721\\result\\5bf452ea2dc9d8f795e295705cb8a425bd6e9502476de280e91a109c87c37ea4.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report and independent upstream production/test corrections.",
+        "affected_api": null,
+        "behavioral_effect": "YIELDS_VALUE",
+        "expected_relation": "API_IMPLEMENTATION_EFFECT",
+        "import_causal": false,
+        "limitation": "Small purposive corpus. API unknown stays null; correction location is not universal semantic truth. 10451 includes another corrected helper.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER"
+        ],
+        "root_cause": "Incremental page collection omits builder/configuration guards.",
+        "root_path": "sphinx/ext/viewcode.py",
+        "root_symbol": "collect_pages",
+        "source_locations": [
+          {
+            "end_line": 276,
+            "line": 181
+          }
+        ],
+        "target_paths": [
+          "sphinx/ext/viewcode.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": true,
+          "correct_symbol_in_context": true,
+          "correct_symbol_in_ledger": true,
+          "correct_symbol_facts_in_ledger": true,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "behavioral_coverage": {
+          "status": "OBSERVED",
+          "correct_symbol_available": false,
+          "correct_api_available": null,
+          "implementation_path_available": null,
+          "reported_symbol_to_implementation_proxy": false,
+          "behavioral_effect_available": false,
+          "defect_relation_representable": null,
+          "matched_callable_ids": [],
+          "matched_effect_ids": [],
+          "resolved_relations": 0,
+          "ledger_backed_relations": 0,
+          "unresolved_dispatches": 0,
+          "reason_codes": [
+            "NO_STRUCTURAL_API_ANCHOR"
+          ],
+          "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+        },
+        "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+        "reason_codes": [
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "collect_pages",
+            "qualified_name": "collect_pages",
+            "kind": "function",
+            "file": "sphinx/ext/viewcode.py",
+            "line": 181,
+            "end_line": 276,
+            "module": "sphinx.ext.viewcode"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 1,
+            "end_line": 295
+          }
+        ],
+        "local_fact_ids": [
+          "E00F448449A95",
+          "E035EC856B6AA",
+          "E077CB341A1CB",
+          "E0919A18E087E",
+          "E0A669C806676",
+          "E0EAAF0EB1E56",
+          "E121C7A6CCEC4",
+          "E1473EDEE9F69",
+          "E14E8E5D0A14F",
+          "E1562A64261D9",
+          "E1CB25B0B1A3A",
+          "E1FD624D2697B",
+          "E212F0A0193FE",
+          "E256415834CBC",
+          "E2A54D7CDC555",
+          "E2BBEE9726FAC",
+          "E361A6C1FCC2B",
+          "E385599F5473A",
+          "E3ADB2E20533A",
+          "E3B7C01936EF3",
+          "E3CD64EDA9D0A",
+          "E3FA4C8EE9501",
+          "E3FCC897876C4",
+          "E4CB0AF6E198C",
+          "E4FAD705B2421",
+          "E55F6F088B20E",
+          "E562FD4336254",
+          "E585BA692A0BE",
+          "E5BED62FDF5DE",
+          "E673249A8F8AD",
+          "E685B95DCEE7A",
+          "E6DE38F7B1858",
+          "E7056FA73764A",
+          "E705F9BE542BF",
+          "E7C14E25AC6F1",
+          "E7D0EFDE5534A",
+          "E82F3918C78D8",
+          "E8E8C9513997F",
+          "E9106ADF2646D",
+          "E91C8197FE2F6",
+          "E92F168854AC0",
+          "E94D8F5FB1BFB",
+          "E96079F9C209D",
+          "E990152A0948A",
+          "E99CA09386642",
+          "E9E74D593BB60",
+          "EA15780CCD6B3",
+          "EA20E7BF9EE8C",
+          "EA5D7E2A982B1",
+          "EA60A93ED07DF",
+          "EA74BACC757CE",
+          "EA7B78442B9D6",
+          "EA8D4821BC8E4",
+          "EA9BF26C542C3",
+          "EAD46F16A6FB2",
+          "EB178ADE3D186",
+          "EB4B7DCD2A254",
+          "EB55A3C13EECD",
+          "EB5670198F8F2",
+          "EB9754962D4AA",
+          "EBB378F6B78A1",
+          "EBB84A37A39DC",
+          "EBC4830D67929",
+          "EBE5A4A8598E9",
+          "EBEF1EFD74C9F",
+          "EC00651C8B283",
+          "EC489867B1F73",
+          "EC5FC149C5779",
+          "EC6AE44E2EA50",
+          "EC7522B1F4007",
+          "EC8487F1A54B5",
+          "ECBA110557C65",
+          "ECD9704F19143",
+          "ED079203F470B",
+          "ED114115A68DE",
+          "ED857E2F72473",
+          "EE394138D07D8",
+          "EE78148503E4F",
+          "EED2A55A77950",
+          "EF923A147693C",
+          "EF9A3D17A36F6"
+        ],
+        "local_causal_node_ids": [
+          "N002C39E4292C",
+          "N023D8FEC9D38",
+          "N0404CB4A9D9B",
+          "N064D67E2A481",
+          "N07A2F924EF30",
+          "N099FF525FB33",
+          "N0B7CE9F5C500",
+          "N0C5A432DB585",
+          "N0DDA2C6C5A1B",
+          "N105C58D6A94A",
+          "N11BC557B42A9",
+          "N14191E96EC09",
+          "N14DED3C86349",
+          "N17B5EE0896BA",
+          "N19517E2F3858",
+          "N197EA45BE4F8",
+          "N1A74B15A066A",
+          "N1AB3220D2F76",
+          "N1D245AEEDCB2",
+          "N1F0FC44263F9",
+          "N1FF7EF71AF1E",
+          "N226DE2145AD0",
+          "N250862D8295E",
+          "N258F990DAE1F",
+          "N265A16BD4B51",
+          "N2A5BDC361DA7",
+          "N2B1C600DBDF5",
+          "N2BF134D3AA43",
+          "N2E0B34E04CA9",
+          "N2F00C689B070",
+          "N2F0281A5EBD5",
+          "N308D4CEF254E",
+          "N30EAB9B69555",
+          "N320F2554F8DB",
+          "N36D4FDCEAFDA",
+          "N386AE0983A3C",
+          "N3E3F3A72DD18",
+          "N4179DC5A78AF",
+          "N47ED48AE7FB9",
+          "N48203C31E205",
+          "N48462B24A4BF",
+          "N4BAEA5CB3497",
+          "N4E13BAF04CF2",
+          "N4E70BD48FEE6",
+          "N4EC9D003F6DA",
+          "N4FE8494381E9",
+          "N57BFADAB430C",
+          "N59212809314A",
+          "N5C596328E8F2",
+          "N5D278C4A92D0",
+          "N5FA58E517BDF",
+          "N62287ED84794",
+          "N6294D92AE02A",
+          "N65CA85370A59",
+          "N6E0BE34B01D4",
+          "N6FC7F1D59CCF",
+          "N711D07AD04A4",
+          "N75A2F7465520",
+          "N75BA749BFCF1",
+          "N7C00BB349AAB",
+          "N812D18EA806B",
+          "N812DBAB87920",
+          "N814774E4ED46",
+          "N821DF83A215D",
+          "N843AE0C476A7",
+          "N84847353AC75",
+          "N8588E37760DA",
+          "N89907389FFDA",
+          "N89B57DF8B456",
+          "N8B269B2B03C7",
+          "N8EBF206E3345",
+          "N8F3B4BD96F42",
+          "N94B6368AAA86",
+          "N9AFBD3CBD65C",
+          "N9DD6F9195749",
+          "NA07888B5FC9E",
+          "NA0E3091BA3DE",
+          "NA2835058C68D",
+          "NAA87BF34DF86",
+          "NACCE3A11797D",
+          "NB18CC60DE282",
+          "NB2F9D06D8A46",
+          "NB67DEF54A011",
+          "NB74C4C472880",
+          "NB95638C5430D",
+          "NB9EACC2E7979",
+          "NBADA6812DBBF",
+          "NBC2004A61A86",
+          "NBF1877D1C173",
+          "NC33E3DA74EDA",
+          "NC36DD30F11C0",
+          "NC759D563F61E",
+          "NC858EC90E9CC",
+          "NC8D14EEA7AFA",
+          "NC9262057B188",
+          "NCC83EB182D0E",
+          "NCCAA9DCE93EA",
+          "NCDE2DEBAB5D0",
+          "NCECE41CD3A67",
+          "NCED4EB354058",
+          "ND0106C833B32",
+          "ND0B598C1F025",
+          "ND0D68EB42047",
+          "ND4243E90645E",
+          "ND480D86DF52E",
+          "ND52C0C684CDB",
+          "ND5525F294411",
+          "ND6A631365CF6",
+          "ND8A828C6087F",
+          "NDB50529F45A5",
+          "NDB98A54B5667",
+          "NDEC0331F0991",
+          "NDF7701BAD8EC",
+          "NDFA049FC3548",
+          "NE0A4F571DC3B",
+          "NE0E941B31ED6",
+          "NE4FFDAEABB85",
+          "NE5A1920F1DCF",
+          "NE6E08D0C68E4",
+          "NE7E6455170EC",
+          "NEACA9F89F0B9",
+          "NED1B6907DC9F",
+          "NF7450F5D297C",
+          "NF784EC946C3B",
+          "NFCBAD1605586",
+          "NFE4B5DD98714"
+        ],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      },
+      "diagnostic_phase_seconds": {
+        "initial_context": 0.01951760000156355,
+        "symbol_resolution": 0.3849907000003441,
+        "implementation_graph": 0.002341700001124991,
+        "index": 6.710708599999634,
+        "initial_retrieval": 0.23707170000125188,
+        "ledger": 0.33141930000056163,
+        "causal_slice": 3.1825164000001678
+      },
+      "service_phase_seconds": {
+        "index": 15.505360799998016,
+        "initial_retrieval": 0.8611283999998705,
+        "context_and_implementation": 1.1562214000005042,
+        "initial_context": 0.03390359999684733,
+        "symbol_resolution": 1.1139660000008007,
+        "implementation_graph": 0.002877000002627028,
+        "ledger": 0.7317675999984203,
+        "causal_slice": 9.509005699997942,
+        "recovery": 2.682980300000054
+      }
+    }
+  ],
+  "operational_failures": [
+    {
+      "id": "sphinx-doc__sphinx-10451",
+      "status": "NOT_EVALUATED_TIMEOUT",
+      "budget_seconds": 240.0,
+      "excluded_from_quality_metrics": true
+    }
+  ],
+  "case_budget_seconds": 240.0,
+  "case_memory_mb": 1024,
+  "memory_monitor": "Windows working-set polling, one-second intervals; not a hard allocation cap",
+  "population_note": "Incomplete cases excluded explicitly, not counted as engine errors. Readiness requires complete coverage.",
+  "engine_commit": "9c8f7811b6232973bd75234c2c562ceb184030cd",
+  "corpus_seal": "ca35ac2aeef385022a3b6e6a6f6224a7dd9bfdf094180b3a0beb02347d3321b9",
+  "split": "holdout",
+  "runtime_source_sha256": {
+    "tern\\orchestrator\\predictive\\__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern\\orchestrator\\predictive\\analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern\\orchestrator\\predictive\\behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern\\orchestrator\\predictive\\causal.py": "37f53c8988010e5899fd1e322774359532bf51bbb7027130c7c6729e9b9c7623",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern\\orchestrator\\predictive\\evaluation.py": "d40c6299603e6d04546d1448f75e11bee7d663f46dcab129e00f8f0ecece368a",
+    "tern\\orchestrator\\predictive\\grounding.py": "d06cc32bc70f313693d4a9ef433b515fdd3dcbe8b9c42ad708fdbca0b5e79a0f",
+    "tern\\orchestrator\\predictive\\import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern\\orchestrator\\predictive\\models.py": "bfb611d8e97da98587cbc804f2083542ced8f81e2bf43e456001ddc53fefe4dd",
+    "tern\\orchestrator\\predictive\\operational.py": "6c0b9874ecfe6a3cb0ef304e7391273cca397e2c3bbebc6639344f23ccea974b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern\\orchestrator\\predictive\\recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern\\orchestrator\\predictive\\robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern\\orchestrator\\predictive\\scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern\\orchestrator\\predictive\\semantic.py": "3017ef02bbb0421eac0f8e94c8508a3c0a2e86fa2d9f807426442a8fce09d6ec",
+    "tern\\orchestrator\\predictive\\service.py": "b6f118c81ed83e2e0cc70dfbc166dfd432103cc4dde9f8ec6671c9cfe50c2f3b",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}

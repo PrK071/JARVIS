@@ -1,0 +1,1004 @@
+{
+  "version": 14,
+  "experimental_only": true,
+  "results": [
+    {
+      "id": "pytest-dev__pytest-7432",
+      "status": "COMPLETED",
+      "experiments": {
+        "A_NORMAL": {
+          "status": "OBSERVED",
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": true,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC35132fe19bb7ebc9"
+              ],
+              "matched_effect_ids": [
+                "BE1aa3ba8411fc6a69",
+                "BE20eb944add728fe3",
+                "BE4428649db5d653a1",
+                "BE5e707a9e48629239",
+                "BE65e7892ddcb9e759",
+                "BE6e84a2d969c0355d",
+                "BE7b2e55829be722a7",
+                "BE82aa6841699f89a8",
+                "BE8c2b90406ca63d2b",
+                "BE96458e1d15fdfa6f",
+                "BEad03435146cc1325",
+                "BEe684c3adcf02e144",
+                "BEeb25fe81431f0c50"
+              ],
+              "resolved_relations": 1,
+              "ledger_backed_relations": 0,
+              "unresolved_dispatches": 22,
+              "reason_codes": [
+                "MISSING_LEDGER_RELATION",
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "pytest_runtest_makereport",
+                "qualified_name": "pytest_runtest_makereport",
+                "kind": "function",
+                "file": "src/_pytest/skipping.py",
+                "line": 261,
+                "end_line": 305,
+                "module": "src._pytest.skipping"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 226,
+                "end_line": 250
+              },
+              {
+                "start_line": 261,
+                "end_line": 305
+              }
+            ],
+            "local_fact_ids": [
+              "E0830964E5ACE",
+              "E0E09EAE3BDBE",
+              "E131CF7E0DF5D",
+              "E16BBC1AC1ED4",
+              "E180E7A148068",
+              "E18BA5C73E5CB",
+              "E1A4F14474864",
+              "E33A8CFC3F97A",
+              "E399BAA308D08",
+              "E4569A24E7A8A",
+              "E47C0D2965D18",
+              "E47C380B4C2B1",
+              "E4E5D7238900B",
+              "E591DA1F29DA7",
+              "E5CDEB9C53F51",
+              "E63A89114C994",
+              "E6E10BF0CFB85",
+              "E6EE6716E91DA",
+              "E863336482C68",
+              "E8785E07AA559",
+              "E8CB73BC8DC07",
+              "E9498732717F6",
+              "E951D2EBF6EC7",
+              "E97F69CB90998",
+              "E98EAE8FE2615",
+              "EA0B1C73284CA",
+              "EA4F22593D730",
+              "EA8A094DFBD2C",
+              "EA8AE5EC1E2A1",
+              "EB19B233365F7",
+              "EB279165BCFE5",
+              "EB66B42EB9AF6",
+              "EC199CFB6085D",
+              "EC455CEC31FAD",
+              "EC6120DE8ADF6",
+              "ED51F172D4339",
+              "ED9F1420AE293",
+              "EDAF9DC7B4C84",
+              "EDF9FAA649150",
+              "EE7F9FD0E031A",
+              "EEC70E6534EB7",
+              "EF01B4AD18280",
+              "EF14A38D1FD07",
+              "EF871F90995AD",
+              "EFC4CA38EFF16",
+              "EFE048692BAEE",
+              "EFEAD457F21F4"
+            ],
+            "local_causal_node_ids": [
+              "BC35132fe19bb7ebc9",
+              "BE1aa3ba8411fc6a69",
+              "BE20eb944add728fe3",
+              "BE4428649db5d653a1",
+              "BE5bb3929e43da9eed",
+              "BE5e707a9e48629239",
+              "BE65e7892ddcb9e759",
+              "BE6e84a2d969c0355d",
+              "BE7b2e55829be722a7",
+              "BE82aa6841699f89a8",
+              "BE8c2b90406ca63d2b",
+              "BE96458e1d15fdfa6f",
+              "BEad03435146cc1325",
+              "BEe684c3adcf02e144",
+              "BEeb25fe81431f0c50",
+              "N01A7F43062B7",
+              "N0432515F2FB4",
+              "N08D01DC27BF5",
+              "N090278D61534",
+              "N095F6CA73CEA",
+              "N0C1D3C62F24C",
+              "N1335AB9F3E17",
+              "N14F8772A5013",
+              "N18520B18441A",
+              "N194B9032FFF0",
+              "N1BBB88A65615",
+              "N1F76C42477ED",
+              "N2316561AB6B3",
+              "N235E846B9374",
+              "N285D78FA44E3",
+              "N29973A677F60",
+              "N2CD6FC420F45",
+              "N31C815A593E1",
+              "N39682A236EC0",
+              "N3BA6BAF589A1",
+              "N3BD8CF137F90",
+              "N3DDD02270553",
+              "N4217E387C3AF",
+              "N424882F2C601",
+              "N42D6EF11CF9B",
+              "N52AB86489079",
+              "N5362ED864CCF",
+              "N55C233A54D7A",
+              "N584D377414E3",
+              "N594658C7509A",
+              "N5E3903230667",
+              "N5F05F61DADD2",
+              "N6266939D78F5",
+              "N62742EDAD843",
+              "N667C303F8576",
+              "N668C12B0F2AC",
+              "N70723100A9AC",
+              "N78D5FCB4898E",
+              "N859511D21CE4",
+              "N888FCE5E454E",
+              "N89714CCB6691",
+              "N8F236269A531",
+              "N934EBACE6CDA",
+              "N9502578426EF",
+              "N95082FA7E91C",
+              "N98F8407B9411",
+              "N9BD9A37F6568",
+              "NA65264816C5F",
+              "NB0AC9C093C54",
+              "NB5E865D8CCC7",
+              "NB884B81A0149",
+              "NBA34FA62961D",
+              "NC10EFE9AB04D",
+              "NC13AC9D2C0AA",
+              "ND29AD40D5293",
+              "ND68DAF274BBD",
+              "NDD52AEB8B83C",
+              "NE286BE18AD5C",
+              "NE36754D639BC",
+              "NED7DD93F1A5E",
+              "NEF70C00A4C3F",
+              "NF062AB4C945A",
+              "NF362365A06ED",
+              "NFA9C03267FA6",
+              "NFB2A62333264",
+              "NFB706C9605EC"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          }
+        },
+        "B_KNOWN_API": {
+          "status": "OBSERVED",
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": true,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC35132fe19bb7ebc9"
+              ],
+              "matched_effect_ids": [
+                "BE1aa3ba8411fc6a69",
+                "BE20eb944add728fe3",
+                "BE4428649db5d653a1",
+                "BE5e707a9e48629239",
+                "BE65e7892ddcb9e759",
+                "BE6e84a2d969c0355d",
+                "BE7b2e55829be722a7",
+                "BE82aa6841699f89a8",
+                "BE8c2b90406ca63d2b",
+                "BE96458e1d15fdfa6f",
+                "BEad03435146cc1325",
+                "BEe684c3adcf02e144",
+                "BEeb25fe81431f0c50"
+              ],
+              "resolved_relations": 1,
+              "ledger_backed_relations": 0,
+              "unresolved_dispatches": 22,
+              "reason_codes": [
+                "MISSING_LEDGER_RELATION",
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "pytest_runtest_makereport",
+                "qualified_name": "pytest_runtest_makereport",
+                "kind": "function",
+                "file": "src/_pytest/skipping.py",
+                "line": 261,
+                "end_line": 305,
+                "module": "src._pytest.skipping"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 226,
+                "end_line": 250
+              },
+              {
+                "start_line": 261,
+                "end_line": 305
+              }
+            ],
+            "local_fact_ids": [
+              "E0830964E5ACE",
+              "E0E09EAE3BDBE",
+              "E131CF7E0DF5D",
+              "E16BBC1AC1ED4",
+              "E180E7A148068",
+              "E18BA5C73E5CB",
+              "E1A4F14474864",
+              "E33A8CFC3F97A",
+              "E399BAA308D08",
+              "E4569A24E7A8A",
+              "E47C0D2965D18",
+              "E47C380B4C2B1",
+              "E4E5D7238900B",
+              "E591DA1F29DA7",
+              "E5CDEB9C53F51",
+              "E63A89114C994",
+              "E6E10BF0CFB85",
+              "E6EE6716E91DA",
+              "E863336482C68",
+              "E8785E07AA559",
+              "E8CB73BC8DC07",
+              "E9498732717F6",
+              "E951D2EBF6EC7",
+              "E97F69CB90998",
+              "E98EAE8FE2615",
+              "EA0B1C73284CA",
+              "EA4F22593D730",
+              "EA8A094DFBD2C",
+              "EA8AE5EC1E2A1",
+              "EB19B233365F7",
+              "EB279165BCFE5",
+              "EB66B42EB9AF6",
+              "EC199CFB6085D",
+              "EC455CEC31FAD",
+              "EC6120DE8ADF6",
+              "ED51F172D4339",
+              "ED9F1420AE293",
+              "EDAF9DC7B4C84",
+              "EDF9FAA649150",
+              "EE7F9FD0E031A",
+              "EEC70E6534EB7",
+              "EF01B4AD18280",
+              "EF14A38D1FD07",
+              "EF871F90995AD",
+              "EFC4CA38EFF16",
+              "EFE048692BAEE",
+              "EFEAD457F21F4"
+            ],
+            "local_causal_node_ids": [
+              "BC35132fe19bb7ebc9",
+              "BE1aa3ba8411fc6a69",
+              "BE20eb944add728fe3",
+              "BE4428649db5d653a1",
+              "BE5bb3929e43da9eed",
+              "BE5e707a9e48629239",
+              "BE65e7892ddcb9e759",
+              "BE6e84a2d969c0355d",
+              "BE7b2e55829be722a7",
+              "BE82aa6841699f89a8",
+              "BE8c2b90406ca63d2b",
+              "BE96458e1d15fdfa6f",
+              "BEad03435146cc1325",
+              "BEe684c3adcf02e144",
+              "BEeb25fe81431f0c50",
+              "N01A7F43062B7",
+              "N0432515F2FB4",
+              "N08D01DC27BF5",
+              "N090278D61534",
+              "N095F6CA73CEA",
+              "N0C1D3C62F24C",
+              "N1335AB9F3E17",
+              "N14F8772A5013",
+              "N18520B18441A",
+              "N194B9032FFF0",
+              "N1BBB88A65615",
+              "N1F76C42477ED",
+              "N2316561AB6B3",
+              "N235E846B9374",
+              "N285D78FA44E3",
+              "N29973A677F60",
+              "N2CD6FC420F45",
+              "N31C815A593E1",
+              "N39682A236EC0",
+              "N3BA6BAF589A1",
+              "N3BD8CF137F90",
+              "N3DDD02270553",
+              "N4217E387C3AF",
+              "N424882F2C601",
+              "N42D6EF11CF9B",
+              "N52AB86489079",
+              "N5362ED864CCF",
+              "N55C233A54D7A",
+              "N584D377414E3",
+              "N594658C7509A",
+              "N5E3903230667",
+              "N5F05F61DADD2",
+              "N6266939D78F5",
+              "N62742EDAD843",
+              "N667C303F8576",
+              "N668C12B0F2AC",
+              "N70723100A9AC",
+              "N78D5FCB4898E",
+              "N859511D21CE4",
+              "N888FCE5E454E",
+              "N89714CCB6691",
+              "N8F236269A531",
+              "N934EBACE6CDA",
+              "N9502578426EF",
+              "N95082FA7E91C",
+              "N98F8407B9411",
+              "N9BD9A37F6568",
+              "NA65264816C5F",
+              "NB0AC9C093C54",
+              "NB5E865D8CCC7",
+              "NB884B81A0149",
+              "NBA34FA62961D",
+              "NC10EFE9AB04D",
+              "NC13AC9D2C0AA",
+              "ND29AD40D5293",
+              "ND68DAF274BBD",
+              "NDD52AEB8B83C",
+              "NE286BE18AD5C",
+              "NE36754D639BC",
+              "NED7DD93F1A5E",
+              "NEF70C00A4C3F",
+              "NF062AB4C945A",
+              "NF362365A06ED",
+              "NFA9C03267FA6",
+              "NFB2A62333264",
+              "NFB706C9605EC"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          }
+        },
+        "C_KNOWN_IMPLEMENTATION_PATH": {
+          "status": "NOT_ADJUDICATED",
+          "reason": "Upstream correction site does not establish a complete API dispatch path."
+        },
+        "D_KNOWN_EFFECT": {
+          "status": "OBSERVED",
+          "effect_ids": [
+            "BE1aa3ba8411fc6a69",
+            "BE20eb944add728fe3",
+            "BE4428649db5d653a1",
+            "BE5e707a9e48629239",
+            "BE65e7892ddcb9e759",
+            "BE6e84a2d969c0355d",
+            "BE7b2e55829be722a7",
+            "BE82aa6841699f89a8",
+            "BE8c2b90406ca63d2b",
+            "BE96458e1d15fdfa6f",
+            "BEad03435146cc1325",
+            "BEe684c3adcf02e144",
+            "BEeb25fe81431f0c50"
+          ],
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": false,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": true,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC35132fe19bb7ebc9"
+              ],
+              "matched_effect_ids": [
+                "BE1aa3ba8411fc6a69",
+                "BE20eb944add728fe3",
+                "BE4428649db5d653a1",
+                "BE5e707a9e48629239",
+                "BE65e7892ddcb9e759",
+                "BE6e84a2d969c0355d",
+                "BE7b2e55829be722a7",
+                "BE82aa6841699f89a8",
+                "BE8c2b90406ca63d2b",
+                "BE96458e1d15fdfa6f",
+                "BEad03435146cc1325",
+                "BEe684c3adcf02e144",
+                "BEeb25fe81431f0c50"
+              ],
+              "resolved_relations": 0,
+              "ledger_backed_relations": 0,
+              "unresolved_dispatches": 20,
+              "reason_codes": [
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": "CORRECT_ROOT_NOT_GENERATED",
+            "reason_codes": [
+              "CORRECT_ROOT_NOT_GENERATED"
+            ],
+            "indexed_symbols": [
+              {
+                "name": "pytest_runtest_makereport",
+                "qualified_name": "pytest_runtest_makereport",
+                "kind": "function",
+                "file": "src/_pytest/skipping.py",
+                "line": 261,
+                "end_line": 305,
+                "module": "src._pytest.skipping"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 226,
+                "end_line": 250
+              },
+              {
+                "start_line": 261,
+                "end_line": 305
+              },
+              {
+                "start_line": 261,
+                "end_line": 305
+              }
+            ],
+            "local_fact_ids": [
+              "E0830964E5ACE",
+              "E0E09EAE3BDBE",
+              "E131CF7E0DF5D",
+              "E16BBC1AC1ED4",
+              "E180E7A148068",
+              "E18BA5C73E5CB",
+              "E1A4F14474864",
+              "E33A8CFC3F97A",
+              "E399BAA308D08",
+              "E4569A24E7A8A",
+              "E47C0D2965D18",
+              "E47C380B4C2B1",
+              "E4E5D7238900B",
+              "E591DA1F29DA7",
+              "E5CDEB9C53F51",
+              "E63A89114C994",
+              "E6E10BF0CFB85",
+              "E6EE6716E91DA",
+              "E863336482C68",
+              "E8785E07AA559",
+              "E8CB73BC8DC07",
+              "E9498732717F6",
+              "E951D2EBF6EC7",
+              "E97F69CB90998",
+              "E98EAE8FE2615",
+              "EA0B1C73284CA",
+              "EA4F22593D730",
+              "EA8A094DFBD2C",
+              "EA8AE5EC1E2A1",
+              "EB19B233365F7",
+              "EB279165BCFE5",
+              "EB66B42EB9AF6",
+              "EC199CFB6085D",
+              "EC455CEC31FAD",
+              "EC6120DE8ADF6",
+              "ED51F172D4339",
+              "ED9F1420AE293",
+              "EDAF9DC7B4C84",
+              "EDF9FAA649150",
+              "EE7F9FD0E031A",
+              "EEC70E6534EB7",
+              "EF01B4AD18280",
+              "EF14A38D1FD07",
+              "EF871F90995AD",
+              "EFC4CA38EFF16",
+              "EFE048692BAEE",
+              "EFEAD457F21F4"
+            ],
+            "local_causal_node_ids": [
+              "BC35132fe19bb7ebc9",
+              "BE1aa3ba8411fc6a69",
+              "BE20eb944add728fe3",
+              "BE4428649db5d653a1",
+              "BE5bb3929e43da9eed",
+              "BE5e707a9e48629239",
+              "BE65e7892ddcb9e759",
+              "BE6e84a2d969c0355d",
+              "BE7b2e55829be722a7",
+              "BE82aa6841699f89a8",
+              "BE8c2b90406ca63d2b",
+              "BE96458e1d15fdfa6f",
+              "BEad03435146cc1325",
+              "BEe684c3adcf02e144",
+              "BEeb25fe81431f0c50",
+              "N01A7F43062B7",
+              "N0432515F2FB4",
+              "N08D01DC27BF5",
+              "N090278D61534",
+              "N095F6CA73CEA",
+              "N0C1D3C62F24C",
+              "N1335AB9F3E17",
+              "N14F8772A5013",
+              "N18520B18441A",
+              "N194B9032FFF0",
+              "N1BBB88A65615",
+              "N1F76C42477ED",
+              "N2316561AB6B3",
+              "N235E846B9374",
+              "N285D78FA44E3",
+              "N29973A677F60",
+              "N2CD6FC420F45",
+              "N31C815A593E1",
+              "N39682A236EC0",
+              "N3BA6BAF589A1",
+              "N3BD8CF137F90",
+              "N3DDD02270553",
+              "N4217E387C3AF",
+              "N424882F2C601",
+              "N42D6EF11CF9B",
+              "N52AB86489079",
+              "N5362ED864CCF",
+              "N55C233A54D7A",
+              "N584D377414E3",
+              "N594658C7509A",
+              "N5E3903230667",
+              "N5F05F61DADD2",
+              "N6266939D78F5",
+              "N62742EDAD843",
+              "N667C303F8576",
+              "N668C12B0F2AC",
+              "N70723100A9AC",
+              "N78D5FCB4898E",
+              "N859511D21CE4",
+              "N888FCE5E454E",
+              "N89714CCB6691",
+              "N8F236269A531",
+              "N934EBACE6CDA",
+              "N9502578426EF",
+              "N95082FA7E91C",
+              "N98F8407B9411",
+              "N9BD9A37F6568",
+              "NA65264816C5F",
+              "NB0AC9C093C54",
+              "NB5E865D8CCC7",
+              "NB884B81A0149",
+              "NBA34FA62961D",
+              "NC10EFE9AB04D",
+              "NC13AC9D2C0AA",
+              "ND29AD40D5293",
+              "ND68DAF274BBD",
+              "NDD52AEB8B83C",
+              "NE286BE18AD5C",
+              "NE36754D639BC",
+              "NED7DD93F1A5E",
+              "NEF70C00A4C3F",
+              "NF062AB4C945A",
+              "NF362365A06ED",
+              "NFA9C03267FA6",
+              "NFB2A62333264",
+              "NFB706C9605EC"
+            ],
+            "correct_candidate_ids": [],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "limitation": "Effect owner/window is oracle-provided; never a real accuracy observation."
+        },
+        "E_KNOWN_CAUSAL_CANDIDATE": {
+          "status": "ORACLE_ROOT_NOT_REPRESENTABLE",
+          "candidate_ids": [],
+          "selection_accuracy": null,
+          "reason": "No selection call in this offline intervention study; absent contracts are never fabricated."
+        }
+      },
+      "raw_trace_sha256": "2865405cee5dfa92a5df6418294b3ae8e2f573dc2d738ab727d8eba2ad6b2dcf",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v14\\interventions\\2865405cee5dfa92a5df6418294b3ae8e2f573dc2d738ab727d8eba2ad6b2dcf.json.gz"
+    },
+    {
+      "id": "sphinx-doc__sphinx-8713",
+      "status": "COMPLETED",
+      "experiments": {
+        "A_NORMAL": {
+          "status": "OBSERVED",
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": false,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC9f596240ee415c5f"
+              ],
+              "matched_effect_ids": [
+                "BE04ff01768401a1b1"
+              ],
+              "resolved_relations": 6,
+              "ledger_backed_relations": 6,
+              "unresolved_dispatches": 17,
+              "reason_codes": [
+                "BUDGET_EXHAUSTED",
+                "INITIAL_CONTEXT_OVER_BUDGET",
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "_parse_other_parameters_section",
+                "qualified_name": "GoogleDocstring._parse_other_parameters_section",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 684,
+                "end_line": 685,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 268,
+                "end_line": 279
+              },
+              {
+                "start_line": 391,
+                "end_line": 406
+              },
+              {
+                "start_line": 437,
+                "end_line": 454
+              },
+              {
+                "start_line": 684,
+                "end_line": 685
+              },
+              {
+                "start_line": 687,
+                "end_line": 694
+              }
+            ],
+            "local_fact_ids": [
+              "E1B2010A7D61D",
+              "E3ABA080BA541",
+              "E556BFD8E2A57",
+              "E65E56AF3C420"
+            ],
+            "local_causal_node_ids": [
+              "BC9f596240ee415c5f",
+              "BE04ff01768401a1b1",
+              "N025665B9DC62",
+              "N096FDBC948C1",
+              "N14D81C6CF05D",
+              "N80CC3FC2D4E7",
+              "N80E131948F9D",
+              "NA73B0BA82E81",
+              "ND9DB58000CA1"
+            ],
+            "correct_candidate_ids": [
+              "RC256293BB8A0"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          }
+        },
+        "B_KNOWN_API": {
+          "status": "OBSERVED",
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": false,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC9f596240ee415c5f"
+              ],
+              "matched_effect_ids": [
+                "BE04ff01768401a1b1"
+              ],
+              "resolved_relations": 6,
+              "ledger_backed_relations": 6,
+              "unresolved_dispatches": 17,
+              "reason_codes": [
+                "BUDGET_EXHAUSTED",
+                "INITIAL_CONTEXT_OVER_BUDGET",
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "_parse_other_parameters_section",
+                "qualified_name": "GoogleDocstring._parse_other_parameters_section",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 684,
+                "end_line": 685,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 268,
+                "end_line": 279
+              },
+              {
+                "start_line": 391,
+                "end_line": 406
+              },
+              {
+                "start_line": 437,
+                "end_line": 454
+              },
+              {
+                "start_line": 684,
+                "end_line": 685
+              },
+              {
+                "start_line": 687,
+                "end_line": 694
+              }
+            ],
+            "local_fact_ids": [
+              "E1B2010A7D61D",
+              "E3ABA080BA541",
+              "E556BFD8E2A57",
+              "E65E56AF3C420"
+            ],
+            "local_causal_node_ids": [
+              "BC9f596240ee415c5f",
+              "BE04ff01768401a1b1",
+              "N025665B9DC62",
+              "N096FDBC948C1",
+              "N14D81C6CF05D",
+              "N80CC3FC2D4E7",
+              "N80E131948F9D",
+              "NA73B0BA82E81",
+              "ND9DB58000CA1"
+            ],
+            "correct_candidate_ids": [
+              "RC256293BB8A0"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          }
+        },
+        "C_KNOWN_IMPLEMENTATION_PATH": {
+          "status": "NOT_ADJUDICATED",
+          "reason": "Upstream correction site does not establish a complete API dispatch path."
+        },
+        "D_KNOWN_EFFECT": {
+          "status": "OBSERVED",
+          "effect_ids": [
+            "BE04ff01768401a1b1"
+          ],
+          "coverage": {
+            "stages": {
+              "correct_file_in_project_index": true,
+              "correct_symbol_in_project_index": true,
+              "correct_file_retrieved": true,
+              "correct_symbol_selected": true,
+              "correct_symbol_in_context": true,
+              "correct_symbol_in_ledger": true,
+              "correct_symbol_facts_in_ledger": true,
+              "correct_relation_in_causal_slice": true,
+              "correct_root_candidate_generated": true,
+              "correct_root_selected": null,
+              "correct_repair_generated": null
+            },
+            "behavioral_coverage": {
+              "status": "OBSERVED",
+              "correct_symbol_available": true,
+              "correct_api_available": false,
+              "implementation_path_available": true,
+              "behavioral_effect_available": true,
+              "defect_relation_representable": null,
+              "matched_callable_ids": [
+                "BC9f596240ee415c5f"
+              ],
+              "matched_effect_ids": [
+                "BE04ff01768401a1b1"
+              ],
+              "resolved_relations": 2,
+              "ledger_backed_relations": 2,
+              "unresolved_dispatches": 12,
+              "reason_codes": [
+                "BUDGET_EXHAUSTED",
+                "INITIAL_CONTEXT_OVER_BUDGET",
+                "NO_SUPPORTED_CONTRACT",
+                "UNRESOLVED_DISPATCH"
+              ],
+              "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+            },
+            "first_loss": null,
+            "reason_codes": [],
+            "indexed_symbols": [
+              {
+                "name": "_parse_other_parameters_section",
+                "qualified_name": "GoogleDocstring._parse_other_parameters_section",
+                "kind": "method",
+                "file": "sphinx/ext/napoleon/docstring.py",
+                "line": 684,
+                "end_line": 685,
+                "module": "sphinx.ext.napoleon.docstring"
+              }
+            ],
+            "selected_windows": [
+              {
+                "start_line": 268,
+                "end_line": 279
+              },
+              {
+                "start_line": 391,
+                "end_line": 406
+              },
+              {
+                "start_line": 437,
+                "end_line": 454
+              },
+              {
+                "start_line": 684,
+                "end_line": 685
+              },
+              {
+                "start_line": 687,
+                "end_line": 694
+              },
+              {
+                "start_line": 684,
+                "end_line": 685
+              }
+            ],
+            "local_fact_ids": [
+              "E1B2010A7D61D",
+              "E3ABA080BA541",
+              "E556BFD8E2A57",
+              "E65E56AF3C420",
+              "EAD0AF67EBA71"
+            ],
+            "local_causal_node_ids": [
+              "BC9f596240ee415c5f",
+              "BE04ff01768401a1b1",
+              "N025665B9DC62",
+              "N096FDBC948C1",
+              "N14D81C6CF05D",
+              "N80CC3FC2D4E7",
+              "N80E131948F9D",
+              "NA73B0BA82E81",
+              "ND9DB58000CA1"
+            ],
+            "correct_candidate_ids": [
+              "RC256293BB8A0"
+            ],
+            "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+          },
+          "limitation": "Effect owner/window is oracle-provided; never a real accuracy observation."
+        },
+        "E_KNOWN_CAUSAL_CANDIDATE": {
+          "status": "GROUNDABLE_CANDIDATE_AVAILABLE_NOT_SELECTED",
+          "candidate_ids": [
+            "RC256293BB8A0"
+          ],
+          "selection_accuracy": null,
+          "reason": "No selection call in this offline intervention study; absent contracts are never fabricated."
+        }
+      },
+      "raw_trace_sha256": "59996745ac351cad718477926298259c5db6074e9df0b98f15ba724a83555849",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v14\\interventions\\59996745ac351cad718477926298259c5db6074e9df0b98f15ba724a83555849.json.gz"
+    }
+  ],
+  "qwen_calls": 0,
+  "limitation": "C path oracle not fully adjudicated; E selector not measured offline."
+}

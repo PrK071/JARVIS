@@ -1,0 +1,218 @@
+{
+  "version": 14,
+  "cases": [
+    {
+      "family": "direct",
+      "ON": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 3
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 3
+      }
+    },
+    {
+      "family": "imported",
+      "ON": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 3
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 1
+      }
+    },
+    {
+      "family": "relative",
+      "ON": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 3
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 3
+      }
+    },
+    {
+      "family": "bound",
+      "ON": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 4
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 1,
+        "invalid_edges": 0,
+        "candidate_count": 4
+      }
+    },
+    {
+      "family": "dynamic_negative",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 2
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 0,
+        "invalid_edges": 1,
+        "candidate_count": 4
+      }
+    },
+    {
+      "family": "state",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      }
+    },
+    {
+      "family": "generator",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      }
+    },
+    {
+      "family": "handler",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 2
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 2
+      }
+    },
+    {
+      "family": "subscript",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      }
+    },
+    {
+      "family": "distractor_negative",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 2
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 2
+      }
+    },
+    {
+      "family": "void_negative",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 0
+      }
+    },
+    {
+      "family": "decorated_negative",
+      "ON": {
+        "resolved_callee_return_edges": 0,
+        "valid_edges": 0,
+        "invalid_edges": 0,
+        "candidate_count": 1
+      },
+      "OFF": {
+        "resolved_callee_return_edges": 1,
+        "valid_edges": 0,
+        "invalid_edges": 1,
+        "candidate_count": 3
+      }
+    }
+  ],
+  "dispatch_precision": {
+    "ON": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0,
+      "population": "hand-adjudicated callee identity controls",
+      "wilson_95": [
+        0.5101091635454027,
+        1.0
+      ]
+    },
+    "OFF": {
+      "numerator": 3,
+      "denominator": 5,
+      "rate": 0.6,
+      "population": "hand-adjudicated callee identity controls",
+      "wilson_95": [
+        0.2307242812760128,
+        0.882379225767352
+      ]
+    }
+  },
+  "snippet_cache": {
+    "calls": 200,
+    "source_bytes": 208382,
+    "legacy_seconds": 0.04712389999986044,
+    "cached_seconds": 0.00028059999931429047,
+    "identical_output": true
+  },
+  "decision": "Keep qualified dispatch; never infer a violated contract from reachability.",
+  "metamorphic_effect": "Rename/wording/comment unit controls preserve paths/effects.",
+  "counterfactual_effect": "Removing a call removes its implementation/effect path.",
+  "limitation": "Structural identity ablation; root validity is not measured on these contract-free controls."
+}

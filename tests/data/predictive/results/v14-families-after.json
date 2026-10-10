@@ -1,0 +1,1039 @@
+{
+  "version": 14,
+  "mode": "behavioral_graph",
+  "cases": [
+    {
+      "family": "direct",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC23c8365b16c3b10a",
+            "path": "api.py",
+            "qualified_name": "helper",
+            "owner": null,
+            "module": "api",
+            "start_line": 3,
+            "end_line": 4,
+            "depth": 1
+          },
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [
+          {
+            "id": "BRd210664bf3450bed",
+            "source_id": "BC5df49604ca89417b",
+            "target_id": "BC23c8365b16c3b10a",
+            "path": "api.py",
+            "line": 2,
+            "end_line": 2,
+            "call_expression": "helper",
+            "resolution": "AST_LOCAL_CALL",
+            "support": "STATICALLY_RESOLVED",
+            "evidence_ids": [],
+            "status": "REACHABLE_NOT_PROVEN_DEFECTIVE"
+          }
+        ],
+        "effects": [
+          {
+            "id": "BE8e7d1e3b4d9ea80e",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BEa56b44cede37a0b1",
+            "callable_id": "BC23c8365b16c3b10a",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "helper",
+            "line": 4,
+            "end_line": 4,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "imported",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 1,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BCdd6d336b4cc1960a"
+        ],
+        "callables": [
+          {
+            "id": "BC6c05d9ee444d5711",
+            "path": "impl.py",
+            "qualified_name": "helper",
+            "owner": null,
+            "module": "impl",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 1
+          },
+          {
+            "id": "BCdd6d336b4cc1960a",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 2,
+            "end_line": 3,
+            "depth": 0
+          }
+        ],
+        "relations": [
+          {
+            "id": "BRe020175d79ef8b82",
+            "source_id": "BCdd6d336b4cc1960a",
+            "target_id": "BC6c05d9ee444d5711",
+            "path": "api.py",
+            "line": 3,
+            "end_line": 3,
+            "call_expression": "fetch",
+            "resolution": "AST_IMPORTED_CALL",
+            "support": "STATICALLY_RESOLVED",
+            "evidence_ids": [],
+            "status": "REACHABLE_NOT_PROVEN_DEFECTIVE"
+          }
+        ],
+        "effects": [
+          {
+            "id": "BEaecb6f1416737890",
+            "callable_id": "BC6c05d9ee444d5711",
+            "kind": "RETURNS_VALUE",
+            "path": "impl.py",
+            "owner": "helper",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BEdfeb208516f99546",
+            "callable_id": "BCdd6d336b4cc1960a",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 3,
+            "end_line": 3,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            2,
+            3
+          ],
+          [
+            "impl.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "relative",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC3094b2c51a736770"
+        ],
+        "callables": [
+          {
+            "id": "BC3094b2c51a736770",
+            "path": "pkg/api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "pkg.api",
+            "start_line": 2,
+            "end_line": 3,
+            "depth": 0
+          },
+          {
+            "id": "BCecb60b89e30e873e",
+            "path": "pkg/impl.py",
+            "qualified_name": "helper",
+            "owner": null,
+            "module": "pkg.impl",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 1
+          }
+        ],
+        "relations": [
+          {
+            "id": "BR3c53c5d4fedceffe",
+            "source_id": "BC3094b2c51a736770",
+            "target_id": "BCecb60b89e30e873e",
+            "path": "pkg/api.py",
+            "line": 3,
+            "end_line": 3,
+            "call_expression": "helper",
+            "resolution": "AST_IMPORTED_CALL",
+            "support": "STATICALLY_RESOLVED",
+            "evidence_ids": [],
+            "status": "REACHABLE_NOT_PROVEN_DEFECTIVE"
+          }
+        ],
+        "effects": [
+          {
+            "id": "BE244e80911c7cd3c5",
+            "callable_id": "BCecb60b89e30e873e",
+            "kind": "RETURNS_VALUE",
+            "path": "pkg/impl.py",
+            "owner": "helper",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BE44c3f438622e3904",
+            "callable_id": "BC3094b2c51a736770",
+            "kind": "RETURNS_VALUE",
+            "path": "pkg/api.py",
+            "owner": "read",
+            "line": 3,
+            "end_line": 3,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "pkg/api.py",
+            2,
+            3
+          ],
+          [
+            "pkg/impl.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "bound",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 4,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC50868913ea65bcc5"
+        ],
+        "callables": [
+          {
+            "id": "BC50868913ea65bcc5",
+            "path": "api.py",
+            "qualified_name": "Api.read",
+            "owner": "Api",
+            "module": "api",
+            "start_line": 2,
+            "end_line": 3,
+            "depth": 0
+          },
+          {
+            "id": "BCa392b9c8577e4319",
+            "path": "api.py",
+            "qualified_name": "Api.helper",
+            "owner": "Api",
+            "module": "api",
+            "start_line": 4,
+            "end_line": 5,
+            "depth": 1
+          }
+        ],
+        "relations": [
+          {
+            "id": "BR526ab8190b4e0f29",
+            "source_id": "BC50868913ea65bcc5",
+            "target_id": "BCa392b9c8577e4319",
+            "path": "api.py",
+            "line": 3,
+            "end_line": 3,
+            "call_expression": "self.helper",
+            "resolution": "LEXICAL_SELF_METHOD",
+            "support": "STATICALLY_RESOLVED",
+            "evidence_ids": [],
+            "status": "REACHABLE_NOT_PROVEN_DEFECTIVE"
+          }
+        ],
+        "effects": [
+          {
+            "id": "BE472f99b518d18f30",
+            "callable_id": "BC50868913ea65bcc5",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "Api.read",
+            "line": 3,
+            "end_line": 3,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BEdba8387dd0db359a",
+            "callable_id": "BCa392b9c8577e4319",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "Api.helper",
+            "line": 5,
+            "end_line": 5,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            2,
+            3
+          ]
+        ],
+        "added_context_bytes": 44,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "dynamic_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 4,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": false,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE8e7d1e3b4d9ea80e",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [
+          {
+            "source_id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "line": 2,
+            "expression": "receiver.helper",
+            "reason": "SHADOWED_OR_DYNAMIC_RECEIVER",
+            "support": "UNRESOLVED"
+          }
+        ],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT",
+          "UNRESOLVED_DISPATCH"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "state",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC3a69fb5b83b779f2"
+        ],
+        "callables": [
+          {
+            "id": "BC3a69fb5b83b779f2",
+            "path": "api.py",
+            "qualified_name": "Api.update",
+            "owner": "Api",
+            "module": "api",
+            "start_line": 2,
+            "end_line": 3,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BEf4530d3d0d02ccc7",
+            "callable_id": "BC3a69fb5b83b779f2",
+            "kind": "WRITES_ATTRIBUTE",
+            "path": "api.py",
+            "owner": "Api.update",
+            "line": 3,
+            "end_line": 3,
+            "subject": "self.current",
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            2,
+            3
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "generator",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC77918a212d2ff9be"
+        ],
+        "callables": [
+          {
+            "id": "BC77918a212d2ff9be",
+            "path": "api.py",
+            "qualified_name": "stream",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE2541f3859b30ec7b",
+            "callable_id": "BC77918a212d2ff9be",
+            "kind": "YIELDS_VALUE",
+            "path": "api.py",
+            "owner": "stream",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "handler",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 2,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 5,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE1ab4177e9d8151cc",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RAISES_EXCEPTION",
+            "path": "api.py",
+            "owner": "read",
+            "line": 3,
+            "end_line": 3,
+            "subject": "",
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BEb3e8b21f351d4be4",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 5,
+            "end_line": 5,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          },
+          {
+            "id": "BEbf111db9601e8dc8",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "HANDLES_EXCEPTION",
+            "path": "api.py",
+            "owner": "read",
+            "line": 4,
+            "end_line": 5,
+            "subject": "ValueError",
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [
+          {
+            "source_id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "line": 3,
+            "expression": "ValueError",
+            "reason": "UNRESOLVED_DISPATCH",
+            "support": "UNRESOLVED"
+          }
+        ],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT",
+          "UNRESOLVED_DISPATCH"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            5
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "subscript",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC13099f17bb792345"
+        ],
+        "callables": [
+          {
+            "id": "BC13099f17bb792345",
+            "path": "api.py",
+            "qualified_name": "update",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE70660f3afe7107ce",
+            "callable_id": "BC13099f17bb792345",
+            "kind": "MUTATES_CONTAINER",
+            "path": "api.py",
+            "owner": "update",
+            "line": 2,
+            "end_line": 2,
+            "subject": "",
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "distractor_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 2,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 3,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE028b926f04f43fa8",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 3,
+            "end_line": 3,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            3
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "void_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": true,
+      "behavioral_effect_available": false,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [],
+        "unresolved_dispatch": [],
+        "reason_codes": [
+          "MISSING_BEHAVIORAL_EFFECT",
+          "NO_SUPPORTED_CONTRACT"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": false,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    },
+    {
+      "family": "decorated_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null,
+      "implementation_path_available": false,
+      "behavioral_effect_available": true,
+      "graph": {
+        "version": 1,
+        "entry_ids": [
+          "BC5df49604ca89417b"
+        ],
+        "callables": [
+          {
+            "id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "qualified_name": "read",
+            "owner": null,
+            "module": "api",
+            "start_line": 1,
+            "end_line": 2,
+            "depth": 0
+          }
+        ],
+        "relations": [],
+        "effects": [
+          {
+            "id": "BE8e7d1e3b4d9ea80e",
+            "callable_id": "BC5df49604ca89417b",
+            "kind": "RETURNS_VALUE",
+            "path": "api.py",
+            "owner": "read",
+            "line": 2,
+            "end_line": 2,
+            "subject": null,
+            "support": "AST_DEMONSTRATED",
+            "evidence_ids": [],
+            "status": "EFFECT_OBSERVED_NOT_PROVEN_INCORRECT"
+          }
+        ],
+        "unresolved_dispatch": [
+          {
+            "source_id": "BC5df49604ca89417b",
+            "path": "api.py",
+            "line": 2,
+            "expression": "helper",
+            "reason": "DECORATED_OR_MISSING_CALLABLE",
+            "support": "UNRESOLVED"
+          }
+        ],
+        "reason_codes": [
+          "NO_SUPPORTED_CONTRACT",
+          "UNRESOLVED_DISPATCH"
+        ],
+        "initial_windows": [
+          [
+            "api.py",
+            1,
+            2
+          ]
+        ],
+        "added_context_bytes": 0,
+        "sufficiency": {
+          "observation_anchored": true,
+          "implementation_reached": true,
+          "effect_connected": true,
+          "contract_supported": false
+        },
+        "limitation": "AST paths/effects do not establish a violated behavioral contract."
+      }
+    }
+  ],
+  "independent_families": 12,
+  "metrics": {
+    "api_selected": {
+      "numerator": 12,
+      "denominator": 12,
+      "rate": 1.0,
+      "population": "family controls",
+      "wilson_95": [
+        0.7575059933447592,
+        1.0
+      ]
+    },
+    "implementation_symbol_proxy": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0,
+      "population": "known implementation controls",
+      "wilson_95": [
+        0.7224672001371107,
+        0.9999999999999999
+      ]
+    },
+    "implementation_path_available": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0,
+      "population": "known implementation controls",
+      "wilson_95": [
+        0.7224672001371107,
+        0.9999999999999999
+      ]
+    },
+    "behavioral_effect_available": {
+      "numerator": 11,
+      "denominator": 11,
+      "rate": 1.0,
+      "population": "known effect controls",
+      "wilson_95": [
+        0.7411670330319684,
+        1.0
+      ]
+    }
+  },
+  "limitation": "Reachability/effects are not defect responsibility. Controls do not encode a violated contract.",
+  "engine_commit": "b00a4813278699735d77c41a593cea99790ff8f7",
+  "frozen_at": "2026-10-10T22:45:01.748217+00:00",
+  "runtime_hashes": {
+    "tern\\orchestrator\\predictive\\__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern\\orchestrator\\predictive\\analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\behavioral.py": "1d0f9807abf414ef29c36796db2e3ed5c3ce9d0d8ca1bf765ebf726856566335",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern\\orchestrator\\predictive\\causal.py": "45f2dde66a68aa1260274e0c2aea2f9d88679d187af17e5ad2b81f93e6256da2",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "e930c13edd4eef43bf7be2b44df8bdb7fc1f230fcecab3162692d7cc295e72de",
+    "tern\\orchestrator\\predictive\\evaluation.py": "3c874b44f60b521aea0c5a886602942e988772467572fd6752f03f2448775eef",
+    "tern\\orchestrator\\predictive\\external_evaluation.py": "93873facf3895bdecea2b6ee1da430a0dea45408445b9158a1e65cbf3661241e",
+    "tern\\orchestrator\\predictive\\grounding.py": "6fe834a50a715c49adf6461892139f5ccd7ca7d2901b6d5087772501a75f02a1",
+    "tern\\orchestrator\\predictive\\import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern\\orchestrator\\predictive\\models.py": "b550e4e1a3bf1297d59358c3a3775676b38217f7fbdd5ed98b6d8182dda17421",
+    "tern\\orchestrator\\predictive\\operational.py": "6c0b9874ecfe6a3cb0ef304e7391273cca397e2c3bbebc6639344f23ccea974b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern\\orchestrator\\predictive\\recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern\\orchestrator\\predictive\\robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern\\orchestrator\\predictive\\scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern\\orchestrator\\predictive\\semantic.py": "6b90db7a02f871aa3eb0c9445561851591d60fee711fb3f25ff368cee7836b48",
+    "tern\\orchestrator\\predictive\\service.py": "cd13be58ca53ee6242397ca2cbf21c95080b965a3a142c73402df5d1c7c4ca43",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}
