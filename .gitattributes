@@ -1,1 +1,2 @@
 tests/data/*.jsonl text eol=lf
+tests/data/predictive/** text eol=lf

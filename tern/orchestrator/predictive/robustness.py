@@ -327,10 +327,11 @@ def robustness_suite_hash(root: str | Path = ROBUSTNESS_ROOT, *, split: str) -> 
         for path in sorted(
             item for item in fixture.rglob("*")
             if item.is_file() and "__pycache__" not in item.parts and item.suffix != ".pyc"
+            and item.name != ".gitkeep"
         ):
             digest.update(f"{fixture.name}/{path.relative_to(fixture).as_posix()}".encode("utf-8"))
             digest.update(b"\0")
-            digest.update(path.read_bytes())
+            digest.update(path.read_bytes().replace(b"\r\n", b"\n"))
             digest.update(b"\0")
     return digest.hexdigest()
 

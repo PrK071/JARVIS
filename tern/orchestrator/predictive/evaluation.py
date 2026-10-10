@@ -350,7 +350,8 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
             selected_files.append(path)
     for fixture in sorted(fixtures):
         selected_files.extend(
-            path for path in sorted((root / "projects" / fixture).rglob("*")) if path.is_file()
+            path for path in sorted((root / "projects" / fixture).rglob("*"))
+            if path.is_file() and path.name != ".gitkeep"
         )
     for path in sorted((root / "v4" / "adjudications").glob("*.jsonl")):
         if any(
@@ -380,7 +381,7 @@ def predictive_corpus_hash(corpus_root: str | Path = CORPUS_ROOT, *, split: str)
     for path in sorted(selected_files):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")
-        digest.update(path.read_bytes())
+        digest.update(path.read_bytes().replace(b"\r\n", b"\n"))
         digest.update(b"\0")
     for row in sorted(robustness_rows):
         digest.update(b"v8-spec\0")
