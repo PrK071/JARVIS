@@ -18,6 +18,7 @@ def compact_report(path: Path, archive_root: Path, *, source_commit: str,
         if hashlib.sha256(archived).hexdigest() != metadata["raw_sha256"]:
             raise ValueError("preserved artifact hash mismatch")
         if source_blob is not None:
+            metadata["source_commit"] = source_commit
             if archived.replace(b"\r\n", b"\n") != source_blob.replace(b"\r\n", b"\n"):
                 raise ValueError("archive does not match historical Git blob")
             metadata["git_blob_sha256"] = hashlib.sha256(source_blob).hexdigest()
@@ -43,6 +44,12 @@ def compact_report(path: Path, archive_root: Path, *, source_commit: str,
         "population": row.get("population") or row.get("oracle", {}).get("population"),
         "metrics": row.get("metrics_v10") or row.get("metrics"),
         "failure_codes": row.get("failure_codes", []),
+        "root_matches_upstream": row.get("root_matches_upstream"),
+        "wall_seconds": row.get("wall_seconds"),
+        "phase_seconds": row.get("phase_seconds"),
+        "recommended_candidate_id": row.get("decision", {}).get("recommended_candidate_id"),
+        "hypotheses": row.get("decision", {}).get("hypotheses", []),
+        "diagnostic_codes": row.get("decision", {}).get("diagnostic_codes", []),
     } for row in rows]
     report["failures"] = [{
         "id": row.get("id"),

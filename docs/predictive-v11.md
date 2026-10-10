@@ -40,6 +40,11 @@ Fixture/adjudication seals use LF bytes and exclude only `.gitkeep`; original
 worktree seals remain in `manifest.json:historical_worktree_seals` and historical
 reports.  No fixture code, oracle answer, or label was changed.
 
+The external shadow/profiling traces are compacted by the same policy.  Their
+complete bytes are preserved at `db82d7e05d7677b4b7fd491970ad4e96e73f95f3`
+and in `.orchestrator/predictive-artifacts/v11/`; the current Git reports retain
+the selected hypotheses, target-root match result, phase timings and provenance.
+
 ## Sandbox contract
 
 `SandboxProvider` remains unavailable until all critical capabilities pass.
