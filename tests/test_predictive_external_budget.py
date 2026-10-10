@@ -29,7 +29,7 @@ def test_operational_timeout_is_not_abstention_or_project_execution(tmp_path, mo
     value = evaluate_with_budget(args, [{'id': 'controlled'}])
     assert invocations[0][1:3] == ['-m', 'scripts.predictive_external_eval']
     assert 'pytest' not in invocations[0]
-    assert value['operational_failures'][0]['status'] == 'NOT_COMPLETED_OPERATIONAL_LIMIT'
+    assert value['operational_failures'][0]['status'] == 'NOT_EVALUATED_TIMEOUT'
     assert value['summary']['n_incomplete_defects'] == 1
     assert value['summary']['metrics']['false_abstention_rate']['denominator'] == 0
     assert value['summary']['metrics']['external_root_validity']['denominator'] == 0

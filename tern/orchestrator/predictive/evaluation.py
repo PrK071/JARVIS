@@ -1275,7 +1275,11 @@ def evaluate_predictive_cases(
         full_failures: list[str] = []
         if report:
             full_metrics, full_failures = _full_metrics(case, context, report)
-        stable = all(item.as_dict() == reports[0].as_dict() for item in reports[1:]) if reports else True
+        # Wall-time measurements are observations, not model output stability.
+        def structured_output(item):
+            return {key: value for key, value in item.as_dict().items() if key != 'phase_seconds'}
+        stable = all(structured_output(item) == structured_output(reports[0])
+                     for item in reports[1:]) if reports else True
         decision_stable = all(
             _decision_stability_signature(item) == _decision_stability_signature(reports[0])
             for item in reports[1:]

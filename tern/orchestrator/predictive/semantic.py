@@ -907,6 +907,7 @@ def _node_for_target(target: RepairTarget, causal_slice: CausalSlice) -> CausalN
     return next((
         item for item in causal_slice.nodes
         if item.path == target.path
+        and item.kind not in {CausalNodeKind.CALLABLE, CausalNodeKind.BEHAVIORAL_EFFECT}
         and (target.line is None or item.line == target.line)
         and (
             not (target.symbol or target.parameter or target.attribute)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -21,6 +21,7 @@ from .models import (
 
 _STRENGTH = {"HARD": 1.0, "STRONG": 0.8, "SUPPORTING": 0.55, "SEMANTIC": 0.3}
 _STRUCTURAL_KINDS = {
+    EvidenceKind.BEHAVIORAL_EFFECT,
     EvidenceKind.CALL_RELATION,
     EvidenceKind.IMPORT_RELATION,
     EvidenceKind.TEST_RELATION,
@@ -97,12 +98,28 @@ class _FactVisitor(ast.NodeVisitor):
     allowed_lines: set[int]
     atoms: list[EvidenceAtom]
     owner: str | None = None
+    _source_lines: tuple[bytes, ...] = field(init=False, repr=False)
+
+    def __post_init__(self):
+        # AST offsets count UTF-8 bytes. Cache once rather than splitting and
+        # encoding an entire large module for every individual expression.
+        lines = self.source.split('\n')
+        self._source_lines = tuple((line + ('\n' if i < len(lines)-1 else '')).encode('utf-8')
+                                   for i, line in enumerate(lines))
 
     def _inside(self, node: ast.AST) -> bool:
         return int(getattr(node, "lineno", 0)) in self.allowed_lines
 
     def _snippet(self, node: ast.AST) -> str:
-        return (ast.get_source_segment(self.source, node) or "").strip()[:320]
+        start, end = getattr(node, 'lineno', None), getattr(node, 'end_lineno', None)
+        if start is None or end is None:
+            return ''
+        if start == end:
+            raw = self._source_lines[start-1][node.col_offset:node.end_col_offset]
+        else:
+            raw = b''.join((self._source_lines[start-1][node.col_offset:],
+                *self._source_lines[start:end-1], self._source_lines[end-1][:node.end_col_offset]))
+        return raw.decode('utf-8').strip()[:320]
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         previous = self.owner
@@ -344,6 +361,19 @@ def build_evidence_ledger(
             if atom.kind in {EvidenceKind.CALL_RELATION, EvidenceKind.STRUCTURAL_RELATION}
         )
 
+    # These effects were derived from AST in bounded symbol windows. They
+    # describe operations, never a failed expectation or an incorrect value.
+    if context.behavioral_graph:
+        for effect in context.behavioral_graph.effects:
+            if effect.kind.value == "RETURNS_VALUE":
+                continue  # Reuse the existing return atom and its stable ID.
+            if not all(line in windows.get(effect.path, ())
+                       for line in range(effect.line, effect.end_line + 1)):
+                continue
+            atoms.append(_atom(EvidenceKind.BEHAVIORAL_EFFECT, effect.path,
+                effect.line, effect.end_line,
+                f"{effect.owner} contains AST operation {effect.kind.value}", .8,
+                symbol=effect.owner, relation=effect.kind.value))
     unique = {atom.id: atom for atom in atoms}
     return EvidenceLedger(tuple(sorted(unique.values(), key=lambda item: item.id)))
 

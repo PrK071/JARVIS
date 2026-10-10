@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from .recovery import StructuralRecoveryTrace
     from .repair import RepairTarget
     from .symbols import RelevantSymbolContext
+    from .behavioral import BehavioralGraph
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -81,6 +82,7 @@ class RetrievalEscalation:
 
 
 class EvidenceKind(str, Enum):
+    BEHAVIORAL_EFFECT = "BEHAVIORAL_EFFECT"
     TRACEBACK_FRAME = "TRACEBACK_FRAME"
     SYMBOL_DEFINITION = "SYMBOL_DEFINITION"
     CALL_RELATION = "CALL_RELATION"
@@ -262,6 +264,8 @@ class ProblemContext:
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
     recovery_trace: StructuralRecoveryTrace | None = None
     relevant_symbol_contexts: tuple[RelevantSymbolContext, ...] = ()
+    behavioral_graph: BehavioralGraph | None = None
+    context_phase_seconds: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.problem.strip():
@@ -519,6 +523,8 @@ class DecisionReport:
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
     recovery_trace: StructuralRecoveryTrace | None = None
     relevant_symbol_contexts: tuple[RelevantSymbolContext, ...] = ()
+    behavioral_graph: BehavioralGraph | None = None
+    phase_seconds: tuple[tuple[str, float], ...] = ()
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -575,6 +581,9 @@ class DecisionReport:
             "semantic_schema_version": 2,
             "recovery_schema_version": 1,
             "symbol_context_schema_version": 1,
+            "behavioral_graph_schema_version": 1,
+            "behavioral_graph": self.behavioral_graph.as_dict() if self.behavioral_graph else None,
+            "phase_seconds": dict(self.phase_seconds),
             "relevant_symbol_contexts": [item.as_dict() for item in self.relevant_symbol_contexts],
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],

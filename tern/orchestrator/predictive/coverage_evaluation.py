@@ -72,7 +72,8 @@ def layer_coverage(snapshot, context: ProblemContext, causal_slice, roots,
         "correct_root_selected": "CORRECT_ROOT_NOT_SELECTED",
         "correct_repair_generated": "CORRECT_REPAIR_NOT_GENERATED",
     }
-    return {"stages": checks,
+    behavioral = behavioral_coverage(context, oracle)
+    return {"stages": checks, "behavioral_coverage": behavioral,
             "first_loss": next((code for key, code in stage_codes.items() if checks[key] is False), None),
             "reason_codes": [code for key, code in stage_codes.items() if checks[key] is False],
             "indexed_symbols": [symbol.as_dict() for symbol in symbols],
@@ -81,6 +82,40 @@ def layer_coverage(snapshot, context: ProblemContext, causal_slice, roots,
             "local_causal_node_ids": sorted(correct_nodes),
             "correct_candidate_ids": sorted(valid_ids),
             "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"}
+
+
+def behavioral_coverage(context, oracle):
+    """Oracle compares identities; runtime never imports this evaluator."""
+    graph = context.behavioral_graph
+    if graph is None:
+        return {"status": "NOT_INSTRUMENTED"}
+    matches = [c for c in graph.callables if c.path == oracle['root_path']
+               and c.qualified_name == oracle['root_symbol']]
+    ids = {c.id for c in matches}
+    effects = [e for e in graph.effects if e.callable_id in ids
+               and e.kind.value == oracle.get('behavioral_effect')]
+    api = oracle.get('affected_api')
+    api_ids = {c.id for c in graph.callables if c.id in graph.entry_ids
+               and api and (c.qualified_name == api or c.qualified_name.endswith('.' + api))}
+    api_hit = bool(api_ids) if api else None
+    reachable = set(api_ids)
+    for _ in range(len(graph.callables)):
+        reached = {r.target_id for r in graph.relations if r.source_id in reachable}
+        if reached <= reachable:
+            break
+        reachable.update(reached)
+    return {"status": "OBSERVED", "correct_symbol_available": bool(matches),
+        "correct_api_available": api_hit,
+        "implementation_path_available": bool(ids & reachable) if api else None,
+        "reported_symbol_to_implementation_proxy": bool(matches),
+        "behavioral_effect_available": bool(effects),
+        # A source-operation match is not a represented violated contract.
+        "defect_relation_representable": None,
+        "matched_callable_ids": sorted(ids), "matched_effect_ids": [e.id for e in effects],
+        "resolved_relations": len(graph.relations),
+        "ledger_backed_relations": sum(bool(r.evidence_ids) for r in graph.relations),
+        "unresolved_dispatches": len(graph.unresolved), "reason_codes": list(graph.reason_codes),
+        "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."}
 
 
 def summarize_layer_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -97,5 +132,11 @@ def summarize_layer_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any
         metrics[label] = rate(sum(item[before] and item[after] for item in layers),
                               sum(bool(item[before]) for item in layers),
                               "formulations passing source stage; local fact/location proxies")
-    return {"metrics": metrics, "first_loss_counts": dict(sorted(Counter(
+    behavioral = [row['layer_coverage']['behavioral_coverage'] for row in rows
+                  if row['layer_coverage'].get('behavioral_coverage', {}).get('status') == 'OBSERVED']
+    behavior_metrics = {key: rate(sum(item[key] is True for item in behavioral),
+        sum(item[key] is not None for item in behavioral), "formulations with behavioral stage observed")
+        for key in ('correct_api_available', 'implementation_path_available',
+                    'behavioral_effect_available', 'defect_relation_representable')}
+    return {"metrics": metrics, "behavioral_metrics": behavior_metrics, "first_loss_counts": dict(sorted(Counter(
         row["layer_coverage"]["first_loss"] or "NO_OBSERVED_LOSS" for row in rows).items()))}

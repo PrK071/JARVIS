@@ -4,12 +4,56 @@ import hashlib
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from tern.orchestrator.client import LlamaClient
 from tern.orchestrator.predictive.external_evaluation import (
     evaluate_external_cases, load_external_cases, summarize_external_results,
 )
+
+
+def _working_set_bytes(worker):
+    """Memoria do nosso worker Windows, nao de processos arbitrarios."""
+    if sys.platform != 'win32' or not hasattr(worker, '_handle'):
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    class MemoryCounters(ctypes.Structure):
+        _fields_ = [('cb', wintypes.DWORD), ('faults', wintypes.DWORD)] + [
+            (name, ctypes.c_size_t) for name in ('peak', 'working', 'quota_peak_paged',
+                'quota_paged', 'quota_peak_nonpaged', 'quota_nonpaged', 'pagefile', 'peak_pagefile')]
+
+    counters = MemoryCounters()
+    counters.cb = ctypes.sizeof(counters)
+    function = ctypes.windll.psapi.GetProcessMemoryInfo
+    function.argtypes = [wintypes.HANDLE, ctypes.POINTER(MemoryCounters), wintypes.DWORD]
+    function.restype = wintypes.BOOL
+    if function(int(worker._handle), ctypes.byref(counters), counters.cb):
+        return int(counters.working)
+    return None
+
+
+class EvaluationMemoryLimit(RuntimeError):
+    pass
+
+
+def _communicate_bounded(worker, command, timeout, memory_mb):
+    if not memory_mb:
+        return worker.communicate(timeout=timeout)
+    deadline = time.monotonic() + timeout
+    while True:
+        memory = _working_set_bytes(worker)
+        if memory is not None and memory > memory_mb * 1024 * 1024:
+            raise EvaluationMemoryLimit('NOT_EVALUATED_RESOURCE_LIMIT')
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(command, timeout)
+        try:
+            return worker.communicate(timeout=min(1, remaining))
+        except subprocess.TimeoutExpired:
+            continue
 
 
 def evaluate_with_budget(args, cases):
@@ -28,17 +72,22 @@ def evaluate_with_budget(args, cases):
         worker = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   text=True, encoding='utf-8', errors='replace')
         try:
-            stdout, stderr = worker.communicate(timeout=args.case_timeout)
-        except subprocess.TimeoutExpired:
+            stdout, stderr = _communicate_bounded(worker, command, args.case_timeout,
+                getattr(args, 'case_memory_mb', 0))
+        except (subprocess.TimeoutExpired, EvaluationMemoryLimit) as error:
             worker.kill()
             worker.communicate()
-            incomplete.append({'id': case['id'], 'status': 'NOT_COMPLETED_OPERATIONAL_LIMIT',
+            incomplete.append({'id': case['id'], 'status': (
+                               'NOT_EVALUATED_RESOURCE_LIMIT' if isinstance(error, EvaluationMemoryLimit)
+                               else 'NOT_EVALUATED_TIMEOUT'),
                                'budget_seconds': args.case_timeout,
                                'excluded_from_quality_metrics': True})
             print(json.dumps(incomplete[-1]), flush=True)
             continue
         if worker.returncode or not output.exists():
-            incomplete.append({'id': case['id'], 'status': 'EVALUATOR_INFRASTRUCTURE_ERROR',
+            incomplete.append({'id': case['id'], 'status': (
+                               'NOT_EVALUATED_TIMEOUT' if 'NOT_EVALUATED_TIMEOUT' in stderr
+                               else 'EVALUATOR_INFRASTRUCTURE_ERROR'),
                                'exit_code': worker.returncode, 'diagnostic': stderr[-1600:],
                                'excluded_from_quality_metrics': True})
             print(json.dumps(incomplete[-1]), flush=True)
@@ -50,8 +99,10 @@ def evaluate_with_budget(args, cases):
     summary['layer_coverage'] = summarize_layer_coverage(rows)
     summary.update(n_total_defects=len(cases), n_evaluable_defects=len(cases)-len(incomplete),
                    n_incomplete_defects=len(incomplete))
-    return {'schema_version': 13, 'summary': summary, 'results': rows,
+    return {'schema_version': 14, 'summary': summary, 'results': rows,
             'operational_failures': incomplete, 'case_budget_seconds': args.case_timeout,
+            'case_memory_mb': getattr(args, 'case_memory_mb', 0),
+            'memory_monitor': 'Windows working-set polling, one-second intervals; not a hard allocation cap',
             'population_note': 'Incomplete cases excluded explicitly, not counted as engine errors. Readiness requires complete coverage.'}
 
 
@@ -64,6 +115,7 @@ def main():
     parser.add_argument("--snapshots", type=Path, default=Path(".orchestrator/external-v12/snapshots"))
     parser.add_argument("--archive", type=Path, default=Path(".orchestrator/predictive-artifacts/v12"))
     parser.add_argument("--case-timeout", type=float, default=0)
+    parser.add_argument("--case-memory-mb", type=int, default=1024)
     parser.add_argument("--case-id", help="Harness-only independent defect filter")
     args = parser.parse_args()
     if args.output.exists():
@@ -76,6 +128,8 @@ def main():
             raise ValueError('Caso nao pertence ao split selado.')
     if args.case_timeout < 0:
         raise ValueError('Timeout de caso invalido.')
+    if args.case_memory_mb < 0:
+        raise ValueError('Limite de memoria invalido.')
     source_hashes = {
         str(path): hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
         for path in sorted(Path("tern/orchestrator/predictive").glob("*.py"))

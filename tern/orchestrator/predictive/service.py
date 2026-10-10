@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import replace
 from pathlib import Path
+from time import perf_counter
 
 from ..project_intelligence_v2 import (
     EvidenceStrength,
@@ -26,6 +27,9 @@ from .policy import PredictiveCandidatePolicy
 from .recovery import StructuralRecoveryService
 from .scoring import ranking_decision
 from .symbols import recover_symbol_context
+from .behavioral import bind_graph_evidence, resolve_behavioral_context
+from .operational import AnalysisTimer, PredictiveOperationalTimeout
+from .relevance import describe_symptom, SymptomKind
 
 
 _STRENGTH_ORDER = {
@@ -51,6 +55,7 @@ def build_problem_context(
     selection: ProjectCandidateSelection,
     path_policy: PathPolicy,
 ) -> ProblemContext:
+    context_started = perf_counter()
     slices = {item.path: item for item in selection.context_slices}
     excerpts: list[EvidenceExcerpt] = []
     related_symbols: list[str] = []
@@ -123,9 +128,22 @@ def build_problem_context(
     )
     # Preserve the validated exception pipeline; enrich behavioral inputs using
     # exact indexed API/value anchors instead of enlarging lexical retrieval.
+    initial_windows = tuple((w.path, w.start_line, w.end_line) for w in context.evidence)
+    initial_context_seconds = perf_counter() - context_started
+    symbol_started = perf_counter()
     if not any(_line_target(candidate) is not None for candidate in selection.selected):
         context = recover_symbol_context(context, snapshot, path_policy)
-    return context
+    symbol_seconds = perf_counter() - symbol_started
+    # A reported line is not sufficient proof of an implementation path.
+    # Only explicit indexed API anchors enable this bounded AST traversal.
+    observed_exception = describe_symptom(problem, None, None).kind is SymptomKind.EXCEPTION_FAILURE
+    graph_started = perf_counter()
+    context = resolve_behavioral_context(context, snapshot, path_policy,
+        materialize=not observed_exception)
+    return replace(context, context_phase_seconds=(('initial_context', initial_context_seconds),
+        ('symbol_resolution', symbol_seconds), ('implementation_graph', perf_counter()-graph_started)),
+        behavioral_graph=replace(context.behavioral_graph,
+        initial_windows=initial_windows))
 
 
 class PredictiveDecisionService:
@@ -148,23 +166,42 @@ class PredictiveDecisionService:
         self.recovery_service = recovery_service or StructuralRecoveryService()
 
     def predict(self, problem: str, project_path: str | Path) -> DecisionReport:
+        timer = AnalysisTimer()
+        report = self._predict(problem, project_path, timer)
+        return replace(report, phase_seconds=tuple(timer.seconds.items()))
+
+    def _predict(self, problem: str, project_path: str | Path, timer: AnalysisTimer) -> DecisionReport:
         if not problem.strip():
             raise ValueError("problem must not be empty")
         root = self.path_policy.resolve(str(project_path))
-        snapshot = ProjectIndexBuilderV2(root, path_policy=self.path_policy).build()
-        selection = self.candidate_generator.generate(problem, snapshot)
-        context = build_problem_context(problem, snapshot, selection, self.path_policy)
+        snapshot = timer.measure('index', ProjectIndexBuilderV2(root, path_policy=self.path_policy).build)
+        selection = timer.measure('initial_retrieval', self.candidate_generator.generate, problem, snapshot)
+        context = timer.measure('context_and_implementation', build_problem_context,
+                                problem, snapshot, selection, self.path_policy)
+        timer.seconds.update(context.context_phase_seconds)
         context = replace(
             context,
-            evidence_ledger=build_evidence_ledger(context, snapshot, self.path_policy),
+            evidence_ledger=timer.measure('ledger', build_evidence_ledger, context, snapshot, self.path_policy),
         )
-        causal_slice, root_causes = build_causal_slice(
+        causal_slice, root_causes = timer.measure('causal_slice', build_causal_slice,
             context, snapshot, self.path_policy
         )
-        recovery = self.recovery_service.recover(
+        if (not root_causes and context.behavioral_graph and context.behavioral_graph.entry_ids
+                and describe_symptom(problem, None, None).kind is SymptomKind.EXCEPTION_FAILURE):
+            # One additional materialization only when the preserved exception
+            # anchor has failed to generate an origin, not for every traceback.
+            context = timer.measure('implementation_recovery', resolve_behavioral_context,
+                                    context, snapshot, self.path_policy)
+            context = replace(context, evidence_ledger=timer.measure('ledger',
+                build_evidence_ledger, context, snapshot, self.path_policy))
+            causal_slice, root_causes = timer.measure('causal_slice', build_causal_slice,
+                context, snapshot, self.path_policy)
+        recovery = timer.measure('recovery', self.recovery_service.recover,
             context, snapshot, self.path_policy, causal_slice, root_causes
         )
         context = replace(recovery.context, recovery_trace=recovery.trace)
+        context = replace(context, behavioral_graph=bind_graph_evidence(
+            context.behavioral_graph, context.evidence_ledger))
         causal_slice, root_causes = recovery.causal_slice, recovery.root_causes
         context = replace(
             context,
@@ -187,11 +224,12 @@ class PredictiveDecisionService:
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
+                behavioral_graph=context.behavioral_graph,
             )
         if not context.sufficient_evidence:
             return self._insufficient(problem, "Nenhuma evidência estrutural forte foi localizada.")
 
-        analysis = self.analyzer.analyze_with_diagnostics(context)
+        analysis = timer.measure('qwen_analysis', self.analyzer.analyze_with_diagnostics, context)
         if analysis.failure_reason is not None:
             return DecisionReport(
                 problem=problem,
@@ -210,6 +248,7 @@ class PredictiveDecisionService:
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
+                behavioral_graph=context.behavioral_graph,
             )
 
         policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
@@ -241,9 +280,12 @@ class PredictiveDecisionService:
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
+                behavioral_graph=context.behavioral_graph,
             )
         try:
-            decision = ranking_decision(eligible)
+            decision = timer.measure('ranking', ranking_decision, eligible)
+        except PredictiveOperationalTimeout:
+            raise
         except Exception:
             return self._insufficient(
                 problem,
@@ -279,6 +321,7 @@ class PredictiveDecisionService:
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
+                behavioral_graph=context.behavioral_graph,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -302,6 +345,7 @@ class PredictiveDecisionService:
             retrieval_escalation=context.retrieval_escalation,
             recovery_trace=context.recovery_trace,
             relevant_symbol_contexts=context.relevant_symbol_contexts,
+            behavioral_graph=context.behavioral_graph,
         )
 
     @staticmethod

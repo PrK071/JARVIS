@@ -18,6 +18,7 @@ from ..project_intelligence_v2 import ProjectCandidateGenerator, ProjectIndexBui
 from ..security import PathPolicy
 from .analysis import StructuredReasoner
 from .causal import build_causal_slice
+from .behavioral import bind_graph_evidence
 from .evaluation import CountingReasoner
 from .grounding import build_evidence_ledger
 from .service import PredictiveDecisionService, build_problem_context
@@ -141,11 +142,22 @@ def evaluate_external_cases(
         if before != case["source_python_sha256"]:
             raise ValueError("Snapshot externo adulterado.")
         policy = PathPolicy((root,))
+        index_started = time.perf_counter()
         snapshot = ProjectIndexBuilderV2(root, path_policy=policy).build()
+        index_seconds = time.perf_counter()-index_started
         for index, problem in enumerate(case["problem_formulations"]):
-            context = build_problem_context(problem, snapshot, ProjectCandidateGenerator().generate(problem, snapshot), policy)
+            selection_started = time.perf_counter()
+            selection = ProjectCandidateGenerator().generate(problem, snapshot)
+            selection_seconds = time.perf_counter()-selection_started
+            context = build_problem_context(problem, snapshot, selection, policy)
+            ledger_started = time.perf_counter()
             context = replace(context, evidence_ledger=build_evidence_ledger(context, snapshot, policy))
+            ledger_seconds = time.perf_counter()-ledger_started
+            context = replace(context, behavioral_graph=bind_graph_evidence(
+                context.behavioral_graph, context.evidence_ledger))
+            causal_started = time.perf_counter()
             initial_slice, initial_roots = build_causal_slice(context, snapshot, policy)
+            causal_seconds = time.perf_counter()-causal_started
             measured = CountingReasoner(reasoner) if reasoner else None
             profile = cProfile.Profile()
             started = time.perf_counter()
@@ -186,7 +198,8 @@ def evaluate_external_cases(
             if winner and not repair_ok(winner): codes.append("WRONG_REPAIR_PAIR")
             blob = json.dumps({"decision": raw, "initial_context": {
                 "files": list(context.related_files), "ledger": context.evidence_ledger.as_dict(),
-                "symbols": [item.as_dict() for item in context.relevant_symbol_contexts]},
+                "symbols": [item.as_dict() for item in context.relevant_symbol_contexts],
+                "behavioral_graph": context.behavioral_graph.as_dict() if context.behavioral_graph else None},
                 "expected": oracle}, ensure_ascii=False, sort_keys=True).encode()
             sha = hashlib.sha256(blob).hexdigest()
             (archive / (sha + ".json.gz")).write_bytes(gzip.compress(blob, mtime=0))
@@ -207,6 +220,10 @@ def evaluate_external_cases(
             from .coverage_evaluation import layer_coverage
             row["layer_coverage"] = layer_coverage(snapshot, context, initial_slice, initial_roots,
                                                    oracle, decision=report)
+            row['diagnostic_phase_seconds'] = dict(context.context_phase_seconds,
+                index=index_seconds, initial_retrieval=selection_seconds,
+                ledger=ledger_seconds, causal_slice=causal_seconds)
+            row['service_phase_seconds'] = dict(report.phase_seconds) if report else None
             rows.append(row)
             # Completed rows survive interrupted long live runs. This sidecar is
             # not a stage-gate report and is kept with untracked raw artifacts.

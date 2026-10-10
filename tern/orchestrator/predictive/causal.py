@@ -12,7 +12,7 @@ from ..project_intelligence_v2 import ProjectSnapshotV2
 from ..security import PathPolicy
 from .import_graph import ImportSCCIdentity, find_import_cycles
 from .relevance import (
-    CausalRelevanceAssessment, ProblemSymptom, SymptomKind,
+    CausalRelevanceAssessment, ProblemSymptom, SymptomKind, RelevanceStatus,
     assess_import_cycle, describe_symptom,
 )
 from .models import (
@@ -25,6 +25,8 @@ from .models import (
 
 
 class CausalNodeKind(str, Enum):
+    CALLABLE = "CALLABLE"
+    BEHAVIORAL_EFFECT = "BEHAVIORAL_EFFECT"
     PARAMETER = "PARAMETER"
     LOCAL_VARIABLE = "LOCAL_VARIABLE"
     ATTRIBUTE = "ATTRIBUTE"
@@ -41,6 +43,8 @@ class CausalNodeKind(str, Enum):
 
 
 class CausalEdgeKind(str, Enum):
+    IMPLEMENTATION_CALL = "IMPLEMENTATION_CALL"
+    HAS_EFFECT = "HAS_EFFECT"
     ASSIGNED_FROM = "ASSIGNED_FROM"
     PASSED_AS_ARGUMENT = "PASSED_AS_ARGUMENT"
     RETURNED_FROM = "RETURNED_FROM"
@@ -1314,16 +1318,33 @@ def build_causal_slice(
         for node_id in (function.param_nodes.get(parameter),)
         if node_id
     }
+    # A verified API graph retains qualified owner identity. In particular an
+    # unresolved receiver must not inherit a callee merely by its final name.
+    graph = context.behavioral_graph
+    graph_callables = {item.id: item for item in graph.callables} if graph else {}
+    resolved_dispatch = {(r.path, graph_callables[r.source_id].qualified_name,
+        r.line, r.call_expression): r for r in graph.relations} if graph else {}
+    unresolved_dispatch = {(u.path, graph_callables[u.source_id].qualified_name,
+        u.line, u.expression) for u in graph.unresolved} if graph else set()
     for call in calls:
+        dispatch_key = (call.path, call.scope, nodes[call.node_id].line, call.target)
+        if dispatch_key in unresolved_dispatch:
+            continue
         matches = by_name.get(call.target.rsplit(".", 1)[-1], ())
+        relation = resolved_dispatch.get(dispatch_key)
+        bound_self = False
+        if relation:
+            target = graph_callables[relation.target_id]
+            matches = [f for f in functions if f.path == target.path and f.name == target.qualified_name]
+            bound_self = relation.resolution == 'LEXICAL_SELF_METHOD'
         if len(matches) != 1:
             continue
         callee = matches[0]
         for positional_ordinal, keyword, sources in call.args:
             parameter = keyword or (
-                callee.params[positional_ordinal]
+                callee.params[positional_ordinal + int(bound_self)]
                 if positional_ordinal is not None
-                and positional_ordinal < len(callee.params)
+                and positional_ordinal + int(bound_self) < len(callee.params)
                 else None
             )
             if parameter not in callee.param_nodes:
@@ -1353,6 +1374,31 @@ def build_causal_slice(
             edge_id = _stable("G", returned, call.node_id, CausalEdgeKind.RETURNED_FROM.value)
             evidence = tuple(dict.fromkeys((*nodes[returned].evidence_ids, *nodes[call.node_id].evidence_ids)))
             edges[edge_id] = CausalEdge(edge_id, returned, call.node_id, CausalEdgeKind.RETURNED_FROM, True, evidence)
+
+    # Transport exact ledger-backed implementation/effect relations as a
+    # disconnected structural subgraph. No edge to the symptom is invented.
+    if graph:
+        from .behavioral import bind_graph_evidence
+        grounded_graph = bind_graph_evidence(graph, context.evidence_ledger)
+        for callable_ in grounded_graph.callables:
+            definitions = tuple(a.id for a in context.evidence_ledger.for_path(callable_.path)
+                if a.kind is EvidenceKind.SYMBOL_DEFINITION and a.symbol == callable_.qualified_name
+                and a.start_line == callable_.start_line)
+            if definitions:
+                nodes[callable_.id] = CausalNode(callable_.id, CausalNodeKind.CALLABLE,
+                    callable_.path, callable_.start_line, callable_.qualified_name,
+                    f'callable {callable_.qualified_name}', definitions, callable_.qualified_name)
+        for relation in grounded_graph.relations:
+            if relation.evidence_ids and relation.source_id in nodes and relation.target_id in nodes:
+                edges[relation.id] = CausalEdge(relation.id, relation.source_id, relation.target_id,
+                    CausalEdgeKind.IMPLEMENTATION_CALL, True, relation.evidence_ids)
+        for effect in grounded_graph.effects:
+            if effect.evidence_ids and effect.callable_id in nodes:
+                nodes[effect.id] = CausalNode(effect.id, CausalNodeKind.BEHAVIORAL_EFFECT,
+                    effect.path, effect.line, effect.owner, effect.kind.value, effect.evidence_ids, effect.owner)
+                edge_id = _stable('G', effect.callable_id, effect.id, 'HAS_EFFECT')
+                edges[edge_id] = CausalEdge(edge_id, effect.callable_id, effect.id,
+                    CausalEdgeKind.HAS_EFFECT, True, effect.evidence_ids)
 
     # Join a uniquely assigned instance attribute (``self.profile = profile``)
     # to reads through another receiver (``user.profile``).  Attribute-name
@@ -1527,6 +1573,20 @@ def build_causal_slice(
             # implementation violates a contract. Preserve that uncertainty.
             edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, bridge_kind, not behavioral_api_anchor, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
 
+    if (failure_id and graph and len(graph.entry_ids) == 1
+            and symptom.kind is SymptomKind.BEHAVIORAL_MISMATCH
+            and not any(c.path == failure_path and c.start_line <= failure_line <= c.end_line
+                        for c in graph.callables)):
+        # Preserve the original location but do not attribute an unrelated
+        # neighboring return to the one explicitly observed API. No substitute
+        # failure site or behavioral contract is fabricated.
+        assessment = CausalRelevanceAssessment(failure_id,
+            RelevanceStatus.INSUFFICIENT_CAUSAL_BRIDGE, False, False, False,
+            reason='ANCHOR_EXISTS_BUT_UNRESOLVED')
+        return CausalSlice(failure_id, tuple(sorted(nodes.values(), key=lambda n: n.id)),
+            tuple(sorted(edges.values(), key=lambda e: e.id)), True, symptom,
+            (*relevance_assessments, assessment)), ()
+
     # Runtime import cycles are a graph property.  Test imports are observers;
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.
     import_cycle_node_ids: set[str] = set()
@@ -1659,7 +1719,8 @@ def build_causal_slice(
         if node_id == failure_id:
             continue
         node = nodes[node_id]
-        if node.kind in {CausalNodeKind.CALL, CausalNodeKind.EXCEPTION_SITE}:
+        if node.kind in {CausalNodeKind.CALL, CausalNodeKind.EXCEPTION_SITE,
+                        CausalNodeKind.CALLABLE, CausalNodeKind.BEHAVIORAL_EFFECT}:
             continue
         evidence_ids = tuple(dict.fromkeys(
             evidence_id for path_node_id in path_ids for evidence_id in nodes[path_node_id].evidence_ids
