@@ -586,10 +586,11 @@ def expand_context_for_causal_flow(
 
 
 def _evidence_at(ledger: EvidenceLedger, path: str, line: int) -> tuple[str, ...]:
-    exact = tuple(atom.id for atom in ledger.atoms if atom.path == path and atom.start_line <= line <= atom.end_line)
+    local = ledger.for_path(path)
+    exact = tuple(atom.id for atom in local if atom.start_line <= line <= atom.end_line)
     if exact:
         return exact
-    return tuple(atom.id for atom in ledger.atoms if atom.path == path)[:2]
+    return tuple(atom.id for atom in local)[:2]
 
 
 class _FlowBuilder(ast.NodeVisitor):
@@ -1471,6 +1472,7 @@ def build_causal_slice(
         first_edge = relevant_import_cycles[0].production_edges[0]
         failure_path, failure_line = first_edge.source, first_edge.line
     symbolic_failure_nodes: list[CausalNode] = []
+    behavioral_api_anchor = False
     if failure_path is None:
         import_failure = "importerror" in folded_problem or "modulenotfounderror" in folded_problem or "import cycle" in folded_problem
         symbolic_failure_nodes = [
@@ -1486,6 +1488,22 @@ def build_causal_slice(
         if symbolic_failure_nodes:
             symbolic_failure_nodes.sort(key=lambda item: (item.path, item.line, item.id))
             failure_path, failure_line = symbolic_failure_nodes[0].path, symbolic_failure_nodes[0].line
+    # Enrichment must not displace an already represented causal anchor.
+    if failure_path is None and context.relevant_symbol_contexts:
+        api_sites = {(item.path, item.qualified_name, item.start_line, item.end_line)
+                     for item in context.relevant_symbol_contexts
+                     if item.selection_reason in {"REPORTED_API", "EVALUATION_ORACLE_SYMBOL"}}
+        if len(api_sites) == 1:
+            api_path, api_name, api_start, api_end = next(iter(api_sites))
+            symbolic_failure_nodes = [node for node in nodes.values()
+                                      if node.path == api_path and node.scope == api_name
+                                      and api_start <= node.line <= api_end
+                                      and node.kind in {CausalNodeKind.RETURN_VALUE, CausalNodeKind.CONDITION}
+                                      and node.evidence_ids]
+            if symbolic_failure_nodes:
+                symbolic_failure_nodes.sort(key=lambda item: (item.line, item.id))
+                failure_path, failure_line = api_path, symbolic_failure_nodes[0].line
+                behavioral_api_anchor = True
     failure_id: str | None = None
     if failure_path and failure_line:
         observed_exception = reported_failure_site and symptom.kind is SymptomKind.EXCEPTION_FAILURE
@@ -1505,7 +1523,9 @@ def build_causal_slice(
         ]
         for node in candidates_at_site:
             edge_id = _stable("G", node.id, failure_id, bridge_kind.value)
-            edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, bridge_kind, True, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
+            # A reported API is an observation anchor, not AST proof that its
+            # implementation violates a contract. Preserve that uncertainty.
+            edges[edge_id] = CausalEdge(edge_id, node.id, failure_id, bridge_kind, not behavioral_api_anchor, tuple(dict.fromkeys((*node.evidence_ids, *nodes[failure_id].evidence_ids))))
 
     # Runtime import cycles are a graph property.  Test imports are observers;
     # TYPE_CHECKING and function-local imports are not runtime SCC edges.

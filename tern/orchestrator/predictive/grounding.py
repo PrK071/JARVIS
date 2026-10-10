@@ -106,11 +106,17 @@ class _FactVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         previous = self.owner
-        self.owner = node.name
+        self.owner = f"{previous}.{node.name}" if previous else node.name
         self.generic_visit(node)
         self.owner = previous
 
     visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        previous = self.owner
+        self.owner = f"{previous}.{node.name}" if previous else node.name
+        self.generic_visit(node)
+        self.owner = previous
 
     def visit_Call(self, node: ast.Call) -> None:
         if self._inside(node):
@@ -230,16 +236,20 @@ def build_evidence_ledger(
 ) -> EvidenceLedger:
     atoms: list[EvidenceAtom] = []
     excerpts = {item.path: item for item in context.evidence}
+    windows: dict[str, set[int]] = {}
+    for item in context.evidence:
+        windows.setdefault(item.path, set()).update(range(item.start_line, item.end_line + 1))
     traceback_lines: dict[str, set[int]] = {}
     for match in re.finditer(r'(?:File\s+["\'](?P<file>[^"\']+)["\'],\s+line\s+(?P<line>\d+))|(?P<short>[^\s]+\.py):(?P<short_line>\d+)', context.problem):
         path = (match.group("file") or match.group("short")).replace("\\", "/")
         traceback_lines.setdefault(path, set()).add(int(match.group("line") or match.group("short_line")))
 
     for path, excerpt in sorted(excerpts.items()):
+        allowed_lines = windows[path]
         resolved = path_policy.resolve(str(Path(snapshot.project_path) / path))
         source = resolved.read_text(encoding="utf-8", errors="replace")
         for line in sorted(traceback_lines.get(path, ())):
-            if excerpt.start_line <= line <= excerpt.end_line:
+            if line in allowed_lines:
                 atoms.append(
                     _atom(
                         EvidenceKind.TRACEBACK_FRAME,
@@ -253,7 +263,7 @@ def build_evidence_ledger(
                 )
         indexed = snapshot.file_index[path]
         for symbol in indexed.symbols:
-            if excerpt.start_line <= symbol.line <= excerpt.end_line:
+            if symbol.line in allowed_lines:
                 atoms.append(
                     _atom(
                         EvidenceKind.SYMBOL_DEFINITION,
@@ -267,7 +277,7 @@ def build_evidence_ledger(
                     )
                 )
         for record in indexed.imports:
-            if excerpt.start_line <= record.line <= excerpt.end_line:
+            if record.line in allowed_lines:
                 imported = record.module or ",".join(record.names)
                 atoms.append(
                     _atom(
@@ -289,7 +299,7 @@ def build_evidence_ledger(
                 _FactVisitor(
                     path,
                     source,
-                    set(range(excerpt.start_line, excerpt.end_line + 1)),
+                    allowed_lines,
                     atoms,
                 ).visit(tree)
 

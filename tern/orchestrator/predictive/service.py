@@ -25,6 +25,7 @@ from .models import (
 from .policy import PredictiveCandidatePolicy
 from .recovery import StructuralRecoveryService
 from .scoring import ranking_decision
+from .symbols import recover_symbol_context
 
 
 _STRENGTH_ORDER = {
@@ -92,7 +93,7 @@ def build_problem_context(
         related_symbols.extend(
             f"{symbol.qualified_name}@{symbol.file}:{symbol.line}-{symbol.end_line}"
             for symbol in indexed.symbols
-            if start <= symbol.line <= end or start <= symbol.end_line <= end
+            if symbol.line <= end and symbol.end_line >= start
         )
 
     related_tests = sorted(
@@ -110,7 +111,7 @@ def build_problem_context(
             if relation.production_file in selected_paths or relation.test_file in selected_paths
         )
     )
-    return ProblemContext(
+    context = ProblemContext(
         problem=problem,
         project_path=snapshot.project_path,
         project_id=snapshot.project_id,
@@ -120,6 +121,11 @@ def build_problem_context(
         related_tests=tuple(related_tests),
         test_relationships=test_relationships,
     )
+    # Preserve the validated exception pipeline; enrich behavioral inputs using
+    # exact indexed API/value anchors instead of enlarging lexical retrieval.
+    if not any(_line_target(candidate) is not None for candidate in selection.selected):
+        context = recover_symbol_context(context, snapshot, path_policy)
+    return context
 
 
 class PredictiveDecisionService:
@@ -180,6 +186,7 @@ class PredictiveDecisionService:
                 root_cause_candidates=(),
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
+                relevant_symbol_contexts=context.relevant_symbol_contexts,
             )
         if not context.sufficient_evidence:
             return self._insufficient(problem, "Nenhuma evidência estrutural forte foi localizada.")
@@ -202,6 +209,7 @@ class PredictiveDecisionService:
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
+                relevant_symbol_contexts=context.relevant_symbol_contexts,
             )
 
         policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
@@ -232,6 +240,7 @@ class PredictiveDecisionService:
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
+                relevant_symbol_contexts=context.relevant_symbol_contexts,
             )
         try:
             decision = ranking_decision(eligible)
@@ -269,6 +278,7 @@ class PredictiveDecisionService:
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
+                relevant_symbol_contexts=context.relevant_symbol_contexts,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -291,6 +301,7 @@ class PredictiveDecisionService:
             root_cause_selections=analysis.root_cause_selections,
             retrieval_escalation=context.retrieval_escalation,
             recovery_trace=context.recovery_trace,
+            relevant_symbol_contexts=context.relevant_symbol_contexts,
         )
 
     @staticmethod

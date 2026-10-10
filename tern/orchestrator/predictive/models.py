@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from .causal import CausalSlice, RepairStrategy, RootCauseCandidate, RootCauseSelection
     from .recovery import StructuralRecoveryTrace
     from .repair import RepairTarget
+    from .symbols import RelevantSymbolContext
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -164,19 +165,29 @@ class EvidenceAtom:
 @dataclass(frozen=True)
 class EvidenceLedger:
     atoms: tuple[EvidenceAtom, ...] = ()
+    _id_index: dict[str, EvidenceAtom] = field(default_factory=dict, init=False, repr=False, compare=False)
+    _path_index: dict[str, tuple[EvidenceAtom, ...]] = field(default_factory=dict, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "atoms", tuple(self.atoms))
         ids = [atom.id for atom in self.atoms]
         if len(ids) != len(set(ids)):
             raise ValueError("evidence ledger IDs must be unique")
+        paths: dict[str, list[EvidenceAtom]] = {}
+        for atom in self.atoms:
+            paths.setdefault(atom.path, []).append(atom)
+        object.__setattr__(self, "_id_index", {atom.id: atom for atom in self.atoms})
+        object.__setattr__(self, "_path_index", {path: tuple(atoms) for path, atoms in paths.items()})
 
     @property
     def ids(self) -> tuple[str, ...]:
         return tuple(atom.id for atom in self.atoms)
 
     def get(self, atom_id: str) -> EvidenceAtom | None:
-        return next((atom for atom in self.atoms if atom.id == atom_id), None)
+        return self._id_index.get(atom_id)
+
+    def for_path(self, path: str) -> tuple[EvidenceAtom, ...]:
+        return self._path_index.get(path, ())
 
     def as_dict(self, *, include_snippets: bool = True) -> dict[str, Any]:
         return {
@@ -250,6 +261,7 @@ class ProblemContext:
     root_cause_candidates: tuple[RootCauseCandidate, ...] = ()
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
     recovery_trace: StructuralRecoveryTrace | None = None
+    relevant_symbol_contexts: tuple[RelevantSymbolContext, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.problem.strip():
@@ -264,6 +276,7 @@ class ProblemContext:
             tuple(dict.fromkeys((str(source), str(test)) for source, test in self.test_relationships)),
         )
         object.__setattr__(self, "root_cause_candidates", tuple(self.root_cause_candidates))
+        object.__setattr__(self, "relevant_symbol_contexts", tuple(self.relevant_symbol_contexts))
 
     @property
     def evidence_refs(self) -> tuple[str, ...]:
@@ -505,6 +518,7 @@ class DecisionReport:
     root_cause_selections: tuple[RootCauseSelection, ...] = ()
     retrieval_escalation: RetrievalEscalation = field(default_factory=RetrievalEscalation)
     recovery_trace: StructuralRecoveryTrace | None = None
+    relevant_symbol_contexts: tuple[RelevantSymbolContext, ...] = ()
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -517,6 +531,7 @@ class DecisionReport:
         object.__setattr__(self, "root_cause_candidates", tuple(self.root_cause_candidates))
         object.__setattr__(self, "repair_strategies", tuple(self.repair_strategies))
         object.__setattr__(self, "root_cause_selections", tuple(self.root_cause_selections))
+        object.__setattr__(self, "relevant_symbol_contexts", tuple(self.relevant_symbol_contexts))
         if len(self.hypotheses) > 3 or len(self.candidates) > 3:
             raise ValueError("predictive reports are limited to three hypotheses and candidates")
         candidate_ids = {item.id for item in self.candidates}
@@ -559,6 +574,8 @@ class DecisionReport:
             "schema_version": 6,
             "semantic_schema_version": 2,
             "recovery_schema_version": 1,
+            "symbol_context_schema_version": 1,
+            "relevant_symbol_contexts": [item.as_dict() for item in self.relevant_symbol_contexts],
             "problem": self.problem,
             "hypotheses": [item.as_dict() for item in self.hypotheses],
             "candidates": [item.as_dict() for item in self.candidates],

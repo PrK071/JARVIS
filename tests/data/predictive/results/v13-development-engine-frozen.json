@@ -1,0 +1,309 @@
+{
+  "schema_version": 13,
+  "engine_commit": "a0a47093fe62e0e8875367a8e2915e1ec8cb67fe",
+  "runtime_source_sha256": {
+    "analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "causal.py": "3f249c78d78d702e316070b314cac4d30ce2512612c99aad0bbae6ea80937c5a",
+    "grounding.py": "c0b1253ff84975bb3c5ae1f6c9e8d3b774520d54193df351006ea36975357d41",
+    "models.py": "8adcaf5187181b415d508cdc09c3e7e9e9afc00cdca040961c5c3547f59ae316",
+    "policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "service.py": "f028facd4f60fa2f1e52263c7391fd28c72820d2496a973b8696da8dfbc6fb65",
+    "relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5"
+  },
+  "n_total": 6,
+  "n_evaluable": 5,
+  "n_incomplete": 1,
+  "pending": [
+    {
+      "id": "sphinx-doc__sphinx-7738",
+      "status": "NOT_COMPLETED_OPERATIONAL_LIMIT",
+      "reason": "Frozen analysis exceeded fifteen minutes; not counted as root error or abstention."
+    }
+  ],
+  "metrics": {
+    "relevant_file_retrieval": {
+      "numerator": 4,
+      "denominator": 5,
+      "rate": 0.8,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.37553462976252533,
+        0.9637758913675698
+      ]
+    },
+    "correct_symbol_ledger_recall": {
+      "numerator": 2,
+      "denominator": 5,
+      "rate": 0.4,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.11762077423264783,
+        0.769275718723987
+      ]
+    },
+    "correct_root_candidate_recall": {
+      "numerator": 0,
+      "denominator": 5,
+      "rate": 0.0,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.0,
+        0.43448246478317476
+      ]
+    },
+    "root_validity": {
+      "numerator": 0,
+      "denominator": 5,
+      "rate": 0.0,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.0,
+        0.43448246478317476
+      ]
+    },
+    "repair_pair_validity": {
+      "numerator": 0,
+      "denominator": 5,
+      "rate": 0.0,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.0,
+        0.43448246478317476
+      ]
+    },
+    "recommendation_coverage": {
+      "numerator": 2,
+      "denominator": 5,
+      "rate": 0.4,
+      "population": "completed frozen formulations only; incomplete case excluded explicitly",
+      "wilson_95": [
+        0.11762077423264783,
+        0.769275718723987
+      ]
+    },
+    "recommendation_precision": {
+      "numerator": 0,
+      "denominator": 2,
+      "rate": 0.0,
+      "population": "completed recommendations",
+      "wilson_95": [
+        0.0,
+        0.6576197724933469
+      ]
+    },
+    "false_abstention_rate": {
+      "numerator": 3,
+      "denominator": 5,
+      "rate": 0.6,
+      "population": "completed positive formulations",
+      "wilson_95": [
+        0.2307242812760128,
+        0.882379225767352
+      ]
+    }
+  },
+  "results": [
+    {
+      "case_id": "pallets__flask-4045",
+      "formulation": 1,
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-engine-frozen\\beac8d9a474ce9bde626ba4720469a28843c7890225190010ccd3d0fabd8fb45.json.gz",
+      "raw_trace_sha256": "beac8d9a474ce9bde626ba4720469a28843c7890225190010ccd3d0fabd8fb45",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "VALIDATE_BOUNDARY",
+          "FIX_CONSUMER_CONTRACT"
+        ],
+        "root_cause": "Blueprint name accepts dots despite nested blueprint namespace contract.",
+        "root_path": "src/flask/blueprints.py",
+        "root_symbol": "Blueprint.__init__",
+        "source_locations": [
+          {
+            "end_line": 201,
+            "line": 171
+          }
+        ],
+        "target_paths": [
+          "src/flask/blueprints.py"
+        ]
+      },
+      "correct_file_retrieved": true,
+      "correct_symbol_in_ledger": true,
+      "correct_symbol_facts_in_ledger": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": true,
+      "failure_reason": null,
+      "phase_seconds": null,
+      "measurement_limit": "Completed raw decision recovered; discarded in-memory counters/timings cannot be reconstructed reliably."
+    },
+    {
+      "case_id": "pytest-dev__pytest-11148",
+      "formulation": 1,
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-engine-frozen\\cecd0b3ac976ba8fafa74ef4805e0dcc138b1d6aa33a583049bb89582970fe57.json.gz",
+      "raw_trace_sha256": "cecd0b3ac976ba8fafa74ef4805e0dcc138b1d6aa33a583049bb89582970fe57",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER"
+        ],
+        "root_cause": "Importlib mode loads an already cached module again instead of returning sys.modules entry.",
+        "root_path": "src/_pytest/pathlib.py",
+        "root_symbol": "import_path",
+        "source_locations": [
+          {
+            "end_line": 590,
+            "line": 486
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/pathlib.py"
+        ]
+      },
+      "correct_file_retrieved": true,
+      "correct_symbol_in_ledger": false,
+      "correct_symbol_facts_in_ledger": false,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "phase_seconds": null,
+      "measurement_limit": "Completed raw decision recovered; discarded in-memory counters/timings cannot be reconstructed reliably."
+    },
+    {
+      "case_id": "pytest-dev__pytest-5495",
+      "formulation": 1,
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-engine-frozen\\eb53d383015009c6dd5103a53f9585ec8d2ac24bda03c18255f97657d8f1fc27.json.gz",
+      "raw_trace_sha256": "eb53d383015009c6dd5103a53f9585ec8d2ac24bda03c18255f97657d8f1fc27",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER",
+          "CORRECT_RETURN_VALUE"
+        ],
+        "root_cause": "Bytes indexing gives integers, causing misleading character comparison output.",
+        "root_path": "src/_pytest/assertion/util.py",
+        "root_symbol": "_compare_eq_sequence",
+        "source_locations": [
+          {
+            "end_line": 286,
+            "line": 256
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/assertion/util.py"
+        ]
+      },
+      "correct_file_retrieved": false,
+      "correct_symbol_in_ledger": false,
+      "correct_symbol_facts_in_ledger": false,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "phase_seconds": null,
+      "measurement_limit": "Completed raw decision recovered; discarded in-memory counters/timings cannot be reconstructed reliably."
+    },
+    {
+      "case_id": "pytest-dev__pytest-7168",
+      "formulation": 1,
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-engine-frozen\\379bd9d76d52af219bb787c6789e2c78494fa745bce67d9e402a0ba9f6474003.json.gz",
+      "raw_trace_sha256": "379bd9d76d52af219bb787c6789e2c78494fa745bce67d9e402a0ba9f6474003",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "FIX_CONSUMER_CONTRACT",
+          "FIX_PRODUCER",
+          "CORRECT_RETURN_VALUE"
+        ],
+        "root_cause": "Reading obj.__class__ invokes broken __getattribute__ while formatting repr failure.",
+        "root_path": "src/_pytest/_io/saferepr.py",
+        "root_symbol": "_format_repr_exception",
+        "source_locations": [
+          {
+            "end_line": 24,
+            "line": 15
+          }
+        ],
+        "target_paths": [
+          "src/_pytest/_io/saferepr.py"
+        ]
+      },
+      "correct_file_retrieved": true,
+      "correct_symbol_in_ledger": true,
+      "correct_symbol_facts_in_ledger": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "phase_seconds": null,
+      "measurement_limit": "Completed raw decision recovered; discarded in-memory counters/timings cannot be reconstructed reliably."
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-11445",
+      "formulation": 1,
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v13\\v13-development-engine-frozen\\32a051efc8a30fcfbde0a99f05384c7aed89e666b75ce155a972d7b73cef737d.json.gz",
+      "raw_trace_sha256": "32a051efc8a30fcfbde0a99f05384c7aed89e666b75ce155a972d7b73cef737d",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+        "import_causal": false,
+        "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+        "repair_strategies": [
+          "CORRECT_CONTROL_FLOW",
+          "FIX_PRODUCER",
+          "CORRECT_CONFIGURATION"
+        ],
+        "root_cause": "Broad docinfo regex mistakes domain roles for metadata, inserting prolog inside heading structure.",
+        "root_path": "sphinx/util/rst.py",
+        "root_symbol": "prepend_prolog",
+        "source_locations": [
+          {
+            "end_line": 97,
+            "line": 78
+          }
+        ],
+        "target_paths": [
+          "sphinx/util/rst.py"
+        ]
+      },
+      "correct_file_retrieved": true,
+      "correct_symbol_in_ledger": false,
+      "correct_symbol_facts_in_ledger": false,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": true,
+      "failure_reason": null,
+      "phase_seconds": null,
+      "measurement_limit": "Completed raw decision recovered; discarded in-memory counters/timings cannot be reconstructed reliably."
+    }
+  ],
+  "preservation": "All preliminary and completed traces retained. Missing timing/call counters not fabricated. Engine runtime files matched original commit throughout frozen process."
+}

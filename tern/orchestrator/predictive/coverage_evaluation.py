@@ -24,7 +24,7 @@ def layer_coverage(snapshot, context: ProblemContext, causal_slice, roots,
     # v12 has no explicit symbol context: its chosen source windows are the
     # selection contract. A surrounding class definition is not a method hit.
     windows = [item for item in context.evidence if item.path == path]
-    selected_hit = bool(explicit) if selected else any(
+    selected_hit = bool(explicit) or any(
         item.start_line <= symbol.line <= item.end_line for item in windows for symbol in symbols)
     facts = [atom for atom in context.evidence_ledger.atoms
              if atom.path == path and inside(atom.start_line)
@@ -37,6 +37,9 @@ def layer_coverage(snapshot, context: ProblemContext, causal_slice, roots,
                      and (node.scope == name or node.symbol == name)}
     correct_roots = [item for item in roots if matches_origin(item.as_dict(), oracle)]
     valid_ids = {item.id for item in correct_roots}
+    # Final selection may use candidates rebuilt by structural recovery.
+    final_valid_ids = ({item.id for item in decision.root_cause_candidates
+                        if matches_origin(item.as_dict(), oracle)} if decision else valid_ids)
     selected_ids = {item.root_cause_id for item in decision.hypotheses} if decision else set()
     checks = {
         "correct_file_in_project_index": indexed is not None,
@@ -50,9 +53,9 @@ def layer_coverage(snapshot, context: ProblemContext, causal_slice, roots,
             edge.source_id in correct_nodes and edge.target_id in correct_nodes
             for edge in causal_slice.edges),
         "correct_root_candidate_generated": bool(correct_roots),
-        "correct_root_selected": bool(selected_ids) and selected_ids <= valid_ids if decision else None,
+        "correct_root_selected": bool(selected_ids) and selected_ids <= final_valid_ids if decision else None,
         "correct_repair_generated": any(
-            candidate.root_cause_id in valid_ids and candidate.strategy_kind in oracle["repair_strategies"]
+            candidate.root_cause_id in final_valid_ids and candidate.strategy_kind in oracle["repair_strategies"]
             and candidate.repair_targets
             and all(target.path in oracle["target_paths"] for target in candidate.repair_targets)
             for candidate in decision.candidates) if decision else None,

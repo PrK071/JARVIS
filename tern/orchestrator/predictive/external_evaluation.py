@@ -184,7 +184,10 @@ def evaluate_external_cases(
             if report and winner is None and not oracle["abstention_expected"]: codes.append("FALSE_ABSTENTION")
             if report and any(item.get("import_scc") for item in selected) and not oracle["import_causal"]: codes.append("IRRELEVANT_SCC_SELECTED")
             if winner and not repair_ok(winner): codes.append("WRONG_REPAIR_PAIR")
-            blob = json.dumps({"decision": raw, "initial_context": context.as_dict() if hasattr(context, "as_dict") else {"files": list(context.related_files), "ledger": context.evidence_ledger.as_dict()}, "expected": oracle}, ensure_ascii=False, sort_keys=True).encode()
+            blob = json.dumps({"decision": raw, "initial_context": {
+                "files": list(context.related_files), "ledger": context.evidence_ledger.as_dict(),
+                "symbols": [item.as_dict() for item in context.relevant_symbol_contexts]},
+                "expected": oracle}, ensure_ascii=False, sort_keys=True).encode()
             sha = hashlib.sha256(blob).hexdigest()
             (archive / (sha + ".json.gz")).write_bytes(gzip.compress(blob, mtime=0))
             row = {"case_id": case["id"], "formulation": index+1, "mode": "live" if report else "structural", "category": case["category"],
@@ -198,13 +201,18 @@ def evaluate_external_cases(
                    "repair_correct": any(repair_ok(item) for item in candidates), "recommendation_correct": bool(winner and repair_ok(winner)),
                    "recommended": winner is not None, "abstention_expected": oracle["abstention_expected"], "winner": winner,
                    "failure_reason": raw.get("failure_reason"), "failure_codes": codes, "wall_seconds": wall,
-                   "phase_seconds": {"index": phase("project_intelligence_v2.py", "build"), "retrieval": phase("project_intelligence_v2.py", "generate"), "ledger": phase("grounding.py", "build_evidence_ledger"), "causal": phase("causal.py", "build_causal_slice"), "recovery_inclusive": phase("recovery.py", "recover"), "scoring": phase("scoring.py", "ranking_decision")},
+                   "phase_seconds": {"index": phase("project_intelligence_v2.py", "build"), "retrieval": phase("project_intelligence_v2.py", "generate"), "context_inclusive": phase("service.py", "build_problem_context"), "symbol_selection": phase("symbols.py", "recover_symbol_context"), "ledger": phase("grounding.py", "build_evidence_ledger"), "causal": phase("causal.py", "build_causal_slice"), "recovery_inclusive": phase("recovery.py", "recover"), "scoring": phase("scoring.py", "ranking_decision")},
                    "qwen": {"requests": measured.requests if measured else 0, "request_ms": measured.request_ms if measured else [], "prompt_tokens": measured.prompt_tokens if measured else 0, "response_tokens": measured.response_tokens if measured else 0},
                    "safety": safety, "raw_trace_sha256": sha, "raw_trace_archive": str(archive / (sha + ".json.gz")), "expected": oracle}
             from .coverage_evaluation import layer_coverage
             row["layer_coverage"] = layer_coverage(snapshot, context, initial_slice, initial_roots,
                                                    oracle, decision=report)
             rows.append(row)
+            # Completed rows survive interrupted long live runs. This sidecar is
+            # not a stage-gate report and is kept with untracked raw artifacts.
+            (archive / "progress.json").write_text(json.dumps({
+                "status": "PARTIAL_NOT_STAGE_GATE", "results": rows},
+                ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             print(json.dumps({"id": case["id"], "root_correct": root_correct, "candidate_exists": bool(correct), "failures": codes}), flush=True)
     from .coverage_evaluation import summarize_layer_coverage
     summary = summarize_external_results(rows)

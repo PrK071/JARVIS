@@ -14,18 +14,20 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--workspace", type=Path, default=Path(".orchestrator/predictive-v12-regression"))
+    parser.add_argument("--archive", type=Path, default=Path(".orchestrator/predictive-artifacts/v12"))
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("Nao sobrescrever regressao preservada.")
     specs = generate_suite("development")
-    root = Path(".orchestrator/predictive-v12-regression")
+    root = args.workspace
     if args.live:
         report = evaluate_generated_live(stratified_sample(specs, 14), reasoner=LlamaClient("http://127.0.0.1:8080", 180), workspace_root=root/"live")
     else:
         report = evaluate_generated_structural(specs, output_root=root/"structural")
     raw = json.dumps(report, ensure_ascii=False).encode()
     sha = hashlib.sha256(raw).hexdigest()
-    archive = Path(".orchestrator/predictive-artifacts/v12")/(sha+".json.gz")
+    archive = args.archive/(sha+".json.gz")
     archive.parent.mkdir(parents=True, exist_ok=True, mode=0o777)
     archive.write_bytes(gzip.compress(raw, mtime=0))
     assert gzip.decompress(archive.read_bytes()) == raw
