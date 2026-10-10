@@ -1,0 +1,156 @@
+{
+  "version": 14,
+  "mode": "v13_frozen",
+  "cases": [
+    {
+      "family": "direct",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "imported",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 1,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "relative",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "bound",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 4,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "dynamic_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 4,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "state",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "generator",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "handler",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 2,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "subscript",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "distractor_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 2,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "void_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": true,
+      "generated_root_count": 0,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    },
+    {
+      "family": "decorated_negative",
+      "api_selected": true,
+      "implementation_symbol_proxy": false,
+      "generated_root_count": 3,
+      "contract_supported": null,
+      "defect_relation_representable": null
+    }
+  ],
+  "independent_families": 12,
+  "metrics": {
+    "api_selected": {
+      "numerator": 12,
+      "denominator": 12,
+      "rate": 1.0,
+      "population": "family controls",
+      "wilson_95": [
+        0.7575059933447592,
+        1.0
+      ]
+    },
+    "implementation_symbol_proxy": {
+      "numerator": 8,
+      "denominator": 10,
+      "rate": 0.8,
+      "population": "known implementation controls",
+      "wilson_95": [
+        0.49016247153664183,
+        0.9433178485456247
+      ]
+    }
+  },
+  "limitation": "Reachability/effects are not defect responsibility. Controls do not encode a violated contract.",
+  "engine_commit": "b00a4813278699735d77c41a593cea99790ff8f7",
+  "frozen_at": "2026-10-10T22:38:52.629021+00:00",
+  "runtime_hashes": {
+    "tern\\orchestrator\\predictive\\__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern\\orchestrator\\predictive\\analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern\\orchestrator\\predictive\\causal.py": "45f2dde66a68aa1260274e0c2aea2f9d88679d187af17e5ad2b81f93e6256da2",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "e6fbb0abc61abf7d3d56b735d4fe3726156e480659d3bd72b9d248a2fff316f3",
+    "tern\\orchestrator\\predictive\\evaluation.py": "3c874b44f60b521aea0c5a886602942e988772467572fd6752f03f2448775eef",
+    "tern\\orchestrator\\predictive\\external_evaluation.py": "c43f3189230bdf2548fee41fbd7bb7b213cd77ca15dcb98909d536d062f54657",
+    "tern\\orchestrator\\predictive\\grounding.py": "51cd1afc8db25ae12fe64b92a800cde65c68b131d941ff513d63596c19dbe3ad",
+    "tern\\orchestrator\\predictive\\import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern\\orchestrator\\predictive\\models.py": "566f4d063dd16c555a0a79a40ea3e2a3e5f1ffca3c87abdf91efb99596f67c8b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern\\orchestrator\\predictive\\recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern\\orchestrator\\predictive\\robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern\\orchestrator\\predictive\\scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern\\orchestrator\\predictive\\semantic.py": "6b90db7a02f871aa3eb0c9445561851591d60fee711fb3f25ff368cee7836b48",
+    "tern\\orchestrator\\predictive\\service.py": "095c09fa7e3d7341119ce4aa62014ba8311412fb8d8ac9f40182695aaf4cb974",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}

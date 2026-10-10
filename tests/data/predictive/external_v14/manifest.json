@@ -1,0 +1,23 @@
+{
+  "version": 14,
+  "frozen_at": "2026-10-10T22:37:46.811176+00:00",
+  "engine_commit": "b00a4813278699735d77c41a593cea99790ff8f7",
+  "cases_sha256": "ca35ac2aeef385022a3b6e6a6f6224a7dd9bfdf094180b3a0beb02347d3321b9",
+  "independent_defects": 4,
+  "development": 2,
+  "holdout": 2,
+  "formulations": 4,
+  "repositories": [
+    "pytest-dev/pytest",
+    "sphinx-doc/sphinx"
+  ],
+  "evaluator_version": 14,
+  "holdout_thresholds": {
+    "implementation_path_recall": 0.75,
+    "candidate_generation_recall": 0.75,
+    "resolved_call_precision": 1.0,
+    "external_root_validity": 0.75
+  },
+  "policy": "Holdout one-shot; historical v12/v13 diagnostic only; gold diff never reasoner input.",
+  "promotion_limit": "Two held-out defects cannot establish broad external generalization."
+}
