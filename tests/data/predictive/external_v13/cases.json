@@ -1,0 +1,418 @@
+[
+  {
+    "base_commit": "2f7415cfbc4b6ca62f9013f1abd27136f46b9653",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/11148",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "2ce6f1a00a78b5250cd1469fe57656b2902bc990179446189780997251af128e",
+    "gold_test_patch_sha256": "2de425c018454ccdc21c39faab9d52436f7acfbde774b65f5df24354881fd6d6",
+    "id": "pytest-dev__pytest-11148",
+    "issue_url": "https://github.com/pytest-dev/pytest/issues/10811",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER"
+      ],
+      "root_cause": "Importlib mode loads an already cached module again instead of returning sys.modules entry.",
+      "root_path": "src/_pytest/pathlib.py",
+      "root_symbol": "import_path",
+      "source_locations": [
+        {
+          "end_line": 590,
+          "line": 486
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/pathlib.py"
+      ]
+    },
+    "problem_formulations": [
+      "Module imported twice under import-mode=importlib\nIn pmxbot/pmxbot@7f189ad, I'm attempting to switch pmxbot off of pkg_resources style namespace packaging to PEP 420 namespace packages. To do so, I've needed to switch to `importlib` for the `import-mode` and re-organize the tests to avoid import errors on the tests.\r\n\r\nYet even after working around these issues, the tests are failing when the effect of `core.initialize()` doesn't seem to have had any effect.\r\n\r\nInvestigating deeper, I see that initializer is executed and performs its actions (setting a class variable `pmxbot.logging.Logger.store`), but when that happens, there are two different versions of `pmxbot.logging` present, one in `sys.modules` and another found in `tests.unit.test_commands.logging`:\r\n\r\n```\r\n=========================================================================== test session starts ===========================================================================\r\nplatform darwin -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0\r\ncachedir: .tox/python/.pytest_cache\r\nrootdir: /Users/jaraco/code/pmxbot/pmxbot, configfile: pytest.ini\r\nplugins: black-0.3.12, mypy-0.10.3, jaraco.test-5.3.0, checkdocs-2.9.0, flake8-1.1.1, enabler-2.0.0, jaraco.mongodb-11.2.1, pmxbot-1122.14.3.dev13+g7f189ad\r\ncollected 421 items / 180 deselected / 241 selected                                                                                                                       \r\nrun-last-failure: rerun previous 240 failures (skipped 14 files)\r\n\r\ntests/unit/test_commands.py E\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> traceback >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n\r\ncls = <class 'tests.unit.test_commands.TestCommands'>\r\n\r\n    @classmethod\r\n    def setup_class(cls):\r\n        path = os.path.dirname(os.path.abspath(__file__))\r\n        configfile = os.path.join(path, 'testconf.yaml')\r\n        config = pmxbot.dictlib.ConfigDict.from_yaml(configfile)\r\n        cls.bot = core.initialize(config)\r\n>       logging.Logger.store.message(\"logged\", \"testrunner\", \"some text\")\r\nE       AttributeError: type object 'Logger' has no attribute 'store'\r\n\r\ntests/unit/test_commands.py:37: AttributeError\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> entering PDB >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PDB post_mortem (IO-capturing turned off) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n> /Users/jaraco/code/pmxbot/pmxbot/tests/unit/test_commands.py(37)setup_class()\r\n-> logging.Logger.store.message(\"logged\", \"testrunner\", \"some text\")\r\n(Pdb) logging.Logger\r\n<class 'pmxbot.logging.Logger'>\r\n(Pdb) logging\r\n<module 'pmxbot.logging' from '/Users/jaraco/code/pmxbot/pmxbot/pmxbot/logging.py'>\r\n(Pdb) import sys\r\n(Pdb) sys.modules['pmxbot.logging']\r\n<module 'pmxbot.logging' from '/Users/jaraco/code/pmxbot/pmxbot/pmxbot/logging.py'>\r\n(Pdb) sys.modules['pmxbot.logging'] is logging\r\nFalse\r\n```\r\n\r\nI haven't yet made a minimal reproducer, but I wanted to first capture this condition.\r\n\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "2d330522612e789b64668c6a8d20f9925e95aca7d12cdd70ec7d7f4d8eb1e661",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/2f7415cfbc4b6ca62f9013f1abd27136f46b9653",
+    "source_python_sha256": "73c3fcc5844afb98d00bfc8ac107d8ed4896d06e0ca94b6626ca0b5586a65983",
+    "split": "development"
+  },
+  {
+    "base_commit": "1aefb24b37c30fba8fd79a744829ca16e252f340",
+    "category": "DATA_OR_RETURN_CONTRACT",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/5495",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "4346eff024daf047d9dbb3c759eb53952edb7c57e613424f8f4fb98e999ca8b1",
+    "gold_test_patch_sha256": "ffed6b9dd4e8e7deb186cd4b1b3d183a92f9cf7003235b0fa3147b010114c4b2",
+    "id": "pytest-dev__pytest-5495",
+    "issue_url": "https://github.com/pytest-dev/pytest/issues/5260",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER",
+        "CORRECT_RETURN_VALUE"
+      ],
+      "root_cause": "Bytes indexing gives integers, causing misleading character comparison output.",
+      "root_path": "src/_pytest/assertion/util.py",
+      "root_symbol": "_compare_eq_sequence",
+      "source_locations": [
+        {
+          "end_line": 286,
+          "line": 256
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/assertion/util.py"
+      ]
+    },
+    "problem_formulations": [
+      "Confusing assertion rewriting message with byte strings\nThe comparison with assertion rewriting for byte strings is confusing: \r\n```\r\n    def test_b():\r\n>       assert b\"\" == b\"42\"\r\nE       AssertionError: assert b'' == b'42'\r\nE         Right contains more items, first extra item: 52\r\nE         Full diff:\r\nE         - b''\r\nE         + b'42'\r\nE         ?   ++\r\n```\r\n\r\n52 is the ASCII ordinal of \"4\" here.\r\n\r\nIt became clear to me when using another example:\r\n\r\n```\r\n    def test_b():\r\n>       assert b\"\" == b\"1\"\r\nE       AssertionError: assert b'' == b'1'\r\nE         Right contains more items, first extra item: 49\r\nE         Full diff:\r\nE         - b''\r\nE         + b'1'\r\nE         ?   +\r\n```\r\n\r\nNot sure what should/could be done here.\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "daa03db91df0a44ef1f58ee2a189627002310d200c2bcac0786598ce10e4fc56",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/1aefb24b37c30fba8fd79a744829ca16e252f340",
+    "source_python_sha256": "50f7e0dfa52dc9d1d5684bbe16d60bd0999a5f95e6ebe4bd22a3bbab3feb0c77",
+    "split": "development"
+  },
+  {
+    "base_commit": "4787fd64a4ca0dba5528b5651bddd254102fe9f3",
+    "category": "EXCEPTION_FAILURE",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/7168",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "6461134e72ddd5997decb656090500402441f32d12bc9f583a9bce0e2f3e806b",
+    "gold_test_patch_sha256": "ae6288ce2b11af1e23717c3234930c64a88181491124fa236253fdd7634ccc18",
+    "id": "pytest-dev__pytest-7168",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/7168",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "FIX_CONSUMER_CONTRACT",
+        "FIX_PRODUCER",
+        "CORRECT_RETURN_VALUE"
+      ],
+      "root_cause": "Reading obj.__class__ invokes broken __getattribute__ while formatting repr failure.",
+      "root_path": "src/_pytest/_io/saferepr.py",
+      "root_symbol": "_format_repr_exception",
+      "source_locations": [
+        {
+          "end_line": 24,
+          "line": 15
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/_io/saferepr.py"
+      ]
+    },
+    "problem_formulations": [
+      "INTERNALERROR when exception in __repr__\nMinimal code to reproduce the issue: \r\n```python\r\nclass SomeClass:\r\n    def __getattribute__(self, attr):\r\n        raise\r\n    def __repr__(self):\r\n        raise\r\ndef test():\r\n    SomeClass().attr\r\n```\r\nSession traceback:\r\n```\r\n============================= test session starts ==============================\r\nplatform darwin -- Python 3.8.1, pytest-5.4.1, py-1.8.1, pluggy-0.13.1 -- /usr/local/opt/python@3.8/bin/python3.8\r\ncachedir: .pytest_cache\r\nrootdir: ******\r\nplugins: asyncio-0.10.0, mock-3.0.0, cov-2.8.1\r\ncollecting ... collected 1 item\r\n\r\ntest_pytest.py::test \r\nINTERNALERROR> Traceback (most recent call last):\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 191, in wrap_session\r\nINTERNALERROR>     session.exitstatus = doit(config, session) or 0\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 247, in _main\r\nINTERNALERROR>     config.hook.pytest_runtestloop(session=session)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/main.py\", line 272, in pytest_runtestloop\r\nINTERNALERROR>     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 208, in _multicall\r\nINTERNALERROR>     return outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 85, in pytest_runtest_protocol\r\nINTERNALERROR>     runtestprotocol(item, nextitem=nextitem)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 100, in runtestprotocol\r\nINTERNALERROR>     reports.append(call_and_report(item, \"call\", log))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 188, in call_and_report\r\nINTERNALERROR>     report = hook.pytest_runtest_makereport(item=item, call=call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/hooks.py\", line 286, in __call__\r\nINTERNALERROR>     return self._hookexec(self, self.get_hookimpls(), kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 93, in _hookexec\r\nINTERNALERROR>     return self._inner_hookexec(hook, methods, kwargs)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/manager.py\", line 84, in <lambda>\r\nINTERNALERROR>     self._inner_hookexec = lambda hook, methods, kwargs: hook.multicall(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 203, in _multicall\r\nINTERNALERROR>     gen.send(outcome)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/skipping.py\", line 129, in pytest_runtest_makereport\r\nINTERNALERROR>     rep = outcome.get_result()\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 80, in get_result\r\nINTERNALERROR>     raise ex[1].with_traceback(ex[2])\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/pluggy/callers.py\", line 187, in _multicall\r\nINTERNALERROR>     res = hook_impl.function(*args)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/runner.py\", line 260, in pytest_runtest_makereport\r\nINTERNALERROR>     return TestReport.from_item_and_call(item, call)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/reports.py\", line 294, in from_item_and_call\r\nINTERNALERROR>     longrepr = item.repr_failure(excinfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/python.py\", line 1513, in repr_failure\r\nINTERNALERROR>     return self._repr_failure_py(excinfo, style=style)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/nodes.py\", line 355, in _repr_failure_py\r\nINTERNALERROR>     return excinfo.getrepr(\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 634, in getrepr\r\nINTERNALERROR>     return fmt.repr_excinfo(self)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 879, in repr_excinfo\r\nINTERNALERROR>     reprtraceback = self.repr_traceback(excinfo_)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 823, in repr_traceback\r\nINTERNALERROR>     reprentry = self.repr_traceback_entry(entry, einfo)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 784, in repr_traceback_entry\r\nINTERNALERROR>     reprargs = self.repr_args(entry) if not short else None\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_code/code.py\", line 693, in repr_args\r\nINTERNALERROR>     args.append((argname, saferepr(argvalue)))\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 82, in saferepr\r\nINTERNALERROR>     return SafeRepr(maxsize).repr(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 51, in repr\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 47, in repr\r\nINTERNALERROR>     s = super().repr(x)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 52, in repr\r\nINTERNALERROR>     return self.repr1(x, self.maxlevel)\r\nINTERNALERROR>   File \"/usr/local/Cellar/python@3.8/3.8.1/Frameworks/Python.framework/Versions/3.8/lib/python3.8/reprlib.py\", line 62, in repr1\r\nINTERNALERROR>     return self.repr_instance(x, level)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 60, in repr_instance\r\nINTERNALERROR>     s = _format_repr_exception(exc, x)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 23, in _format_repr_exception\r\nINTERNALERROR>     exc_info, obj.__class__.__name__, id(obj)\r\nINTERNALERROR>   File \"/usr/local/lib/python3.8/site-packages/_pytest/_io/saferepr.py\", line 56, in repr_instance\r\nINTERNALERROR>     s = repr(x)\r\nINTERNALERROR>   File \"/Users/stiflou/Documents/projets/apischema/tests/test_pytest.py\", line 6, in __repr__\r\nINTERNALERROR>     raise\r\nINTERNALERROR> RuntimeError: No active exception to reraise\r\n\r\n============================ no tests ran in 0.09s ============================\r\n```\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "734863201a90369462fc32cab8aa0117897383edcb406726fc8341e5bfba8334",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/4787fd64a4ca0dba5528b5651bddd254102fe9f3",
+    "source_python_sha256": "fe0e776c3e88c03c40ecc4b2ae50e49c7b2bd1855b86c837033bafd712e0b641",
+    "split": "development"
+  },
+  {
+    "base_commit": "71db08c05197545944949d5aa76cd340e7143627",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/11445",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "951e9680cb0d3ba0ab4ebea2e6e4092167e5e7c273420e9aaecd8a8755585cde",
+    "gold_test_patch_sha256": "b8eeaa101b3c97e7a51666947c4456dafbbed133efb186d5f2550f5e48d53cf4",
+    "id": "sphinx-doc__sphinx-11445",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/pull/11445",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER",
+        "CORRECT_CONFIGURATION"
+      ],
+      "root_cause": "Broad docinfo regex mistakes domain roles for metadata, inserting prolog inside heading structure.",
+      "root_path": "sphinx/util/rst.py",
+      "root_symbol": "prepend_prolog",
+      "source_locations": [
+        {
+          "end_line": 97,
+          "line": 78
+        }
+      ],
+      "target_paths": [
+        "sphinx/util/rst.py"
+      ]
+    },
+    "problem_formulations": [
+      "Using rst_prolog removes top level headings containing a domain directive\n### Describe the bug\r\n\r\nIf `rst_prolog` is set, then any documents that contain a domain directive as the first heading (eg `:mod:`) do not render the heading correctly or include the heading in the toctree.\r\n\r\nIn the example below, if the heading of `docs/mypackage.rst` were `mypackage2` instead of `:mod:mypackage2` then the heading displays correctly.\r\nSimilarly, if you do not set `rst_prolog` then the heading will display correctly.\r\n\r\nThis appears to have been broken for some time because I can reproduce it in v4.0.0 of Sphinx\r\n\r\n### How to Reproduce\r\n\r\n```bash\r\n$ sphinx-quickstart --no-sep --project mypackage --author me -v 0.1.0 --release 0.1.0 --language en docs\r\n$ echo -e 'Welcome\\n=======\\n\\n.. toctree::\\n\\n   mypackage\\n' > docs/index.rst\r\n$ echo -e ':mod:`mypackage2`\\n=================\\n\\nContent\\n\\nSubheading\\n----------\\n' > docs/mypackage.rst\r\n$ echo -e 'rst_prolog = \"\"\"\\n.. |psf| replace:: Python Software Foundation\\n\"\"\"\\n' >> docs/conf.py\r\n$ sphinx-build -b html . _build\r\n$ grep 'mypackage2' docs/_build/index.html\r\n```\r\n\r\n`docs/index.rst`:\r\n\r\n```rst\r\nWelcome\r\n=======\r\n\r\n.. toctree::\r\n\r\n   mypackage\r\n```\r\n\r\n`docs/mypackage.rst`:\r\n\r\n```rst\r\n:mod:`mypackage2`\r\n=================\r\n\r\nContent\r\n\r\nSubheading\r\n----------\r\n```\r\n\r\n### Environment Information\r\n\r\n```text\r\nPlatform:              linux; (Linux-6.3.2-arch1-1-x86_64-with-glibc2.37)\r\nPython version:        3.11.3 (main, Apr  5 2023, 15:52:25) [GCC 12.2.1 20230201])\r\nPython implementation: CPython\r\nSphinx version:        7.1.0+/d3c91f951\r\nDocutils version:      0.20.1\r\nJinja2 version:        3.1.2\r\nPygments version:      2.15.1\r\n```\r\n\r\n\r\n### Sphinx extensions\r\n\r\n```python\r\n[]\r\n```\r\n\r\n\r\n### Additional context\r\n\r\n_No response_\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 13,
+    "source_archive_sha256": "d1075bd7e25bcc607d20696ba41408c7ebb12748190e07f8234cfd3982e4ad1d",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/71db08c05197545944949d5aa76cd340e7143627",
+    "source_python_sha256": "e9d459ae44c5f23f44417f81a1cc2fadcd2a0cd19cd2c181e4d17194555f308f",
+    "split": "development"
+  },
+  {
+    "base_commit": "c087d717f6ed183dd422359bf91210dc59689d63",
+    "category": "CONFIGURATION_BEHAVIOR",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/7738",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "3866a1c6c3971beecff7fd55b812932b7d907a8d7cbb06709a1e7a95ab5aab7b",
+    "gold_test_patch_sha256": "38a4764b28d1030fc5dbea0c334407216e8a467eed5dfb99556b7eb6fd510b3b",
+    "id": "sphinx-doc__sphinx-7738",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/issues/7734",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_CONFIGURATION",
+        "FIX_PRODUCER"
+      ],
+      "root_cause": "Trailing underscore is escaped even when strip_signature_backslash is false.",
+      "root_path": "sphinx/ext/napoleon/docstring.py",
+      "root_symbol": "GoogleDocstring._escape_args_and_kwargs",
+      "source_locations": [
+        {
+          "end_line": 329,
+          "line": 320
+        }
+      ],
+      "target_paths": [
+        "sphinx/ext/napoleon/docstring.py"
+      ]
+    },
+    "problem_formulations": [
+      "overescaped trailing underscore on attribute with napoleon\n**Describe the bug**\r\nAttribute name `hello_` shows up as `hello\\_` in the html (visible backslash) with napoleon.\r\n\r\n**To Reproduce**\r\nSteps to reproduce the behavior:\r\n\r\nempty `__init__.py`\r\n`a.py` contains\r\n```python\r\nclass A:\r\n    \"\"\"\r\n    Attributes\r\n    ----------\r\n    hello_: int\r\n        hi\r\n    \"\"\"\r\n    pass\r\n```\r\nrun `sphinx-quickstart`\r\nadd `'sphinx.ext.autodoc', 'sphinx.ext.napoleon'` to extensions in conf.py.\r\nadd `.. autoclass:: a.A` to index.rst\r\nPYTHONPATH=. make clean html\r\nopen _build/html/index.html in web browser and see the ugly backslash.\r\n\r\n**Expected behavior**\r\nNo backslash, a similar output to what I get for\r\n```rst\r\n    .. attribute:: hello_\r\n        :type: int\r\n\r\n        hi\r\n```\r\n(the type shows up differently as well, but that's not the point here)\r\nOlder versions like 2.4.3 look ok to me.\r\n\r\n**Environment info**\r\n- OS: Linux debian testing\r\n- Python version: 3.8.3\r\n- Sphinx version: 3.0.4\r\n- Sphinx extensions:  sphinx.ext.autodoc, sphinx.ext.napoleon\r\n- Extra tools:\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 13,
+    "source_archive_sha256": "edf40c2790c0f832faca73f4d1d9701c8406d36fb3b6dfeb6b5db795a4e8a092",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/c087d717f6ed183dd422359bf91210dc59689d63",
+    "source_python_sha256": "3324f2bcc505e7dafe76c1289277762b2724f989c7c0a7015a9b01f820873295",
+    "split": "development"
+  },
+  {
+    "base_commit": "d8c37f43724cd9fb0870f77877b7c4c7e38a19e0",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pallets/flask/pull/4045",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "6c4055e1cb35cf9c5d50bbba639af1787d6f5d5146f9539cedc364a43d01c687",
+    "gold_test_patch_sha256": "def1da53a3857f67b571f108abde6fcdac61da5c7820c0749fa7c487fe87a62a",
+    "id": "pallets__flask-4045",
+    "issue_url": "https://github.com/pallets/flask/pull/4045",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "VALIDATE_BOUNDARY",
+        "FIX_CONSUMER_CONTRACT"
+      ],
+      "root_cause": "Blueprint name accepts dots despite nested blueprint namespace contract.",
+      "root_path": "src/flask/blueprints.py",
+      "root_symbol": "Blueprint.__init__",
+      "source_locations": [
+        {
+          "end_line": 201,
+          "line": 171
+        }
+      ],
+      "target_paths": [
+        "src/flask/blueprints.py"
+      ]
+    },
+    "problem_formulations": [
+      "Raise error when blueprint name contains a dot\nThis is required since every dot is now significant since blueprints can be nested. An error was already added for endpoint names in 1.0, but should have been added for this as well.\n"
+    ],
+    "repo": "pallets/flask",
+    "schema_version": 13,
+    "source_archive_sha256": "844fa3af247aa5004e4691f56ced6cbb1a26c6e6484385d1026ce970f28f273e",
+    "source_archive_url": "https://codeload.github.com/pallets/flask/tar.gz/d8c37f43724cd9fb0870f77877b7c4c7e38a19e0",
+    "source_python_sha256": "66343f058cf4ae5042ce68402f454aa639edf3c0d93fd6e659b8a536e6a48798",
+    "split": "development"
+  },
+  {
+    "base_commit": "56bf819c2f4eaf8b36bd8c42c06bb59d5a3bfc0f",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/7220",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "a8ce7c334bfe6a30f80b6b547c9b1e3ead886b643bf9ab340f8165cd10bef878",
+    "gold_test_patch_sha256": "adc9066a2d467a6190edaf765b1843ed03011dacfd7bc48732cdfdf1e8d67760",
+    "id": "pytest-dev__pytest-7220",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/7220",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER",
+        "CORRECT_CONFIGURATION"
+      ],
+      "root_cause": "Relative failure paths use changed working directory instead of invocation directory.",
+      "root_path": "src/_pytest/nodes.py",
+      "root_symbol": "Node._repr_failure_py",
+      "source_locations": [
+        {
+          "end_line": 377,
+          "line": 333
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/nodes.py"
+      ]
+    },
+    "problem_formulations": [
+      "Wrong path to test file when directory changed in fixture\nFiles are shown as relative to new directory when working directory is changed in a fixture. This makes it impossible to jump to the error as the editor is unaware of the directory change. The displayed directory should stay relative to the original directory.\r\n\r\ntest_path_error.py:\r\n```python\r\nimport os\r\nimport errno\r\nimport shutil\r\n\r\nimport pytest\r\n\r\n\r\n@pytest.fixture\r\ndef private_dir():  # or (monkeypatch)\r\n    out_dir = 'ddd'\r\n\r\n    try:\r\n        shutil.rmtree(out_dir)\r\n    except OSError as ex:\r\n        if ex.errno != errno.ENOENT:\r\n            raise\r\n    os.mkdir(out_dir)\r\n\r\n    old_dir = os.getcwd()\r\n    os.chdir(out_dir)\r\n    yield out_dir\r\n    os.chdir(old_dir)\r\n\r\n    # Same issue if using:\r\n    # monkeypatch.chdir(out_dir)\r\n\r\n\r\ndef test_show_wrong_path(private_dir):\r\n    assert False\r\n```\r\n\r\n```diff\r\n+ Expected: test_path_error.py:29: AssertionError\r\n- Displayed: ../test_path_error.py:29: AssertionError\r\n```\r\n\r\nThe full output is:\r\n```\r\n-*- mode: compilation; default-directory: \"~/src/pytest_path_error/\" -*-\r\nCompilation started at Fri Jan 10 00:05:52\r\n\r\nnox\r\nnox > Running session test\r\nnox > Creating virtual environment (virtualenv) using python3.7 in .nox/test\r\nnox > pip install pytest>=5.3\r\nnox > pip freeze\r\nattrs==19.3.0\r\nimportlib-metadata==1.3.0\r\nmore-itertools==8.0.2\r\npackaging==20.0\r\npluggy==0.13.1\r\npy==1.8.1\r\npyparsing==2.4.6\r\npytest==5.3.2\r\nsix==1.13.0\r\nwcwidth==0.1.8\r\nzipp==0.6.0\r\nnox > pytest \r\n================================= test session starts =================================\r\nplatform linux -- Python 3.7.5, pytest-5.3.2, py-1.8.1, pluggy-0.13.1\r\nrootdir: /home/lhn/src/pytest_path_error\r\ncollected 1 item                                                                      \r\n\r\ntest_path_error.py F                                                            [100%]\r\n\r\n====================================== FAILURES =======================================\r\n________________________________ test_show_wrong_path _________________________________\r\n\r\nprivate_dir = 'ddd'\r\n\r\n    def test_show_wrong_path(private_dir):\r\n>       assert False\r\nE       assert False\r\n\r\n../test_path_error.py:29: AssertionError\r\n================================== 1 failed in 0.03s ==================================\r\nnox > Command pytest  failed with exit code 1\r\nnox > Session test failed.\r\n\r\nCompilation exited abnormally with code 1 at Fri Jan 10 00:06:01\r\n```\r\n\r\nnoxfile.py:\r\n```python\r\nimport nox\r\n\r\n@nox.session(python='3.7')\r\ndef test(session):\r\n    session.install('pytest>=5.3')\r\n    session.run('pip', 'freeze')\r\n    session.run('pytest')\r\n```\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "56ab5df6573cba42f4ac8c38986dc3ae30998829dd9d7b084c5c15ad2486e6d9",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/56bf819c2f4eaf8b36bd8c42c06bb59d5a3bfc0f",
+    "source_python_sha256": "60a5d10dd378cb85f8f7d80ed13da5961cf92cc95a26d39643f21ef6f8e45d71",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "7f7a36478abe7dd1fa993b115d22606aa0e35e88",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/7490",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "88a7af7e123619306d887c6a9bd1f905acc4872b454df914094c038b71356e30",
+    "gold_test_patch_sha256": "fe5323cfe9d6be9648be22ffb13a95079c6e17c13f09987f4c1b8589d27c690c",
+    "id": "pytest-dev__pytest-7490",
+    "issue_url": "https://github.com/pytest-dev/pytest/issues/7486",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER"
+      ],
+      "root_cause": "Dynamic xfail mark added during call is not reevaluated after execution.",
+      "root_path": "src/_pytest/skipping.py",
+      "root_symbol": "pytest_runtest_call",
+      "source_locations": [
+        {
+          "end_line": 257,
+          "line": 248
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/skipping.py"
+      ]
+    },
+    "problem_formulations": [
+      "Pytest 6: Dynamically adding xfail marker in test no longer ignores failure\n<!--\r\nThanks for submitting an issue!\r\n\r\nHere's a quick checklist for what to provide:\r\n-->\r\n\r\n## Description\r\n\r\nWith pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises. \r\n\r\n## Versions\r\n\r\n<details>\r\n\r\n```\r\n$ pip list\r\nPackage                       Version                         Location                                                      \r\n----------------------------- ------------------------------- --------------------------------------------------------------\r\na                             1.0                             \r\naioftp                        0.13.0                          \r\naiohttp                       3.6.2                           \r\nalabaster                     0.7.12                          \r\napipkg                        1.5                             \r\naplus                         0.11.0                          \r\nappdirs                       1.4.3                           \r\nappnope                       0.1.0                           \r\narrow                         0.15.7                          \r\naspy.yaml                     1.3.0                           \r\nastropy                       3.2.3                           \r\nasv                           0.4.1                           \r\nasync-timeout                 3.0.1                           \r\natomicwrites                  1.3.0                           \r\nattrs                         19.1.0                          \r\naws-sam-translator            1.15.1                          \r\naws-xray-sdk                  0.95                            \r\nBabel                         2.7.0                           \r\nbackcall                      0.1.0                           \r\nbinaryornot                   0.4.4                           \r\nblack                         19.10b0                         \r\nbleach                        3.1.0                           \r\nblurb                         1.0.7                           \r\nbokeh                         1.3.4                           \r\nboto                          2.49.0                          \r\nboto3                         1.7.84                          \r\nbotocore                      1.10.84                         \r\nbqplot                        0.12.12                         \r\nbranca                        0.3.1                           \r\ncachetools                    4.1.0                           \r\ncertifi                       2019.9.11                       \r\ncffi                          1.13.2                          \r\ncfgv                          2.0.1                           \r\ncfn-lint                      0.25.0                          \r\ncftime                        1.0.4.2                         \r\nchardet                       3.0.4                           \r\nClick                         7.0                             \r\nclick-plugins                 1.1.1                           \r\ncligj                         0.5.0                           \r\ncloudpickle                   1.2.2                           \r\ncolorama                      0.4.3                           \r\ncolorcet                      2.0.2                           \r\ncoloredlogs                   14.0                            \r\ncookiecutter                  1.7.2                           \r\ncookies                       2.2.1                           \r\ncoverage                      4.5.4                           \r\ncryptography                  2.8                             \r\ncycler                        0.10.0                          \r\nCython                        3.0a5                           \r\ncytoolz                       0.10.1                          \r\ndask                          2.4.0                           /Users/taugspurger/Envs/pandas-dev/lib/python3.7/site-packages\r\nDateTime                      4.3                             \r\ndecorator                     4.4.0                           \r\ndefusedxml                    0.6.0                           \r\nDeprecated                    1.2.7                           \r\ndistributed                   2.4.0                           \r\ndocker                        4.1.0                           \r\ndocutils                      0.15.2                          \r\necdsa                         0.14.1                          \r\nentrypoints                   0.3                             \r\net-xmlfile                    1.0.1                           \r\nexecnet                       1.7.1                           \r\nfastparquet                   0.3.3                           /Users/taugspurger/sandbox/fastparquet                        \r\nfeedparser                    5.2.1                           \r\nFiona                         1.8.8                           \r\nflake8                        3.7.9                           \r\nflake8-rst                    0.7.1                           \r\nfletcher                      0.3.1                           \r\nflit                          2.1.0                           \r\nflit-core                     2.1.0                           \r\nfsspec                        0.7.4                           \r\nfuture                        0.18.2                          \r\ngcsfs                         0.6.2                           \r\ngeopandas                     0.6.0+1.g95b8e1a.dirty          /Users/taugspurger/sandbox/geopandas                          \r\ngitdb2                        2.0.5                           \r\nGitPython                     3.0.2                           \r\ngoogle-auth                   1.16.1                          \r\ngoogle-auth-oauthlib          0.4.1                           \r\ngraphviz                      0.13                            \r\nh5py                          2.10.0                          \r\nHeapDict                      1.0.1                           \r\nholoviews                     1.12.6                          \r\nhumanfriendly                 8.1                             \r\nhunter                        3.1.3                           \r\nhvplot                        0.5.2                           \r\nhypothesis                    4.36.2                          \r\nidentify                      1.4.7                           \r\nidna                          2.8                             \r\nimagesize                     1.1.0                           \r\nimportlib-metadata            0.23                            \r\nimportlib-resources           1.0.2                           \r\niniconfig                     1.0.0                           \r\nintake                        0.5.3                           \r\nipydatawidgets                4.0.1                           \r\nipykernel                     5.1.2                           \r\nipyleaflet                    0.13.0                          \r\nipympl                        0.5.6                           \r\nipython                       7.11.1                          \r\nipython-genutils              0.2.0                           \r\nipyvolume                     0.5.2                           \r\nipyvue                        1.3.2                           \r\nipyvuetify                    1.4.0                           \r\nipywebrtc                     0.5.0                           \r\nipywidgets                    7.5.1                           \r\nisort                         4.3.21                          \r\njdcal                         1.4.1                           \r\njedi                          0.16.0                          \r\nJinja2                        2.11.2                          \r\njinja2-time                   0.2.0                           \r\njmespath                      0.9.4                           \r\njoblib                        0.14.1                          \r\njson5                         0.9.4                           \r\njsondiff                      1.1.1                           \r\njsonpatch                     1.24                            \r\njsonpickle                    1.2                             \r\njsonpointer                   2.0                             \r\njsonschema                    3.0.2                           \r\njupyter                       1.0.0                           \r\njupyter-client                5.3.3                           \r\njupyter-console               6.0.0                           \r\njupyter-core                  4.5.0                           \r\njupyterlab                    2.1.2                           \r\njupyterlab-server             1.1.4                           \r\nkiwisolver                    1.1.0                           \r\nline-profiler                 2.1.1                           \r\nllvmlite                      0.33.0                          \r\nlocket                        0.2.0                           /Users/taugspurger/sandbox/locket.py                          \r\nlxml                          4.5.0                           \r\nmanhole                       1.6.0                           \r\nMarkdown                      3.1.1                           \r\nMarkupSafe                    1.1.1                           \r\nmatplotlib                    3.2.2                           \r\nmccabe                        0.6.1                           \r\nmemory-profiler               0.55.0                          \r\nmistune                       0.8.4                           \r\nmock                          3.0.5                           \r\nmore-itertools                7.2.0                           \r\nmoto                          1.3.6                           \r\nmsgpack                       0.6.2                           \r\nmultidict                     4.5.2                           \r\nmunch                         2.3.2                           \r\nmypy                          0.730                           \r\nmypy-extensions               0.4.1                           \r\nnbconvert                     5.6.0                           \r\nnbformat                      4.4.0                           \r\nnbsphinx                      0.4.2                           \r\nnest-asyncio                  1.3.3                           \r\nnodeenv                       1.3.3                           \r\nnotebook                      6.0.1                           \r\nnumexpr                       2.7.1                           \r\nnumpy                         1.19.0                          \r\nnumpydoc                      1.0.0.dev0                      \r\noauthlib                      3.1.0                           \r\nodfpy                         1.4.0                           \r\nopenpyxl                      3.0.3                           \r\npackaging                     20.4                            \r\npandas                        1.1.0.dev0+1758.g035e1fe831     /Users/taugspurger/sandbox/pandas                             \r\npandas-sphinx-theme           0.0.1.dev0                      /Users/taugspurger/sandbox/pandas-sphinx-theme                \r\npandocfilters                 1.4.2                           \r\nparam                         1.9.2                           \r\nparfive                       1.0.0                           \r\nparso                         0.6.0                           \r\npartd                         1.0.0                           \r\npathspec                      0.8.0                           \r\npatsy                         0.5.1                           \r\npexpect                       4.7.0                           \r\npickleshare                   0.7.5                           \r\nPillow                        6.1.0                           \r\npip                           20.0.2                          \r\npluggy                        0.13.0                          \r\npoyo                          0.5.0                           \r\npre-commit                    1.18.3                          \r\nprogressbar2                  3.51.3                          \r\nprometheus-client             0.7.1                           \r\nprompt-toolkit                2.0.9                           \r\npsutil                        5.6.3                           \r\nptyprocess                    0.6.0                           \r\npy                            1.9.0                           \r\npyaml                         20.4.0                          \r\npyarrow                       0.16.0                          \r\npyasn1                        0.4.7                           \r\npyasn1-modules                0.2.8                           \r\npycodestyle                   2.5.0                           \r\npycparser                     2.19                            \r\npycryptodome                  3.9.8                           \r\npyct                          0.4.6                           \r\npydata-sphinx-theme           0.1.1                           \r\npydeps                        1.9.0                           \r\npyflakes                      2.1.1                           \r\nPyGithub                      1.44.1                          \r\nPygments                      2.4.2                           \r\nPyJWT                         1.7.1                           \r\npyparsing                     2.4.2                           \r\npyproj                        2.4.0                           \r\npyrsistent                    0.15.4                          \r\npytest                        5.4.3                           \r\npytest-asyncio                0.10.0                          \r\npytest-cov                    2.8.1                           \r\npytest-cover                  3.0.0                           \r\npytest-forked                 1.0.2                           \r\npytest-repeat                 0.8.0                           \r\npytest-xdist                  1.29.0                          \r\npython-boilerplate            0.1.0                           \r\npython-dateutil               2.8.0                           \r\npython-jose                   2.0.2                           \r\npython-jsonrpc-server         0.3.2                           \r\npython-language-server        0.31.4                          \r\npython-slugify                4.0.1                           \r\npython-utils                  2.4.0                           \r\npythreejs                     2.2.0                           \r\npytoml                        0.1.21                          \r\npytz                          2019.2                          \r\npyviz-comms                   0.7.2                           \r\nPyYAML                        5.1.2                           \r\npyzmq                         18.1.0                          \r\nqtconsole                     4.5.5                           \r\nregex                         2020.6.8                        \r\nrequests                      2.24.0                          \r\nrequests-oauthlib             1.3.0                           \r\nresponses                     0.10.6                          \r\nrsa                           4.0                             \r\nrstcheck                      3.3.1                           \r\ns3fs                          0.4.2                           \r\ns3transfer                    0.1.13                          \r\nscikit-learn                  0.22.2.post1                    \r\nscipy                         1.3.1                           \r\nseaborn                       0.9.0                           \r\nSend2Trash                    1.5.0                           \r\nsetuptools                    49.2.0                          \r\nShapely                       1.6.4.post2                     \r\nsix                           1.12.0                          \r\nsmmap2                        2.0.5                           \r\nsnakeviz                      2.0.1                           \r\nsnowballstemmer               1.9.1                           \r\nsortedcontainers              2.1.0                           \r\nsparse                        0.10.0                          \r\nSphinx                        3.1.1                           \r\nsphinxcontrib-applehelp       1.0.2                           \r\nsphinxcontrib-devhelp         1.0.2                           \r\nsphinxcontrib-htmlhelp        1.0.3                           \r\nsphinxcontrib-jsmath          1.0.1                           \r\nsphinxcontrib-qthelp          1.0.3                           \r\nsphinxcontrib-serializinghtml 1.1.4                           \r\nsphinxcontrib-websupport      1.1.2                           \r\nsphinxcontrib.youtube         0.1.2                           \r\nSQLAlchemy                    1.3.11                          \r\nsshpubkeys                    3.1.0                           \r\nstatsmodels                   0.10.2                          \r\nstdlib-list                   0.6.0                           \r\nsunpy                         1.1.dev518+gcad2d473f.d20191103 /Users/taugspurger/sandbox/sunpy                              \r\ntables                        3.6.1                           \r\ntabulate                      0.8.6                           \r\ntblib                         1.4.0                           \r\nterminado                     0.8.2                           \r\ntest                          1.0.0                           \r\ntestpath                      0.4.2                           \r\ntext-unidecode                1.3                             \r\nthrift                        0.13.0                          \r\ntoml                          0.10.0                          \r\ntoolz                         0.10.0                          \r\ntornado                       6.0.3                           \r\ntqdm                          4.37.0                          \r\ntraitlets                     4.3.2                           \r\ntraittypes                    0.2.1                           \r\ntyped-ast                     1.4.0                           \r\ntyping-extensions             3.7.4                           \r\nujson                         1.35                            \r\nurllib3                       1.25.5                          \r\nvaex                          3.0.0                           \r\nvaex-arrow                    0.5.1                           \r\nvaex-astro                    0.7.0                           \r\nvaex-core                     2.0.2                           \r\nvaex-hdf5                     0.6.0                           \r\nvaex-jupyter                  0.5.1.post0                     \r\nvaex-ml                       0.9.0                           \r\nvaex-server                   0.3.1                           \r\nvaex-viz                      0.4.0                           \r\nvirtualenv                    16.7.5                          \r\nwcwidth                       0.1.7                           \r\nwebencodings                  0.5.1                           \r\nwebsocket-client              0.56.0                          \r\nWerkzeug                      0.16.0                          \r\nwheel                         0.34.2                          \r\nwidgetsnbextension            3.5.1                           \r\nwrapt                         1.11.2                          \r\nxarray                        0.14.1+36.gb3d3b448             /Users/taugspurger/sandbox/xarray                             \r\nxlwt                          1.3.0                           \r\nxmltodict                     0.12.0                          \r\nyarl                          1.3.0                           \r\nzict                          1.0.0                           \r\nzipp                          0.6.0                           \r\nzope.interface                4.7.1                           \r\n```\r\n\r\n</details>\r\n\r\n- [ ] pytest and operating system versions\r\n\r\nPytest 6.0.1rc0 and MacOS 10.14.5\r\n\r\n```python\r\n# file: test_foo.py\r\nimport pytest\r\n\r\n\r\ndef test_xfail_test(request):\r\n    mark = pytest.mark.xfail(reason=\"xfail\")\r\n    request.node.add_marker(mark)\r\n    assert 0\r\n```\r\n\r\nWith 5.4.3\r\n\r\n```\r\n\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-5.4.3, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py x                                                                                                                                                                [100%]\r\n\r\n============================================================================= short test summary info ==============================================================================\r\nXFAIL test_foo.py::test_xfail_test\r\n  xfail\r\n================================================================================ 1 xfailed in 0.07s ================================================================================\r\n```\r\n\r\nWith 6.0.0rc0\r\n\r\n```\r\n$ pytest -rsx test_foo.py\r\n=============================================================================== test session starts ================================================================================\r\nplatform darwin -- Python 3.7.6, pytest-6.0.0rc1, py-1.9.0, pluggy-0.13.0\r\nhypothesis profile 'default' -> database=DirectoryBasedExampleDatabase('/Users/taugspurger/sandbox/.hypothesis/examples')\r\nrootdir: /Users/taugspurger/sandbox\r\nplugins: xdist-1.29.0, hypothesis-4.36.2, forked-1.0.2, repeat-0.8.0, asyncio-0.10.0, cov-2.8.1\r\ncollected 1 item\r\n\r\ntest_foo.py F                                                                                                                                                                [100%]\r\n\r\n===================================================================================== FAILURES =====================================================================================\r\n_________________________________________________________________________________ test_xfail_test __________________________________________________________________________________\r\n\r\nrequest = <FixtureRequest for <Function test_xfail_test>>\r\n\r\n    def test_xfail_test(request):\r\n        mark = pytest.mark.xfail(reason=\"xfail\")\r\n        request.node.add_marker(mark)\r\n>       assert 0\r\nE       assert 0\r\n\r\ntest_foo.py:7: AssertionError\r\n```\r\n\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "5b1a6508e8e3cfbf99abb6b33acd04f8a7b23fa0da6adc2cf590994d4ddae2cc",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/7f7a36478abe7dd1fa993b115d22606aa0e35e88",
+    "source_python_sha256": "8239a2b040b06ffcdc291dd779ef66c68111b1c094413096d289a1142e00ce78",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "e2ee3144ed6e241dea8d96215fcdca18b3892551",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/9359",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "2d9598fe2b5eaf3e92ba22058dc2acc4b5d13dd0f2ef1e4fc6b7541e0db6055d",
+    "gold_test_patch_sha256": "44dafb9d328533b6fdd3cc6a57c2e3ed0cd4f1fb5ec23f116aac47508eac4662",
+    "id": "pytest-dev__pytest-9359",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/9359",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER",
+        "CORRECT_RETURN_VALUE"
+      ],
+      "root_cause": "Statement boundary calculation omits decorator line numbers on Python 3.8+.",
+      "root_path": "src/_pytest/_code/source.py",
+      "root_symbol": "get_statement_startend2",
+      "source_locations": [
+        {
+          "end_line": 165,
+          "line": 146
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/_code/source.py"
+      ]
+    },
+    "problem_formulations": [
+      "Error message prints extra code line when using assert in python3.9\n<!--\r\nThanks for submitting an issue!\r\n\r\nQuick check-list while reporting bugs:\r\n-->\r\n\r\n- [x] a detailed description of the bug or problem you are having\r\n- [x] output of `pip list` from the virtual environment you are using\r\n- [x] pytest and operating system versions\r\n- [ ] minimal example if possible\r\n### Description\r\nI have a test like this:\r\n```\r\nfrom pytest import fixture\r\n\r\n\r\ndef t(foo):\r\n    return foo\r\n\r\n\r\n@fixture\r\ndef foo():\r\n    return 1\r\n\r\n\r\ndef test_right_statement(foo):\r\n    assert foo == (3 + 2) * (6 + 9)\r\n\r\n    @t\r\n    def inner():\r\n        return 2\r\n\r\n    assert 2 == inner\r\n\r\n\r\n@t\r\ndef outer():\r\n    return 2\r\n```\r\nThe test \"test_right_statement\" fails at the first assertion,but print extra code (the \"t\" decorator) in error details, like this:\r\n\r\n```\r\n ============================= test session starts =============================\r\nplatform win32 -- Python 3.9.6, pytest-6.2.5, py-1.10.0, pluggy-0.13.1 -- \r\ncachedir: .pytest_cache\r\nrootdir: \r\nplugins: allure-pytest-2.9.45\r\ncollecting ... collected 1 item\r\n\r\ntest_statement.py::test_right_statement FAILED                           [100%]\r\n\r\n================================== FAILURES ===================================\r\n____________________________ test_right_statement _____________________________\r\n\r\nfoo = 1\r\n\r\n    def test_right_statement(foo):\r\n>       assert foo == (3 + 2) * (6 + 9)\r\n    \r\n        @t\r\nE       assert 1 == 75\r\nE         +1\r\nE         -75\r\n\r\ntest_statement.py:14: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED test_statement.py::test_right_statement - assert 1 == 75\r\n============================== 1 failed in 0.12s ==============================\r\n```\r\nAnd the same thing **did not** happen when using python3.7.10：\r\n```\r\n============================= test session starts =============================\r\nplatform win32 -- Python 3.7.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- \r\ncachedir: .pytest_cache\r\nrootdir: \r\ncollecting ... collected 1 item\r\n\r\ntest_statement.py::test_right_statement FAILED                           [100%]\r\n\r\n================================== FAILURES ===================================\r\n____________________________ test_right_statement _____________________________\r\n\r\nfoo = 1\r\n\r\n    def test_right_statement(foo):\r\n>       assert foo == (3 + 2) * (6 + 9)\r\nE       assert 1 == 75\r\nE         +1\r\nE         -75\r\n\r\ntest_statement.py:14: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED test_statement.py::test_right_statement - assert 1 == 75\r\n============================== 1 failed in 0.03s ==============================\r\n```\r\nIs there some problems when calculate the statement lineno?\r\n\r\n### pip list \r\n```\r\n$ pip list\r\nPackage            Version\r\n------------------ -------\r\natomicwrites       1.4.0\r\nattrs              21.2.0\r\ncolorama           0.4.4\r\nimportlib-metadata 4.8.2\r\niniconfig          1.1.1\r\npackaging          21.3\r\npip                21.3.1\r\npluggy             1.0.0\r\npy                 1.11.0\r\npyparsing          3.0.6\r\npytest             6.2.5\r\nsetuptools         59.4.0\r\ntoml               0.10.2\r\ntyping_extensions  4.0.0\r\nzipp               3.6.0\r\n\r\n```\r\n### pytest and operating system versions\r\npytest 6.2.5\r\nWindows 10 \r\nSeems to happen in python 3.9,not 3.7\r\n\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 13,
+    "source_archive_sha256": "72bd646a146371e9d599406e97286a0717f7d56b16d090419b4f6c5800dc095f",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/e2ee3144ed6e241dea8d96215fcdca18b3892551",
+    "source_python_sha256": "2339ffbfadaa2a48d989c9609c622aa646287fe08ad77a2a376bbc9f52320137",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "b19bce971e82f2497d67fdacdeca8db08ae0ba56",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/8595",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "e49e0193e868dbd51b26a9f09163ce7604090ed1676ff719f8dfb038424d6ad9",
+    "gold_test_patch_sha256": "441f4e2ab16c90acf8161135eea31eb6e46eac4b22d100104fe35b3f9c0a3d4f",
+    "id": "sphinx-doc__sphinx-8595",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/pull/8595",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Original report, pre-fix AST, upstream production and regression-test diffs; no model output.",
+      "import_causal": false,
+      "limitation": "Location/strategy proxy; no third-party code executed. Blueprint constructor is one valid correction, endpoint assertions are a related co-fix.",
+      "repair_strategies": [
+        "CORRECT_CONTROL_FLOW",
+        "FIX_PRODUCER"
+      ],
+      "root_cause": "Falsy test conflates explicit empty __all__ with absent __all__.",
+      "root_path": "sphinx/ext/autodoc/__init__.py",
+      "root_symbol": "ModuleDocumenter.get_object_members",
+      "source_locations": [
+        {
+          "end_line": 1098,
+          "line": 1074
+        }
+      ],
+      "target_paths": [
+        "sphinx/ext/autodoc/__init__.py"
+      ]
+    },
+    "problem_formulations": [
+      "autodoc: empty __all__ attribute is ignored\n**Describe the bug**\r\nautodoc: empty `__all__` attribute is ignored\r\n\r\n**To Reproduce**\r\n```\r\n# example.py\r\n__all__ = []\r\n\r\n\r\ndef foo():\r\n    \"docstring\"\r\n\r\n\r\ndef bar():\r\n    \"docstring\"\r\n\r\n\r\ndef baz():\r\n    \"docstring\"\r\n```\r\n```\r\n# index.rst\r\n.. automodule:: example\r\n   :members:\r\n```\r\n\r\nAll foo, bar, and baz are shown.\r\n\r\n**Expected behavior**\r\nNo entries should be shown because `__all__` is empty.\r\n\r\n**Your project**\r\nNo\r\n\r\n**Screenshots**\r\nNo\r\n\r\n**Environment info**\r\n- OS: Mac\r\n- Python version: 3.9.1\r\n- Sphinx version: HEAD of 3.x\r\n- Sphinx extensions: sphinx.ext.autodoc\r\n- Extra tools: No\r\n\r\n**Additional context**\r\nNo\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 13,
+    "source_archive_sha256": "3bc84c594f995feb7b15505dc9cd413caf228ab0ddb6f97b66801f56d22cad74",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/b19bce971e82f2497d67fdacdeca8db08ae0ba56",
+    "source_python_sha256": "b00dda53c6276441254fcb8021d0ab65525ab2ff333e5aaeb39ff9563004117c",
+    "split": "holdout"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "version": 13,
+  "frozen_at": "2026-10-10T19:03:09.149902+00:00",
+  "engine_commit": "a0a47093fe62e0e8875367a8e2915e1ec8cb67fe",
+  "dataset": "princeton-nlp/SWE-bench_Lite",
+  "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+  "cases_sha256": "8579df1e5991831dd30607deddab615658f11246c27b8d0a192209f1eff2af21",
+  "independent_defects": 10,
+  "development": 6,
+  "holdout": 4,
+  "formulations": 10,
+  "repositories": [
+    "pallets/flask",
+    "pytest-dev/pytest",
+    "sphinx-doc/sphinx"
+  ],
+  "evaluator_version": 13,
+  "holdout_thresholds": {
+    "correct_symbol_in_ledger": 0.8,
+    "correct_root_candidate_generated": 0.75,
+    "external_root_validity": 0.75
+  },
+  "promotion_limit": "Small purposive sample cannot establish production readiness.",
+  "historical_external_v12": "All twelve defects observed; diagnostic only, excluded from promotion.",
+  "policy": "No gold patch in runtime input; source-only snapshots; holdout one-shot after hardening."
+}

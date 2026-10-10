@@ -14,13 +14,16 @@ def main():
     parser.add_argument("--split", choices=("development", "holdout", "all"), required=True)
     parser.add_argument("--mode", choices=("structural", "live"), default="structural")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--corpus", type=Path, default=Path("tests/data/predictive/external_v12"))
+    parser.add_argument("--snapshots", type=Path, default=Path(".orchestrator/external-v12/snapshots"))
+    parser.add_argument("--archive", type=Path, default=Path(".orchestrator/predictive-artifacts/v12"))
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("Nao sobrescrever resultado historico.")
-    corpus = Path("tests/data/predictive/external_v12")
+    corpus = args.corpus
     cases = load_external_cases(corpus, split=args.split)
-    value = evaluate_external_cases(cases, Path(".orchestrator/external-v12/snapshots"),
-        Path(".orchestrator/predictive-artifacts/v12") / args.output.stem,
+    value = evaluate_external_cases(cases, args.snapshots,
+        args.archive / args.output.stem,
         reasoner=LlamaClient("http://127.0.0.1:8080", 180) if args.mode == "live" else None)
     value["engine_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     value["corpus_seal"] = json.loads((corpus/"manifest.json").read_text())["cases_sha256"]

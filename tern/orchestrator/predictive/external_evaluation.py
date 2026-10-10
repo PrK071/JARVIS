@@ -201,6 +201,12 @@ def evaluate_external_cases(
                    "phase_seconds": {"index": phase("project_intelligence_v2.py", "build"), "retrieval": phase("project_intelligence_v2.py", "generate"), "ledger": phase("grounding.py", "build_evidence_ledger"), "causal": phase("causal.py", "build_causal_slice"), "recovery_inclusive": phase("recovery.py", "recover"), "scoring": phase("scoring.py", "ranking_decision")},
                    "qwen": {"requests": measured.requests if measured else 0, "request_ms": measured.request_ms if measured else [], "prompt_tokens": measured.prompt_tokens if measured else 0, "response_tokens": measured.response_tokens if measured else 0},
                    "safety": safety, "raw_trace_sha256": sha, "raw_trace_archive": str(archive / (sha + ".json.gz")), "expected": oracle}
+            from .coverage_evaluation import layer_coverage
+            row["layer_coverage"] = layer_coverage(snapshot, context, initial_slice, initial_roots,
+                                                   oracle, decision=report)
             rows.append(row)
             print(json.dumps({"id": case["id"], "root_correct": root_correct, "candidate_exists": bool(correct), "failures": codes}), flush=True)
-    return {"schema_version": 12, "summary": summarize_external_results(rows), "results": rows}
+    from .coverage_evaluation import summarize_layer_coverage
+    summary = summarize_external_results(rows)
+    summary["layer_coverage"] = summarize_layer_coverage(rows)
+    return {"schema_version": 13, "summary": summary, "results": rows}
