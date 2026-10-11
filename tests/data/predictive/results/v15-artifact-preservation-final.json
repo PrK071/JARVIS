@@ -1,0 +1,96 @@
+{
+  "version": 13,
+  "destination": "C:\\Users\\User\\AppData\\Local\\JARVIS\\evaluation-artifacts\\v15",
+  "traces": [
+    {
+      "relative_path": "13668726e573aa0c7addf0c25b406a5210a0a6b8a2729d2de93759ec3dadea58.json.gz",
+      "raw_sha256": "13668726e573aa0c7addf0c25b406a5210a0a6b8a2729d2de93759ec3dadea58",
+      "compressed_sha256": "c911bbdb03faa7c4937f81e90f2700265371155e766c337cb6034bafbd40ba04",
+      "compressed_bytes": 336075
+    },
+    {
+      "relative_path": "75e300f294a54555ae179af056d0b333e04a14e7b3cdded8a6b20f3ba8d9095e.json.gz",
+      "raw_sha256": "75e300f294a54555ae179af056d0b333e04a14e7b3cdded8a6b20f3ba8d9095e",
+      "compressed_sha256": "2f95cdeb5c97a18996226c5cfbe957cc3afc14c87181a41a53eab139dbd5117b",
+      "compressed_bytes": 3307
+    },
+    {
+      "relative_path": "development/v15-external-development-after/pallets__flask-4992/result/82269d230e406dc176d54df4429232884d9fca87af8c8fbeb7486d53713e41c3.json.gz",
+      "raw_sha256": "82269d230e406dc176d54df4429232884d9fca87af8c8fbeb7486d53713e41c3",
+      "compressed_sha256": "ea4d6c0bd7bf9e0310dd55860614a8810a5bee4f6538cf3f8b39e3dd3461144f",
+      "compressed_bytes": 502359
+    },
+    {
+      "relative_path": "development/v15-external-development-after/sphinx-doc__sphinx-8506/result/03c4348d2082758b34d394eb164b88bbd80d56a6734e5f40c00dcdab464509d1.json.gz",
+      "raw_sha256": "03c4348d2082758b34d394eb164b88bbd80d56a6734e5f40c00dcdab464509d1",
+      "compressed_sha256": "3e28086031f8ac2d7cbd4bd8235bd6b45753113e61e6ac235dee7d166fb5d7a1",
+      "compressed_bytes": 1562571
+    },
+    {
+      "relative_path": "ed71b0ee8b5bf0f0a6bc8036ff9fcdeeded93a7d8f0b651761833968a346ca5e.json.gz",
+      "raw_sha256": "ed71b0ee8b5bf0f0a6bc8036ff9fcdeeded93a7d8f0b651761833968a346ca5e",
+      "compressed_sha256": "c430e44dc0fb6ef69778bd02d547219cd48ea625f92ed2769d4dce570a6d5e43",
+      "compressed_bytes": 336113
+    },
+    {
+      "relative_path": "frozen/v15-external-engine-frozen/pallets__flask-4992/result/6cea7fafadbe4a359903c73c00c19d78a87476e210f8119d5bac76a56e94b574.json.gz",
+      "raw_sha256": "6cea7fafadbe4a359903c73c00c19d78a87476e210f8119d5bac76a56e94b574",
+      "compressed_sha256": "2261ef4532002eddef4d3d221f16b1ee4dc8ecdd99af3fe03a2ef591f62c7b01",
+      "compressed_bytes": 500814
+    },
+    {
+      "relative_path": "frozen/v15-external-engine-frozen/sphinx-doc__sphinx-8506/result/6bfde7110ec9d1c564b90e7ebb2e88449f6d4b9eba0df87474e7816a0f6a885a.json.gz",
+      "raw_sha256": "6bfde7110ec9d1c564b90e7ebb2e88449f6d4b9eba0df87474e7816a0f6a885a",
+      "compressed_sha256": "b740a0a6de99c7b8f843d5c903f7edf4e7d462e20596bf8e732c082bdc3c7911",
+      "compressed_bytes": 1562526
+    },
+    {
+      "relative_path": "holdout/v15-external-holdout-one-shot/pytest-dev__pytest-8906/result/bec6f13e3d1e31dcd822c5e079a994f363ef042d12d7132ee33835628cd0764f.json.gz",
+      "raw_sha256": "bec6f13e3d1e31dcd822c5e079a994f363ef042d12d7132ee33835628cd0764f",
+      "compressed_sha256": "ac64acf5cc530eec1551963ac0ba4f9597734f291b8daf091315cf79d32f3afd",
+      "compressed_bytes": 229662
+    },
+    {
+      "relative_path": "holdout/v15-external-holdout-one-shot/sphinx-doc__sphinx-8801/result/72836276304a00dbb8152664b9a240e8175a0c8d10e156f5aa5ef2c6fd948294.json.gz",
+      "raw_sha256": "72836276304a00dbb8152664b9a240e8175a0c8d10e156f5aa5ef2c6fd948294",
+      "compressed_sha256": "18200db0eea46db023b08c9efccfcef46edc42dd409176999cc15b9464224feb",
+      "compressed_bytes": 57567
+    }
+  ],
+  "checkpoints": [
+    {
+      "relative_path": "development/v15-external-development-after/pallets__flask-4992/checkpoints.jsonl",
+      "sha256": "4d0a3cce53f8ed7ea1f9705f8c187d2e28e299ba6a266ea6f137ba4d4205ebb6",
+      "bytes": 8305
+    },
+    {
+      "relative_path": "development/v15-external-development-after/sphinx-doc__sphinx-7975/checkpoints.jsonl",
+      "sha256": "fd15e1bae983d4692993ab6be10e02296846a1adbeae1dfb01ca86b7d1c1b37a",
+      "bytes": 5224
+    },
+    {
+      "relative_path": "development/v15-external-development-after/sphinx-doc__sphinx-8506/checkpoints.jsonl",
+      "sha256": "a5d3fb7b032b9d03995cb59fd1dd9371ea8cbe17bc949fe0054d878482d6e052",
+      "bytes": 6264
+    },
+    {
+      "relative_path": "holdout/v15-external-holdout-one-shot/pytest-dev__pytest-8906/checkpoints.jsonl",
+      "sha256": "7f1e7a6b9ef511ac25995a6d8b02afcfad1c1af5dea5a040dd83912ee105012c",
+      "bytes": 10423
+    },
+    {
+      "relative_path": "holdout/v15-external-holdout-one-shot/sphinx-doc__sphinx-8627/checkpoints.jsonl",
+      "sha256": "2a1e8ea1cf361df6517834e2852f5f5f832a2ab70735655233b588e2584c545a",
+      "bytes": 8875
+    },
+    {
+      "relative_path": "holdout/v15-external-holdout-one-shot/sphinx-doc__sphinx-8801/checkpoints.jsonl",
+      "sha256": "b1f0bdd656720a3b1beead1331349718422d7bc591e038df4bca50e98fc3fc9b",
+      "bytes": 8383
+    }
+  ],
+  "count": 9,
+  "verified": true,
+  "originals_retained": true,
+  "limitation": "Verified same-host local backup, not off-machine disaster recovery."
+}

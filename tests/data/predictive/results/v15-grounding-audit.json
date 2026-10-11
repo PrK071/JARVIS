@@ -1,0 +1,152 @@
+{
+  "version": 13,
+  "audits": [
+    {
+      "source_report": "tests\\data\\predictive\\results\\v15-external-engine-frozen.json",
+      "rows": [
+        {
+          "case_id": "pallets__flask-4992",
+          "formulation": 1,
+          "valid_refs": 5,
+          "refs": 5,
+          "unsupported_claims": 0,
+          "claims": 4,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8506",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 5,
+        "denominator": 5,
+        "rate": 1.0,
+        "population": "unique references per formulation",
+        "wilson_95": [
+          0.5655175352168251,
+          1.0
+        ]
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    },
+    {
+      "source_report": "tests\\data\\predictive\\results\\v15-external-development-after.json",
+      "rows": [
+        {
+          "case_id": "pallets__flask-4992",
+          "formulation": 1,
+          "valid_refs": 5,
+          "refs": 5,
+          "unsupported_claims": 0,
+          "claims": 4,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8506",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 5,
+        "denominator": 5,
+        "rate": 1.0,
+        "population": "unique references per formulation",
+        "wilson_95": [
+          0.5655175352168251,
+          1.0
+        ]
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    },
+    {
+      "source_report": "tests\\data\\predictive\\results\\v15-external-holdout-one-shot.json",
+      "rows": [
+        {
+          "case_id": "pytest-dev__pytest-8906",
+          "formulation": 1,
+          "valid_refs": 3,
+          "refs": 3,
+          "unsupported_claims": 0,
+          "claims": 4,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8801",
+          "formulation": 1,
+          "valid_refs": 0,
+          "refs": 0,
+          "unsupported_claims": 0,
+          "claims": 0,
+          "forbidden_recommendations": 0,
+          "read_only_contract": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 3,
+        "denominator": 3,
+        "rate": 1.0,
+        "population": "unique references per formulation",
+        "wilson_95": [
+          0.4385029682449546,
+          1.0
+        ]
+      },
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "population": "claims classified by deterministic grounding; not causal semantic support",
+        "wilson_95": [
+          0.0,
+          0.4898908364545973
+        ]
+      },
+      "forbidden_recommendations": 0,
+      "read_only_contract": true,
+      "passed": true,
+      "note": "Preserved outputs independently verified; no model calls or external project execution. Causal relevance is evaluated separately against oracle."
+    }
+  ]
+}

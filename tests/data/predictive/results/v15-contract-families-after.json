@@ -1,0 +1,622 @@
+{
+  "version": 15,
+  "population": "12 controlled local families, not external accuracy",
+  "rows": [
+    {
+      "family": "literal_mismatch",
+      "expected": "EXPECTED_CONFIRMED_ROOT",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": true,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "a89950667ecaa2ac49bbb74520d42d322ea894a5bbc0dfc79a922de7e3b25369",
+      "contracts": [
+        {
+          "id": "CT1cfe8e6cc2dd2e03",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() wrong output\nExpected: an integer\nObserved: None",
+          "expected_behavior": "int",
+          "expectation_source": "STATIC_ANNOTATION",
+          "evidence_ids": [
+            "ECC003F46E175",
+            "EA3866528F4DF"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "EA3866528F4DF"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": true,
+          "violation_supported": true,
+          "return_site_line": 2,
+          "verification_reason": "UNCONDITIONAL_LITERAL_ANNOTATION_MISMATCH",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "valid_literal",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "57dd289843a327be57c465c77ded38911b5e70ea626933c3656fd7fc71f2a49f",
+      "contracts": [
+        {
+          "id": "CT1cfe8e6cc2dd2e03",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() reported wrong output\nExpected: an integer\nObserved: incorrect result",
+          "expected_behavior": "int",
+          "expectation_source": "STATIC_ANNOTATION",
+          "evidence_ids": [
+            "ECC003F46E175",
+            "E7B22F2AD247F"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "E7B22F2AD247F"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": true,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "ANNOTATION_SATISFIED_FOR_LITERAL_RETURN",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "downstream",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 4,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "consume",
+        "read"
+      ],
+      "source_sha256": "c9665534803081f21deb078c247652a96070a306113c4e8f09d9c2c993c97940",
+      "contracts": [
+        {
+          "id": "CTc65020436c886c5b",
+          "callable_id": "BCca2a2948ffb0a01f",
+          "path": "api.py",
+          "symbol": "consume",
+          "observation": "consume() wrong output\nExpected: 1\nObserved: 3",
+          "expected_behavior": "1",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "E2C7600116376"
+          ],
+          "links": [
+            {
+              "entry_id": "BCca2a2948ffb0a01f",
+              "effect_id": "BEabc9ba59b9768afa",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "E2C7600116376",
+                "EE74112986457"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        },
+        {
+          "id": "CT1cfe8e6cc2dd2e03",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "consume() wrong output\nExpected: 1\nObserved: 3",
+          "expected_behavior": "int",
+          "expectation_source": "STATIC_ANNOTATION",
+          "evidence_ids": [
+            "ECC003F46E175",
+            "E7B22F2AD247F"
+          ],
+          "links": [
+            {
+              "entry_id": "BCca2a2948ffb0a01f",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [
+                "BR5eb0aa485b1f23d9"
+              ],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "E7B22F2AD247F",
+                "E1EB7B9D7167E"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": true,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "ANNOTATION_SATISFIED_FOR_LITERAL_RETURN",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "state",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 0,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "Api.update"
+      ],
+      "source_sha256": "ef0227573b58575408600aab75cd7c666917715acb55a549983a5481c86d280f",
+      "contracts": [
+        {
+          "id": "CT9f96f16317ce8b89",
+          "callable_id": "BC3a69fb5b83b779f2",
+          "path": "api.py",
+          "symbol": "Api.update",
+          "observation": "Api.update() wrong state\nExpected: stored item\nObserved: different state",
+          "expected_behavior": "stored item",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "E2D860725EC63"
+          ],
+          "links": [
+            {
+              "entry_id": "BC3a69fb5b83b779f2",
+              "effect_id": "BEf4530d3d0d02ccc7",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "E2D860725EC63",
+                "E9E65ADA84222"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "state_guard",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "Api.update"
+      ],
+      "source_sha256": "7c4e35770fb38db64890f9456bf21e98d6bf499a9088d707fadd73d5e2e4092f",
+      "contracts": [
+        {
+          "id": "CT9f96f16317ce8b89",
+          "callable_id": "BC3a69fb5b83b779f2",
+          "path": "api.py",
+          "symbol": "Api.update",
+          "observation": "Api.update() wrong state\nExpected: assigned item\nObserved: unchanged state",
+          "expected_behavior": "assigned item",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "E4EE3194EE378"
+          ],
+          "links": [
+            {
+              "entry_id": "BC3a69fb5b83b779f2",
+              "effect_id": "BEe6165e96f948ff7a",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "E4EE3194EE378",
+                "E45F5D3CECBA9"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "yield",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 0,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "aa9030b14d85c14c59ded88bcf8648e01df012e0bd84bf5a23d23348689a5ce5",
+      "contracts": [
+        {
+          "id": "CTfcac72454bc0473a",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() iteration wrong\nExpected: two items\nObserved: one item",
+          "expected_behavior": "two items",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "ECC003F46E175"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE351b9945fd06af5f",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "E2F828E1B67F0"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "forward",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 3,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read",
+        "helper"
+      ],
+      "source_sha256": "646981c7e394ea41bf482fc578e6363d0324ec80f90a56de88986edd4034f6de",
+      "contracts": [
+        {
+          "id": "CTfcac72454bc0473a",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() wrong output\nExpected: data\nObserved: None",
+          "expected_behavior": "data",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "ECC003F46E175"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "E2D05B2412EF6"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        },
+        {
+          "id": "CT0e64c97a4143726d",
+          "callable_id": "BC23c8365b16c3b10a",
+          "path": "api.py",
+          "symbol": "helper",
+          "observation": "read() wrong output\nExpected: data\nObserved: None",
+          "expected_behavior": "data",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "EE9D9A633FB42"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BEa56b44cede37a0b1",
+              "implementation_relation_ids": [
+                "BRd210664bf3450bed"
+              ],
+              "evidence_ids": [
+                "EE9D9A633FB42",
+                "EBD8CC6A02D34",
+                "E231CCD79F987"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "conditional",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 6,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "e49985a8723f69dc75fd97eb97f64e778e78bad44def8847443c02b8b712bc9f",
+      "contracts": [
+        {
+          "id": "CT1cfe8e6cc2dd2e03",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() wrong output\nExpected: integer\nObserved: incorrect result",
+          "expected_behavior": "int",
+          "expectation_source": "STATIC_ANNOTATION",
+          "evidence_ids": [
+            "ECCFD0025DB0C"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE028b926f04f43fa8",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECCFD0025DB0C",
+                "E327A4AB5AD87"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            },
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE31d46f15ae8071b3",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECCFD0025DB0C",
+                "E0F38A40864E8"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": true,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "reported_contract",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "c99c1301f2ae64576d1f597c97f6010ccec4ea48ceb231ac3104bb7d1050eb9d",
+      "contracts": [
+        {
+          "id": "CTfcac72454bc0473a",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() wrong output\nExpected: integer\nObserved: None",
+          "expected_behavior": "integer",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "ECC003F46E175"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "EB0909705A7AC"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "unrelated",
+      "expected": "EXPECTED_ABSTENTION",
+      "api_anchored": false,
+      "effect_available": false,
+      "root_candidate_count": 0,
+      "violation_supported": false,
+      "investigation_symbols": [],
+      "source_sha256": "7913304b5553d6af6298bef665581d3e29a74d1cde81d8c11556479f9e02d652",
+      "contracts": []
+    },
+    {
+      "family": "ambiguous",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": false,
+      "investigation_symbols": [
+        "read"
+      ],
+      "source_sha256": "2493b575f396fc3964469d4987f27668ebbd0d71c876fc02aa0e52b9116c502d",
+      "contracts": [
+        {
+          "id": "CTfcac72454bc0473a",
+          "callable_id": "BC5df49604ca89417b",
+          "path": "api.py",
+          "symbol": "read",
+          "observation": "read() wrong output\nExpected: data\nObserved: missing data",
+          "expected_behavior": "data",
+          "expectation_source": "USER_REPORTED_EXPECTATION",
+          "evidence_ids": [
+            "ECC003F46E175"
+          ],
+          "links": [
+            {
+              "entry_id": "BC5df49604ca89417b",
+              "effect_id": "BE8e7d1e3b4d9ea80e",
+              "implementation_relation_ids": [],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "EBAEBBB48EEA3"
+              ],
+              "support": "INFERRED_FROM_OBSERVATION",
+              "condition": "VERIFY_EXECUTION_AND_OBSERVATION",
+              "execution_demonstrated": false,
+              "causal_responsibility_demonstrated": false
+            }
+          ],
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "return_site_line": null,
+          "verification_reason": "NO_SUPPORTED_CONTRACT_VIOLATION",
+          "limitation": "Aplicabilidade estatica nao prova execucao nem explica sozinha o sintoma."
+        }
+      ]
+    },
+    {
+      "family": "no_effect",
+      "expected": "EXPECTED_ABSTENTION",
+      "api_anchored": true,
+      "effect_available": false,
+      "root_candidate_count": 0,
+      "violation_supported": false,
+      "investigation_symbols": [],
+      "source_sha256": "e99e03a8d5ac03d6138cf628e240e81ab6d0b591f73a38ec9c1fde51348106c1",
+      "contracts": []
+    }
+  ],
+  "source_sha256": {
+    "tern\\orchestrator\\predictive\\__init__.py": "881009024cdbefe1fecc996f4a2956e6a9bd194018746f8d17e647b5547f3874",
+    "tern\\orchestrator\\predictive\\analysis.py": "88e8608e91c622bf4e035f2761fa46d094853a79cbaf57c80eb4b8ab82c5a410",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern\\orchestrator\\predictive\\behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "73d6e9f72cd11ca65b06cf3abd2cb8fbf8a6c8a6e96b237d5f69197e4849ebc2",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "e1eaf027e344df6c6cf7a856f02bf83d24bfb016846a3f4f55d690b5e3d753ea",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "359ad470b54e5486fa078408d2b5762c9d0500293897bfbab5d0d9427fc4c876",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "56852c51e259a35e8ba2e7f690d46bb9bddee4adae2277f0022df52d9c773ccc",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e671f9b44af1716b2c474170a353718c16b98c87345af0cfc9353a7adf28d64c",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "2b960fc89eba0bd4d00d7ed8d315ed96ca9d2c2c1515880828c4c73e7219c184",
+    "tern\\orchestrator\\predictive\\causal.py": "ad99cce645b696a886795e94f4b9a17ec6a50ba8b3a2854001b98e60ba6e4f5f",
+    "tern\\orchestrator\\predictive\\contracts.py": "c45d8fe80bbbc99762f096ec5daeac792ac3bc71f817cb70b449263fae949fdc",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern\\orchestrator\\predictive\\evaluation.py": "2959dfc6bc84a023106fb0d659878cede51abbeeb71ab796c7ef0014c82e98de",
+    "tern\\orchestrator\\predictive\\external_evaluation.py": "63450e16ac0fd9c2ba68f7726ea855833cfa4badd680a579c63bd741fd06c8cf",
+    "tern\\orchestrator\\predictive\\grounding.py": "01a267a077df4761d43fdf7c00d901523cf6612e99caaf50e6d2c5a39f86e9f2",
+    "tern\\orchestrator\\predictive\\import_graph.py": "3b2ad8edd4000c170ba148645b0d676469943a352138c6a5dfbb4e6deacbacce",
+    "tern\\orchestrator\\predictive\\investigation.py": "8d38d95730c8267d5c7d1a7e579795f6967fbffdc18f80b564f8acf06722077f",
+    "tern\\orchestrator\\predictive\\investigation_evaluation.py": "8a3d5b1f708bcbbfbb73cb77b6254939f3741326c8343b88d5db39ec9ce0b0ba",
+    "tern\\orchestrator\\predictive\\models.py": "4986bcd05bf5a69b8459094a072a651fd777e513eafe51055c6e56ffe328b174",
+    "tern\\orchestrator\\predictive\\operational.py": "6c0b9874ecfe6a3cb0ef304e7391273cca397e2c3bbebc6639344f23ccea974b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "86b0c0481382e56db7b8960e02c30750ceeb5b8374799251e30c116b6542d5cd",
+    "tern\\orchestrator\\predictive\\recovery.py": "59b7be0d0a6d81c12b2bc4ed5f1423ae9b88a48fe416b432bc3a60962f80c708",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "516b108efb10aa9151d6cba414008a4e8a2a96056ec822a84257aaf07786597e",
+    "tern\\orchestrator\\predictive\\robustness.py": "a27eabc726e6ddf10e39bf470623b4e711279770f5b149239c5bfe14f68875e0",
+    "tern\\orchestrator\\predictive\\scoring.py": "b1bfccec5c8bdfdfd2b2e54334b51e097da0cc46f7ffdc853be4f3e337f954e2",
+    "tern\\orchestrator\\predictive\\semantic.py": "73d15b938e8a42bf8954da84813c246a276ece79e886c0d262ca88811a361abe",
+    "tern\\orchestrator\\predictive\\service.py": "fb71862a90feb28d810a0d39c9f15959d453435b2f4f45a79255e3978fc2bba7",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}

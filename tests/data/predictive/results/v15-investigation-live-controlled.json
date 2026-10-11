@@ -1,0 +1,95 @@
+{
+  "version": 15,
+  "population": "3 controlled local families, not external root accuracy",
+  "rows": [
+    {
+      "family": "state",
+      "expected": "INVESTIGATION",
+      "location_or_abstention_correct": true,
+      "hypothesis_count": 1,
+      "confirmed_roots": 0,
+      "recommendations": 0,
+      "qwen_requests": 1,
+      "request_ms": [
+        9950.91339999999
+      ],
+      "wall_seconds": 10.149569799999881,
+      "phase_seconds": {
+        "index": 0.1877383999999438,
+        "initial_retrieval": 0.0012181999991298653,
+        "context_and_implementation": 0.0039639999995415565,
+        "initial_context": 0.000941999998758547,
+        "symbol_resolution": 0.0013271999996504746,
+        "implementation_graph": 0.0012170999980298802,
+        "ledger": 0.0013323999992280733,
+        "causal_slice": 0.0013570999981311616,
+        "recovery": 0.00016840000171214342,
+        "behavioral_contracts": 0.0011745000010705553,
+        "qwen_analysis": 9.951158200001373
+      },
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0
+    },
+    {
+      "family": "yield",
+      "expected": "INVESTIGATION",
+      "location_or_abstention_correct": true,
+      "hypothesis_count": 1,
+      "confirmed_roots": 0,
+      "recommendations": 0,
+      "qwen_requests": 1,
+      "request_ms": [
+        8895.785900000192
+      ],
+      "wall_seconds": 9.08837019999919,
+      "phase_seconds": {
+        "index": 0.18354729999919073,
+        "initial_retrieval": 0.0009214999990945216,
+        "context_and_implementation": 0.0031673999983468093,
+        "initial_context": 0.0009431000034965109,
+        "symbol_resolution": 0.0010545000004640315,
+        "implementation_graph": 0.0011088999999628868,
+        "ledger": 0.0009260000006179325,
+        "causal_slice": 0.0011325999985274393,
+        "recovery": 9.43000013648998e-05,
+        "behavioral_contracts": 0.0009907999992719851,
+        "qwen_analysis": 8.896001700002671
+      },
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0
+    },
+    {
+      "family": "no_anchor",
+      "expected": "ABSTENTION",
+      "location_or_abstention_correct": true,
+      "hypothesis_count": 0,
+      "confirmed_roots": 0,
+      "recommendations": 0,
+      "qwen_requests": 0,
+      "request_ms": [],
+      "wall_seconds": 0.18418910000036703,
+      "phase_seconds": {
+        "index": 0.18185230000017327,
+        "initial_retrieval": 0.0005046000005677342,
+        "context_and_implementation": 0.00020930000027874485,
+        "initial_context": 3.51999988197349e-05,
+        "symbol_resolution": 6.940000093891285e-05,
+        "implementation_graph": 5.789999704575166e-05,
+        "ledger": 1.939999856404029e-05,
+        "causal_slice": 8.789999992586672e-05,
+        "recovery": 0.00021439999909489416,
+        "behavioral_contracts": 3.2000025385059416e-06
+      },
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0
+    }
+  ],
+  "raw_trace_sha256": "75e300f294a54555ae179af056d0b333e04a14e7b3cdded8a6b20f3ba8d9095e",
+  "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v15\\75e300f294a54555ae179af056d0b333e04a14e7b3cdded8a6b20f3ba8d9095e.json.gz"
+}
