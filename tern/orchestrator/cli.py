@@ -124,6 +124,10 @@ def _print_predictive_report(report: DecisionReport) -> None:
         print(f"Recuperacao estrutural: {actions}")
         if added:
             print("Contexto recuperado: " + ", ".join(added))
+    if report.evidence_sufficiency:
+        print("Suficiencia de evidencia: " + report.evidence_sufficiency.classification.value)
+        for request in report.evidence_sufficiency.requests:
+            print(f"Evidencia necessaria: {request.missing_fact} - {request.why_needed}")
     if report.insufficient_evidence:
         if report.investigable_hypotheses:
             print("Investigacao consultiva; nenhuma causa confirmada ou reparo elegivel:")

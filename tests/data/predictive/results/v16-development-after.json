@@ -1,0 +1,2641 @@
+{
+  "version": 16,
+  "corpus_sha256": "898bb85b4fb7a29dc689e31e7ee0e64d3e55b620acc000e2f2443a793c36b5e4",
+  "runtime_sources": {
+    "tern/orchestrator/predictive/__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern/orchestrator/predictive/analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern/orchestrator/predictive/artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern/orchestrator/predictive/behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern/orchestrator/predictive/behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern/orchestrator/predictive/benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern/orchestrator/predictive/benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern/orchestrator/predictive/benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern/orchestrator/predictive/benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern/orchestrator/predictive/benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern/orchestrator/predictive/benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern/orchestrator/predictive/causal.py": "77deb4ba3934a2c03b08e2e0463decff431e645eb690ea9ad3e0929243e36f3d",
+    "tern/orchestrator/predictive/contracts.py": "62b12baccc5e0f1ee1d49e34f093affc3ef20b496489e970ecb89296186f43ab",
+    "tern/orchestrator/predictive/coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern/orchestrator/predictive/evaluation.py": "15bdc19d6f8561c9ef63ee6153576a77e61b3f0cf1a14a3388d30b61539f8d90",
+    "tern/orchestrator/predictive/external_evaluation.py": "04d78f1dd85921d884a8958a88bdfb1b769d5b59317a6289513f074f70495eaa",
+    "tern/orchestrator/predictive/grounding.py": "d06cc32bc70f313693d4a9ef433b515fdd3dcbe8b9c42ad708fdbca0b5e79a0f",
+    "tern/orchestrator/predictive/import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern/orchestrator/predictive/investigation.py": "c6fe719411e07bc34396a159c20c6f8392818d84db5865ccaa6f64ce92f0d047",
+    "tern/orchestrator/predictive/investigation_evaluation.py": "8a3d5b1f708bcbbfbb73cb77b6254939f3741326c8343b88d5db39ec9ce0b0ba",
+    "tern/orchestrator/predictive/models.py": "5892e90dfeb55f9f45511cb0732a2a42bf6e94abba9d5781d6e29147f38c90a1",
+    "tern/orchestrator/predictive/operational.py": "a33d8a8f24a4fb4e4275f76a0cca300a43c619d6039f1e7f66b5f427baccfffd",
+    "tern/orchestrator/predictive/oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern/orchestrator/predictive/policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern/orchestrator/predictive/recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern/orchestrator/predictive/relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern/orchestrator/predictive/repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern/orchestrator/predictive/robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern/orchestrator/predictive/scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern/orchestrator/predictive/semantic.py": "c25eb3523d9ec69522384480f13fe6a2d8e62ba50a9111a236d762f74224175f",
+    "tern/orchestrator/predictive/service.py": "b0f8c365da5ccd991ff990fb75c29e6c64bebc1e0c4e932d24a936c2bbea809c",
+    "tern/orchestrator/predictive/sufficiency.py": "1ea7dc133b94d09c11284117c695fc206a442ba9c1793c35825e894a2d6c7858",
+    "tern/orchestrator/predictive/symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  },
+  "split": "development",
+  "summary": {
+    "A": {
+      "eligible_defects": 4,
+      "completed_defects": 4,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "presealed independent defects eligible for A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed positive defects",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed defects",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0.0,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": [
+            2.7755575615628914e-17,
+            0.3903342879021653
+          ]
+        },
+        "evidence_reference_validity": {
+          "numerator": 159,
+          "denominator": 159,
+          "rate": 1.0,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": [
+            0.9764098230971759,
+            1.0
+          ]
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 3,
+      "median_wall_seconds": 14.696571649999896,
+      "p95_wall_seconds": 28.594918399998278,
+      "states": {
+        "REQUIRES_API_RESOLUTION": 1,
+        "SUFFICIENT_FOR_INVESTIGATION": 3
+      }
+    },
+    "B": {
+      "eligible_defects": 4,
+      "completed_defects": 4,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "presealed independent defects eligible for B",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed positive defects",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed defects",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0.0,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": [
+            2.7755575615628914e-17,
+            0.3903342879021653
+          ]
+        },
+        "evidence_reference_validity": {
+          "numerator": 159,
+          "denominator": 159,
+          "rate": 1.0,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": [
+            0.9764098230971759,
+            1.0
+          ]
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 3,
+      "median_wall_seconds": 15.525003150001794,
+      "p95_wall_seconds": 28.75663429999986,
+      "states": {
+        "REQUIRES_API_RESOLUTION": 1,
+        "SUFFICIENT_FOR_INVESTIGATION": 3
+      }
+    },
+    "C": {
+      "eligible_defects": 1,
+      "completed_defects": 1,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "presealed independent defects eligible for C",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "completed independent defects, mode C",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "completed independent defects, mode C",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "completed independent defects, mode C",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "completed independent defects, mode C",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "completed positive defects",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "completed defects",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 3,
+          "rate": 0.0,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": [
+            5.551115123125783e-17,
+            0.5614970317550454
+          ]
+        },
+        "evidence_reference_validity": {
+          "numerator": 62,
+          "denominator": 62,
+          "rate": 1.0,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": [
+            0.9416559278986275,
+            0.9999999999999999
+          ]
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 1,
+      "median_wall_seconds": 80.31210529999953,
+      "p95_wall_seconds": 80.31210529999953,
+      "states": {
+        "SUFFICIENT_FOR_INVESTIGATION": 1
+      }
+    },
+    "D": {
+      "eligible_defects": 0,
+      "completed_defects": 0,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "presealed independent defects eligible for D",
+          "wilson_95": null
+        },
+        "correct_file_retrieved": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed positive defects",
+          "wilson_95": null
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed defects",
+          "wilson_95": null
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": null
+        },
+        "evidence_reference_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": null
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 0,
+      "median_wall_seconds": null,
+      "p95_wall_seconds": null,
+      "states": {}
+    }
+  },
+  "results": [
+    {
+      "case_id": "psf__requests-1142",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 13.47363779999796,
+      "phases": {
+        "index": 0.7760644000009052,
+        "initial_retrieval": 0.037689199998567346,
+        "context_and_implementation": 0.07379589999982272,
+        "initial_context": 0.010064199999760604,
+        "symbol_resolution": 0.05411199999798555,
+        "implementation_graph": 0.0059159000011277385,
+        "ledger": 0.06547449999925448,
+        "causal_slice": 0.29835210000237566,
+        "recovery": 0.07316010000067763,
+        "behavioral_contracts": 0.004918199996609474,
+        "evidence_sufficiency": 0.005743900001107249,
+        "qwen_analysis": 11.713549399999465
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        11710.043499999301
+      ],
+      "peak_working_set": 215044096,
+      "state": {
+        "api_ids": [
+          "BCfb79a3aef986ceef"
+        ],
+        "relation_ids": [
+          "BRfa6db6fb265a9882"
+        ],
+        "effect_ids": [
+          "BE36e3afa081ee0c01",
+          "BE974a7f18e5f80c43"
+        ],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "get",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "INVESTIGATION_ONLY"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "get",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "INVESTIGATION_ONLY"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 2,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 2,
+      "evidence_references_valid": 5,
+      "evidence_reference_population": 5,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "75afe5f05bee8cdd8a78df3024b6a17be6dfd732d6d9543600d1570e9cb9ce92",
+      "last_checkpoint": {
+        "elapsed_seconds": 11.711989499999618,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 13.048995599998307,
+        "working_set_bytes": 215044096
+      }
+    },
+    {
+      "case_id": "psf__requests-1142",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 13.436253400002897,
+      "phases": {
+        "index": 0.7723412999985158,
+        "initial_retrieval": 0.03776560000187601,
+        "context_and_implementation": 0.0739772000015364,
+        "initial_context": 0.009844399999565212,
+        "symbol_resolution": 0.05447479999929783,
+        "implementation_graph": 0.005990000001474982,
+        "ledger": 0.06215819999852101,
+        "causal_slice": 0.30240319999938947,
+        "recovery": 0.08202709999750368,
+        "behavioral_contracts": 0.00499130000025616,
+        "evidence_sufficiency": 0.005655600001773564,
+        "qwen_analysis": 11.669320699998934
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        11665.782500000205
+      ],
+      "peak_working_set": 216850432,
+      "state": {
+        "api_ids": [
+          "BCfb79a3aef986ceef"
+        ],
+        "relation_ids": [
+          "BRfa6db6fb265a9882"
+        ],
+        "effect_ids": [
+          "BE36e3afa081ee0c01",
+          "BE974a7f18e5f80c43"
+        ],
+        "contract_ids": [
+          "CT3dd38fa0f87cb087",
+          "CT6892db316d3ecb00"
+        ],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "get",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "INVESTIGATION_ONLY"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "get",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "INVESTIGATION_ONLY"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 2,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 2,
+      "evidence_references_valid": 5,
+      "evidence_reference_population": 5,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "9a0dcfe54963026e9625ed491aac69eb79fcddcfc2e81cfb2f8ee8e8d26efba1",
+      "last_checkpoint": {
+        "elapsed_seconds": 11.667769700001372,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 13.010866199998418,
+        "working_set_bytes": 216850432
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 28.594918399998278,
+      "phases": {
+        "index": 0.9044115000033344,
+        "initial_retrieval": 0.03826150000168127,
+        "context_and_implementation": 0.13692259999879752,
+        "initial_context": 0.010325100000045495,
+        "symbol_resolution": 0.10884639999858337,
+        "implementation_graph": 0.013957400002254872,
+        "ledger": 0.12103160000333446,
+        "causal_slice": 1.685744300000806,
+        "recovery": 0.05958749999990687,
+        "behavioral_contracts": 0.010049299999081995,
+        "evidence_sufficiency": 0.14803759999995236,
+        "qwen_analysis": 24.614754599999287
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        24610.7271999972
+      ],
+      "peak_working_set": 227123200,
+      "state": {
+        "api_ids": [
+          "BC45e65d355a4ef873",
+          "BCb82d79931a41edc7"
+        ],
+        "relation_ids": [
+          "BR785705e8f5ae15ee"
+        ],
+        "effect_ids": [
+          "BE0ac311b0a4a39c99",
+          "BE5e2ccdc744a45383",
+          "BEd89037059892f41d"
+        ],
+        "contract_ids": [],
+        "root_ids": [
+          "R1EDE4D32622E",
+          "R3F1573F8C7D2",
+          "R3253009748CB",
+          "R942CCF163785",
+          "RC18DB1941704",
+          "RC0614885736A",
+          "RF0FDB94022E0",
+          "R942545AB51D6",
+          "R27892CE10583",
+          "R54F4CF0DAAC5",
+          "R9FA131AAAD42",
+          "R79A0CB69B3CA"
+        ],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [
+        {
+          "root_id": "R1EDE4D32622E",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E65309A0BD001",
+            "E21711822BB0F",
+            "E4DAD29910756",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R3F1573F8C7D2",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R3253009748CB",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R942CCF163785",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RC18DB1941704",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RC0614885736A",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RF0FDB94022E0",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R942545AB51D6",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R27892CE10583",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R54F4CF0DAAC5",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E59A4CE9982ED",
+            "EE500D2433E3B",
+            "E430633C3EAF8",
+            "E79A6268FF62B",
+            "E36A6CF65AB65",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R9FA131AAAD42",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E59A4CE9982ED",
+            "EE500D2433E3B",
+            "E430633C3EAF8",
+            "E79A6268FF62B",
+            "E36A6CF65AB65",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R79A0CB69B3CA",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "put",
+            "to_native_string",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "R1EDE4D32622E",
+            "R3F1573F8C7D2",
+            "R3253009748CB",
+            "R942CCF163785",
+            "RC18DB1941704",
+            "RC0614885736A",
+            "RF0FDB94022E0",
+            "R942545AB51D6",
+            "R27892CE10583",
+            "R54F4CF0DAAC5",
+            "R9FA131AAAD42",
+            "R79A0CB69B3CA"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "put",
+            "to_native_string",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "R1EDE4D32622E",
+            "R3F1573F8C7D2",
+            "R3253009748CB",
+            "R942CCF163785",
+            "RC18DB1941704",
+            "RC0614885736A",
+            "RF0FDB94022E0",
+            "R942545AB51D6",
+            "R27892CE10583",
+            "R54F4CF0DAAC5",
+            "R9FA131AAAD42",
+            "R79A0CB69B3CA"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 3,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 3,
+      "evidence_references_valid": 86,
+      "evidence_reference_population": 86,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "edc6af41e5c81df408ebeb7136866848fc10d15d71f7c35f86583182133a3c46",
+      "last_checkpoint": {
+        "elapsed_seconds": 24.613078099999257,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 27.718551499998284,
+        "working_set_bytes": 227123200
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 28.75663429999986,
+      "phases": {
+        "index": 0.8745906000003743,
+        "initial_retrieval": 0.040050600000540726,
+        "context_and_implementation": 0.1332339000000502,
+        "initial_context": 0.01011129999824334,
+        "symbol_resolution": 0.1058392000013555,
+        "implementation_graph": 0.013615500000014435,
+        "ledger": 0.11935840000296594,
+        "causal_slice": 1.6198490000024321,
+        "recovery": 0.06159829999887734,
+        "behavioral_contracts": 0.010957599999528611,
+        "evidence_sufficiency": 0.1777430000001914,
+        "qwen_analysis": 24.83500339999955
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        24831.281800001307
+      ],
+      "peak_working_set": 227573760,
+      "state": {
+        "api_ids": [
+          "BC45e65d355a4ef873",
+          "BCb82d79931a41edc7"
+        ],
+        "relation_ids": [
+          "BR785705e8f5ae15ee"
+        ],
+        "effect_ids": [
+          "BE0ac311b0a4a39c99",
+          "BE5e2ccdc744a45383",
+          "BEd89037059892f41d"
+        ],
+        "contract_ids": [
+          "CT4295e077792c61a9",
+          "CT8c032b1b6db65bb4",
+          "CT6892db316d3ecb00"
+        ],
+        "root_ids": [
+          "R1EDE4D32622E",
+          "R3F1573F8C7D2",
+          "R3253009748CB",
+          "R942CCF163785",
+          "RC18DB1941704",
+          "RC0614885736A",
+          "RF0FDB94022E0",
+          "R942545AB51D6",
+          "R27892CE10583",
+          "R54F4CF0DAAC5",
+          "R9FA131AAAD42",
+          "R79A0CB69B3CA"
+        ],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [
+        {
+          "root_id": "R1EDE4D32622E",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E65309A0BD001",
+            "E21711822BB0F",
+            "E4DAD29910756",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R3F1573F8C7D2",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R3253009748CB",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R942CCF163785",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RC18DB1941704",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RC0614885736A",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "RF0FDB94022E0",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R942545AB51D6",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R27892CE10583",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R54F4CF0DAAC5",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E59A4CE9982ED",
+            "EE500D2433E3B",
+            "E430633C3EAF8",
+            "E79A6268FF62B",
+            "E36A6CF65AB65",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R9FA131AAAD42",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E59A4CE9982ED",
+            "EE500D2433E3B",
+            "E430633C3EAF8",
+            "E79A6268FF62B",
+            "E36A6CF65AB65",
+            "ECA0783274BD7",
+            "ED64862CC2AEE",
+            "E0EA5C3DA01CD",
+            "ED9D8EDEFED34",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        },
+        {
+          "root_id": "R79A0CB69B3CA",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E034AF9814D73",
+            "E0713ADC260C5",
+            "E5DA0FD80EBE3",
+            "EDD2EDA5375A0",
+            "EE3BB138B8F1C"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "put",
+            "to_native_string",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "R1EDE4D32622E",
+            "R3F1573F8C7D2",
+            "R3253009748CB",
+            "R942CCF163785",
+            "RC18DB1941704",
+            "RC0614885736A",
+            "RF0FDB94022E0",
+            "R942545AB51D6",
+            "R27892CE10583",
+            "R54F4CF0DAAC5",
+            "R9FA131AAAD42",
+            "R79A0CB69B3CA"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "put",
+            "to_native_string",
+            "request"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "R1EDE4D32622E",
+            "R3F1573F8C7D2",
+            "R3253009748CB",
+            "R942CCF163785",
+            "RC18DB1941704",
+            "RC0614885736A",
+            "RF0FDB94022E0",
+            "R942545AB51D6",
+            "R27892CE10583",
+            "R54F4CF0DAAC5",
+            "R9FA131AAAD42",
+            "R79A0CB69B3CA"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 3,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 3,
+      "evidence_references_valid": 86,
+      "evidence_reference_population": 86,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "2b414ed7e3a882efdfb3cd6fc77d5ba1b8e743721be95ae775192371eb74b5af",
+      "last_checkpoint": {
+        "elapsed_seconds": 24.83344080000097,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 27.87221579999823,
+        "working_set_bytes": 227573760
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 15.919505500001833,
+      "phases": {
+        "index": 1.9413110000023153,
+        "initial_retrieval": 0.10700930000166409,
+        "context_and_implementation": 0.20924559999912162,
+        "initial_context": 0.010893499998928746,
+        "symbol_resolution": 0.16203110000060406,
+        "implementation_graph": 0.03255120000176248,
+        "ledger": 0.07591570000295178,
+        "causal_slice": 0.49452430000019376,
+        "recovery": 0.24172120000002906,
+        "behavioral_contracts": 0.017133000001194887,
+        "evidence_sufficiency": 0.01872410000214586,
+        "qwen_analysis": 12.171510299998772
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        12168.064999998023
+      ],
+      "peak_working_set": 219910144,
+      "state": {
+        "api_ids": [
+          "BC07623842da07ef1a",
+          "BC5dc8dee5655ca334",
+          "BC61ef1a449c0cc9d6",
+          "BC81dbd5dca15eb77a",
+          "BC9b7a10bcb036bd0d",
+          "BCb6eeb84af56a7dc8",
+          "BCbeae8932204dcf64",
+          "BCc2fd9a15884f3524"
+        ],
+        "relation_ids": [],
+        "effect_ids": [
+          "BE4599fd909ddf06bc"
+        ],
+        "contract_ids": [],
+        "root_ids": [
+          "R47762B53DC60",
+          "R405A9569E718",
+          "RA93620249E9D",
+          "RD43575166817",
+          "R030B98A64BA0",
+          "RE382C15672CE",
+          "RBF37ED3AADE8",
+          "R03962DAE742E",
+          "R1113D25350FB",
+          "R22506446CB74",
+          "R5D8E61B9DE79",
+          "R610977716884"
+        ],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [
+        {
+          "root_id": "R47762B53DC60",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E09DDAA7AE740",
+            "E58DFC439CB7B",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R405A9569E718",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RA93620249E9D",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RD43575166817",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E2F0641A5DB69",
+            "EAA8360283885",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R030B98A64BA0",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RE382C15672CE",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RBF37ED3AADE8",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E09DDAA7AE740",
+            "E05EF50DEA0E4",
+            "E58DFC439CB7B",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R03962DAE742E",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R1113D25350FB",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R22506446CB74",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R5D8E61B9DE79",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R610977716884",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "EFE1B3E621588",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "_pytest"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "R47762B53DC60",
+            "R405A9569E718",
+            "RA93620249E9D",
+            "RD43575166817",
+            "R030B98A64BA0",
+            "RE382C15672CE",
+            "RBF37ED3AADE8",
+            "R03962DAE742E",
+            "R1113D25350FB",
+            "R22506446CB74",
+            "R5D8E61B9DE79",
+            "R610977716884"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "_pytest"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "R47762B53DC60",
+            "R405A9569E718",
+            "RA93620249E9D",
+            "RD43575166817",
+            "R030B98A64BA0",
+            "RE382C15672CE",
+            "RBF37ED3AADE8",
+            "R03962DAE742E",
+            "R1113D25350FB",
+            "R22506446CB74",
+            "R5D8E61B9DE79",
+            "R610977716884"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 1,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 1,
+      "evidence_references_valid": 68,
+      "evidence_reference_population": 68,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "383f82f04ffe5eff1acc8763a41ea65b0ff7989650d691fcaaec32d87a8f7493",
+      "last_checkpoint": {
+        "elapsed_seconds": 12.169938999999431,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 15.276806400001078,
+        "working_set_bytes": 219910144
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 17.61375290000069,
+      "phases": {
+        "index": 1.9373075000003155,
+        "initial_retrieval": 0.12074199999915436,
+        "context_and_implementation": 0.20290860000022803,
+        "initial_context": 0.010597700002108468,
+        "symbol_resolution": 0.15125110000008135,
+        "implementation_graph": 0.037263899997924455,
+        "ledger": 0.07744150000144145,
+        "causal_slice": 0.5169007999975292,
+        "recovery": 0.23117909999928088,
+        "behavioral_contracts": 0.01724839999951655,
+        "evidence_sufficiency": 0.01657780000095954,
+        "qwen_analysis": 13.896258000000671
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        13892.802499998652
+      ],
+      "peak_working_set": 219254784,
+      "state": {
+        "api_ids": [
+          "BC03c18ae6de6aa346",
+          "BC07623842da07ef1a",
+          "BC5dc8dee5655ca334",
+          "BC61ef1a449c0cc9d6",
+          "BC81dbd5dca15eb77a",
+          "BC9b7a10bcb036bd0d",
+          "BCb6eeb84af56a7dc8",
+          "BCbeae8932204dcf64",
+          "BCc2fd9a15884f3524"
+        ],
+        "relation_ids": [],
+        "effect_ids": [
+          "BE4599fd909ddf06bc"
+        ],
+        "contract_ids": [
+          "CT07d7c9ba5a2b057d"
+        ],
+        "root_ids": [
+          "R47762B53DC60",
+          "R405A9569E718",
+          "RA93620249E9D",
+          "RD43575166817",
+          "R030B98A64BA0",
+          "RE382C15672CE",
+          "RBF37ED3AADE8",
+          "R03962DAE742E",
+          "R1113D25350FB",
+          "R22506446CB74",
+          "R5D8E61B9DE79",
+          "R610977716884"
+        ],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [
+        {
+          "root_id": "R47762B53DC60",
+          "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E09DDAA7AE740",
+            "E58DFC439CB7B",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R405A9569E718",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RA93620249E9D",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RD43575166817",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E2F0641A5DB69",
+            "EAA8360283885",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R030B98A64BA0",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RE382C15672CE",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "RBF37ED3AADE8",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E09DDAA7AE740",
+            "E05EF50DEA0E4",
+            "E58DFC439CB7B",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R03962DAE742E",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E05EF50DEA0E4",
+            "E078879BAA4FB",
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R1113D25350FB",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R22506446CB74",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R5D8E61B9DE79",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        },
+        {
+          "root_id": "R610977716884",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E143FBB9EB89B",
+            "E41172A7D0DDB",
+            "E19DBFC9A8DC5",
+            "E47CDE5C943CD",
+            "E94D72DAEC033"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "_pytest"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "R47762B53DC60",
+            "R405A9569E718",
+            "RA93620249E9D",
+            "RD43575166817",
+            "R030B98A64BA0",
+            "RE382C15672CE",
+            "RBF37ED3AADE8",
+            "R03962DAE742E",
+            "R1113D25350FB",
+            "R22506446CB74",
+            "R5D8E61B9DE79",
+            "R610977716884"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "_pytest"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "R47762B53DC60",
+            "R405A9569E718",
+            "RA93620249E9D",
+            "RD43575166817",
+            "R030B98A64BA0",
+            "RE382C15672CE",
+            "RBF37ED3AADE8",
+            "R03962DAE742E",
+            "R1113D25350FB",
+            "R22506446CB74",
+            "R5D8E61B9DE79",
+            "R610977716884"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 1,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 1,
+      "evidence_references_valid": 68,
+      "evidence_reference_population": 68,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "9baa4de3f8689478aec77415772686b9723f5635f7195c0df692de8568b0acaa",
+      "last_checkpoint": {
+        "elapsed_seconds": 13.89468229999693,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 17.01626110000143,
+        "working_set_bytes": 219254784
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 9.948014000001422,
+      "phases": {
+        "index": 3.7784877000012784,
+        "initial_retrieval": 0.14772609999999986,
+        "context_and_implementation": 0.050759300000208896,
+        "initial_context": 0.0037449000010383315,
+        "symbol_resolution": 0.039772700001776684,
+        "implementation_graph": 0.003607200000260491,
+        "ledger": 0.02592920000097365,
+        "causal_slice": 0.9822667000007641,
+        "recovery": 3.501506499997049,
+        "behavioral_contracts": 0.003309399999125162,
+        "evidence_sufficiency": 0.011384499997802777
+      },
+      "qwen_requests": 0,
+      "qwen_request_ms": [],
+      "peak_working_set": 242708480,
+      "state": {
+        "api_ids": [],
+        "relation_ids": [],
+        "effect_ids": [],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "REQUIRES_API_RESOLUTION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [
+        {
+          "missing_fact": "AFFECTED_API_INVOCATION",
+          "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+          "related_symbols": [],
+          "acceptable_evidence_types": [
+            "REPRODUCIBLE_API_CALL",
+            "REAL_TRACEBACK"
+          ],
+          "disambiguates": [
+            "ROOT_MISSING"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 0,
+      "evidence_reference_population": 0,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "ffa84d337671d3d185e0f4037e79b587ebef403ff15671e810c6637a0a6090e1",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.009656599999289028,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 8.50527080000029,
+        "working_set_bytes": 242708480
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 10.3261222000001,
+      "phases": {
+        "index": 3.80389550000109,
+        "initial_retrieval": 0.15475639999931445,
+        "context_and_implementation": 0.05022319999989122,
+        "initial_context": 0.0038034000026527792,
+        "symbol_resolution": 0.03904980000152136,
+        "implementation_graph": 0.003696199997648364,
+        "ledger": 0.026378599999588914,
+        "causal_slice": 1.0323750999996264,
+        "recovery": 3.657384499998443,
+        "behavioral_contracts": 0.003307999999378808,
+        "evidence_sufficiency": 0.01352220000262605
+      },
+      "qwen_requests": 0,
+      "qwen_request_ms": [],
+      "peak_working_set": 241418240,
+      "state": {
+        "api_ids": [],
+        "relation_ids": [],
+        "effect_ids": [],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "REQUIRES_API_RESOLUTION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [
+        {
+          "missing_fact": "AFFECTED_API_INVOCATION",
+          "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+          "related_symbols": [],
+          "acceptable_evidence_types": [
+            "REPRODUCIBLE_API_CALL",
+            "REAL_TRACEBACK"
+          ],
+          "disambiguates": [
+            "ROOT_MISSING"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 0,
+      "evidence_reference_population": 0,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "3250424dbd6f74edf28616063a75e16790fb1103c873a73bb5c3e6e1b4ad7048",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.011782499997934792,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 8.745558200000232,
+        "working_set_bytes": 241418240
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "C",
+      "status": "COMPLETED",
+      "wall_seconds": 80.31210529999953,
+      "phases": {
+        "index": 3.7391745999993873,
+        "initial_retrieval": 0.36010109999915585,
+        "context_and_implementation": 0.9515429000020958,
+        "initial_context": 0.022705999999743653,
+        "symbol_resolution": 0.8582059000000299,
+        "implementation_graph": 0.0666479999999865,
+        "ledger": 0.5149627000027976,
+        "causal_slice": 21.941325499999948,
+        "recovery": 2.3301772000013443,
+        "behavioral_contracts": 0.02883260000089649,
+        "evidence_sufficiency": 2.9245124999979453,
+        "qwen_analysis": 38.906453300001886
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        38902.31510000012
+      ],
+      "peak_working_set": 365744128,
+      "state": {
+        "api_ids": [
+          "BC56706684a382571f",
+          "BC81dfa07bc24f8e75",
+          "BCa581c906101c9724",
+          "BCd44a00f916b99f1b",
+          "BCdc6a5c0570de42ae"
+        ],
+        "relation_ids": [],
+        "effect_ids": [
+          "BE1d0872937e80d850",
+          "BE37df0cdbdbbaacdd",
+          "BE65e2eee4287b9efb",
+          "BE67f06c28e26b1dd7",
+          "BE6bb60513044358d5",
+          "BE7ed6ded1a5abaecd",
+          "BE8557369a12b2ee64",
+          "BE8a692ded847d4cf4",
+          "BEa12b485b40af84e9",
+          "BEaefdb27a4093f444",
+          "BEbf4e2f8ffe3ee707",
+          "BEed43e2881377c483"
+        ],
+        "contract_ids": [
+          "CT819c8bf80ca066f8",
+          "CT125294f29e4c2732",
+          "CT1202dc58617786b7",
+          "CTa4ed8ef0cad0a77a"
+        ],
+        "root_ids": [
+          "R7E77857628CB",
+          "R711710FBA193",
+          "RD0A43E35338D",
+          "R72DA18748611",
+          "RED4C5B83D255",
+          "RE8A79A3C04D2",
+          "RF0A4711A87BA",
+          "R6EE18FA20102",
+          "R8ED96E06AADA",
+          "RBB34AA373E5E",
+          "RA8FE25A04777",
+          "R0A75DBA379A3"
+        ],
+        "supported_root_ids": [],
+        "state": "SUFFICIENT_FOR_INVESTIGATION",
+        "correct_candidate_exists": false
+      },
+      "root_states": [
+        {
+          "root_id": "R7E77857628CB",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E61F8B026370A",
+            "EC816ED02435E"
+          ]
+        },
+        {
+          "root_id": "R711710FBA193",
+          "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E9369F608A640",
+            "E9EE894912B70",
+            "EBA7507E36D89"
+          ]
+        },
+        {
+          "root_id": "RD0A43E35338D",
+          "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E2E20052B0E9F",
+            "E541B92DB5D43",
+            "E81E67827E525",
+            "EBA7507E36D89"
+          ]
+        },
+        {
+          "root_id": "R72DA18748611",
+          "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E32B4E9811F24",
+            "E47D13507B832",
+            "E83E900E86CF6",
+            "EBA7507E36D89"
+          ]
+        },
+        {
+          "root_id": "RED4C5B83D255",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E56183FD99E58",
+            "EECFD0D9772FD"
+          ]
+        },
+        {
+          "root_id": "RE8A79A3C04D2",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E6B92546C4809",
+            "EECFD0D9772FD"
+          ]
+        },
+        {
+          "root_id": "RF0A4711A87BA",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E14213951EFC4",
+            "E4219CE2C7040",
+            "E907E54A41F9F",
+            "EECFD0D9772FD"
+          ]
+        },
+        {
+          "root_id": "R6EE18FA20102",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E1A8850B3C716",
+            "E6ED100DAEDF1",
+            "EE09CC3AFA501"
+          ]
+        },
+        {
+          "root_id": "R8ED96E06AADA",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E994E500BF88F",
+            "ED415CE550562",
+            "E6CEE5390F2EC",
+            "E9AD27FD5DD71",
+            "ED11CCDF80788",
+            "ED124BF9512A8",
+            "E83EFA57BB6B5",
+            "EA72B5A125209",
+            "EBFBE73F64A3F",
+            "E3139FF84B896"
+          ]
+        },
+        {
+          "root_id": "RBB34AA373E5E",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "EDA4625EF91EF",
+            "E14213951EFC4",
+            "E4219CE2C7040",
+            "E907E54A41F9F",
+            "EECFD0D9772FD"
+          ]
+        },
+        {
+          "root_id": "RA8FE25A04777",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "E174791E1CD9F",
+            "EDA4625EF91EF",
+            "E14213951EFC4",
+            "E4219CE2C7040",
+            "E907E54A41F9F",
+            "EECFD0D9772FD"
+          ]
+        },
+        {
+          "root_id": "R0A75DBA379A3",
+          "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+          "reasons": [
+            "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+          ],
+          "evidence_ids": [
+            "EECFD0D9772FD",
+            "EDA4625EF91EF",
+            "E14213951EFC4",
+            "E4219CE2C7040",
+            "E907E54A41F9F"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "missing_fact": "EFFECT_TO_OBSERVATION",
+          "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+          "related_symbols": [
+            "parse"
+          ],
+          "acceptable_evidence_types": [
+            "EXISTING_EXECUTION_TRACE",
+            "INITIAL_AND_FINAL_STATE",
+            "INPUT_OUTPUT_PAIR"
+          ],
+          "disambiguates": [
+            "R7E77857628CB",
+            "R711710FBA193",
+            "RD0A43E35338D",
+            "R72DA18748611",
+            "RED4C5B83D255",
+            "RE8A79A3C04D2",
+            "RF0A4711A87BA",
+            "R6EE18FA20102",
+            "R8ED96E06AADA",
+            "RBB34AA373E5E",
+            "RA8FE25A04777",
+            "R0A75DBA379A3"
+          ],
+          "execution_requested": false
+        },
+        {
+          "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+          "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+          "related_symbols": [
+            "parse"
+          ],
+          "acceptable_evidence_types": [
+            "PREEXISTING_REGRESSION_ASSERTION",
+            "EXPECTED_AND_OBSERVED_OUTPUT"
+          ],
+          "disambiguates": [
+            "R7E77857628CB",
+            "R711710FBA193",
+            "RD0A43E35338D",
+            "R72DA18748611",
+            "RED4C5B83D255",
+            "RE8A79A3C04D2",
+            "RF0A4711A87BA",
+            "R6EE18FA20102",
+            "R8ED96E06AADA",
+            "RBB34AA373E5E",
+            "RA8FE25A04777",
+            "R0A75DBA379A3"
+          ],
+          "execution_requested": false
+        }
+      ],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 3,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 3,
+      "evidence_references_valid": 62,
+      "evidence_reference_population": 62,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "c67ebc07d854dd4665813ad148ada74b9f5ef2d58a5c0952cffece0a2e751ce0",
+      "last_checkpoint": {
+        "elapsed_seconds": 38.90490050000153,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 71.69711240000106,
+        "working_set_bytes": 363098112
+      }
+    }
+  ],
+  "information_gain": [
+    {
+      "case_id": "psf__requests-1142",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT3dd38fa0f87cb087",
+            "CT6892db316d3ecb00"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "SUFFICIENT_FOR_INVESTIGATION",
+        "state_after": "SUFFICIENT_FOR_INVESTIGATION",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT4295e077792c61a9",
+            "CT6892db316d3ecb00",
+            "CT8c032b1b6db65bb4"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "SUFFICIENT_FOR_INVESTIGATION",
+        "state_after": "SUFFICIENT_FOR_INVESTIGATION",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [
+            "BC03c18ae6de6aa346"
+          ],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT07d7c9ba5a2b057d"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "SUFFICIENT_FOR_INVESTIGATION",
+        "state_after": "SUFFICIENT_FOR_INVESTIGATION",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "REQUIRES_API_RESOLUTION",
+        "state_after": "REQUIRES_API_RESOLUTION",
+        "changed": false,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "mode": "C",
+      "gain": {
+        "added": {
+          "api_ids": [
+            "BC56706684a382571f",
+            "BC81dfa07bc24f8e75",
+            "BCa581c906101c9724",
+            "BCd44a00f916b99f1b",
+            "BCdc6a5c0570de42ae"
+          ],
+          "relation_ids": [],
+          "effect_ids": [
+            "BE1d0872937e80d850",
+            "BE37df0cdbdbbaacdd",
+            "BE65e2eee4287b9efb",
+            "BE67f06c28e26b1dd7",
+            "BE6bb60513044358d5",
+            "BE7ed6ded1a5abaecd",
+            "BE8557369a12b2ee64",
+            "BE8a692ded847d4cf4",
+            "BEa12b485b40af84e9",
+            "BEaefdb27a4093f444",
+            "BEbf4e2f8ffe3ee707",
+            "BEed43e2881377c483"
+          ],
+          "contract_ids": [
+            "CT1202dc58617786b7",
+            "CT125294f29e4c2732",
+            "CT819c8bf80ca066f8",
+            "CTa4ed8ef0cad0a77a"
+          ],
+          "root_ids": [
+            "R0A75DBA379A3",
+            "R6EE18FA20102",
+            "R711710FBA193",
+            "R72DA18748611",
+            "R7E77857628CB",
+            "R8ED96E06AADA",
+            "RA8FE25A04777",
+            "RBB34AA373E5E",
+            "RD0A43E35338D",
+            "RE8A79A3C04D2",
+            "RED4C5B83D255",
+            "RF0A4711A87BA"
+          ],
+          "supported_root_ids": []
+        },
+        "state_before": "REQUIRES_API_RESOLUTION",
+        "state_after": "SUFFICIENT_FOR_INVESTIGATION",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    }
+  ],
+  "limitations": [
+    "D unavailable: no new pre-fix runtime evidence; existing original logs already in A.",
+    "C available only when original report cited preexisting base-commit test; no gold tests inserted.",
+    "Independent defects and input formulations are distinct populations.",
+    "Baseline external qualification invalid after post-v15-seal correction; diagnostic comparison only."
+  ]
+}

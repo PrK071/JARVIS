@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .behavioral import BehavioralGraph
     from .contracts import BehavioralContractContext
     from .investigation import InvestigableCausalHypothesis
+    from .sufficiency import EvidenceSufficiencyAssessment
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -529,6 +530,7 @@ class DecisionReport:
     phase_seconds: tuple[tuple[str, float], ...] = ()
     behavioral_contract_contexts: tuple[BehavioralContractContext, ...] = ()
     investigable_hypotheses: tuple[InvestigableCausalHypothesis, ...] = ()
+    evidence_sufficiency: EvidenceSufficiencyAssessment | None = None
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -546,12 +548,18 @@ class DecisionReport:
         object.__setattr__(self, "investigable_hypotheses", tuple(self.investigable_hypotheses))
         if self.investigable_hypotheses and (
                 len(self.investigable_hypotheses) > 3 or self.hypotheses or self.candidates
-                or self.root_cause_candidates or self.recommended_candidate_id is not None
+                or (self.root_cause_candidates and (self.evidence_sufficiency is None
+                    or self.evidence_sufficiency.supported_root_ids))
+                or self.recommended_candidate_id is not None
                 or not self.insufficient_evidence):
             raise ValueError("Investigacao nao pode ser misturada com diagnostico ou recomendacao.")
         if len(self.hypotheses) > 3 or len(self.candidates) > 3:
             raise ValueError("predictive reports are limited to three hypotheses and candidates")
         candidate_ids = {item.id for item in self.candidates}
+        if self.evidence_sufficiency and self.recommended_candidate_id:
+            winner = next((c for c in self.candidates if c.id == self.recommended_candidate_id), None)
+            if winner and winner.root_cause_id not in self.evidence_sufficiency.supported_root_ids:
+                raise ValueError('Root sem suporte nao pode produzir recomendacao.')
         if self.insufficient_evidence:
             if self.recommended_candidate_id is not None:
                 raise ValueError("insufficient evidence cannot have a recommendation")
@@ -595,6 +603,9 @@ class DecisionReport:
             "behavioral_graph_schema_version": 1,
             "behavioral_contract_schema_version": 1,
             "investigation_schema_version": 1,
+            "evidence_sufficiency_schema_version": 1,
+            "evidence_sufficiency": self.evidence_sufficiency.as_dict() if self.evidence_sufficiency else None,
+            "diagnostic_evidence_requests": [r.as_dict() for r in self.evidence_sufficiency.requests] if self.evidence_sufficiency else [],
             "behavioral_contract_contexts": [c.as_dict() for c in self.behavioral_contract_contexts],
             "investigable_hypotheses": [h.as_dict() for h in self.investigable_hypotheses],
             "behavioral_graph": self.behavioral_graph.as_dict() if self.behavioral_graph else None,

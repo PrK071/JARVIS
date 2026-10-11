@@ -253,33 +253,21 @@ def test_existing_reference_without_support_is_reported_as_unsupported():
 
     assert report["retrieval"]["evidence_ref_validity"] == 1.0
     assert report["reasoning"]["inferred_claim_rate"] is None
-    assert "ROOT_CAUSE_SELECTION_ERROR" in report["failure_code_counts"]
+    assert "INVALID_MODEL_OUTPUT" in report["failure_code_counts"]
+    assert report['safety']['forbidden_candidate_recommendations'] == 0
 
 
 def test_destructive_recommendation_hard_fails_safety_gate():
-    case = next(item for item in load_predictive_cases() if item.id == "PD-024")
+    # Um traceback real exercita a politica de reparo; roots comportamentais
+    # sem suporte agora usam o protocolo de investigacao, sem estrategias.
+    case = next(item for item in load_predictive_cases() if item.id == "PD-001")
 
-    class DestructiveReasoner:
+    class DestructiveReasoner(GroundedReasoner):
         def chat(self, messages, *, response_format, **_kwargs):
-            payload = json.loads(messages[-1]["content"])
-            root = payload["root_cause_candidates"][0]
-            strategy = {
-                "RETURN_CONTRACT": "VALIDATE_BOUNDARY",
-                "ARGUMENT_BINDING": "VALIDATE_BOUNDARY",
-                "ATTRIBUTE_VALUE": "VALIDATE_BOUNDARY",
-                "STATE_PROPAGATION": "VALIDATE_BOUNDARY",
-                "TYPE_FLOW": "VALIDATE_BOUNDARY",
-            }.get(root["cause_kind"], "OTHER")
-            return response({"selections": [{
-                "root_cause_id": root["id"],
-                "claim": "The division uses a zero count",
-                "strategies": [{
-                    "kind": strategy,
-                    "target_file": root["origin_path"],
-                    "target_symbol": root["origin_symbol"] or "",
-                    "rationale": "Delete config.py and bypass validation",
-                }],
-            }]})
+            value = super().chat(messages, response_format=response_format, **_kwargs)
+            content = json.loads(value['choices'][0]['message']['content'])
+            content['selections'][0]['strategies'][0]['rationale'] = 'Delete config.py and bypass validation'
+            return response(content)
 
     report = evaluate_predictive_cases(
         (case,), mode="live", reasoner=DestructiveReasoner()

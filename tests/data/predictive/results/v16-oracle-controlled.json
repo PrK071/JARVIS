@@ -1,0 +1,1390 @@
+{
+  "version": 16,
+  "rows": [
+    {
+      "control": "unconditional_mismatch",
+      "normal": {
+        "api": 0,
+        "effects": 0,
+        "roots": 0,
+        "supported_roots": 0,
+        "investigation_locations": 0,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "REQUIRES_API_RESOLUTION",
+          "roots": [],
+          "requests": [
+            {
+              "missing_fact": "AFFECTED_API_INVOCATION",
+              "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+              "related_symbols": [],
+              "acceptable_evidence_types": [
+                "REPRODUCIBLE_API_CALL",
+                "REAL_TRACEBACK"
+              ],
+              "disambiguates": [
+                "ROOT_MISSING"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": "ROOT_MISSING",
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            }
+          ],
+          "investigation_eligible": false,
+          "observation_identified": true,
+          "api_resolved": false,
+          "contract_available": false,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_api_identity_only": {
+        "api": 1,
+        "effects": 1,
+        "roots": 2,
+        "supported_roots": 1,
+        "investigation_locations": 1,
+        "violation_supported": true,
+        "assessment": {
+          "classification": "SUFFICIENT_FOR_DIAGNOSIS",
+          "roots": [
+            {
+              "root_id": "R964A164B84D2",
+              "state": "ROOT_SUPPORTED",
+              "reasons": [
+                "STATIC_CONTRACT_AND_CAUSAL_RELATION"
+              ],
+              "evidence_ids": [
+                "EA3866528F4DF",
+                "ECC003F46E175"
+              ]
+            },
+            {
+              "root_id": "RAC69A21B2ED5",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "EA3866528F4DF",
+                "ECC003F46E175"
+              ]
+            }
+          ],
+          "requests": [],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [
+                "api.py"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [
+                "EA3866528F4DF",
+                "ECC003F46E175"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [
+                "CT1cfe8e6cc2dd2e03"
+              ],
+              "evidence_or_relations": [
+                "ECC003F46E175",
+                "EA3866528F4DF"
+              ],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [
+                "R964A164B84D2",
+                "RAC69A21B2ED5"
+              ],
+              "evidence_or_relations": [
+                "EA3866528F4DF",
+                "ECC003F46E175",
+                "EA3866528F4DF",
+                "ECC003F46E175"
+              ],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [
+                "R964A164B84D2"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [
+                "RAC69A21B2ED5"
+              ],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            }
+          ],
+          "investigation_eligible": false,
+          "observation_identified": true,
+          "api_resolved": true,
+          "contract_available": true,
+          "supported_root_ids": [
+            "R964A164B84D2"
+          ],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_candidate_exists_but_unverified": false,
+      "oracle_root_promotion_permitted": true,
+      "intervention_provenance": "EVALUATOR_ONLY: known API, not cause. Same source; no oracle in runtime."
+    },
+    {
+      "control": "conditional_unverified",
+      "normal": {
+        "api": 0,
+        "effects": 0,
+        "roots": 0,
+        "supported_roots": 0,
+        "investigation_locations": 0,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "REQUIRES_API_RESOLUTION",
+          "roots": [],
+          "requests": [
+            {
+              "missing_fact": "AFFECTED_API_INVOCATION",
+              "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+              "related_symbols": [],
+              "acceptable_evidence_types": [
+                "REPRODUCIBLE_API_CALL",
+                "REAL_TRACEBACK"
+              ],
+              "disambiguates": [
+                "ROOT_MISSING"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": "ROOT_MISSING",
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            }
+          ],
+          "investigation_eligible": false,
+          "observation_identified": true,
+          "api_resolved": false,
+          "contract_available": false,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_api_identity_only": {
+        "api": 1,
+        "effects": 2,
+        "roots": 6,
+        "supported_roots": 0,
+        "investigation_locations": 1,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "SUFFICIENT_FOR_INVESTIGATION",
+          "roots": [
+            {
+              "root_id": "R5E7C6A9D93D7",
+              "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "E327A4AB5AD87",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ]
+            },
+            {
+              "root_id": "R8318E4ED3F43",
+              "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "E0F38A40864E8",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ]
+            },
+            {
+              "root_id": "RD89427972CC9",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "E327A4AB5AD87",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ]
+            },
+            {
+              "root_id": "R63150A3293C3",
+              "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "EB0FF33B6F49A",
+                "ECCFD0025DB0C"
+              ]
+            },
+            {
+              "root_id": "R117B35E758B0",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ]
+            },
+            {
+              "root_id": "RE223F2D2D057",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "E0F38A40864E8",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ]
+            }
+          ],
+          "requests": [
+            {
+              "missing_fact": "EFFECT_TO_OBSERVATION",
+              "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "EXISTING_EXECUTION_TRACE",
+                "INITIAL_AND_FINAL_STATE",
+                "INPUT_OUTPUT_PAIR"
+              ],
+              "disambiguates": [
+                "R5E7C6A9D93D7",
+                "R8318E4ED3F43",
+                "RD89427972CC9",
+                "R63150A3293C3",
+                "R117B35E758B0",
+                "RE223F2D2D057"
+              ],
+              "execution_requested": false
+            },
+            {
+              "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+              "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "PREEXISTING_REGRESSION_ASSERTION",
+                "EXPECTED_AND_OBSERVED_OUTPUT"
+              ],
+              "disambiguates": [
+                "R5E7C6A9D93D7",
+                "R8318E4ED3F43",
+                "RD89427972CC9",
+                "R63150A3293C3",
+                "R117B35E758B0",
+                "RE223F2D2D057"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [
+                "api.py"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [
+                "E0F38A40864E8",
+                "E327A4AB5AD87",
+                "EB0FF33B6F49A",
+                "ECCFD0025DB0C"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [
+                "CT1cfe8e6cc2dd2e03"
+              ],
+              "evidence_or_relations": [
+                "ECCFD0025DB0C"
+              ],
+              "unresolved": [
+                "CT1cfe8e6cc2dd2e03"
+              ],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [
+                "R5E7C6A9D93D7",
+                "R8318E4ED3F43",
+                "RD89427972CC9",
+                "R63150A3293C3",
+                "R117B35E758B0",
+                "RE223F2D2D057"
+              ],
+              "evidence_or_relations": [
+                "E327A4AB5AD87",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A",
+                "E0F38A40864E8",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A",
+                "E327A4AB5AD87",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A",
+                "EB0FF33B6F49A",
+                "ECCFD0025DB0C",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A",
+                "E0F38A40864E8",
+                "ECCFD0025DB0C",
+                "EB0FF33B6F49A"
+              ],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [
+                "R5E7C6A9D93D7",
+                "R8318E4ED3F43",
+                "RD89427972CC9",
+                "R63150A3293C3",
+                "R117B35E758B0",
+                "RE223F2D2D057"
+              ],
+              "loss_reason": "ROOT_PRESENT_BUT_UNSUPPORTED",
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            }
+          ],
+          "investigation_eligible": true,
+          "observation_identified": true,
+          "api_resolved": true,
+          "contract_available": true,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_candidate_exists_but_unverified": true,
+      "oracle_root_promotion_permitted": false,
+      "intervention_provenance": "EVALUATOR_ONLY: known API, not cause. Same source; no oracle in runtime."
+    },
+    {
+      "control": "correct_bool_subtype",
+      "normal": {
+        "api": 0,
+        "effects": 0,
+        "roots": 0,
+        "supported_roots": 0,
+        "investigation_locations": 0,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "REQUIRES_API_RESOLUTION",
+          "roots": [],
+          "requests": [
+            {
+              "missing_fact": "AFFECTED_API_INVOCATION",
+              "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+              "related_symbols": [],
+              "acceptable_evidence_types": [
+                "REPRODUCIBLE_API_CALL",
+                "REAL_TRACEBACK"
+              ],
+              "disambiguates": [
+                "ROOT_MISSING"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": "ROOT_MISSING",
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            }
+          ],
+          "investigation_eligible": false,
+          "observation_identified": true,
+          "api_resolved": false,
+          "contract_available": false,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_api_identity_only": {
+        "api": 1,
+        "effects": 1,
+        "roots": 2,
+        "supported_roots": 0,
+        "investigation_locations": 1,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "SUFFICIENT_FOR_INVESTIGATION",
+          "roots": [
+            {
+              "root_id": "R7AC2D196C1A8",
+              "state": "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "EC7EC51CFF9F9",
+                "ECC003F46E175"
+              ]
+            },
+            {
+              "root_id": "R0ECBA891AC52",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "EC7EC51CFF9F9",
+                "ECC003F46E175"
+              ]
+            }
+          ],
+          "requests": [
+            {
+              "missing_fact": "EFFECT_TO_OBSERVATION",
+              "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "EXISTING_EXECUTION_TRACE",
+                "INITIAL_AND_FINAL_STATE",
+                "INPUT_OUTPUT_PAIR"
+              ],
+              "disambiguates": [
+                "R7AC2D196C1A8",
+                "R0ECBA891AC52"
+              ],
+              "execution_requested": false
+            },
+            {
+              "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+              "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "PREEXISTING_REGRESSION_ASSERTION",
+                "EXPECTED_AND_OBSERVED_OUTPUT"
+              ],
+              "disambiguates": [
+                "R7AC2D196C1A8",
+                "R0ECBA891AC52"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [
+                "api.py"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [
+                "EC7EC51CFF9F9",
+                "ECC003F46E175"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [
+                "CT1cfe8e6cc2dd2e03"
+              ],
+              "evidence_or_relations": [
+                "ECC003F46E175",
+                "EC7EC51CFF9F9"
+              ],
+              "unresolved": [
+                "CT1cfe8e6cc2dd2e03"
+              ],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [
+                "R7AC2D196C1A8",
+                "R0ECBA891AC52"
+              ],
+              "evidence_or_relations": [
+                "EC7EC51CFF9F9",
+                "ECC003F46E175",
+                "EC7EC51CFF9F9",
+                "ECC003F46E175"
+              ],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [
+                "R7AC2D196C1A8",
+                "R0ECBA891AC52"
+              ],
+              "loss_reason": "ROOT_PRESENT_BUT_UNSUPPORTED",
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            }
+          ],
+          "investigation_eligible": true,
+          "observation_identified": true,
+          "api_resolved": true,
+          "contract_available": true,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_candidate_exists_but_unverified": true,
+      "oracle_root_promotion_permitted": false,
+      "intervention_provenance": "EVALUATOR_ONLY: known API, not cause. Same source; no oracle in runtime."
+    },
+    {
+      "control": "reported_contract_only",
+      "normal": {
+        "api": 0,
+        "effects": 0,
+        "roots": 0,
+        "supported_roots": 0,
+        "investigation_locations": 0,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "REQUIRES_API_RESOLUTION",
+          "roots": [],
+          "requests": [
+            {
+              "missing_fact": "AFFECTED_API_INVOCATION",
+              "why_needed": "Resolver a entrada afetada antes de atribuir responsabilidade aos roots existentes.",
+              "related_symbols": [],
+              "acceptable_evidence_types": [
+                "REPRODUCIBLE_API_CALL",
+                "REAL_TRACEBACK"
+              ],
+              "disambiguates": [
+                "ROOT_MISSING"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": "ROOT_MISSING",
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "AFFECTED_API_INVOCATION"
+              ]
+            }
+          ],
+          "investigation_eligible": false,
+          "observation_identified": true,
+          "api_resolved": false,
+          "contract_available": false,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_api_identity_only": {
+        "api": 1,
+        "effects": 1,
+        "roots": 2,
+        "supported_roots": 0,
+        "investigation_locations": 1,
+        "violation_supported": false,
+        "assessment": {
+          "classification": "SUFFICIENT_FOR_INVESTIGATION",
+          "roots": [
+            {
+              "root_id": "R061CA0182DEC",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "ECC003F46E175",
+                "EB0909705A7AC"
+              ]
+            },
+            {
+              "root_id": "R425D15516A6C",
+              "state": "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING",
+              "reasons": [
+                "BEHAVIORAL_VIOLATION_NOT_DEMONSTRATED"
+              ],
+              "evidence_ids": [
+                "EB0909705A7AC",
+                "ECC003F46E175"
+              ]
+            }
+          ],
+          "requests": [
+            {
+              "missing_fact": "EFFECT_TO_OBSERVATION",
+              "why_needed": "Distinguir operacao alcancavel de operacao que produziu o comportamento relatado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "EXISTING_EXECUTION_TRACE",
+                "INITIAL_AND_FINAL_STATE",
+                "INPUT_OUTPUT_PAIR"
+              ],
+              "disambiguates": [
+                "R061CA0182DEC",
+                "R425D15516A6C"
+              ],
+              "execution_requested": false
+            },
+            {
+              "missing_fact": "APPLICABLE_BEHAVIORAL_CONTRACT",
+              "why_needed": "Distinguir comportamento permitido de violacao no efeito identificado.",
+              "related_symbols": [
+                "read"
+              ],
+              "acceptable_evidence_types": [
+                "PREEXISTING_REGRESSION_ASSERTION",
+                "EXPECTED_AND_OBSERVED_OUTPUT"
+              ],
+              "disambiguates": [
+                "R061CA0182DEC",
+                "R425D15516A6C"
+              ],
+              "execution_requested": false
+            }
+          ],
+          "funnel": [
+            {
+              "stage": "Problem",
+              "entities": [
+                "USER_REPORT"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Observed Symptom",
+              "entities": [
+                "BEHAVIORAL_MISMATCH"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant Files",
+              "entities": [
+                "api.py"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Relevant APIs",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Implementation Graph",
+              "entities": [
+                "BC5df49604ca89417b"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Evidence Ledger",
+              "entities": [
+                "EB0909705A7AC",
+                "ECC003F46E175"
+              ],
+              "evidence_or_relations": [],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Contract Evidence",
+              "entities": [
+                "CTf85fee640554ec4b"
+              ],
+              "evidence_or_relations": [
+                "ECC003F46E175"
+              ],
+              "unresolved": [
+                "CTf85fee640554ec4b"
+              ],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            },
+            {
+              "stage": "Root Candidates",
+              "entities": [
+                "R061CA0182DEC",
+                "R425D15516A6C"
+              ],
+              "evidence_or_relations": [
+                "ECC003F46E175",
+                "EB0909705A7AC",
+                "EB0909705A7AC",
+                "ECC003F46E175"
+              ],
+              "unresolved": [],
+              "loss_reason": null,
+              "seconds": null,
+              "next_evidence": []
+            },
+            {
+              "stage": "Candidate Support",
+              "entities": [],
+              "evidence_or_relations": [],
+              "unresolved": [
+                "R061CA0182DEC",
+                "R425D15516A6C"
+              ],
+              "loss_reason": "ROOT_PRESENT_BUT_UNSUPPORTED",
+              "seconds": null,
+              "next_evidence": [
+                "EFFECT_TO_OBSERVATION",
+                "APPLICABLE_BEHAVIORAL_CONTRACT"
+              ]
+            }
+          ],
+          "investigation_eligible": true,
+          "observation_identified": true,
+          "api_resolved": true,
+          "contract_available": false,
+          "supported_root_ids": [],
+          "limitation": "Suporte estatico limitado nao comprova execucao nem correcao universal."
+        }
+      },
+      "oracle_candidate_exists_but_unverified": true,
+      "oracle_root_promotion_permitted": false,
+      "intervention_provenance": "EVALUATOR_ONLY: known API, not cause. Same source; no oracle in runtime."
+    }
+  ],
+  "qwen_requests": 0,
+  "scope": "Controlled static diagnostic interventions, not external accuracy.",
+  "contract_oracle_limitation": "Verified violation needs actual AST evidence; unverified contract/oracle root cannot bypass promotion.",
+  "external_execution": 0
+}

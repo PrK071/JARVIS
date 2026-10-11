@@ -99,7 +99,7 @@ def test_service_preserves_reasoner_unavailable_diagnostic(tmp_path):
 
     report = PredictiveDecisionService(
         UnavailableReasoner(), path_policy=PathPolicy((root,))
-    ).predict('File "pkg/calc.py", line 2\nTypeError', root)
+    ).predict('File "pkg/calc.py", line 2\nTypeError: unsupported operands', root)
 
     assert report.insufficient_evidence is True
     assert report.failure_reason.value == "REASONER_UNAVAILABLE"
@@ -118,7 +118,7 @@ def test_forbidden_candidate_is_rejected_and_never_recommended(tmp_path):
 
     report = PredictiveDecisionService(
         UnsafeReasoner(), path_policy=PathPolicy((root,))
-    ).predict('File "pkg/calc.py", line 2\nTypeError', root)
+    ).predict('File "pkg/calc.py", line 2\nTypeError: unsupported operands', root)
 
     assert report.recommended_candidate_id is None
     assert report.candidates == ()

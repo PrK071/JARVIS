@@ -32,6 +32,7 @@ from .operational import AnalysisTimer, PredictiveOperationalTimeout, observe_ph
 from .relevance import describe_symptom, SymptomKind
 from .contracts import build_contract_contexts
 from .investigation import build_investigable_hypotheses, select_investigations
+from .sufficiency import assess_evidence_sufficiency, EvidenceSufficiency, DiagnosticEvidenceRequest
 
 
 _STRENGTH_ORDER = {
@@ -171,6 +172,25 @@ class PredictiveDecisionService:
     def predict(self, problem: str, project_path: str | Path) -> DecisionReport:
         timer = AnalysisTimer()
         report = self._predict(problem, project_path, timer)
+        assessment = report.evidence_sufficiency
+        if assessment:
+            if report.failure_reason is PredictiveFailureReason.ROOT_CAUSE_AMBIGUOUS:
+                request = DiagnosticEvidenceRequest('DISTINGUISH_CAUSAL_ALTERNATIVES',
+                    'O seletor nao distinguiu roots fundamentados com os fatos disponiveis.',
+                    tuple(r.origin_symbol for r in report.root_cause_candidates if r.origin_symbol),
+                    ('INPUT_OUTPUT_PAIR', 'EXISTING_EXECUTION_TRACE'),
+                    tuple(r.id for r in report.root_cause_candidates))
+                assessment = replace(assessment, classification=EvidenceSufficiency.AMBIGUOUS,
+                    requests=(*assessment.requests, request))
+            route = ('CONFIRMED_DIAGNOSIS' if report.recommended_candidate_id else
+                'INVESTIGATION' if report.investigable_hypotheses else 'ABSTENTION')
+            assessment = replace(assessment, funnel=(*assessment.funnel, {
+                'stage': 'Final Routing', 'entities': [route], 'evidence_or_relations': [],
+                'unresolved': [r.missing_fact for r in assessment.requests],
+                'loss_reason': report.failure_reason.value if report.failure_reason else None,
+                'seconds': sum(timer.seconds.get(p, 0) for p in ('qwen_analysis', 'policy', 'ranking')),
+                'next_evidence': [r.missing_fact for r in assessment.requests]}))
+            report = replace(report, evidence_sufficiency=assessment)
         return replace(report, phase_seconds=tuple(timer.seconds.items()))
 
     def _predict(self, problem: str, project_path: str | Path, timer: AnalysisTimer) -> DecisionReport:
@@ -213,7 +233,9 @@ class PredictiveDecisionService:
         )
         contracts = timer.measure('behavioral_contracts', build_contract_contexts,
                                   context, self.path_policy)
-        if not root_causes:
+        assessment = timer.measure('evidence_sufficiency', assess_evidence_sufficiency,
+            context, contracts, timer.seconds)
+        if not assessment.supported_root_ids:
             locations = build_investigable_hypotheses(context, contracts)
             selected, investigation_failure = timer.measure('qwen_analysis', select_investigations,
                 self.investigation_reasoner, context, locations) if locations else ((), None)
@@ -227,11 +249,14 @@ class PredictiveDecisionService:
                     "Nenhuma origem causal estruturalmente demonstrável foi localizada."
                 ),
                 failure_reason=investigation_failure or PredictiveFailureReason.INSUFFICIENT_STRUCTURAL_EVIDENCE,
-                diagnostic_codes=('INVESTIGATION_ONLY',) if selected else (),
+                diagnostic_codes=tuple(code for code in (
+                    'ROOT_PRESENT_BUT_UNSUPPORTED' if root_causes else 'ROOT_MISSING',
+                    'INVESTIGATION_ONLY' if selected else None) if code),
                 investigable_hypotheses=selected,
                 behavioral_contract_contexts=contracts,
+                evidence_sufficiency=assessment,
                 causal_slice=causal_slice,
-                root_cause_candidates=(),
+                root_cause_candidates=root_causes,
                 retrieval_escalation=context.retrieval_escalation,
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
@@ -240,6 +265,8 @@ class PredictiveDecisionService:
         if not context.sufficient_evidence:
             return self._insufficient(problem, "Nenhuma evidência estrutural forte foi localizada.")
 
+        context = replace(context, root_cause_candidates=tuple(
+            root for root in root_causes if root.id in assessment.supported_root_ids))
         analysis = timer.measure('qwen_analysis', self.analyzer.analyze_with_diagnostics, context)
         if analysis.failure_reason is not None:
             return DecisionReport(
@@ -253,7 +280,7 @@ class PredictiveDecisionService:
                 diagnostic_codes=analysis.diagnostic_codes,
                 rejected_candidates=analysis.rejected_candidates,
                 causal_slice=context.causal_slice,
-                root_cause_candidates=context.root_cause_candidates,
+                root_cause_candidates=root_causes,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
@@ -261,6 +288,7 @@ class PredictiveDecisionService:
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
                 behavioral_contract_contexts=contracts,
+                evidence_sufficiency=assessment,
             )
 
         policy_candidates = timer.measure('policy', lambda: tuple(
@@ -287,7 +315,7 @@ class PredictiveDecisionService:
                 )),
                 rejected_candidates=rejected,
                 causal_slice=context.causal_slice,
-                root_cause_candidates=context.root_cause_candidates,
+                root_cause_candidates=root_causes,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
@@ -295,6 +323,7 @@ class PredictiveDecisionService:
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
                 behavioral_contract_contexts=contracts,
+                evidence_sufficiency=assessment,
             )
         try:
             decision = timer.measure('ranking', ranking_decision, eligible)
@@ -329,7 +358,7 @@ class PredictiveDecisionService:
                 ranking_margin=decision.margin,
                 ranking_ambiguous=True,
                 causal_slice=context.causal_slice,
-                root_cause_candidates=context.root_cause_candidates,
+                root_cause_candidates=root_causes,
                 repair_strategies=analysis.repair_strategies,
                 root_cause_selections=analysis.root_cause_selections,
                 retrieval_escalation=context.retrieval_escalation,
@@ -337,6 +366,7 @@ class PredictiveDecisionService:
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
                 behavioral_contract_contexts=contracts,
+                evidence_sufficiency=assessment,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -354,7 +384,7 @@ class PredictiveDecisionService:
             rejected_candidates=rejected,
             ranking_margin=decision.margin,
             causal_slice=context.causal_slice,
-            root_cause_candidates=context.root_cause_candidates,
+            root_cause_candidates=root_causes,
             repair_strategies=analysis.repair_strategies,
             root_cause_selections=analysis.root_cause_selections,
             retrieval_escalation=context.retrieval_escalation,
@@ -362,6 +392,7 @@ class PredictiveDecisionService:
             relevant_symbol_contexts=context.relevant_symbol_contexts,
             behavioral_graph=context.behavioral_graph,
             behavioral_contract_contexts=contracts,
+            evidence_sufficiency=assessment,
         )
 
     @staticmethod

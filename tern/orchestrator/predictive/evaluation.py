@@ -1277,7 +1277,13 @@ def evaluate_predictive_cases(
             full_metrics, full_failures = _full_metrics(case, context, report)
         # Wall-time measurements are observations, not model output stability.
         def structured_output(item):
-            return {key: value for key, value in item.as_dict().items() if key != 'phase_seconds'}
+            value = {key: value for key, value in item.as_dict().items() if key != 'phase_seconds'}
+            # Custos de observabilidade nao sao instabilidade da decisao.
+            if value.get('evidence_sufficiency'):
+                value['evidence_sufficiency']['funnel'] = [
+                    {key: item for key, item in stage.items() if key != 'seconds'}
+                    for stage in value['evidence_sufficiency']['funnel']]
+            return value
         stable = all(structured_output(item) == structured_output(reports[0])
                      for item in reports[1:]) if reports else True
         decision_stable = all(
