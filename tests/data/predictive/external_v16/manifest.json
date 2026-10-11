@@ -1,0 +1,19 @@
+{
+  "version": 16,
+  "frozen_at": "2026-10-11T01:43:58.326903+00:00",
+  "baseline": "4c259064f8761b0295ff846e45fa63ca21c61690",
+  "cases_sha256": "898bb85b4fb7a29dc689e31e7ee0e64d3e55b620acc000e2f2443a793c36b5e4",
+  "independent_defects": 12,
+  "development": 4,
+  "holdout": 8,
+  "budget_seconds": 240,
+  "memory_mb": 1024,
+  "holdout_thresholds": {
+    "completion_rate": 1.0,
+    "root_validity": 0.8,
+    "hypothesis_location_precision": 0.75,
+    "unsupported_root_recommendations": 0
+  },
+  "policy": "One-shot held-out matrix after final freeze; no holdout tuning.",
+  "scope": "12 purposive Python projections; not production qualification."
+}

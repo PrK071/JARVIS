@@ -1,0 +1,1218 @@
+{
+  "version": 16,
+  "corpus_sha256": "898bb85b4fb7a29dc689e31e7ee0e64d3e55b620acc000e2f2443a793c36b5e4",
+  "runtime_sources": {
+    "tern/orchestrator/predictive/__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern/orchestrator/predictive/analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern/orchestrator/predictive/artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern/orchestrator/predictive/behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern/orchestrator/predictive/behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern/orchestrator/predictive/benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern/orchestrator/predictive/benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern/orchestrator/predictive/benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern/orchestrator/predictive/benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern/orchestrator/predictive/benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern/orchestrator/predictive/benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern/orchestrator/predictive/causal.py": "37f53c8988010e5899fd1e322774359532bf51bbb7027130c7c6729e9b9c7623",
+    "tern/orchestrator/predictive/contracts.py": "62b12baccc5e0f1ee1d49e34f093affc3ef20b496489e970ecb89296186f43ab",
+    "tern/orchestrator/predictive/coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern/orchestrator/predictive/evaluation.py": "d40c6299603e6d04546d1448f75e11bee7d663f46dcab129e00f8f0ecece368a",
+    "tern/orchestrator/predictive/external_evaluation.py": "04d78f1dd85921d884a8958a88bdfb1b769d5b59317a6289513f074f70495eaa",
+    "tern/orchestrator/predictive/grounding.py": "d06cc32bc70f313693d4a9ef433b515fdd3dcbe8b9c42ad708fdbca0b5e79a0f",
+    "tern/orchestrator/predictive/import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern/orchestrator/predictive/investigation.py": "c6fe719411e07bc34396a159c20c6f8392818d84db5865ccaa6f64ce92f0d047",
+    "tern/orchestrator/predictive/investigation_evaluation.py": "8a3d5b1f708bcbbfbb73cb77b6254939f3741326c8343b88d5db39ec9ce0b0ba",
+    "tern/orchestrator/predictive/models.py": "b77e6c67420b7f5b7bf53915361be21ca2144f3decfc5aabc5911fb6d975b2be",
+    "tern/orchestrator/predictive/operational.py": "a33d8a8f24a4fb4e4275f76a0cca300a43c619d6039f1e7f66b5f427baccfffd",
+    "tern/orchestrator/predictive/oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern/orchestrator/predictive/policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern/orchestrator/predictive/recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern/orchestrator/predictive/relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern/orchestrator/predictive/repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern/orchestrator/predictive/robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern/orchestrator/predictive/scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern/orchestrator/predictive/semantic.py": "3017ef02bbb0421eac0f8e94c8508a3c0a2e86fa2d9f807426442a8fce09d6ec",
+    "tern/orchestrator/predictive/service.py": "5109a1af6adc5ae8be488d8d1cae12ea035eff8cc596934a10a5263e1e32733f",
+    "tern/orchestrator/predictive/symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  },
+  "split": "development",
+  "summary": {
+    "A": {
+      "eligible_defects": 4,
+      "completed_defects": 4,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "presealed independent defects eligible for A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "recommendations",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "false_abstention_rate": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "completed positive defects",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 1,
+          "denominator": 4,
+          "rate": 0.25,
+          "population": "completed defects",
+          "wilson_95": [
+            0.04558726080970055,
+            0.6993581574175981
+          ]
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "evidence_reference_validity": {
+          "numerator": 150,
+          "denominator": 150,
+          "rate": 1.0,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": [
+            0.9750297556319235,
+            1.0
+          ]
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 3,
+      "median_wall_seconds": 42.293927149999945,
+      "p95_wall_seconds": 90.52372119999927,
+      "states": {
+        "BASELINE_WITHOUT_TRIAGE": 4
+      }
+    },
+    "B": {
+      "eligible_defects": 4,
+      "completed_defects": 4,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "presealed independent defects eligible for B",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode B",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "recommendations",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "false_abstention_rate": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "completed positive defects",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 1,
+          "denominator": 4,
+          "rate": 0.25,
+          "population": "completed defects",
+          "wilson_95": [
+            0.04558726080970055,
+            0.6993581574175981
+          ]
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "evidence_reference_validity": {
+          "numerator": 150,
+          "denominator": 150,
+          "rate": 1.0,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": [
+            0.9750297556319235,
+            1.0
+          ]
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 3,
+      "median_wall_seconds": 43.61568995000016,
+      "p95_wall_seconds": 94.86334949999946,
+      "states": {
+        "BASELINE_WITHOUT_TRIAGE": 4
+      }
+    },
+    "C": {
+      "eligible_defects": 1,
+      "completed_defects": 0,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "population": "presealed independent defects eligible for C",
+          "wilson_95": [
+            0.0,
+            0.7934506856227626
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode C",
+          "wilson_95": null
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode C",
+          "wilson_95": null
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode C",
+          "wilson_95": null
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode C",
+          "wilson_95": null
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed positive defects",
+          "wilson_95": null
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed defects",
+          "wilson_95": null
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": null
+        },
+        "evidence_reference_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": null
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 0,
+      "median_wall_seconds": 240.04267919999984,
+      "p95_wall_seconds": 240.04267919999984,
+      "states": {}
+    },
+    "D": {
+      "eligible_defects": 0,
+      "completed_defects": 0,
+      "metrics": {
+        "completion_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "presealed independent defects eligible for D",
+          "wilson_95": null
+        },
+        "correct_file_retrieved": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "correct_candidate_exists": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "root_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "repair_correct": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed independent defects, mode D",
+          "wilson_95": null
+        },
+        "recommendation_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "recommendations",
+          "wilson_95": null
+        },
+        "false_abstention_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed positive defects",
+          "wilson_95": null
+        },
+        "investigable_hypothesis_coverage": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "completed defects",
+          "wilson_95": null
+        },
+        "hypothesis_location_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "hypotheses; source-location proxy not causal confirmation",
+          "wilson_95": null
+        },
+        "evidence_reference_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "candidate and investigation evidence IDs",
+          "wilson_95": null
+        },
+        "required_evidence_precision": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent adjudication of acquisition efficacy",
+          "wilson_95": null
+        }
+      },
+      "qwen_requests": 0,
+      "median_wall_seconds": null,
+      "p95_wall_seconds": null,
+      "states": {}
+    }
+  },
+  "results": [
+    {
+      "case_id": "psf__requests-1142",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 21.81078890000208,
+      "phases": {
+        "index": 1.0745239999996556,
+        "initial_retrieval": 0.03723860000172863,
+        "context_and_implementation": 0.08401140000205487,
+        "initial_context": 0.011045899998862296,
+        "symbol_resolution": 0.06297089999861782,
+        "implementation_graph": 0.006303800000750925,
+        "ledger": 0.06471670000246377,
+        "causal_slice": 0.36350469999888446,
+        "recovery": 0.11375019999832148,
+        "behavioral_contracts": 0.007252800001879223,
+        "qwen_analysis": 19.405911200003175
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        19401.63670000038
+      ],
+      "peak_working_set": 216801280,
+      "state": {
+        "api_ids": [
+          "BCfb79a3aef986ceef"
+        ],
+        "relation_ids": [
+          "BRfa6db6fb265a9882"
+        ],
+        "effect_ids": [
+          "BE36e3afa081ee0c01",
+          "BE974a7f18e5f80c43"
+        ],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 2,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 2,
+      "evidence_references_valid": 5,
+      "evidence_reference_population": 5,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "c3a805c57dc342db020a83f4d957ca1488d2d74ee6c648e6925dc85c0db314c0",
+      "last_checkpoint": {
+        "elapsed_seconds": 19.404133800002455,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 22,
+        "state": "END",
+        "wall_seconds": 21.151155799998378,
+        "working_set_bytes": 216801280
+      }
+    },
+    {
+      "case_id": "psf__requests-1142",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 21.37582359999942,
+      "phases": {
+        "index": 1.0137390999989293,
+        "initial_retrieval": 0.04178369999863207,
+        "context_and_implementation": 0.09682469999825116,
+        "initial_context": 0.012512699999206234,
+        "symbol_resolution": 0.06960899999830872,
+        "implementation_graph": 0.009076599999389146,
+        "ledger": 0.13535760000013397,
+        "causal_slice": 0.6188862000017252,
+        "recovery": 0.09799659999771393,
+        "behavioral_contracts": 0.006025999999110354,
+        "qwen_analysis": 18.80990219999876
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        18806.116499999916
+      ],
+      "peak_working_set": 217010176,
+      "state": {
+        "api_ids": [
+          "BCfb79a3aef986ceef"
+        ],
+        "relation_ids": [
+          "BRfa6db6fb265a9882"
+        ],
+        "effect_ids": [
+          "BE36e3afa081ee0c01",
+          "BE974a7f18e5f80c43"
+        ],
+        "contract_ids": [
+          "CT3dd38fa0f87cb087",
+          "CT6892db316d3ecb00"
+        ],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 2,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 2,
+      "evidence_references_valid": 5,
+      "evidence_reference_population": 5,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "a8eb6dd0a477ff03aab9bb8f69d6602fc2e65911eb8015cb9619d654b7a33873",
+      "last_checkpoint": {
+        "elapsed_seconds": 18.808286999999837,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 22,
+        "state": "END",
+        "wall_seconds": 20.821108000000095,
+        "working_set_bytes": 217010176
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 62.77706539999781,
+      "phases": {
+        "index": 1.6912926999975753,
+        "initial_retrieval": 0.050040800000715535,
+        "context_and_implementation": 0.3676811999976053,
+        "initial_context": 0.01214839999738615,
+        "symbol_resolution": 0.3285193000010622,
+        "implementation_graph": 0.02151899999807938,
+        "ledger": 0.6045918000017991,
+        "causal_slice": 6.894935399999667,
+        "recovery": 0.0622241999990365,
+        "behavioral_contracts": 0.010851799997908529,
+        "qwen_analysis": 51.70003340000039,
+        "policy": 0.0032688999999663793,
+        "ranking": 0.003196499998011859
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        48821.040200000425
+      ],
+      "peak_working_set": 227663872,
+      "state": {
+        "api_ids": [
+          "BC45e65d355a4ef873",
+          "BCb82d79931a41edc7"
+        ],
+        "relation_ids": [
+          "BR785705e8f5ae15ee"
+        ],
+        "effect_ids": [
+          "BE0ac311b0a4a39c99",
+          "BE5e2ccdc744a45383",
+          "BEd89037059892f41d"
+        ],
+        "contract_ids": [],
+        "root_ids": [
+          "R1EDE4D32622E",
+          "R3F1573F8C7D2",
+          "R3253009748CB",
+          "R942CCF163785",
+          "RC18DB1941704",
+          "RC0614885736A",
+          "RF0FDB94022E0",
+          "R942545AB51D6",
+          "R27892CE10583",
+          "R54F4CF0DAAC5",
+          "R9FA131AAAD42",
+          "R79A0CB69B3CA"
+        ],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": true,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 79,
+      "evidence_reference_population": 79,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "5274cd2afba0abd3d96caad073efff136a91c16421cbeba469ea8f825bd2e901",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.001645300002564909,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 61.38807430000088,
+        "working_set_bytes": 227663872
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 65.8555563000009,
+      "phases": {
+        "index": 0.9554724000008719,
+        "initial_retrieval": 0.04341829999975744,
+        "context_and_implementation": 0.14615559999947436,
+        "initial_context": 0.010884799998166272,
+        "symbol_resolution": 0.11493139999947743,
+        "implementation_graph": 0.01654700000290177,
+        "ledger": 0.12468560000343132,
+        "causal_slice": 5.9420385000012175,
+        "recovery": 0.0639694999990752,
+        "behavioral_contracts": 0.010190199998760363,
+        "qwen_analysis": 57.551373800000874,
+        "policy": 0.003340700000990182,
+        "ranking": 0.003286299997853348
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        55084.35219999956
+      ],
+      "peak_working_set": 227434496,
+      "state": {
+        "api_ids": [
+          "BC45e65d355a4ef873",
+          "BCb82d79931a41edc7"
+        ],
+        "relation_ids": [
+          "BR785705e8f5ae15ee"
+        ],
+        "effect_ids": [
+          "BE0ac311b0a4a39c99",
+          "BE5e2ccdc744a45383",
+          "BEd89037059892f41d"
+        ],
+        "contract_ids": [
+          "CT4295e077792c61a9",
+          "CT8c032b1b6db65bb4",
+          "CT6892db316d3ecb00"
+        ],
+        "root_ids": [
+          "R1EDE4D32622E",
+          "R3F1573F8C7D2",
+          "R3253009748CB",
+          "R942CCF163785",
+          "RC18DB1941704",
+          "RC0614885736A",
+          "RF0FDB94022E0",
+          "R942545AB51D6",
+          "R27892CE10583",
+          "R54F4CF0DAAC5",
+          "R9FA131AAAD42",
+          "R79A0CB69B3CA"
+        ],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": true,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 79,
+      "evidence_reference_population": 79,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": false,
+      "trace_sha256": "b7aa534e50e1294c7551a250601c34e54146b3462fbf56a2cd5bb6b746bdd9b3",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.0016790000008768402,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 64.84375839999848,
+        "working_set_bytes": 227434496
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 90.52372119999927,
+      "phases": {
+        "index": 2.505957999997918,
+        "initial_retrieval": 0.10975479999979143,
+        "context_and_implementation": 0.23994909999964875,
+        "initial_context": 0.011418600002798485,
+        "symbol_resolution": 0.18506410000190954,
+        "implementation_graph": 0.03941259999919566,
+        "ledger": 0.08880329999738024,
+        "causal_slice": 0.6654534000008425,
+        "recovery": 0.31558989999757614,
+        "behavioral_contracts": 0.024222199997893767,
+        "qwen_analysis": 85.10574740000084,
+        "policy": 0.003978199998527998,
+        "ranking": 0.0036542999987432268
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        81908.1019999976
+      ],
+      "peak_working_set": 219615232,
+      "state": {
+        "api_ids": [
+          "BC07623842da07ef1a",
+          "BC5dc8dee5655ca334",
+          "BC61ef1a449c0cc9d6",
+          "BC81dbd5dca15eb77a",
+          "BC9b7a10bcb036bd0d",
+          "BCb6eeb84af56a7dc8",
+          "BCbeae8932204dcf64",
+          "BCc2fd9a15884f3524"
+        ],
+        "relation_ids": [],
+        "effect_ids": [
+          "BE4599fd909ddf06bc"
+        ],
+        "contract_ids": [],
+        "root_ids": [
+          "R47762B53DC60",
+          "R405A9569E718",
+          "RA93620249E9D",
+          "RD43575166817",
+          "R030B98A64BA0",
+          "RE382C15672CE",
+          "RBF37ED3AADE8",
+          "R03962DAE742E",
+          "R1113D25350FB",
+          "R22506446CB74",
+          "R5D8E61B9DE79",
+          "R610977716884"
+        ],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": true,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 66,
+      "evidence_reference_population": 66,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "2018e356842c8f017128ae588536b26ce50f64b09f63fc1b577f63e1cd5fa880",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.001983099999051774,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 89.06282699999792,
+        "working_set_bytes": 219615232
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 94.86334949999946,
+      "phases": {
+        "index": 3.9187262000014016,
+        "initial_retrieval": 0.18091890000141575,
+        "context_and_implementation": 0.34824680000019725,
+        "initial_context": 0.012339500000962289,
+        "symbol_resolution": 0.26485950000278535,
+        "implementation_graph": 0.0668775000012829,
+        "ledger": 0.1435222000000067,
+        "causal_slice": 0.671888000000763,
+        "recovery": 0.24622760000056587,
+        "behavioral_contracts": 0.018814699997165008,
+        "qwen_analysis": 87.9889852999986,
+        "policy": 0.00395369999750983,
+        "ranking": 0.004343799999332987
+      },
+      "qwen_requests": 1,
+      "qwen_request_ms": [
+        84169.18169999917
+      ],
+      "peak_working_set": 218746880,
+      "state": {
+        "api_ids": [
+          "BC03c18ae6de6aa346",
+          "BC07623842da07ef1a",
+          "BC5dc8dee5655ca334",
+          "BC61ef1a449c0cc9d6",
+          "BC81dbd5dca15eb77a",
+          "BC9b7a10bcb036bd0d",
+          "BCb6eeb84af56a7dc8",
+          "BCbeae8932204dcf64",
+          "BCc2fd9a15884f3524"
+        ],
+        "relation_ids": [],
+        "effect_ids": [
+          "BE4599fd909ddf06bc"
+        ],
+        "contract_ids": [
+          "CT07d7c9ba5a2b057d"
+        ],
+        "root_ids": [
+          "R47762B53DC60",
+          "R405A9569E718",
+          "RA93620249E9D",
+          "RD43575166817",
+          "R030B98A64BA0",
+          "RE382C15672CE",
+          "RBF37ED3AADE8",
+          "R03962DAE742E",
+          "R1113D25350FB",
+          "R22506446CB74",
+          "R5D8E61B9DE79",
+          "R610977716884"
+        ],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": true,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 66,
+      "evidence_reference_population": 66,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "5c71bf6af57c126176d9d42d15ebfc72ea5fe21906d2114bfc073f8f189ef426",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.002186599998822203,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 93.5250111000023,
+        "working_set_bytes": 218746880
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "A",
+      "status": "COMPLETED",
+      "wall_seconds": 21.198644399999466,
+      "phases": {
+        "index": 8.360128599997552,
+        "initial_retrieval": 0.2795753999998851,
+        "context_and_implementation": 0.07172299999729148,
+        "initial_context": 0.005561000001762295,
+        "symbol_resolution": 0.05540380000093137,
+        "implementation_graph": 0.004704900002252543,
+        "ledger": 0.041502500000206055,
+        "causal_slice": 1.8393782999992254,
+        "recovery": 7.217503600000782,
+        "behavioral_contracts": 0.003446399998210836
+      },
+      "qwen_requests": 0,
+      "qwen_request_ms": [],
+      "peak_working_set": 241201152,
+      "state": {
+        "api_ids": [],
+        "relation_ids": [],
+        "effect_ids": [],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 0,
+      "evidence_reference_population": 0,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "65afa752460c9e94bf7fd05883f0973773ee24122e18eb01e2915b22bc4f4c28",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.0017547999996168073,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "behavioral_contracts",
+        "schema_version": 1,
+        "sequence": 18,
+        "state": "END",
+        "wall_seconds": 17.81839299999774,
+        "working_set_bytes": 241201152
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "B",
+      "status": "COMPLETED",
+      "wall_seconds": 13.033252599998377,
+      "phases": {
+        "index": 5.836560800002189,
+        "initial_retrieval": 0.16034229999786476,
+        "context_and_implementation": 0.053926300002785865,
+        "initial_context": 0.004177200000412995,
+        "symbol_resolution": 0.04228560000046855,
+        "implementation_graph": 0.0036997999995946884,
+        "ledger": 0.026465699997061165,
+        "causal_slice": 1.0304622000003292,
+        "recovery": 4.031448100002308,
+        "behavioral_contracts": 0.003815199997916352
+      },
+      "qwen_requests": 0,
+      "qwen_request_ms": [],
+      "peak_working_set": 242823168,
+      "state": {
+        "api_ids": [],
+        "relation_ids": [],
+        "effect_ids": [],
+        "contract_ids": [],
+        "root_ids": [],
+        "supported_root_ids": [],
+        "state": "BASELINE_WITHOUT_TRIAGE",
+        "correct_candidate_exists": false
+      },
+      "root_states": [],
+      "requests": [],
+      "correct_file_retrieved": true,
+      "correct_candidate_exists": false,
+      "root_correct": false,
+      "repair_correct": false,
+      "recommended": false,
+      "hypotheses_emitted": 0,
+      "correct_hypothesis_locations": 0,
+      "hypothesis_location_population": 0,
+      "evidence_references_valid": 0,
+      "evidence_reference_population": 0,
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0,
+        "forbidden_recommendations": 0
+      },
+      "original_reveals_location": true,
+      "trace_sha256": "f48f7c1fe19812d151608ef1e42c2259df8ff509586fa39822d4c9505fb725d9",
+      "last_checkpoint": {
+        "elapsed_seconds": 0.00192590000006021,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "behavioral_contracts",
+        "schema_version": 1,
+        "sequence": 18,
+        "state": "END",
+        "wall_seconds": 11.149917599999753,
+        "working_set_bytes": 242823168
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "input_mode": "C",
+      "status": "NOT_EVALUATED_TIMEOUT",
+      "diagnostic": "Command '['C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe', '-m', 'scripts.predictive_v16_evidence_study', '--split', 'development', '--runtime', 'C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\JARVIS-v11', '--case', 'sphinx-doc__sphinx-9367', '--input-mode', 'C', '--corpus', 'D:\\\\JARVIS-v16-work\\\\tests\\\\data\\\\predictive\\\\external_v16', '--snapshots', 'D:\\\\JARVIS-evaluation-v16\\\\external-v16\\\\snapshots', '--archive', 'D:\\\\JARVIS-evaluation-v16\\\\artifacts\\\\v16\\\\development-before\\\\sphinx-doc__sphinx-9367\\\\C', '--output', 'D:\\\\JARVIS-evaluation-v16\\\\artifacts\\\\v16\\\\development-before\\\\sphinx-doc__sphinx-9367\\\\C\\\\result.json', '--live']' timed out after 240 seconds",
+      "last_checkpoint": {
+        "elapsed_seconds": 78.50554059999922,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_request",
+        "schema_version": 1,
+        "sequence": 21,
+        "state": "END",
+        "wall_seconds": 216.40295569999944,
+        "working_set_bytes": 360972288
+      },
+      "timeout_phase": "qwen_request",
+      "wall_seconds": 240.04267919999984,
+      "excluded_from_causal_metrics": true
+    }
+  ],
+  "information_gain": [
+    {
+      "case_id": "psf__requests-1142",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT3dd38fa0f87cb087",
+            "CT6892db316d3ecb00"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "BASELINE_WITHOUT_TRIAGE",
+        "state_after": "BASELINE_WITHOUT_TRIAGE",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "psf__requests-2931",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT4295e077792c61a9",
+            "CT6892db316d3ecb00",
+            "CT8c032b1b6db65bb4"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "BASELINE_WITHOUT_TRIAGE",
+        "state_after": "BASELINE_WITHOUT_TRIAGE",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "pytest-dev__pytest-10051",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [
+            "BC03c18ae6de6aa346"
+          ],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [
+            "CT07d7c9ba5a2b057d"
+          ],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "BASELINE_WITHOUT_TRIAGE",
+        "state_after": "BASELINE_WITHOUT_TRIAGE",
+        "changed": true,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-9367",
+      "mode": "B",
+      "gain": {
+        "added": {
+          "api_ids": [],
+          "relation_ids": [],
+          "effect_ids": [],
+          "contract_ids": [],
+          "root_ids": [],
+          "supported_root_ids": []
+        },
+        "state_before": "BASELINE_WITHOUT_TRIAGE",
+        "state_after": "BASELINE_WITHOUT_TRIAGE",
+        "changed": false,
+        "causal_correctness_improved": false,
+        "limitation": "Novas entidades nao demonstram causalidade; confirmar com adjudicacao independente."
+      }
+    }
+  ],
+  "limitations": [
+    "D unavailable: no new pre-fix runtime evidence; existing original logs already in A.",
+    "C available only when original report cited preexisting base-commit test; no gold tests inserted.",
+    "Independent defects and input formulations are distinct populations.",
+    "Baseline external qualification invalid after post-v15-seal correction; diagnostic comparison only."
+  ]
+}
