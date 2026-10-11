@@ -34,8 +34,9 @@ def test_memory_budget_never_executes_external_project(monkeypatch):
 
 
 def test_cooperative_timeout_not_causal_failure(monkeypatch):
-    moments = iter([0, 5, 5])
-    monkeypatch.setattr('tern.orchestrator.predictive.operational.perf_counter', lambda: next(moments))
+    # Inicio do timer, inicio do checkpoint, duracao e limite total.
+    moments = iter([0, 0])
+    monkeypatch.setattr('tern.orchestrator.predictive.operational.perf_counter', lambda: next(moments, 5))
     timer = AnalysisTimer(started=0, max_static_stage_seconds=1)
     with pytest.raises(PredictiveOperationalTimeout, match='NOT_EVALUATED_TIMEOUT'):
         timer.measure('ledger', lambda: ())

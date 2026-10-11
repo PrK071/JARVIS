@@ -125,6 +125,12 @@ def _print_predictive_report(report: DecisionReport) -> None:
         if added:
             print("Contexto recuperado: " + ", ".join(added))
     if report.insufficient_evidence:
+        if report.investigable_hypotheses:
+            print("Investigacao consultiva; nenhuma causa confirmada ou reparo elegivel:")
+            for item in report.investigable_hypotheses:
+                print(f"- {item.path}::{item.symbol} [{item.status.value}]")
+                print("  Evidencia adicional: " + ", ".join(r.value for r in item.required_evidence))
+            print("Execucao nao autorizada; hipoteses nao sao recomendacoes.")
         print(f"Evidência insuficiente: {report.recommendation_explanation}")
         return
     print("\nHipóteses:")

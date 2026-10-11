@@ -28,8 +28,10 @@ from .recovery import StructuralRecoveryService
 from .scoring import ranking_decision
 from .symbols import recover_symbol_context
 from .behavioral import bind_graph_evidence, resolve_behavioral_context
-from .operational import AnalysisTimer, PredictiveOperationalTimeout
+from .operational import AnalysisTimer, PredictiveOperationalTimeout, observe_phase
 from .relevance import describe_symptom, SymptomKind
+from .contracts import build_contract_contexts
+from .investigation import build_investigable_hypotheses, select_investigations
 
 
 _STRENGTH_ORDER = {
@@ -132,14 +134,14 @@ def build_problem_context(
     initial_context_seconds = perf_counter() - context_started
     symbol_started = perf_counter()
     if not any(_line_target(candidate) is not None for candidate in selection.selected):
-        context = recover_symbol_context(context, snapshot, path_policy)
+        context = observe_phase('symbol_resolution', recover_symbol_context, context, snapshot, path_policy)
     symbol_seconds = perf_counter() - symbol_started
     # A reported line is not sufficient proof of an implementation path.
     # Only explicit indexed API anchors enable this bounded AST traversal.
     observed_exception = describe_symptom(problem, None, None).kind is SymptomKind.EXCEPTION_FAILURE
     graph_started = perf_counter()
-    context = resolve_behavioral_context(context, snapshot, path_policy,
-        materialize=not observed_exception)
+    context = observe_phase('implementation_graph', resolve_behavioral_context,
+        context, snapshot, path_policy, materialize=not observed_exception)
     return replace(context, context_phase_seconds=(('initial_context', initial_context_seconds),
         ('symbol_resolution', symbol_seconds), ('implementation_graph', perf_counter()-graph_started)),
         behavioral_graph=replace(context.behavioral_graph,
@@ -160,6 +162,7 @@ class PredictiveDecisionService:
         recovery_service: StructuralRecoveryService | None = None,
     ) -> None:
         self.path_policy = path_policy
+        self.investigation_reasoner = reasoner
         self.analyzer = analyzer or PredictiveAnalyzer(reasoner)
         self.candidate_generator = candidate_generator or ProjectCandidateGenerator()
         self.candidate_policy = candidate_policy or PredictiveCandidatePolicy()
@@ -208,7 +211,12 @@ class PredictiveDecisionService:
             causal_slice=causal_slice,
             root_cause_candidates=root_causes,
         )
+        contracts = timer.measure('behavioral_contracts', build_contract_contexts,
+                                  context, self.path_policy)
         if not root_causes:
+            locations = build_investigable_hypotheses(context, contracts)
+            selected, investigation_failure = timer.measure('qwen_analysis', select_investigations,
+                self.investigation_reasoner, context, locations) if locations else ((), None)
             return DecisionReport(
                 problem=problem,
                 hypotheses=(),
@@ -218,7 +226,10 @@ class PredictiveDecisionService:
                 recommendation_explanation=(
                     "Nenhuma origem causal estruturalmente demonstrável foi localizada."
                 ),
-                failure_reason=PredictiveFailureReason.INSUFFICIENT_STRUCTURAL_EVIDENCE,
+                failure_reason=investigation_failure or PredictiveFailureReason.INSUFFICIENT_STRUCTURAL_EVIDENCE,
+                diagnostic_codes=('INVESTIGATION_ONLY',) if selected else (),
+                investigable_hypotheses=selected,
+                behavioral_contract_contexts=contracts,
                 causal_slice=causal_slice,
                 root_cause_candidates=(),
                 retrieval_escalation=context.retrieval_escalation,
@@ -249,9 +260,11 @@ class PredictiveDecisionService:
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
+                behavioral_contract_contexts=contracts,
             )
 
-        policy_candidates = tuple(self.candidate_policy.apply(item) for item in analysis.candidates)
+        policy_candidates = timer.measure('policy', lambda: tuple(
+            self.candidate_policy.apply(item) for item in analysis.candidates))
         rejected = tuple(
             (*analysis.rejected_candidates, *(item for item in policy_candidates if not item.eligible))
         )
@@ -281,6 +294,7 @@ class PredictiveDecisionService:
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
+                behavioral_contract_contexts=contracts,
             )
         try:
             decision = timer.measure('ranking', ranking_decision, eligible)
@@ -322,6 +336,7 @@ class PredictiveDecisionService:
                 recovery_trace=context.recovery_trace,
                 relevant_symbol_contexts=context.relevant_symbol_contexts,
                 behavioral_graph=context.behavioral_graph,
+                behavioral_contract_contexts=contracts,
             )
         winner = next(item for item in decision.candidates if item.id == decision.winner_id)
         explanation = (
@@ -346,6 +361,7 @@ class PredictiveDecisionService:
             recovery_trace=context.recovery_trace,
             relevant_symbol_contexts=context.relevant_symbol_contexts,
             behavioral_graph=context.behavioral_graph,
+            behavioral_contract_contexts=contracts,
         )
 
     @staticmethod

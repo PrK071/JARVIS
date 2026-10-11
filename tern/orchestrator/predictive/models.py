@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from .repair import RepairTarget
     from .symbols import RelevantSymbolContext
     from .behavioral import BehavioralGraph
+    from .contracts import BehavioralContractContext
+    from .investigation import InvestigableCausalHypothesis
 
 
 def _bounded_score(name: str, value: float) -> float:
@@ -525,6 +527,8 @@ class DecisionReport:
     relevant_symbol_contexts: tuple[RelevantSymbolContext, ...] = ()
     behavioral_graph: BehavioralGraph | None = None
     phase_seconds: tuple[tuple[str, float], ...] = ()
+    behavioral_contract_contexts: tuple[BehavioralContractContext, ...] = ()
+    investigable_hypotheses: tuple[InvestigableCausalHypothesis, ...] = ()
     requires_approval: bool = field(default=True, init=False)
     dry_run: bool = field(default=True, init=False)
     execution_authorized: bool = field(default=False, init=False)
@@ -538,6 +542,13 @@ class DecisionReport:
         object.__setattr__(self, "repair_strategies", tuple(self.repair_strategies))
         object.__setattr__(self, "root_cause_selections", tuple(self.root_cause_selections))
         object.__setattr__(self, "relevant_symbol_contexts", tuple(self.relevant_symbol_contexts))
+        object.__setattr__(self, "behavioral_contract_contexts", tuple(self.behavioral_contract_contexts))
+        object.__setattr__(self, "investigable_hypotheses", tuple(self.investigable_hypotheses))
+        if self.investigable_hypotheses and (
+                len(self.investigable_hypotheses) > 3 or self.hypotheses or self.candidates
+                or self.root_cause_candidates or self.recommended_candidate_id is not None
+                or not self.insufficient_evidence):
+            raise ValueError("Investigacao nao pode ser misturada com diagnostico ou recomendacao.")
         if len(self.hypotheses) > 3 or len(self.candidates) > 3:
             raise ValueError("predictive reports are limited to three hypotheses and candidates")
         candidate_ids = {item.id for item in self.candidates}
@@ -582,6 +593,10 @@ class DecisionReport:
             "recovery_schema_version": 1,
             "symbol_context_schema_version": 1,
             "behavioral_graph_schema_version": 1,
+            "behavioral_contract_schema_version": 1,
+            "investigation_schema_version": 1,
+            "behavioral_contract_contexts": [c.as_dict() for c in self.behavioral_contract_contexts],
+            "investigable_hypotheses": [h.as_dict() for h in self.investigable_hypotheses],
             "behavioral_graph": self.behavioral_graph.as_dict() if self.behavioral_graph else None,
             "phase_seconds": dict(self.phase_seconds),
             "relevant_symbol_contexts": [item.as_dict() for item in self.relevant_symbol_contexts],

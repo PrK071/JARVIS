@@ -11,6 +11,8 @@ from tern.orchestrator.client import LlamaClient
 from tern.orchestrator.predictive.external_evaluation import (
     evaluate_external_cases, load_external_cases, summarize_external_results,
 )
+from tern.orchestrator.predictive.operational import observe_checkpoints, observe_phase
+from .predictive_checkpoints import CheckpointJournal, last_checkpoint
 
 
 def _working_set_bytes(worker):
@@ -68,7 +70,9 @@ def evaluate_with_budget(args, cases):
         command = [sys.executable, '-m', 'scripts.predictive_external_eval',
                    '--split', args.split, '--mode', args.mode, '--case-id', case['id'],
                    '--output', str(output), '--archive', str(directory),
-                   '--corpus', str(args.corpus), '--snapshots', str(args.snapshots)]
+                   '--corpus', str(args.corpus), '--snapshots', str(args.snapshots),
+                   '--checkpoints', str(directory / 'checkpoints.jsonl')]
+        worker_started = time.monotonic()
         worker = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   text=True, encoding='utf-8', errors='replace')
         try:
@@ -81,6 +85,7 @@ def evaluate_with_budget(args, cases):
                                'NOT_EVALUATED_RESOURCE_LIMIT' if isinstance(error, EvaluationMemoryLimit)
                                else 'NOT_EVALUATED_TIMEOUT'),
                                'budget_seconds': args.case_timeout,
+                               'last_checkpoint': last_checkpoint(directory / 'checkpoints.jsonl'),
                                'excluded_from_quality_metrics': True})
             print(json.dumps(incomplete[-1]), flush=True)
             continue
@@ -89,14 +94,20 @@ def evaluate_with_budget(args, cases):
                                'NOT_EVALUATED_TIMEOUT' if 'NOT_EVALUATED_TIMEOUT' in stderr
                                else 'EVALUATOR_INFRASTRUCTURE_ERROR'),
                                'exit_code': worker.returncode, 'diagnostic': stderr[-1600:],
+                               'last_checkpoint': last_checkpoint(directory / 'checkpoints.jsonl'),
                                'excluded_from_quality_metrics': True})
             print(json.dumps(incomplete[-1]), flush=True)
             continue
-        rows.extend(json.loads(output.read_text(encoding='utf-8'))['results'])
+        completed = json.loads(output.read_text(encoding='utf-8'))['results']
+        for row in completed:
+            row['total_worker_seconds'] = time.monotonic()-worker_started
+        rows.extend(completed)
         print(json.dumps({'id': case['id'], 'status': 'COMPLETED'}), flush=True)
     from tern.orchestrator.predictive.coverage_evaluation import summarize_layer_coverage
     summary = summarize_external_results(rows)
     summary['layer_coverage'] = summarize_layer_coverage(rows)
+    from tern.orchestrator.predictive.investigation_evaluation import investigation_metrics
+    summary['investigation'] = investigation_metrics(rows, incomplete)
     summary.update(n_total_defects=len(cases), n_evaluable_defects=len(cases)-len(incomplete),
                    n_incomplete_defects=len(incomplete))
     return {'schema_version': 14, 'summary': summary, 'results': rows,
@@ -117,6 +128,7 @@ def main():
     parser.add_argument("--case-timeout", type=float, default=0)
     parser.add_argument("--case-memory-mb", type=int, default=1024)
     parser.add_argument("--case-id", help="Harness-only independent defect filter")
+    parser.add_argument('--checkpoints', type=Path, help='Journal do worker fora dos snapshots')
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit("Nao sobrescrever resultado historico.")
@@ -135,9 +147,15 @@ def main():
         for path in sorted(Path("tern/orchestrator/predictive").glob("*.py"))
         if path.name != "external_evaluation.py"
     }
-    value = evaluate_with_budget(args, cases) if args.case_timeout else evaluate_external_cases(cases, args.snapshots,
-        args.archive / args.output.stem,
-        reasoner=LlamaClient("http://127.0.0.1:8080", 180) if args.mode == "live" else None)
+    journal = CheckpointJournal(args.checkpoints, args.snapshots) if args.checkpoints else None
+    class CheckpointReasoner:
+        def __init__(self):
+            self.client = LlamaClient('http://127.0.0.1:8080', 180)
+        def chat(self, *messages, **kwargs):
+            return observe_phase('qwen_request', self.client.chat, *messages, **kwargs)
+    with observe_checkpoints(journal):
+        value = evaluate_with_budget(args, cases) if args.case_timeout else evaluate_external_cases(cases, args.snapshots,
+            args.archive / args.output.stem, reasoner=CheckpointReasoner() if args.mode == 'live' else None)
     value["engine_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     value["corpus_seal"] = json.loads((corpus/"manifest.json").read_text())["cases_sha256"]
     value["split"] = args.split

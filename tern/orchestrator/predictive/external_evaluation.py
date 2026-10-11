@@ -22,6 +22,7 @@ from .behavioral import bind_graph_evidence
 from .evaluation import CountingReasoner
 from .grounding import build_evidence_ledger
 from .service import PredictiveDecisionService, build_problem_context
+from .operational import observe_phase
 
 
 def python_source_hash(root: Path) -> str:
@@ -143,20 +144,20 @@ def evaluate_external_cases(
             raise ValueError("Snapshot externo adulterado.")
         policy = PathPolicy((root,))
         index_started = time.perf_counter()
-        snapshot = ProjectIndexBuilderV2(root, path_policy=policy).build()
+        snapshot = observe_phase('diagnostic.index', ProjectIndexBuilderV2(root, path_policy=policy).build)
         index_seconds = time.perf_counter()-index_started
         for index, problem in enumerate(case["problem_formulations"]):
             selection_started = time.perf_counter()
-            selection = ProjectCandidateGenerator().generate(problem, snapshot)
+            selection = observe_phase('diagnostic.retrieval', ProjectCandidateGenerator().generate, problem, snapshot)
             selection_seconds = time.perf_counter()-selection_started
-            context = build_problem_context(problem, snapshot, selection, policy)
+            context = observe_phase('diagnostic.context_and_graph', build_problem_context, problem, snapshot, selection, policy)
             ledger_started = time.perf_counter()
-            context = replace(context, evidence_ledger=build_evidence_ledger(context, snapshot, policy))
+            context = replace(context, evidence_ledger=observe_phase('diagnostic.ledger', build_evidence_ledger, context, snapshot, policy))
             ledger_seconds = time.perf_counter()-ledger_started
             context = replace(context, behavioral_graph=bind_graph_evidence(
                 context.behavioral_graph, context.evidence_ledger))
             causal_started = time.perf_counter()
-            initial_slice, initial_roots = build_causal_slice(context, snapshot, policy)
+            initial_slice, initial_roots = observe_phase('diagnostic.causal_slice', build_causal_slice, context, snapshot, policy)
             causal_seconds = time.perf_counter()-causal_started
             measured = CountingReasoner(reasoner) if reasoner else None
             profile = cProfile.Profile()
@@ -224,6 +225,24 @@ def evaluate_external_cases(
                 index=index_seconds, initial_retrieval=selection_seconds,
                 ledger=ledger_seconds, causal_slice=causal_seconds)
             row['service_phase_seconds'] = dict(report.phase_seconds) if report else None
+            investigations = raw.get('investigable_hypotheses', ())
+            contracts = raw.get('behavioral_contract_contexts', ())
+            row['investigations'] = [dict(h,
+                oracle_location_match=h['path'] == oracle['root_path'] and h['symbol'] == oracle['root_symbol'],
+                evidence_valid=bool(h['evidence_ids']) and all(context.evidence_ledger.get(i) is not None
+                    for i in h['evidence_ids'])) for h in investigations]
+            # Recovery can add ledger atoms. Use the final report provenance for
+            # investigation facts rather than declaring initial omissions false.
+            if report and report.investigable_hypotheses:
+                row['investigations'] = [dict(h, evidence_valid=all(
+                    i in {e for c in report.behavioral_contract_contexts for link in c.links
+                          for e in (*c.evidence_ids, *link.evidence_ids)} for i in h['evidence_ids']))
+                    for h in row['investigations']]
+            row['contract_metrics_available'] = 'behavioral_contract_contexts' in raw
+            row['oracle_contract_available'] = any(c['path'] == oracle['root_path']
+                and c['symbol'] == oracle['root_symbol'] and c['contract_exists'] for c in contracts)
+            # Reachability/inferred observations are NEVER demonstrated bridges.
+            row['oracle_effect_bridge_demonstrated'] = False
             rows.append(row)
             # Completed rows survive interrupted long live runs. This sidecar is
             # not a stage-gate report and is kept with untracked raw artifacts.

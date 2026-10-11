@@ -1,6 +1,38 @@
 """Limites operacionais nao devem ser interpretados como falhas causais."""
 from dataclasses import dataclass, field
 from time import perf_counter
+from contextlib import contextmanager
+from contextvars import ContextVar
+
+
+_checkpoint_observer = ContextVar('predictive_checkpoint_observer', default=None)
+
+
+@contextmanager
+def observe_checkpoints(observer):
+    """O consumidor de observabilidade persiste; o predictive nao recebe writer."""
+    token = _checkpoint_observer.set(observer)
+    try:
+        yield
+    finally:
+        _checkpoint_observer.reset(token)
+
+
+def observe_phase(name, function, *args, **kwargs):
+    observer = _checkpoint_observer.get()
+    start = perf_counter()
+    if observer:
+        observer({'phase': name, 'state': 'START', 'elapsed_seconds': 0.0})
+    try:
+        result = function(*args, **kwargs)
+    except BaseException as error:
+        if observer:
+            observer({'phase': name, 'state': 'ERROR', 'elapsed_seconds': perf_counter()-start,
+                      'error_type': type(error).__name__})
+        raise
+    if observer:
+        observer({'phase': name, 'state': 'END', 'elapsed_seconds': perf_counter()-start})
+    return result
 
 
 class PredictiveOperationalTimeout(TimeoutError):
@@ -16,7 +48,7 @@ class AnalysisTimer:
 
     def measure(self, name, function, *args, **kwargs):
         start = perf_counter()
-        result = function(*args, **kwargs)
+        result = observe_phase(name, function, *args, **kwargs)
         elapsed = perf_counter() - start
         self.seconds[name] = self.seconds.get(name, 0) + elapsed
         # Cooperative stage boundaries. The evaluation worker enforces hard

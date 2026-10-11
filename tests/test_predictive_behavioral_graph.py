@@ -155,11 +155,12 @@ def test_inadequate_line_anchor_preserved_and_no_authority(tmp_path):
     path.write_text(source)
     before = hashlib.sha256(path.read_bytes()).hexdigest()
     calls = []
-    class NeverReason:
+    class InvestigationReason:
         def chat(self, *args, **kwargs):
             calls.append(1)
-            raise AssertionError('Sem contrato nao criar chamada adicional.')
-    report = PredictiveDecisionService(NeverReason(), path_policy=PathPolicy((tmp_path,))).predict(
+            assert kwargs['response_format']['json_schema']['name'] == 'investigable_locations'
+            return {'choices': [{'message': {'content': '{"investigations": []}'}}]}
+    report = PredictiveDecisionService(InvestigationReason(), path_policy=PathPolicy((tmp_path,))).predict(
         'api.py:2 Api.update() stores unexpected state', tmp_path)
     graph = report.behavioral_graph
     assert graph and any(e.kind is EffectKind.WRITES_ATTRIBUTE for e in graph.effects)
@@ -167,7 +168,8 @@ def test_inadequate_line_anchor_preserved_and_no_authority(tmp_path):
     assert not report.execution_authorized and report.requires_approval
     assert report.as_dict()['behavioral_graph_schema_version'] == 1
     assert before == hashlib.sha256(path.read_bytes()).hexdigest()
-    assert not calls
+    assert len(calls) == 1
+    assert not report.root_cause_candidates and not report.candidates
     assert any(a.reason == 'ANCHOR_EXISTS_BUT_UNRESOLVED' for a in report.causal_slice.relevance_assessments)
 
 
