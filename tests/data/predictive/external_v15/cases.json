@@ -1,0 +1,278 @@
+[
+  {
+    "base_commit": "4c288bc97ea371817199908d0d9b12de9dae327e",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pallets/flask/pull/4992",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "db912cc1331807c9b0715766eb45a5fac8c4036a99dd54c9ce998b675d0d8697",
+    "gold_test_patch_sha256": "851c94393511592a1e3b65ea1d909b73b342ef55388819c6bd9632edb71ad304",
+    "id": "pallets__flask-4992",
+    "issue_url": "https://github.com/pallets/flask/pull/4992",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": "Config.from_file",
+      "behavioral_effect": "RAISES_EXCEPTION",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "Text-only file opening cannot supply the binary reader required by the supplied TOML loader.",
+      "root_path": "src/flask/config.py",
+      "root_symbol": "Config.from_file",
+      "source_locations": [
+        {
+          "end_line": 273,
+          "line": 232
+        }
+      ],
+      "target_paths": [
+        "src/flask/config.py"
+      ]
+    },
+    "problem_formulations": [
+      "Add a file mode parameter to flask.Config.from_file()\nPython 3.11 introduced native TOML support with the `tomllib` package. This could work nicely with the `flask.Config.from_file()` method as an easy way to load TOML config files:\r\n\r\n```python\r\napp.config.from_file(\"config.toml\", tomllib.load)\r\n```\r\n\r\nHowever, `tomllib.load()` takes an object readable in binary mode, while `flask.Config.from_file()` opens a file in text mode, resulting in this error:\r\n\r\n```\r\nTypeError: File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`\r\n```\r\n\r\nWe can get around this with a more verbose expression, like loading from a file opened with the built-in `open()` function and passing the `dict` to `app.Config.from_mapping()`:\r\n\r\n```python\r\n# We have to repeat the path joining that from_file() does\r\nwith open(os.path.join(app.config.root_path, \"config.toml\"), \"rb\") as file:\r\n    app.config.from_mapping(tomllib.load(file))\r\n```\r\n\r\nBut adding a file mode parameter to `flask.Config.from_file()` would enable the use of a simpler expression. E.g.:\r\n\r\n```python\r\napp.config.from_file(\"config.toml\", tomllib.load, mode=\"b\")\r\n```\r\n\n"
+    ],
+    "repo": "pallets/flask",
+    "schema_version": 15,
+    "source_archive_sha256": "3643d985acd981e2787a937fe773d8912c95988a28e8ee79832f4c5530e29896",
+    "source_archive_url": "https://codeload.github.com/pallets/flask/tar.gz/4c288bc97ea371817199908d0d9b12de9dae327e",
+    "source_python_sha256": "6cee739f0a0c8aa1860cc2923b0e83a1cfbde39bdb7efb4f386c21c0fb02d25a",
+    "split": "development"
+  },
+  {
+    "base_commit": "4ec6cbe341fd84468c448e20082c778043bbea4b",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/7975",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "58c14a5616a09cfd8cb55d96dff05235bd6acc21bb3b32fa35decfdfc0c329a9",
+    "gold_test_patch_sha256": "685eabf95de87d84c7e4549121f9b40e6a2792b8afd69bb0209ac9bee9b2acb4",
+    "id": "sphinx-doc__sphinx-7975",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/issues/2050",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": null,
+      "behavioral_effect": "RETURNS_VALUE",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "The sort-key partition splits symbol entries into two groups and creates duplicate anchors.",
+      "root_path": "sphinx/environment/adapters/indexentries.py",
+      "root_symbol": "IndexEntries.create_index",
+      "source_locations": [
+        {
+          "end_line": 176,
+          "line": 32
+        }
+      ],
+      "target_paths": [
+        "sphinx/environment/adapters/indexentries.py"
+      ]
+    },
+    "problem_formulations": [
+      "Two sections called Symbols in index\nWhen using index entries with the following leading characters: _@_, _£_, and _←_ I get two sections called _Symbols_ in the HTML output, the first containing all _@_ entries before ”normal” words and the second containing _£_ and _←_ entries after the ”normal” words.  Both have the same anchor in HTML so the links at the top of the index page contain two _Symbols_ links, one before the letters and one after, but both lead to the first section.\n\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 15,
+    "source_archive_sha256": "3240540a3637998191f0323ada9944039eae7eee89cf05151a77d41519e4d642",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/4ec6cbe341fd84468c448e20082c778043bbea4b",
+    "source_python_sha256": "ed1530c54f03f13e48f9ded914a87e2176470eecfc45c7745f6959da8b5886c6",
+    "split": "development"
+  },
+  {
+    "base_commit": "e4bd3bd3ddd42c6642ff779a4f7381f219655c2c",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/8506",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "a99517671ca1aec8033a000c5212ab6f1a80afe4563e0e8c76889577e67e4a7b",
+    "gold_test_patch_sha256": "82e61ce7eb66207b7fe78eb62a22676c15ff28b0c0e19b246efadb8b6bf45c41",
+    "id": "sphinx-doc__sphinx-8506",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/issues/8352",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": null,
+      "behavioral_effect": "RETURNS_VALUE",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "Option parsing excludes bracket-leading syntax accepted by earlier versions; regex and normalization require correction.",
+      "root_path": "sphinx/domains/std.py",
+      "root_symbol": "Cmdoption.handle_signature",
+      "source_locations": [
+        {
+          "end_line": 212,
+          "line": 186
+        }
+      ],
+      "target_paths": [
+        "sphinx/domains/std.py"
+      ]
+    },
+    "problem_formulations": [
+      "Sphinx 3.2 complains about option:: syntax that earlier versions accepted\nSphinx 3.2 complains about use of the option:: directive that earlier versions accepted without complaint.\r\n\r\nThe QEMU documentation includes this:\r\n```\r\n.. option:: [enable=]PATTERN\r\n\r\n   Immediately enable events matching *PATTERN*\r\n```\r\n\r\nas part of the documentation of the command line options of one of its programs. Earlier versions of Sphinx were fine with this, but Sphinx 3.2 complains:\r\n\r\n```\r\nWarning, treated as error:\r\n../../docs/qemu-option-trace.rst.inc:4:Malformed option description '[enable=]PATTERN', should look like \"opt\", \"-opt args\", \"--opt args\", \"/opt args\" or \"+opt args\"\r\n```\r\n\r\nSphinx ideally shouldn't change in ways that break the building of documentation that worked in older versions, because this makes it unworkably difficult to have documentation that builds with whatever the Linux distro's sphinx-build is.\r\n\r\nThe error message suggests that Sphinx has a very restrictive idea of what option syntax is; it would be better if it just accepted any string, because not all programs and OSes have option syntax that matches the limited list the error message indicates.\r\n\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 15,
+    "source_archive_sha256": "d06f503248baac8544fd5db786f12d9675db7dc1f5df13350e83660be3e42c3d",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/e4bd3bd3ddd42c6642ff779a4f7381f219655c2c",
+    "source_python_sha256": "b850a08cb8d56aa065b43974f97700d7fda4ef2b7b14ebb5b0ad09f4b4874d87",
+    "split": "development"
+  },
+  {
+    "base_commit": "332d80ba8433aea41c3709fa52737ede4405072b",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/8627",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "bffe3b37782b3e09b3634412fea9a411a3df7ab168c50ae52c9e6405f0eea0fe",
+    "gold_test_patch_sha256": "0ed8650bfaa9412bc82c4767cbd8efff8408f7fed12de78b7caffdd10643184c",
+    "id": "sphinx-doc__sphinx-8627",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/issues/8315",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": null,
+      "behavioral_effect": "RETURNS_VALUE",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "Incorrect upstream Struct.__module__ metadata requires explicit qualification; stringify also changes.",
+      "root_path": "sphinx/util/typing.py",
+      "root_symbol": "restify",
+      "source_locations": [
+        {
+          "end_line": 105,
+          "line": 89
+        }
+      ],
+      "target_paths": [
+        "sphinx/util/typing.py"
+      ]
+    },
+    "problem_formulations": [
+      "autodoc isn't able to resolve struct.Struct type annotations\n**Describe the bug**\r\nIf `struct.Struct` is declared in any type annotations, I get `class reference target not found: Struct`\r\n\r\n**To Reproduce**\r\nSimple `index.rst`\r\n```\r\nHello World\r\n===========\r\n\r\ncode docs\r\n=========\r\n\r\n.. automodule:: helloworld.helloworld\r\n```\r\n\r\nSimple `helloworld.py`\r\n```\r\nimport struct\r\nimport pathlib\r\n\r\ndef consume_struct(_: struct.Struct) -> None:\r\n    pass\r\n\r\ndef make_struct() -> struct.Struct:\r\n    mystruct = struct.Struct('HH')\r\n    return mystruct\r\n\r\ndef make_path() -> pathlib.Path:\r\n    return pathlib.Path()\r\n```\r\n\r\nCommand line:\r\n```\r\npython3 -m sphinx -b html docs/ doc-out -nvWT\r\n```\r\n\r\n**Expected behavior**\r\nIf you comment out the 2 functions that have `Struct` type annotations, you'll see that `pathlib.Path` resolves fine and shows up in the resulting documentation. I'd expect that `Struct` would also resolve correctly.\r\n\r\n**Your project**\r\nn/a\r\n\r\n**Screenshots**\r\nn/a\r\n\r\n**Environment info**\r\n- OS: Ubuntu 18.04, 20.04\r\n- Python version: 3.8.2\r\n- Sphinx version: 3.2.1\r\n- Sphinx extensions:  'sphinx.ext.autodoc',\r\n              'sphinx.ext.autosectionlabel',\r\n              'sphinx.ext.intersphinx',\r\n              'sphinx.ext.doctest',\r\n              'sphinx.ext.todo'\r\n- Extra tools: \r\n\r\n**Additional context**\r\n\r\n\r\n- [e.g. URL or Ticket]\r\n\r\n\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 15,
+    "source_archive_sha256": "adb43119119b9f3cc0b03c04085b50c99f7d380a4a732b364ecb5800c5a4983c",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/332d80ba8433aea41c3709fa52737ede4405072b",
+    "source_python_sha256": "90d97141a458c96528ef8384a618c91af92c3d5af1a85f49c6645eb3e72deac8",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "7ca279e33aebb60168d35e6be4ed059f4a68f2c1",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/sphinx-doc/sphinx/pull/8801",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "9802db76c37e259ec5b43680a69f380b624aa6ca9b8e917b6fdb6d90f99f6a2f",
+    "gold_test_patch_sha256": "4c5620e7890a69e289ead024a98b01249b46e92df1a120098977455f22e8a6cb",
+    "id": "sphinx-doc__sphinx-8801",
+    "issue_url": "https://github.com/sphinx-doc/sphinx/issues/8800",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": null,
+      "behavioral_effect": "RETURNS_VALUE",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "Annotation-only inherited attributes lose source documentation during ObjectMember construction.",
+      "root_path": "sphinx/ext/autodoc/importer.py",
+      "root_symbol": "get_class_members",
+      "source_locations": [
+        {
+          "end_line": 318,
+          "line": 245
+        }
+      ],
+      "target_paths": [
+        "sphinx/ext/autodoc/importer.py"
+      ]
+    },
+    "problem_formulations": [
+      "autodoc: The annotation only member in superclass is treated as \"undocumented\"\n**Describe the bug**\r\nautodoc: The annotation only member in superclass is treated as \"undocumented\".\r\n\r\n**To Reproduce**\r\n\r\n```\r\n# example.py\r\nclass Foo:\r\n    \"\"\"docstring\"\"\"\r\n    attr1: int  #: docstring\r\n\r\n\r\nclass Bar(Foo):\r\n    \"\"\"docstring\"\"\"\r\n    attr2: str  #: docstring\r\n```\r\n```\r\n# index.rst\r\n.. autoclass:: example.Bar\r\n   :members:\r\n   :inherited-members:\r\n```\r\n\r\n`Bar.attr1` is not documented. It will be shown if I give `:undoc-members:` option to the autoclass directive call. It seems the attribute is treated as undocumented.\r\n\r\n**Expected behavior**\r\nIt should be shown.\r\n\r\n**Your project**\r\nNo\r\n\r\n**Screenshots**\r\nNo\r\n\r\n**Environment info**\r\n- OS: Mac\r\n- Python version: 3.9.1\r\n- Sphinx version: HEAD of 3.x\r\n- Sphinx extensions: sphinx.ext.autodoc\r\n- Extra tools: No\r\n\r\n**Additional context**\r\nNo\r\n\n"
+    ],
+    "repo": "sphinx-doc/sphinx",
+    "schema_version": 15,
+    "source_archive_sha256": "dbc8887d4ff1fe8452559a9fe144ec127fd4bd8861d8e3715feede0d046b2c3c",
+    "source_archive_url": "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/7ca279e33aebb60168d35e6be4ed059f4a68f2c1",
+    "source_python_sha256": "3ed155c2bbea78780ebfc53e214b9548f46a99155e03e775121e14a26c61b257",
+    "split": "holdout"
+  },
+  {
+    "base_commit": "69356d20cfee9a81972dcbf93d8caf9eabe113e8",
+    "category": "BEHAVIORAL_MISMATCH",
+    "corrective_pr_url": "https://github.com/pytest-dev/pytest/pull/8906",
+    "dataset_revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+    "gold_patch_sha256": "bd0a6b9c33abec01b4b103daa2eefb835e43d35605fc56a95143045de18942b0",
+    "gold_test_patch_sha256": "346c803c0c386e93a18a11c5b32aebce287ee6190aa2b40db7a639b6b744e824",
+    "id": "pytest-dev__pytest-8906",
+    "issue_url": "https://github.com/pytest-dev/pytest/pull/8906",
+    "oracle": {
+      "abstention_expected": false,
+      "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+      "affected_api": null,
+      "behavioral_effect": "RAISES_EXCEPTION",
+      "expected_relation": "BEHAVIORAL_CONTRACT",
+      "import_causal": false,
+      "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+      "repair_strategies": [
+        "FIX_PRODUCER",
+        "CORRECT_CONTROL_FLOW",
+        "CORRECT_RETURN_VALUE",
+        "ERROR_HANDLING"
+      ],
+      "root_cause": "The collection error recommends a module marker that does not stop importing incompatible syntax.",
+      "root_path": "src/_pytest/python.py",
+      "root_symbol": "Module._importtestmodule",
+      "source_locations": [
+        {
+          "end_line": 617,
+          "line": 572
+        }
+      ],
+      "target_paths": [
+        "src/_pytest/python.py"
+      ]
+    },
+    "problem_formulations": [
+      "Improve handling of skip for module level\nThis is potentially about updating docs, updating error messages or introducing a new API.\r\n\r\nConsider the following scenario:\r\n\r\n`pos_only.py` is using Python 3,8 syntax:\r\n```python\r\ndef foo(a, /, b):\r\n    return a + b\r\n```\r\n\r\nIt should not be tested under Python 3.6 and 3.7.\r\nThis is a proper way to skip the test in Python older than 3.8:\r\n```python\r\nfrom pytest import raises, skip\r\nimport sys\r\nif sys.version_info < (3, 8):\r\n    skip(msg=\"Requires Python >= 3.8\", allow_module_level=True)\r\n\r\n# import must be after the module level skip:\r\nfrom pos_only import *\r\n\r\ndef test_foo():\r\n    assert foo(10, 20) == 30\r\n    assert foo(10, b=20) == 30\r\n    with raises(TypeError):\r\n        assert foo(a=10, b=20)\r\n```\r\n\r\nMy actual test involves parameterize and a 3.8 only class, so skipping the test itself is not sufficient because the 3.8 class was used in the parameterization.\r\n\r\nA naive user will try to initially skip the module like:\r\n\r\n```python\r\nif sys.version_info < (3, 8):\r\n    skip(msg=\"Requires Python >= 3.8\")\r\n```\r\nThis issues this error:\r\n\r\n>Using pytest.skip outside of a test is not allowed. To decorate a test function, use the @pytest.mark.skip or @pytest.mark.skipif decorators instead, and to skip a module use `pytestmark = pytest.mark.{skip,skipif}.\r\n\r\nThe proposed solution `pytestmark = pytest.mark.{skip,skipif}`, does not work  in my case: pytest continues to process the file and fail when it hits the 3.8 syntax (when running with an older version of Python).\r\n\r\nThe correct solution, to use skip as a function is actively discouraged by the error message.\r\n\r\nThis area feels a bit unpolished.\r\nA few ideas to improve:\r\n\r\n1. Explain skip with  `allow_module_level` in the error message. this seems in conflict with the spirit of the message.\r\n2. Create an alternative API to skip a module to make things easier: `skip_module(\"reason\")`, which can call `_skip(msg=msg, allow_module_level=True)`.\r\n\r\n\n"
+    ],
+    "repo": "pytest-dev/pytest",
+    "schema_version": 15,
+    "source_archive_sha256": "ece662e0d995b18637d4d2a006a344c3a3fdec7d3c7dc2fed46df0c7c86ee7ea",
+    "source_archive_url": "https://codeload.github.com/pytest-dev/pytest/tar.gz/69356d20cfee9a81972dcbf93d8caf9eabe113e8",
+    "source_python_sha256": "6365970ad1d96f714ed832ed93d037145cca7cceddbd891972f336084b83952a",
+    "split": "holdout"
+  }
+]

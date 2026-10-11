@@ -1,0 +1,157 @@
+{
+  "version": 15,
+  "population": "12 controlled local families, not external accuracy",
+  "rows": [
+    {
+      "family": "literal_mismatch",
+      "expected": "EXPECTED_CONFIRMED_ROOT",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "a89950667ecaa2ac49bbb74520d42d322ea894a5bbc0dfc79a922de7e3b25369"
+    },
+    {
+      "family": "valid_literal",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "57dd289843a327be57c465c77ded38911b5e70ea626933c3656fd7fc71f2a49f"
+    },
+    {
+      "family": "downstream",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 4,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "c9665534803081f21deb078c247652a96070a306113c4e8f09d9c2c993c97940"
+    },
+    {
+      "family": "state",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 0,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "ef0227573b58575408600aab75cd7c666917715acb55a549983a5481c86d280f"
+    },
+    {
+      "family": "state_guard",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "7c4e35770fb38db64890f9456bf21e98d6bf499a9088d707fadd73d5e2e4092f"
+    },
+    {
+      "family": "yield",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 0,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "aa9030b14d85c14c59ded88bcf8648e01df012e0bd84bf5a23d23348689a5ce5"
+    },
+    {
+      "family": "forward",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 3,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "646981c7e394ea41bf482fc578e6363d0324ec80f90a56de88986edd4034f6de"
+    },
+    {
+      "family": "conditional",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 6,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "e49985a8723f69dc75fd97eb97f64e778e78bad44def8847443c02b8b712bc9f"
+    },
+    {
+      "family": "reported_contract",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "c99c1301f2ae64576d1f597c97f6010ccec4ea48ceb231ac3104bb7d1050eb9d"
+    },
+    {
+      "family": "unrelated",
+      "expected": "EXPECTED_ABSTENTION",
+      "api_anchored": false,
+      "effect_available": false,
+      "root_candidate_count": 0,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "7913304b5553d6af6298bef665581d3e29a74d1cde81d8c11556479f9e02d652"
+    },
+    {
+      "family": "ambiguous",
+      "expected": "EXPECTED_HYPOTHESIS",
+      "api_anchored": true,
+      "effect_available": true,
+      "root_candidate_count": 2,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "2493b575f396fc3964469d4987f27668ebbd0d71c876fc02aa0e52b9116c502d"
+    },
+    {
+      "family": "no_effect",
+      "expected": "EXPECTED_ABSTENTION",
+      "api_anchored": true,
+      "effect_available": false,
+      "root_candidate_count": 0,
+      "violation_supported": null,
+      "investigation_symbols": [],
+      "source_sha256": "e99e03a8d5ac03d6138cf628e240e81ab6d0b591f73a38ec9c1fde51348106c1"
+    }
+  ],
+  "source_sha256": {
+    "tern\\orchestrator\\predictive\\__init__.py": "881009024cdbefe1fecc996f4a2956e6a9bd194018746f8d17e647b5547f3874",
+    "tern\\orchestrator\\predictive\\analysis.py": "88e8608e91c622bf4e035f2761fa46d094853a79cbaf57c80eb4b8ab82c5a410",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern\\orchestrator\\predictive\\behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "73d6e9f72cd11ca65b06cf3abd2cb8fbf8a6c8a6e96b237d5f69197e4849ebc2",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "e1eaf027e344df6c6cf7a856f02bf83d24bfb016846a3f4f55d690b5e3d753ea",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "359ad470b54e5486fa078408d2b5762c9d0500293897bfbab5d0d9427fc4c876",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "56852c51e259a35e8ba2e7f690d46bb9bddee4adae2277f0022df52d9c773ccc",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e671f9b44af1716b2c474170a353718c16b98c87345af0cfc9353a7adf28d64c",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "2b960fc89eba0bd4d00d7ed8d315ed96ca9d2c2c1515880828c4c73e7219c184",
+    "tern\\orchestrator\\predictive\\causal.py": "ad99cce645b696a886795e94f4b9a17ec6a50ba8b3a2854001b98e60ba6e4f5f",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern\\orchestrator\\predictive\\evaluation.py": "2959dfc6bc84a023106fb0d659878cede51abbeeb71ab796c7ef0014c82e98de",
+    "tern\\orchestrator\\predictive\\external_evaluation.py": "63450e16ac0fd9c2ba68f7726ea855833cfa4badd680a579c63bd741fd06c8cf",
+    "tern\\orchestrator\\predictive\\grounding.py": "01a267a077df4761d43fdf7c00d901523cf6612e99caaf50e6d2c5a39f86e9f2",
+    "tern\\orchestrator\\predictive\\import_graph.py": "3b2ad8edd4000c170ba148645b0d676469943a352138c6a5dfbb4e6deacbacce",
+    "tern\\orchestrator\\predictive\\models.py": "4986bcd05bf5a69b8459094a072a651fd777e513eafe51055c6e56ffe328b174",
+    "tern\\orchestrator\\predictive\\operational.py": "6c0b9874ecfe6a3cb0ef304e7391273cca397e2c3bbebc6639344f23ccea974b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "86b0c0481382e56db7b8960e02c30750ceeb5b8374799251e30c116b6542d5cd",
+    "tern\\orchestrator\\predictive\\recovery.py": "59b7be0d0a6d81c12b2bc4ed5f1423ae9b88a48fe416b432bc3a60962f80c708",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "516b108efb10aa9151d6cba414008a4e8a2a96056ec822a84257aaf07786597e",
+    "tern\\orchestrator\\predictive\\robustness.py": "a27eabc726e6ddf10e39bf470623b4e711279770f5b149239c5bfe14f68875e0",
+    "tern\\orchestrator\\predictive\\scoring.py": "b1bfccec5c8bdfdfd2b2e54334b51e097da0cc46f7ffdc853be4f3e337f954e2",
+    "tern\\orchestrator\\predictive\\semantic.py": "73d15b938e8a42bf8954da84813c246a276ece79e886c0d262ca88811a361abe",
+    "tern\\orchestrator\\predictive\\service.py": "fb71862a90feb28d810a0d39c9f15959d453435b2f4f45a79255e3978fc2bba7",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}

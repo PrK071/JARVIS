@@ -1,0 +1,27 @@
+{
+  "version": 15,
+  "engine_commit": "76a15a4c8aeba3385a8d001903037defd0cbf99f",
+  "frozen_at": "2026-10-11T00:24:37.053868+00:00",
+  "cases_sha256": "8d53d42008dfd87c7d9604cede84cc667456f31052d35ad632021525cb9376fe",
+  "independent_defects": 6,
+  "development": 3,
+  "holdout": 3,
+  "formulations": 6,
+  "repositories": [
+    "pallets/flask",
+    "sphinx-doc/sphinx",
+    "pytest-dev/pytest"
+  ],
+  "evaluator_version": 15,
+  "holdout_thresholds": {
+    "completed_case_rate": 1.0,
+    "hypothesis_location_precision": 0.75,
+    "hypothesis_evidence_validity": 1.0,
+    "incorrect_hypothesis_promotion_rate": 0.0,
+    "contract_availability": 0.75,
+    "correct_root_candidate_recall": 0.75,
+    "external_root_validity": 0.75
+  },
+  "policy": "One-shot held-out evaluation after final runtime freeze. No tuning on historical defects.",
+  "promotion_limit": "Three held-out defects do not establish general external diagnostic readiness."
+}

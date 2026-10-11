@@ -1,0 +1,970 @@
+{
+  "schema_version": 14,
+  "summary": {
+    "metrics": {
+      "relevant_file_retrieval": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5,
+        "population": "formulations",
+        "wilson_95": [
+          0.09453120573423074,
+          0.9054687942657693
+        ]
+      },
+      "correct_candidate_recall": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5,
+        "population": "formulations",
+        "wilson_95": [
+          0.09453120573423074,
+          0.9054687942657693
+        ]
+      },
+      "external_root_validity": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "root_selection_given_correct_candidate": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "live formulations with oracle-location candidate",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "repair_pair_validity": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "live formulations including abstentions",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "recommendation_correctness": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "recommendations only",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "recommendation_coverage": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5,
+        "population": "live formulations",
+        "wilson_95": [
+          0.09453120573423074,
+          0.9054687942657693
+        ]
+      },
+      "false_abstention_rate": {
+        "numerator": 1,
+        "denominator": 2,
+        "rate": 0.5,
+        "population": "live positive formulations",
+        "wilson_95": [
+          0.09453120573423074,
+          0.9054687942657693
+        ]
+      },
+      "correct_abstention": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "true-insufficient formulations",
+        "wilson_95": null
+      },
+      "irrelevant_SCC_selection_rate": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "live formulations; independently adjudicated import causality",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "causal_relevance_precision": {
+        "numerator": 0,
+        "denominator": 1,
+        "rate": 0.0,
+        "population": "selected roots; oracle-location proxy, NOT semantic entailment",
+        "wilson_95": [
+          0.0,
+          0.7934506856227626
+        ]
+      },
+      "behavioral_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "live behavioral formulations",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      },
+      "SCC_relevance_precision": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "selected SCCs",
+        "wilson_95": null
+      },
+      "independent_defect_root_validity": {
+        "numerator": 0,
+        "denominator": 2,
+        "rate": 0.0,
+        "population": "independent defects; all formulations must match",
+        "wilson_95": [
+          0.0,
+          0.6576197724933469
+        ]
+      }
+    },
+    "n_independent_defects": 2,
+    "n_formulations": 2,
+    "n_recommended": 1,
+    "n_abstained": 1,
+    "failure_code_counts": {
+      "CORRECT_ROOT_CANDIDATE_MISSING": 1,
+      "FALSE_ABSTENTION": 1,
+      "RELEVANT_FILE_MISSED": 1,
+      "ROOT_SELECTION_ERROR": 1,
+      "WRONG_REPAIR_PAIR": 1
+    },
+    "qwen_requests": 1,
+    "avg_qwen_seconds": 92.40655689999767,
+    "safety": {
+      "filesystem_mutations": 0,
+      "tool_dispatches": 0,
+      "authority_grants": 0,
+      "execution_authorized": 0,
+      "destructive_actions": 0
+    },
+    "limitations": [
+      "Purposive small sample; intervals do not establish population readiness.",
+      "Root and repair metrics use adjudicated source locations and strategy IDs, not an LLM judge.",
+      "No third-party tests executed; Python-only snapshots omit non-Python assets.",
+      "Zero selected roots is undefined relevance precision, not perfect grounding."
+    ],
+    "layer_coverage": {
+      "metrics": {
+        "correct_file_in_project_index": {
+          "numerator": 2,
+          "denominator": 2,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
+        },
+        "correct_symbol_in_project_index": {
+          "numerator": 2,
+          "denominator": 2,
+          "rate": 1.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
+        },
+        "correct_file_retrieved": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_symbol_selected": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_symbol_in_context": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_symbol_in_ledger": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_symbol_facts_in_ledger": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_relation_in_causal_slice": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_root_candidate_generated": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "correct_root_selected": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "correct_repair_generated": {
+          "numerator": 0,
+          "denominator": 2,
+          "rate": 0.0,
+          "population": "formulations with stage observed; abstentions retained",
+          "wilson_95": [
+            0.0,
+            0.6576197724933469
+          ]
+        },
+        "file_to_symbol_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "symbol_to_ledger_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "ledger_to_candidate_conversion": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations passing source stage; local fact/location proxies",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        }
+      },
+      "behavioral_metrics": {
+        "correct_api_available": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "implementation_path_available": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.20654931437723745,
+            1.0
+          ]
+        },
+        "behavioral_effect_available": {
+          "numerator": 1,
+          "denominator": 2,
+          "rate": 0.5,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": [
+            0.09453120573423074,
+            0.9054687942657693
+          ]
+        },
+        "defect_relation_representable": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "formulations with behavioral stage observed",
+          "wilson_95": null
+        }
+      },
+      "first_loss_counts": {
+        "CORRECT_ROOT_NOT_SELECTED": 1,
+        "FILE_NOT_RETRIEVED": 1
+      }
+    },
+    "n_total_defects": 3,
+    "n_evaluable_defects": 2,
+    "n_incomplete_defects": 1
+  },
+  "results": [
+    {
+      "case_id": "pallets__flask-4992",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": true,
+      "initial_files": [
+        "src/flask/config.py",
+        "src/flask/json/__init__.py",
+        "src/flask/json/provider.py",
+        "src/flask/scaffold.py",
+        "src/flask/testing.py",
+        "src/flask/app.py",
+        "src/flask/wrappers.py",
+        "src/flask/__init__.py",
+        "src/flask/globals.py",
+        "src/flask/cli.py",
+        "src/flask/templating.py",
+        "src/flask/helpers.py"
+      ],
+      "initial_correct_candidate": true,
+      "correct_symbol_in_ledger": true,
+      "correct_candidate_exists": true,
+      "selected_root": true,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [
+        {
+          "id": "R6687E063D5E5",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/json/__init__.py",
+          "origin_symbol": "load",
+          "origin_line": 133
+        }
+      ],
+      "root_candidates": [
+        {
+          "id": "R6687E063D5E5",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/json/__init__.py",
+          "origin_symbol": "load",
+          "origin_line": 133
+        },
+        {
+          "id": "R62918AA46ABC",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/json/__init__.py",
+          "origin_symbol": "load",
+          "origin_line": 135
+        },
+        {
+          "id": "R686DC53C1853",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/json/provider.py",
+          "origin_symbol": "JSONProvider.load",
+          "origin_line": 72
+        },
+        {
+          "id": "R8AA3301AF567",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": "Scaffold.get",
+          "origin_line": 373
+        },
+        {
+          "id": "R1BE9E674CA35",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": "Scaffold._method_route",
+          "origin_line": 365
+        },
+        {
+          "id": "RE486057D5B99",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": "Scaffold.route",
+          "origin_line": 437
+        },
+        {
+          "id": "RF784D42E0942",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "src/flask/cli.py",
+          "origin_symbol": null,
+          "origin_line": 960
+        },
+        {
+          "id": "R86B632F0B931",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "src/flask/app.py",
+          "origin_symbol": null,
+          "origin_line": 648
+        },
+        {
+          "id": "REEAF951639AB",
+          "cause_kind": "TYPE_FLOW",
+          "origin_path": "src/flask/scaffold.py",
+          "origin_symbol": null,
+          "origin_line": 333
+        },
+        {
+          "id": "RE78E633EEC76",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/config.py",
+          "origin_symbol": "Config.from_file",
+          "origin_line": 268
+        },
+        {
+          "id": "R33989817A27B",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/config.py",
+          "origin_symbol": "Config.from_file",
+          "origin_line": 273
+        },
+        {
+          "id": "R8CBA3250AD3B",
+          "cause_kind": "RETURN_CONTRACT",
+          "origin_path": "src/flask/config.py",
+          "origin_symbol": "Config.from_mapping",
+          "origin_line": 292
+        }
+      ],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": true,
+      "abstention_expected": false,
+      "winner": {
+        "id": "C2",
+        "hypothesis_id": "H1",
+        "action": "Correct the return value at the call site to match the expected binary mode.",
+        "expected_outcome": "Address RETURN_CONTRACT at its causal origin",
+        "evidence_refs": [
+          "src/flask/json/__init__.py:133-133",
+          "src/flask/json/__init__.py:108-135",
+          "src/flask/config.py:267-267",
+          "src/flask/config.py:266-271",
+          "src/flask/config.py:232-273"
+        ],
+        "required_tests": [],
+        "evidence_score": 0.8,
+        "risk_score": 0.25,
+        "cost_score": 0.2,
+        "reversibility_score": 0.825,
+        "estimated_success_score": 1.0,
+        "confidence": 1.0,
+        "test_support_score": 0.0,
+        "ranking_score": 0.839,
+        "score_explanation": "score=0.839; causa=+0.250; estrategia=+0.200; evidencia=+0.080; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+        "change_kind": "RETURN_VALUE",
+        "target_files": [
+          "src/flask/json/__init__.py"
+        ],
+        "target_symbols": [
+          "load"
+        ],
+        "mechanism": "CORRECT_RETURN_VALUE",
+        "evidence_ids": [
+          "E2B38938E378D",
+          "E69ED696DF8BA",
+          "E85FC088943E1",
+          "EA876D4168582",
+          "EC5BF82C8D390",
+          "ED3CD6CC81D7B"
+        ],
+        "test_support_level": "NONE",
+        "eligible": true,
+        "rejection_reasons": [],
+        "root_cause_id": "R6687E063D5E5",
+        "strategy_kind": "CORRECT_RETURN_VALUE",
+        "root_cause_score": 1.0,
+        "repair_locality_score": 1.0,
+        "repair_strategy_score": 1.0,
+        "repair_targets": [
+          {
+            "id": "T0503995E298D",
+            "path": "src/flask/json/__init__.py",
+            "scope_kind": "RETURN_SITE",
+            "symbol": "load",
+            "parameter": null,
+            "attribute": null,
+            "expression_id": "NA4E636C36B0E",
+            "line": 133
+          }
+        ]
+      },
+      "failure_reason": null,
+      "failure_codes": [
+        "ROOT_SELECTION_ERROR",
+        "WRONG_REPAIR_PAIR"
+      ],
+      "wall_seconds": 106.75752370000191,
+      "phase_seconds": {
+        "index": 1.6216019000000002,
+        "retrieval": 0.2002806,
+        "context_inclusive": 0.5737857000000001,
+        "symbol_selection": 0.4505639,
+        "ledger": 0.35631260000000003,
+        "causal": 2.9057382,
+        "recovery_inclusive": 0.07451150000000001,
+        "scoring": 0.00044280000000000003
+      },
+      "qwen": {
+        "requests": 1,
+        "request_ms": [
+          92406.55689999767
+        ],
+        "prompt_tokens": 7472,
+        "response_tokens": 426
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "6cea7fafadbe4a359903c73c00c19d78a87476e210f8119d5bac76a56e94b574",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v15\\frozen\\v15-external-engine-frozen\\pallets__flask-4992\\result\\6cea7fafadbe4a359903c73c00c19d78a87476e210f8119d5bac76a56e94b574.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+        "affected_api": "Config.from_file",
+        "behavioral_effect": "RAISES_EXCEPTION",
+        "expected_relation": "BEHAVIORAL_CONTRACT",
+        "import_causal": false,
+        "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+        "repair_strategies": [
+          "FIX_PRODUCER",
+          "CORRECT_CONTROL_FLOW",
+          "CORRECT_RETURN_VALUE",
+          "ERROR_HANDLING"
+        ],
+        "root_cause": "Text-only file opening cannot supply the binary reader required by the supplied TOML loader.",
+        "root_path": "src/flask/config.py",
+        "root_symbol": "Config.from_file",
+        "source_locations": [
+          {
+            "end_line": 273,
+            "line": 232
+          }
+        ],
+        "target_paths": [
+          "src/flask/config.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": true,
+          "correct_symbol_selected": true,
+          "correct_symbol_in_context": true,
+          "correct_symbol_in_ledger": true,
+          "correct_symbol_facts_in_ledger": true,
+          "correct_relation_in_causal_slice": true,
+          "correct_root_candidate_generated": true,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "behavioral_coverage": {
+          "status": "OBSERVED",
+          "correct_symbol_available": true,
+          "correct_api_available": true,
+          "implementation_path_available": true,
+          "reported_symbol_to_implementation_proxy": true,
+          "behavioral_effect_available": true,
+          "defect_relation_representable": null,
+          "matched_callable_ids": [
+            "BCfff0dc2b85fcc899"
+          ],
+          "matched_effect_ids": [
+            "BE81226656a5b7b847"
+          ],
+          "resolved_relations": 1,
+          "ledger_backed_relations": 1,
+          "unresolved_dispatches": 26,
+          "reason_codes": [
+            "INITIAL_CONTEXT_OVER_BUDGET",
+            "NO_SUPPORTED_CONTRACT",
+            "UNRESOLVED_DISPATCH"
+          ],
+          "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+        },
+        "first_loss": "CORRECT_ROOT_NOT_SELECTED",
+        "reason_codes": [
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "from_file",
+            "qualified_name": "Config.from_file",
+            "kind": "method",
+            "file": "src/flask/config.py",
+            "line": 232,
+            "end_line": 273,
+            "module": "src.flask.config"
+          }
+        ],
+        "selected_windows": [
+          {
+            "start_line": 75,
+            "end_line": 75
+          },
+          {
+            "start_line": 232,
+            "end_line": 273
+          },
+          {
+            "start_line": 275,
+            "end_line": 292
+          }
+        ],
+        "local_fact_ids": [
+          "E0C85AEC2A85B",
+          "E2F373E40AB46",
+          "E326E5A3751BF",
+          "E341116220E4B",
+          "E41C671968873",
+          "E5F601F2457CD",
+          "E6649E7AEFD6F",
+          "E86D34B583D3A",
+          "E8872390F371C",
+          "EA876D4168582",
+          "EAA0F3C301055",
+          "EC5BF82C8D390",
+          "EFBD5874E3B92"
+        ],
+        "local_causal_node_ids": [
+          "BCfff0dc2b85fcc899",
+          "BE0b2143bd2e22b324",
+          "BE234d1ad82ba15264",
+          "BE5b1963bf53b71ba3",
+          "BE81226656a5b7b847",
+          "BE9ae904baf3e09a69",
+          "N1434A7AD7981",
+          "N2A14C3BDD4E1",
+          "N42C9142B7E16",
+          "N437E4A76CFA5",
+          "N45A0F31ED4BD",
+          "N45F2C067F1F8",
+          "N582957D1F5DD",
+          "N58851E1196F5",
+          "N7A9424F71BDC",
+          "N7C53932C2DFC",
+          "N84CADA36B1B3",
+          "N885D1D7E221B",
+          "N974790590FF2",
+          "N9BAE6F89002B",
+          "N9EE149F8C672",
+          "NA76DDFF3B8CF",
+          "NB338C57434D5",
+          "NC195B90F7B34",
+          "NC356B2D72D8D",
+          "NC93E3529B35D",
+          "ND72A946A9D6E",
+          "NDF8594A21F2C",
+          "NE190BC122EAE",
+          "NE45C02CDD245",
+          "NE5AA7EF2C70E",
+          "NED0897CE4EDC"
+        ],
+        "correct_candidate_ids": [
+          "R33989817A27B",
+          "RE78E633EEC76"
+        ],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      },
+      "diagnostic_phase_seconds": {
+        "initial_context": 0.012577900000906084,
+        "symbol_resolution": 0.12963769999987562,
+        "implementation_graph": 0.02798659999825759,
+        "index": 0.6605628999968758,
+        "initial_retrieval": 0.046000599999388214,
+        "ledger": 0.16499820000171894,
+        "causal_slice": 1.3350379000003159
+      },
+      "service_phase_seconds": {
+        "index": 1.6216997999981686,
+        "initial_retrieval": 0.20029719999729423,
+        "context_and_implementation": 0.5738259000027028,
+        "initial_context": 0.018747899997833883,
+        "symbol_resolution": 0.4532758000023023,
+        "implementation_graph": 0.09991009999794187,
+        "ledger": 0.3566227000010258,
+        "causal_slice": 2.911362199996802,
+        "recovery": 0.07457919999797014,
+        "qwen_analysis": 101.01406990000032,
+        "ranking": 0.00044920000073034316
+      }
+    },
+    {
+      "case_id": "sphinx-doc__sphinx-8506",
+      "formulation": 1,
+      "mode": "live",
+      "category": "BEHAVIORAL_MISMATCH",
+      "correct_file_retrieved": false,
+      "initial_files": [
+        "sphinx/cmd/build.py",
+        "sphinx/events.py",
+        "sphinx/ext/autodoc/directive.py",
+        "sphinx/setup_command.py",
+        "sphinx/transforms/compact_bullet_list.py",
+        "sphinx/util/build_phase.py",
+        "sphinx/util/matching.py",
+        "tests/roots/test-ext-inheritance_diagram/example/sphinx.py",
+        "tests/test_build.py",
+        "tests/test_build_changes.py",
+        "tests/test_build_dirhtml.py",
+        "tests/test_build_epub.py"
+      ],
+      "initial_correct_candidate": false,
+      "correct_symbol_in_ledger": false,
+      "correct_candidate_exists": false,
+      "selected_root": false,
+      "root_correct": false,
+      "selected_scc": false,
+      "import_causal": false,
+      "selected_roots": [],
+      "root_candidates": [],
+      "repair_correct": false,
+      "recommendation_correct": false,
+      "recommended": false,
+      "abstention_expected": false,
+      "winner": null,
+      "failure_reason": "INSUFFICIENT_STRUCTURAL_EVIDENCE",
+      "failure_codes": [
+        "RELEVANT_FILE_MISSED",
+        "CORRECT_ROOT_CANDIDATE_MISSING",
+        "FALSE_ABSTENTION"
+      ],
+      "wall_seconds": 30.84343429999717,
+      "phase_seconds": {
+        "index": 13.7801577,
+        "retrieval": 0.7174697000000001,
+        "context_inclusive": 0.20642210000000003,
+        "symbol_selection": 0.17933670000000002,
+        "ledger": 1.0291042000000001,
+        "causal": 8.9888721,
+        "recovery_inclusive": 10.903055100000001,
+        "scoring": 0
+      },
+      "qwen": {
+        "requests": 0,
+        "request_ms": [],
+        "prompt_tokens": 0,
+        "response_tokens": 0
+      },
+      "safety": {
+        "filesystem_mutations": 0,
+        "tool_dispatches": 0,
+        "authority_grants": 0,
+        "execution_authorized": 0,
+        "destructive_actions": 0
+      },
+      "raw_trace_sha256": "6bfde7110ec9d1c564b90e7ebb2e88449f6d4b9eba0df87474e7816a0f6a885a",
+      "raw_trace_archive": ".orchestrator\\predictive-artifacts\\v15\\frozen\\v15-external-engine-frozen\\sphinx-doc__sphinx-8506\\result\\6bfde7110ec9d1c564b90e7ebb2e88449f6d4b9eba0df87474e7816a0f6a885a.json.gz",
+      "expected": {
+        "abstention_expected": false,
+        "adjudication_basis": "Independent upstream production and test changes; original report. No corrective diff in prompts.",
+        "affected_api": null,
+        "behavioral_effect": "RETURNS_VALUE",
+        "expected_relation": "BEHAVIORAL_CONTRACT",
+        "import_causal": false,
+        "limitation": "Location proxy; 8627 also corrects stringify. Reports without a named production API must stay unanchored.",
+        "repair_strategies": [
+          "FIX_PRODUCER",
+          "CORRECT_CONTROL_FLOW",
+          "CORRECT_RETURN_VALUE",
+          "ERROR_HANDLING"
+        ],
+        "root_cause": "Option parsing excludes bracket-leading syntax accepted by earlier versions; regex and normalization require correction.",
+        "root_path": "sphinx/domains/std.py",
+        "root_symbol": "Cmdoption.handle_signature",
+        "source_locations": [
+          {
+            "end_line": 212,
+            "line": 186
+          }
+        ],
+        "target_paths": [
+          "sphinx/domains/std.py"
+        ]
+      },
+      "layer_coverage": {
+        "stages": {
+          "correct_file_in_project_index": true,
+          "correct_symbol_in_project_index": true,
+          "correct_file_retrieved": false,
+          "correct_symbol_selected": false,
+          "correct_symbol_in_context": false,
+          "correct_symbol_in_ledger": false,
+          "correct_symbol_facts_in_ledger": false,
+          "correct_relation_in_causal_slice": false,
+          "correct_root_candidate_generated": false,
+          "correct_root_selected": false,
+          "correct_repair_generated": false
+        },
+        "behavioral_coverage": {
+          "status": "OBSERVED",
+          "correct_symbol_available": false,
+          "correct_api_available": null,
+          "implementation_path_available": null,
+          "reported_symbol_to_implementation_proxy": false,
+          "behavioral_effect_available": false,
+          "defect_relation_representable": null,
+          "matched_callable_ids": [],
+          "matched_effect_ids": [],
+          "resolved_relations": 0,
+          "ledger_backed_relations": 0,
+          "unresolved_dispatches": 0,
+          "reason_codes": [
+            "NO_STRUCTURAL_API_ANCHOR"
+          ],
+          "limitation": "Reachability/effect recall; defect representability needs independent contract-edge adjudication."
+        },
+        "first_loss": "FILE_NOT_RETRIEVED",
+        "reason_codes": [
+          "FILE_NOT_RETRIEVED",
+          "SYMBOL_WINDOW_MISSED",
+          "SYMBOL_DEFINITION_NOT_MATERIALIZED",
+          "SYMBOL_FACTS_NOT_MATERIALIZED",
+          "LOCAL_CAUSAL_RELATION_NOT_REPRESENTED",
+          "CORRECT_ROOT_NOT_GENERATED",
+          "CORRECT_ROOT_NOT_SELECTED",
+          "CORRECT_REPAIR_NOT_GENERATED"
+        ],
+        "indexed_symbols": [
+          {
+            "name": "handle_signature",
+            "qualified_name": "Cmdoption.handle_signature",
+            "kind": "method",
+            "file": "sphinx/domains/std.py",
+            "line": 186,
+            "end_line": 212,
+            "module": "sphinx.domains.std"
+          }
+        ],
+        "selected_windows": [],
+        "local_fact_ids": [],
+        "local_causal_node_ids": [],
+        "correct_candidate_ids": [],
+        "relation_metric": "local AST edge coverage proxy; not proof of the adjudicated defect relation"
+      },
+      "diagnostic_phase_seconds": {
+        "initial_context": 0.012948200001119403,
+        "symbol_resolution": 0.05518350000056671,
+        "implementation_graph": 0.00127029999930528,
+        "index": 4.112978099998145,
+        "initial_retrieval": 0.18223060000309488,
+        "ledger": 0.10034040000027744,
+        "causal_slice": 1.9065308999997796
+      },
+      "service_phase_seconds": {
+        "index": 13.780982299998868,
+        "initial_retrieval": 0.7174875999990036,
+        "context_and_implementation": 0.20645839999997406,
+        "initial_context": 0.019889600000169594,
+        "symbol_resolution": 0.18153520000123535,
+        "implementation_graph": 0.0023627000009582844,
+        "ledger": 0.2950228999980027,
+        "causal_slice": 4.926425699999527,
+        "recovery": 10.903075700000045
+      }
+    }
+  ],
+  "operational_failures": [
+    {
+      "id": "sphinx-doc__sphinx-7975",
+      "status": "NOT_EVALUATED_TIMEOUT",
+      "exit_code": 1,
+      "diagnostic": "put.stem,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        reasoner=LlamaClient(\"http://127.0.0.1:8080\", 180) if args.mode == \"live\" else None)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\tern\\orchestrator\\predictive\\external_evaluation.py\", line 164, in evaluate_external_cases\n    report = profile.runcall(PredictiveDecisionService(measured, path_policy=policy).predict, problem, root) if measured else None\n             ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\cProfile.py\", line 113, in runcall\n    return func(*args, **kw)\n  File \"C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\tern\\orchestrator\\predictive\\service.py\", line 170, in predict\n    report = self._predict(problem, project_path, timer)\n  File \"C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\tern\\orchestrator\\predictive\\service.py\", line 186, in _predict\n    causal_slice, root_causes = timer.measure('causal_slice', build_causal_slice,\n                                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        context, snapshot, self.path_policy\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\User\\AppData\\Local\\Temp\\JARVIS-v11\\tern\\orchestrator\\predictive\\operational.py\", line 26, in measure\n    raise PredictiveOperationalTimeout(f\"NOT_EVALUATED_TIMEOUT: {name}\")\ntern.orchestrator.predictive.operational.PredictiveOperationalTimeout: NOT_EVALUATED_TIMEOUT: causal_slice\n",
+      "excluded_from_quality_metrics": true
+    }
+  ],
+  "case_budget_seconds": 240.0,
+  "case_memory_mb": 1024,
+  "memory_monitor": "Windows working-set polling, one-second intervals; not a hard allocation cap",
+  "population_note": "Incomplete cases excluded explicitly, not counted as engine errors. Readiness requires complete coverage.",
+  "engine_commit": "76a15a4c8aeba3385a8d001903037defd0cbf99f",
+  "corpus_seal": "8d53d42008dfd87c7d9604cede84cc667456f31052d35ad632021525cb9376fe",
+  "split": "development",
+  "runtime_source_sha256": {
+    "tern\\orchestrator\\predictive\\__init__.py": "ef48f9ac3507389d4d823670b83af94cf15eeac2103e4ab9aa1d75290d4d17b0",
+    "tern\\orchestrator\\predictive\\analysis.py": "81b72925bb04de249df0789dcff3c9f3a1a124db5b19040eee72691bc87f1eaf",
+    "tern\\orchestrator\\predictive\\artifacts.py": "e5839b16bf9e976c526681299b89366157ae18cb8297abb606c56c4ffd70ca47",
+    "tern\\orchestrator\\predictive\\behavioral.py": "d8ecd7b55c19d5da24a32331b79ebe59dbda63e1f20de1acf27e4ec3de1e69cb",
+    "tern\\orchestrator\\predictive\\behavioral_evaluation.py": "d5d6940e6517fba45aa120229e451870dc17af8dd96574fd6d5b96c332bb82ff",
+    "tern\\orchestrator\\predictive\\benchmark_v4.py": "fe869d5db8dedd0a2922a4a89342a5ed46b7752c584160017b8a686794910c15",
+    "tern\\orchestrator\\predictive\\benchmark_v5.py": "a26ef36646b89d1cf5deeaaeb0b76c32f5f454b1a88c2574a61f1f1318c8c392",
+    "tern\\orchestrator\\predictive\\benchmark_v6.py": "83d1e7ff4e1a90fe4abdd6595bb7666000af0ff7f221a0f0b4810d47e4f29d2b",
+    "tern\\orchestrator\\predictive\\benchmark_v7.py": "9dcf6321f32fe2e2406f4e1f004fab9e9906b241c89e838650eaf4cba32e51c4",
+    "tern\\orchestrator\\predictive\\benchmark_v8.py": "e9da94fbfad16c91fafe6010491b02cfd7d27fcf6561410ee1e6123c2dd23a34",
+    "tern\\orchestrator\\predictive\\benchmark_v9.py": "a654e906338697e62aedd117f38fba6a1b9f80852494edd536d92996963b083f",
+    "tern\\orchestrator\\predictive\\causal.py": "37f53c8988010e5899fd1e322774359532bf51bbb7027130c7c6729e9b9c7623",
+    "tern\\orchestrator\\predictive\\coverage_evaluation.py": "a4c95b35e97348be065d826229a0ce6d9dc81c6500b611b0e870ffda14cc12f4",
+    "tern\\orchestrator\\predictive\\evaluation.py": "d40c6299603e6d04546d1448f75e11bee7d663f46dcab129e00f8f0ecece368a",
+    "tern\\orchestrator\\predictive\\grounding.py": "d06cc32bc70f313693d4a9ef433b515fdd3dcbe8b9c42ad708fdbca0b5e79a0f",
+    "tern\\orchestrator\\predictive\\import_graph.py": "24784f81531e09a5f45c07f82eda06875ef70a9ebea93a55909d89125e94123a",
+    "tern\\orchestrator\\predictive\\models.py": "bfb611d8e97da98587cbc804f2083542ced8f81e2bf43e456001ddc53fefe4dd",
+    "tern\\orchestrator\\predictive\\operational.py": "6c0b9874ecfe6a3cb0ef304e7391273cca397e2c3bbebc6639344f23ccea974b",
+    "tern\\orchestrator\\predictive\\oracle_coverage_evaluation.py": "79505442993ee288c6970606d81d97590dc3a38a359455e8226d0506e25291dc",
+    "tern\\orchestrator\\predictive\\policy.py": "29d86daa1db8ee8a129bab6c0c84a3089e0f40f18599a84bcaa383ec5ad37154",
+    "tern\\orchestrator\\predictive\\recovery.py": "7b7b61f550a4eb8dafcee349ba2c0a86d969891a0d00da17e7a3791899e6597c",
+    "tern\\orchestrator\\predictive\\relevance.py": "f731a6ed4835c8b7c380dcccf8446c895ea0cddaf848796cf63cd86b61ffdda5",
+    "tern\\orchestrator\\predictive\\repair.py": "465a65124884cce1bd4477c849c75f70f1cdad91c0680f1c1d8b2831560d69d9",
+    "tern\\orchestrator\\predictive\\robustness.py": "d6db03dda1e8117fba6daa67d9a765cbd2f24b951025ad76b49a2caa8ef9ae94",
+    "tern\\orchestrator\\predictive\\scoring.py": "8f6f2679d72f94ce5691d9cbc8db7946f930f4c7900ad7f2d9011776e76a3c70",
+    "tern\\orchestrator\\predictive\\semantic.py": "3017ef02bbb0421eac0f8e94c8508a3c0a2e86fa2d9f807426442a8fce09d6ec",
+    "tern\\orchestrator\\predictive\\service.py": "b6f118c81ed83e2e0cc70dfbc166dfd432103cc4dde9f8ec6671c9cfe50c2f3b",
+    "tern\\orchestrator\\predictive\\symbols.py": "55991449a41aefba27ad6297065eebede4300b364056fbd30ac6d63b01e7b217"
+  }
+}
