@@ -1,0 +1,27 @@
+{
+  "version": 16,
+  "working_directory": "D:/JARVIS-v16-work",
+  "runtime_seal": "v16-runtime-freeze.json",
+  "full_suite": {
+    "command": "python -m pytest -q",
+    "passed": 1639,
+    "skipped": 3,
+    "failed": 0,
+    "warnings": 1,
+    "wall_seconds": 166.92,
+    "warning": "Existing VOICE_TTS_SPEED deprecation; not a predictive failure"
+  },
+  "predictive_subset": {
+    "passed": 398,
+    "skipped": 2,
+    "deselected": 1242,
+    "failed": 0,
+    "wall_seconds": 97.52
+  },
+  "live_dependency_required_for_unit_suite": false,
+  "external_project_code_executed": false,
+  "external_snapshot_mutations": 0,
+  "final_freeze_verified": true,
+  "git_objects_independent_of_temporary_checkout": true,
+  "complete_v10_live_holdout_rerun": false
+}

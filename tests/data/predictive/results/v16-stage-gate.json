@@ -1,0 +1,164 @@
+{
+  "version": 16,
+  "gates": {
+    "PREDICTIVE_SYNTHETIC_READY": true,
+    "DIAGNOSTIC_TRIAGE_READY": false,
+    "OPERATIONAL_EVALUATION_READY": true,
+    "INVESTIGATION_CAPABILITY_READY": false,
+    "PREDICTIVE_EXTERNAL_COVERAGE_READY": false,
+    "PREDICTIVE_EXTERNAL_DECISION_READY": false,
+    "SIMULATION_RUNTIME_READY": false
+  },
+  "corpus_sha256": "898bb85b4fb7a29dc689e31e7ee0e64d3e55b620acc000e2f2443a793c36b5e4",
+  "runtime_freeze": "tests/data/predictive/results/v16-runtime-freeze.json",
+  "full_tests_passed": true,
+  "holdout_completion": {
+    "numerator": 16,
+    "denominator": 16,
+    "rate": 1.0,
+    "population": "presealed eligible inputs; not independent defects",
+    "wilson_95": [
+      0.8063923194655637,
+      1.0000000000000002
+    ]
+  },
+  "root_support_funnel": {
+    "ROOT_EXISTS_BUT_CAUSAL_BRIDGE_MISSING": 70,
+    "ROOT_EXISTS_BUT_CONTRACT_UNVERIFIED": 2
+  },
+  "primary_independent_defect_metrics": {
+    "completion_rate": {
+      "numerator": 8,
+      "denominator": 8,
+      "rate": 1.0,
+      "population": "presealed independent defects eligible for A",
+      "wilson_95": [
+        0.6755924351161198,
+        1.0
+      ]
+    },
+    "correct_file_retrieved": {
+      "numerator": 6,
+      "denominator": 8,
+      "rate": 0.75,
+      "population": "completed independent defects, mode A",
+      "wilson_95": [
+        0.40927543031016883,
+        0.9285207872478909
+      ]
+    },
+    "correct_candidate_exists": {
+      "numerator": 0,
+      "denominator": 8,
+      "rate": 0.0,
+      "population": "completed independent defects, mode A",
+      "wilson_95": [
+        0.0,
+        0.32440756488388023
+      ]
+    },
+    "root_correct": {
+      "numerator": 0,
+      "denominator": 8,
+      "rate": 0.0,
+      "population": "completed independent defects, mode A",
+      "wilson_95": [
+        0.0,
+        0.32440756488388023
+      ]
+    },
+    "repair_correct": {
+      "numerator": 0,
+      "denominator": 8,
+      "rate": 0.0,
+      "population": "completed independent defects, mode A",
+      "wilson_95": [
+        0.0,
+        0.32440756488388023
+      ]
+    },
+    "recommendation_precision": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "population": "recommendations",
+      "wilson_95": null
+    },
+    "false_abstention_rate": {
+      "numerator": 8,
+      "denominator": 8,
+      "rate": 1.0,
+      "population": "completed positive defects",
+      "wilson_95": [
+        0.6755924351161198,
+        1.0
+      ]
+    },
+    "investigable_hypothesis_coverage": {
+      "numerator": 5,
+      "denominator": 8,
+      "rate": 0.625,
+      "population": "completed defects",
+      "wilson_95": [
+        0.30574239460262737,
+        0.8631557141764026
+      ]
+    },
+    "hypothesis_location_precision": {
+      "numerator": 0,
+      "denominator": 9,
+      "rate": 0.0,
+      "population": "hypotheses; source-location proxy not causal confirmation",
+      "wilson_95": [
+        0.0,
+        0.2991450484195441
+      ]
+    },
+    "evidence_reference_validity": {
+      "numerator": 272,
+      "denominator": 272,
+      "rate": 1.0,
+      "population": "candidate and investigation evidence IDs",
+      "wilson_95": [
+        0.9860736713142486,
+        1.0
+      ]
+    },
+    "required_evidence_precision": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "population": "undefined: no independent adjudication of acquisition efficacy",
+      "wilson_95": null
+    }
+  },
+  "safety": {
+    "filesystem_mutations": 0,
+    "tool_dispatches": 0,
+    "authority_grants": 0,
+    "execution_authorized": 0,
+    "destructive_actions": 0,
+    "forbidden_recommendations": 0
+  },
+  "evidence_reference_validity": {
+    "numerator": 540,
+    "denominator": 540,
+    "rate": 1.0,
+    "population": "candidate/investigation IDs",
+    "wilson_95": [
+      0.9929364362381928,
+      0.9999999999999999
+    ]
+  },
+  "deterministic_profile_semantics_equal": true,
+  "stop_condition": "STATIC_EVIDENCE_INSUFFICIENT_FOR_RELIABLE_DIAGNOSIS",
+  "stop_scope": "Motor e informacao estudados; nao demonstra impossibilidade teorica de analise estatica.",
+  "next_milestone": "Secure Sandbox Validation -> Controlled Runtime Evidence -> Causal Reassessment",
+  "limitations": [
+    "Localizacao de hypothesis nao confirma causa; candidato correto e proxy de localizacao.",
+    "required_evidence_precision undefined: necessidade plausivel ainda sem eficacia externa adjudicada.",
+    "B pode materializar expectativa UNKNOWN como metadado relatado; mudanca de ID nao e ganho causal.",
+    "D indisponivel; um unico C nao permite medir valor geral de observacoes runtime.",
+    "Sintetico: regressao estrutural+unitaria, nao repeticao de todo holdout live v10."
+  ]
+}

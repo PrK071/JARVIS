@@ -1,0 +1,1044 @@
+{
+  "version": 16,
+  "audits": [
+    {
+      "source": "tests\\data\\predictive\\results\\v16-development-before.json",
+      "funnel": {
+        "report_available": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "reported_api_resolved": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "implementation_reachable": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "effects_represented": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "contract_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "contract_applies": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "violation_supported": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "roots_present": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "roots_supported": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "affected_api_recall": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independently sealed affected-API oracle; resolution is not recall",
+          "wilson_95": null
+        },
+        "causal_bridge_representability": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_selection_given_correct_candidate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no correct-root candidates available",
+          "wilson_95": null
+        },
+        "recommendation_coverage": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "completed independent A defects",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "root_support_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent semantic support adjudication of every generic root",
+          "wilson_95": null
+        }
+      },
+      "routing": {
+        "INVESTIGATION": 1,
+        "DIAGNOSIS": 2,
+        "ABSTENTION": 1
+      },
+      "rows": [
+        {
+          "case_id": "psf__requests-1142",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-1142",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-2931",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "DIAGNOSIS",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-2931",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "DIAGNOSIS",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10051",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "DIAGNOSIS",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10051",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "DIAGNOSIS",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9367",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9367",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 300,
+        "denominator": 300,
+        "rate": 1.0,
+        "population": "candidate/investigation evidence IDs, not causal correctness",
+        "wilson_95": [
+          0.9873570287754538,
+          0.9999999999999998
+        ]
+      },
+      "unsupported_claims": 0,
+      "claim_population": 16,
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 16,
+        "rate": 0.0,
+        "population": "claims; hypothesis-only suggestions are not confirmed claims",
+        "wilson_95": [
+          0.0,
+          0.1936076805344365
+        ]
+      },
+      "limitations": [
+        "A/B inputs are correlated formulations, not additional independent defects.",
+        "B UNKNOWN sentinel can create unverified reported-contract metadata; new IDs are not evidence of information gain.",
+        "Hypothesis location precision is exact root-location proxy; it can penalize a legitimate investigation at the public API.",
+        "Two class-scoped oracles are coarse; exact method/attribute correspondence is not fully adjudicated.",
+        "Requests includes historical Python-2 behavior; not a qualification of arbitrary modern Python environments.",
+        "No additional runtime observations were available; investigation requests were not independently validated for efficacy."
+      ]
+    },
+    {
+      "source": "tests\\data\\predictive\\results\\v16-development-after.json",
+      "funnel": {
+        "report_available": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.5101091635454027,
+            1.0
+          ]
+        },
+        "reported_api_resolved": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "implementation_reachable": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "effects_represented": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30064184258240184,
+            0.9544127391902995
+          ]
+        },
+        "contract_exists": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "contract_applies": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "violation_supported": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "roots_present": {
+          "numerator": 2,
+          "denominator": 4,
+          "rate": 0.5,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.15003898915214947,
+            0.8499610108478506
+          ]
+        },
+        "roots_supported": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "affected_api_recall": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independently sealed affected-API oracle; resolution is not recall",
+          "wilson_95": null
+        },
+        "causal_bridge_representability": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_selection_given_correct_candidate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no correct-root candidates available",
+          "wilson_95": null
+        },
+        "recommendation_coverage": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "population": "completed independent A defects",
+          "wilson_95": [
+            0.0,
+            0.4898908364545973
+          ]
+        },
+        "root_support_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent semantic support adjudication of every generic root",
+          "wilson_95": null
+        }
+      },
+      "routing": {
+        "INVESTIGATION": 3,
+        "ABSTENTION": 1
+      },
+      "rows": [
+        {
+          "case_id": "psf__requests-1142",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-1142",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-2931",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-2931",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10051",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10051",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9367",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9367",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9367",
+          "mode": "C",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 380,
+        "denominator": 380,
+        "rate": 1.0,
+        "population": "candidate/investigation evidence IDs, not causal correctness",
+        "wilson_95": [
+          0.9899920690367933,
+          1.0000000000000002
+        ]
+      },
+      "unsupported_claims": 0,
+      "claim_population": 0,
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "claims; hypothesis-only suggestions are not confirmed claims",
+        "wilson_95": null
+      },
+      "limitations": [
+        "A/B inputs are correlated formulations, not additional independent defects.",
+        "B UNKNOWN sentinel can create unverified reported-contract metadata; new IDs are not evidence of information gain.",
+        "Hypothesis location precision is exact root-location proxy; it can penalize a legitimate investigation at the public API.",
+        "Two class-scoped oracles are coarse; exact method/attribute correspondence is not fully adjudicated.",
+        "Requests includes historical Python-2 behavior; not a qualification of arbitrary modern Python environments.",
+        "No additional runtime observations were available; investigation requests were not independently validated for efficacy."
+      ]
+    },
+    {
+      "source": "tests\\data\\predictive\\results\\v16-external-holdout-one-shot.json",
+      "funnel": {
+        "report_available": {
+          "numerator": 8,
+          "denominator": 8,
+          "rate": 1.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.6755924351161198,
+            1.0
+          ]
+        },
+        "reported_api_resolved": {
+          "numerator": 5,
+          "denominator": 8,
+          "rate": 0.625,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30574239460262737,
+            0.8631557141764026
+          ]
+        },
+        "implementation_reachable": {
+          "numerator": 5,
+          "denominator": 8,
+          "rate": 0.625,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30574239460262737,
+            0.8631557141764026
+          ]
+        },
+        "effects_represented": {
+          "numerator": 5,
+          "denominator": 8,
+          "rate": 0.625,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.30574239460262737,
+            0.8631557141764026
+          ]
+        },
+        "contract_exists": {
+          "numerator": 1,
+          "denominator": 8,
+          "rate": 0.125,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.02241749145005667,
+            0.4708881822128535
+          ]
+        },
+        "contract_applies": {
+          "numerator": 1,
+          "denominator": 8,
+          "rate": 0.125,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.02241749145005667,
+            0.4708881822128535
+          ]
+        },
+        "violation_supported": {
+          "numerator": 0,
+          "denominator": 8,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.32440756488388023
+          ]
+        },
+        "roots_present": {
+          "numerator": 3,
+          "denominator": 8,
+          "rate": 0.375,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.13684428582359742,
+            0.6942576053973727
+          ]
+        },
+        "roots_supported": {
+          "numerator": 0,
+          "denominator": 8,
+          "rate": 0.0,
+          "population": "completed independent defects in A",
+          "wilson_95": [
+            0.0,
+            0.32440756488388023
+          ]
+        },
+        "affected_api_recall": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independently sealed affected-API oracle; resolution is not recall",
+          "wilson_95": null
+        },
+        "causal_bridge_representability": {
+          "numerator": 0,
+          "denominator": 8,
+          "rate": 0.0,
+          "population": "completed independent defects, mode A",
+          "wilson_95": [
+            0.0,
+            0.32440756488388023
+          ]
+        },
+        "root_selection_given_correct_candidate": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no correct-root candidates available",
+          "wilson_95": null
+        },
+        "recommendation_coverage": {
+          "numerator": 0,
+          "denominator": 8,
+          "rate": 0.0,
+          "population": "completed independent A defects",
+          "wilson_95": [
+            0.0,
+            0.32440756488388023
+          ]
+        },
+        "root_support_validity": {
+          "numerator": 0,
+          "denominator": 0,
+          "rate": null,
+          "population": "undefined: no independent semantic support adjudication of every generic root",
+          "wilson_95": null
+        }
+      },
+      "routing": {
+        "INVESTIGATION": 5,
+        "ABSTENTION": 3
+      },
+      "rows": [
+        {
+          "case_id": "psf__requests-1724",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-1724",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-1921",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-1921",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-5414",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-5414",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-6028",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "psf__requests-6028",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": true,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10081",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": true,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-10081",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-5262",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "pytest-dev__pytest-5262",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": true,
+          "implementation_reachable": true,
+          "effects_represented": true,
+          "contract_exists": true,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": true,
+          "outcome": "INVESTIGATION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8621",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-8621",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9711",
+          "mode": "A",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        },
+        {
+          "case_id": "sphinx-doc__sphinx-9711",
+          "mode": "B",
+          "report_available": true,
+          "reported_api_resolved": false,
+          "implementation_reachable": false,
+          "effects_represented": false,
+          "contract_exists": false,
+          "contract_applies": false,
+          "violation_supported": false,
+          "roots_present": false,
+          "roots_supported": false,
+          "unknown_expectation_sentinel": false,
+          "outcome": "ABSTENTION",
+          "structural_edges_do_not_prove_execution": true
+        }
+      ],
+      "evidence_reference_validity": {
+        "numerator": 540,
+        "denominator": 540,
+        "rate": 1.0,
+        "population": "candidate/investigation evidence IDs, not causal correctness",
+        "wilson_95": [
+          0.9929364362381928,
+          0.9999999999999999
+        ]
+      },
+      "unsupported_claims": 0,
+      "claim_population": 0,
+      "unsupported_claim_rate": {
+        "numerator": 0,
+        "denominator": 0,
+        "rate": null,
+        "population": "claims; hypothesis-only suggestions are not confirmed claims",
+        "wilson_95": null
+      },
+      "limitations": [
+        "A/B inputs are correlated formulations, not additional independent defects.",
+        "B UNKNOWN sentinel can create unverified reported-contract metadata; new IDs are not evidence of information gain.",
+        "Hypothesis location precision is exact root-location proxy; it can penalize a legitimate investigation at the public API.",
+        "Two class-scoped oracles are coarse; exact method/attribute correspondence is not fully adjudicated.",
+        "Requests includes historical Python-2 behavior; not a qualification of arbitrary modern Python environments.",
+        "No additional runtime observations were available; investigation requests were not independently validated for efficacy."
+      ]
+    }
+  ]
+}

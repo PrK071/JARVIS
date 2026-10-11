@@ -1,0 +1,667 @@
+{
+  "rows": [
+    {
+      "journal": "development-after/psf__requests-1142/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0018543999976827763,
+      "model_inclusive_queue_seconds": [
+        11.708295000000362
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 11.711989499999618,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 13.048995599998307,
+        "working_set_bytes": 215044096
+      },
+      "peak_sampled_working_set": 215044096
+    },
+    {
+      "journal": "development-after/psf__requests-1142/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.001886699999886332,
+      "model_inclusive_queue_seconds": [
+        11.664075099997717
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 11.667769700001372,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 13.010866199998418,
+        "working_set_bytes": 216850432
+      },
+      "peak_sampled_working_set": 216850432
+    },
+    {
+      "journal": "development-after/psf__requests-2931/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0022218000012799166,
+      "model_inclusive_queue_seconds": [
+        24.6089273999969
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 24.613078099999257,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 27.718551499998284,
+        "working_set_bytes": 227123200
+      },
+      "peak_sampled_working_set": 227123200
+    },
+    {
+      "journal": "development-after/psf__requests-2931/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.002050399998552166,
+      "model_inclusive_queue_seconds": [
+        24.829536799999914
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 24.83344080000097,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 27.87221579999823,
+        "working_set_bytes": 227573760
+      },
+      "peak_sampled_working_set": 227573760
+    },
+    {
+      "journal": "development-after/pytest-dev__pytest-10051/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0017909000016516075,
+      "model_inclusive_queue_seconds": [
+        12.166338499999256
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 12.169938999999431,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 15.276806400001078,
+        "working_set_bytes": 219910144
+      },
+      "peak_sampled_working_set": 219910144
+    },
+    {
+      "journal": "development-after/pytest-dev__pytest-10051/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0017956999981834088,
+      "model_inclusive_queue_seconds": [
+        13.891056899999967
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 13.89468229999693,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 17.01626110000143,
+        "working_set_bytes": 219254784
+      },
+      "peak_sampled_working_set": 219254784
+    },
+    {
+      "journal": "development-after/sphinx-doc__sphinx-9367/A/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.009656599999289028,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 8.50527080000029,
+        "working_set_bytes": 242708480
+      },
+      "peak_sampled_working_set": 242708480
+    },
+    {
+      "journal": "development-after/sphinx-doc__sphinx-9367/B/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.011782499997934792,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 8.745558200000232,
+        "working_set_bytes": 241418240
+      },
+      "peak_sampled_working_set": 241418240
+    },
+    {
+      "journal": "development-after/sphinx-doc__sphinx-9367/C/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.002469700000801822,
+      "model_inclusive_queue_seconds": [
+        38.900625299997046
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 38.90490050000153,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 71.69711240000106,
+        "working_set_bytes": 363098112
+      },
+      "peak_sampled_working_set": 365744128
+    },
+    {
+      "journal": "development-before/psf__requests-1142/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.00236389999918174,
+      "model_inclusive_queue_seconds": [
+        19.39980149999974
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 19.404133800002455,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 22,
+        "state": "END",
+        "wall_seconds": 21.151155799998378,
+        "working_set_bytes": 216801280
+      },
+      "peak_sampled_working_set": 216801280
+    },
+    {
+      "journal": "development-before/psf__requests-1142/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.002043000000412576,
+      "model_inclusive_queue_seconds": [
+        18.804250500001217
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 18.808286999999837,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 22,
+        "state": "END",
+        "wall_seconds": 20.821108000000095,
+        "working_set_bytes": 217010176
+      },
+      "peak_sampled_working_set": 217010176
+    },
+    {
+      "journal": "development-before/psf__requests-2931/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 2.3973623999991105,
+      "model_inclusive_queue_seconds": [
+        48.818611200000305
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.001645300002564909,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 61.38807430000088,
+        "working_set_bytes": 227663872
+      },
+      "peak_sampled_working_set": 227663872
+    },
+    {
+      "journal": "development-before/psf__requests-2931/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 1.8961238999982015,
+      "model_inclusive_queue_seconds": [
+        55.08219089999693
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.0016790000008768402,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 64.84375839999848,
+        "working_set_bytes": 227434496
+      },
+      "peak_sampled_working_set": 227434496
+    },
+    {
+      "journal": "development-before/pytest-dev__pytest-10051/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 2.2087533000012627,
+      "model_inclusive_queue_seconds": [
+        81.90558020000026
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.001983099999051774,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 89.06282699999792,
+        "working_set_bytes": 219615232
+      },
+      "peak_sampled_working_set": 219615232
+    },
+    {
+      "journal": "development-before/pytest-dev__pytest-10051/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 1.711135400000785,
+      "model_inclusive_queue_seconds": [
+        84.16596420000133
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.002186599998822203,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "ranking",
+        "schema_version": 1,
+        "sequence": 26,
+        "state": "END",
+        "wall_seconds": 93.5250111000023,
+        "working_set_bytes": 218746880
+      },
+      "peak_sampled_working_set": 218746880
+    },
+    {
+      "journal": "development-before/sphinx-doc__sphinx-9367/A/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.0017547999996168073,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "behavioral_contracts",
+        "schema_version": 1,
+        "sequence": 18,
+        "state": "END",
+        "wall_seconds": 17.81839299999774,
+        "working_set_bytes": 241201152
+      },
+      "peak_sampled_working_set": 241201152
+    },
+    {
+      "journal": "development-before/sphinx-doc__sphinx-9367/B/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.00192590000006021,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "behavioral_contracts",
+        "schema_version": 1,
+        "sequence": 18,
+        "state": "END",
+        "wall_seconds": 11.149917599999753,
+        "working_set_bytes": 242823168
+      },
+      "peak_sampled_working_set": 242823168
+    },
+    {
+      "journal": "development-before/sphinx-doc__sphinx-9367/C/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 92.32793149999998,
+      "model_inclusive_queue_seconds": [
+        78.50554059999922
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 78.50554059999922,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_request",
+        "schema_version": 1,
+        "sequence": 21,
+        "state": "END",
+        "wall_seconds": 216.40295569999944,
+        "working_set_bytes": 360972288
+      },
+      "peak_sampled_working_set": 360972288
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-1724/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.002000099997530924,
+      "model_inclusive_queue_seconds": [
+        37.56903030000103
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 37.57400489999782,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 30,
+        "state": "END",
+        "wall_seconds": 40.91215519999969,
+        "working_set_bytes": 229302272
+      },
+      "peak_sampled_working_set": 229302272
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-1724/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.002006399998208508,
+      "model_inclusive_queue_seconds": [
+        37.619538800001465
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 37.624492299997655,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 30,
+        "state": "END",
+        "wall_seconds": 41.48329720000038,
+        "working_set_bytes": 228995072
+      },
+      "peak_sampled_working_set": 228995072
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-1921/A/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.005879100001038751,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 2.2810658999987936,
+        "working_set_bytes": 222289920
+      },
+      "peak_sampled_working_set": 222289920
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-1921/B/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.005694800001947442,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 2.334332999998878,
+        "working_set_bytes": 224948224
+      },
+      "peak_sampled_working_set": 224948224
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-5414/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0020990999983041547,
+      "model_inclusive_queue_seconds": [
+        20.40815929999735
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 20.41305910000301,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 22.84276410000166,
+        "working_set_bytes": 231927808
+      },
+      "peak_sampled_working_set": 231927808
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-5414/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0020712000005005393,
+      "model_inclusive_queue_seconds": [
+        22.383566500000597
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 22.3884844000022,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 24.97021870000026,
+        "working_set_bytes": 231383040
+      },
+      "peak_sampled_working_set": 231383040
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-6028/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0020604000019375235,
+      "model_inclusive_queue_seconds": [
+        20.010086500002217
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 20.01791830000002,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 22.71431870000015,
+        "working_set_bytes": 232062976
+      },
+      "peak_sampled_working_set": 232062976
+    },
+    {
+      "journal": "holdout-one-shot/psf__requests-6028/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0021783000011055265,
+      "model_inclusive_queue_seconds": [
+        22.369558700000198
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 22.37458830000105,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 25.13399120000031,
+        "working_set_bytes": 231649280
+      },
+      "peak_sampled_working_set": 231649280
+    },
+    {
+      "journal": "holdout-one-shot/pytest-dev__pytest-10081/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0018036000001302455,
+      "model_inclusive_queue_seconds": [
+        24.10848679999981
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 24.113156499999604,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 28.216633999996702,
+        "working_set_bytes": 214630400
+      },
+      "peak_sampled_working_set": 214630400
+    },
+    {
+      "journal": "holdout-one-shot/pytest-dev__pytest-10081/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0017650000008870848,
+      "model_inclusive_queue_seconds": [
+        16.593139399999927
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 16.597759800002677,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 20.837012900003174,
+        "working_set_bytes": 212766720
+      },
+      "peak_sampled_working_set": 212766720
+    },
+    {
+      "journal": "holdout-one-shot/pytest-dev__pytest-5262/A/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0020903000004182104,
+      "model_inclusive_queue_seconds": [
+        23.97996240000066
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 23.984917600002518,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 30.37275579999914,
+        "working_set_bytes": 246980608
+      },
+      "peak_sampled_working_set": 246980608
+    },
+    {
+      "journal": "holdout-one-shot/pytest-dev__pytest-5262/B/checkpoints.jsonl",
+      "requests_started": 1,
+      "requests_finished": 1,
+      "pre_model_analysis_seconds": 0.0024570999994466547,
+      "model_inclusive_queue_seconds": [
+        24.566812000000937
+      ],
+      "last_checkpoint": {
+        "elapsed_seconds": 24.57221959999879,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "qwen_analysis",
+        "schema_version": 1,
+        "sequence": 24,
+        "state": "END",
+        "wall_seconds": 31.754348700000264,
+        "working_set_bytes": 247459840
+      },
+      "peak_sampled_working_set": 247459840
+    },
+    {
+      "journal": "holdout-one-shot/sphinx-doc__sphinx-8621/A/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.21377819999906933,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 29.309804200001963,
+        "working_set_bytes": 368902144
+      },
+      "peak_sampled_working_set": 372264960
+    },
+    {
+      "journal": "holdout-one-shot/sphinx-doc__sphinx-8621/B/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.06437329999971553,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 34.272943900003156,
+        "working_set_bytes": 370536448
+      },
+      "peak_sampled_working_set": 379564032
+    },
+    {
+      "journal": "holdout-one-shot/sphinx-doc__sphinx-9711/A/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.09812499999679858,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 34.43291590000081,
+        "working_set_bytes": 449748992
+      },
+      "peak_sampled_working_set": 451006464
+    },
+    {
+      "journal": "holdout-one-shot/sphinx-doc__sphinx-9711/B/checkpoints.jsonl",
+      "requests_started": 0,
+      "requests_finished": 0,
+      "pre_model_analysis_seconds": null,
+      "model_inclusive_queue_seconds": [],
+      "last_checkpoint": {
+        "elapsed_seconds": 0.13171909999800846,
+        "model_timing_resolution": "REQUEST_INCLUSIVE_QUEUE_AND_GENERATION_UNKNOWN",
+        "phase": "evidence_sufficiency",
+        "schema_version": 1,
+        "sequence": 20,
+        "state": "END",
+        "wall_seconds": 50.393030199997156,
+        "working_set_bytes": 449101824
+      },
+      "peak_sampled_working_set": 449101824
+    }
+  ],
+  "requests_started": 24,
+  "requests_finished": 24,
+  "limitation": "Queue/generation inseparaveis; working set amostrado nao e limite rigido de alocacao."
+}
