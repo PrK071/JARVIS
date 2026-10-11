@@ -43,6 +43,8 @@ def test_family_contract_and_investigation_population(tmp_path, family):
 
 @pytest.mark.parametrize('source', [
     'def read() -> int:\n    return 1\n',
+    'def read() -> int:\n    return True\n',
+    'def read() -> float:\n    return False\n',
     'def read(flag) -> int:\n    if flag:\n        return None\n    return 1\n',
     'def read() -> int:\n    return external()\n',
     'int = Custom\ndef read() -> int:\n    return None\n',

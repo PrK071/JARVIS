@@ -116,7 +116,7 @@ def _literal_return_violation(node, tree):
         return None, None
     returned = body[0]
     actual = type(returned.value.value)
-    allowed = {'int': (int,), 'float': (int, float), 'str': (str,),
+    allowed = {'int': (int, bool), 'float': (int, float, bool), 'str': (str,),
         'bool': (bool,), 'None': (type(None),)}[annotation]
     return actual not in allowed, returned.lineno
 
