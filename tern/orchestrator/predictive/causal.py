@@ -1028,6 +1028,7 @@ def _responsibility_profile(
     binding_override: ArgumentBindingIdentity | None = None,
     parameter_ordinals: Mapping[str, int] | None = None,
     satisfied_return_sites: frozenset[str] = frozenset(),
+    ordered_edges: tuple[CausalEdge, ...] | None = None,
 ) -> CausalResponsibilityProfile:
     if import_scc is not None:
         return CausalResponsibilityProfile(
@@ -1067,7 +1068,8 @@ def _responsibility_profile(
     # after that point belong to the returned producer value, not to the
     # producer's own input lineage.
     path_binding: ArgumentBindingIdentity | None = None
-    ordered_edges = tuple(sorted(edges.values(), key=lambda item: item.id))
+    if ordered_edges is None:
+        ordered_edges = tuple(sorted(edges.values(), key=lambda item: item.id))
     for source_id, target_id in zip(path_ids, path_ids[1:]):
         if nodes[source_id].kind is CausalNodeKind.RETURN_VALUE:
             break
@@ -1703,6 +1705,8 @@ def build_causal_slice(
             queue.append(edge.source_id)
 
     root_candidates: list[RootCauseCandidate] = []
+    ordered_responsibility_edges = tuple(sorted(edges.values(), key=lambda item: item.id))
+    deterministic_pairs = {(e.source_id, e.target_id) for e in edges.values() if e.deterministic}
     satisfied_return_sites = frozenset(
         node_id
         for node_id in annotated_return_nodes
@@ -1734,7 +1738,7 @@ def build_causal_slice(
         ) / max(1, len(node.evidence_ids))
         deterministic_edges = 0
         for left, right in zip(path_ids, path_ids[1:]):
-            deterministic_edges += any(edge.source_id == left and edge.target_id == right and edge.deterministic for edge in edges.values())
+            deterministic_edges += (left, right) in deterministic_pairs
         structural = deterministic_edges / max(1, distance)
         completeness = 1.0 if path_ids[-1] == failure_id else 0.0
         kind = _node_kind_for_cause(node, context.problem)
@@ -1858,6 +1862,7 @@ def build_causal_slice(
                 binding_override=binding_override,
                 parameter_ordinals=parameter_ordinals,
                 satisfied_return_sites=satisfied_return_sites,
+                ordered_edges=ordered_responsibility_edges,
             )
             root_candidates.append(RootCauseCandidate(
                 _stable(

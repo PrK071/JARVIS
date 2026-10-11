@@ -381,8 +381,11 @@ def compare_root_candidates(
     right: RootCauseCandidate,
     causal_slice: CausalSlice,
 ) -> RootPairwiseComparison:
-    left_signature = root_cause_signature(left, causal_slice)
-    right_signature = root_cause_signature(right, causal_slice)
+    return _compare_root_candidates(left, right, causal_slice,
+        root_cause_signature(left, causal_slice), root_cause_signature(right, causal_slice))
+
+
+def _compare_root_candidates(left, right, causal_slice, left_signature, right_signature):
 
     def result(preferred: RootCauseCandidate, rejected: RootCauseCandidate, reason: PairwiseRootReason) -> RootPairwiseComparison:
         return RootPairwiseComparison(preferred.id, rejected.id, reason, True)
@@ -1189,8 +1192,9 @@ def pairwise_root_matrix(
     candidates: Iterable[RootCauseCandidate], causal_slice: CausalSlice
 ) -> tuple[RootPairwiseComparison, ...]:
     ordered = tuple(candidates)
+    signatures = tuple(root_cause_signature(root, causal_slice) for root in ordered)
     return tuple(
-        compare_root_candidates(left, right, causal_slice)
+        _compare_root_candidates(left, right, causal_slice, signatures[index], signatures[right_index])
         for index, left in enumerate(ordered)
-        for right in ordered[index + 1 :]
+        for right_index, right in enumerate(ordered[index + 1 :], index+1)
     )

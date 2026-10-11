@@ -1,0 +1,993 @@
+{
+  "baseline": "4c259064f8761b0295ff846e45fa63ca21c61690",
+  "case_id": "sphinx-doc__sphinx-7975",
+  "purpose": "historical diagnostic profiling, never promotion",
+  "phases": {
+    "index": 14.566405900000973,
+    "retrieval": 0.6991329000011319,
+    "context": 1.519665800002258,
+    "ledger": 1.9371876000004704,
+    "causal_slice": 47.24561109999922,
+    "pairwise_comparison": 2.7656468999994104
+  },
+  "hotspots": {
+    "index": [
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 538,
+        "function": "build",
+        "calls": 1,
+        "own_seconds": 0.1125319,
+        "cumulative_seconds": 14.565779800000001
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 688,
+        "function": "_index_file",
+        "calls": 508,
+        "own_seconds": 0.0204487,
+        "cumulative_seconds": 9.6866643
+      },
+      {
+        "file": "ast.py",
+        "line": 384,
+        "function": "walk",
+        "calls": 712826,
+        "own_seconds": 0.7809523,
+        "cumulative_seconds": 4.579230900000001
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 506,
+        "function": "_referenced_names",
+        "calls": 507,
+        "own_seconds": 0.4739354,
+        "cumulative_seconds": 3.7566078000000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'extend' of 'collections.deque' objects>",
+        "calls": 708602,
+        "own_seconds": 0.5679794,
+        "cumulative_seconds": 3.5881838000000004
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 810,
+        "function": "_test_relationships",
+        "calls": 1,
+        "own_seconds": 0.7350294,
+        "cumulative_seconds": 3.2901931
+      },
+      {
+        "file": "ast.py",
+        "line": 284,
+        "function": "iter_child_nodes",
+        "calls": 1412980,
+        "own_seconds": 1.4313887,
+        "cumulative_seconds": 3.0202044000000003
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 456,
+        "function": "_import_records",
+        "calls": 507,
+        "own_seconds": 0.006725,
+        "cumulative_seconds": 2.8500488
+      },
+      {
+        "file": "ast.py",
+        "line": 418,
+        "function": "visit",
+        "calls": 415870,
+        "own_seconds": 0.45978300000000005,
+        "cumulative_seconds": 2.8189360000000003
+      },
+      {
+        "file": "ast.py",
+        "line": 424,
+        "function": "generic_visit",
+        "calls": 407602,
+        "own_seconds": 1.0080344,
+        "cumulative_seconds": 2.816476
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 464,
+        "function": "visit_FunctionDef",
+        "calls": 5709,
+        "own_seconds": 0.008077,
+        "cumulative_seconds": 2.5570129
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 365,
+        "function": "_symbol_records",
+        "calls": 507,
+        "own_seconds": 0.0029375,
+        "cumulative_seconds": 1.9253679000000001
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 368,
+        "function": "visit",
+        "calls": 1388,
+        "own_seconds": 0.258471,
+        "cumulative_seconds": 1.9219142
+      },
+      {
+        "file": "_abc.py",
+        "line": 194,
+        "function": "stem",
+        "calls": 121832,
+        "own_seconds": 0.1768839,
+        "cumulative_seconds": 1.8349164000000002
+      },
+      {
+        "file": "ast.py",
+        "line": 272,
+        "function": "iter_fields",
+        "calls": 3006119,
+        "own_seconds": 1.2283958000000001,
+        "cumulative_seconds": 1.7641296000000002
+      },
+      {
+        "file": "_local.py",
+        "line": 346,
+        "function": "name",
+        "calls": 123864,
+        "own_seconds": 0.09012490000000001,
+        "cumulative_seconds": 1.6339005000000002
+      },
+      {
+        "file": "_local.py",
+        "line": 307,
+        "function": "_tail",
+        "calls": 132168,
+        "own_seconds": 0.3741146,
+        "cumulative_seconds": 1.5452882000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.isinstance>",
+        "calls": 4966762,
+        "own_seconds": 1.0957096000000002,
+        "cumulative_seconds": 1.095739
+      },
+      {
+        "file": "_local.py",
+        "line": 257,
+        "function": "_parse_path",
+        "calls": 127088,
+        "own_seconds": 0.5641952,
+        "cumulative_seconds": 1.0869006
+      },
+      {
+        "file": "ast.py",
+        "line": 30,
+        "function": "parse",
+        "calls": 507,
+        "own_seconds": 0.173787,
+        "cumulative_seconds": 1.0555732
+      }
+    ],
+    "retrieval": [
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 1228,
+        "function": "generate",
+        "calls": 1,
+        "own_seconds": 0.0008894,
+        "cumulative_seconds": 0.6990453000000001
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 1345,
+        "function": "_explicit_files",
+        "calls": 1,
+        "own_seconds": 0.0058116,
+        "cumulative_seconds": 0.43005540000000003
+      },
+      {
+        "file": "__init__.py",
+        "line": 174,
+        "function": "search",
+        "calls": 1063,
+        "own_seconds": 0.0017072,
+        "cumulative_seconds": 0.4147401
+      },
+      {
+        "file": "__init__.py",
+        "line": 330,
+        "function": "_compile",
+        "calls": 1571,
+        "own_seconds": 0.0132122,
+        "cumulative_seconds": 0.3846337
+      },
+      {
+        "file": "_compiler.py",
+        "line": 743,
+        "function": "compile",
+        "calls": 1035,
+        "own_seconds": 0.0063086,
+        "cumulative_seconds": 0.3559913
+      },
+      {
+        "file": "_parser.py",
+        "line": 970,
+        "function": "parse",
+        "calls": 1035,
+        "own_seconds": 0.0045097,
+        "cumulative_seconds": 0.2342613
+      },
+      {
+        "file": "_parser.py",
+        "line": 451,
+        "function": "_parse_sub",
+        "calls": 3015,
+        "own_seconds": 0.0125597,
+        "cumulative_seconds": 0.2258319
+      },
+      {
+        "file": "_parser.py",
+        "line": 511,
+        "function": "_parse",
+        "calls": 3015,
+        "own_seconds": 0.0880481,
+        "cumulative_seconds": 0.22018020000000002
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 1669,
+        "function": "_context_slices",
+        "calls": 1,
+        "own_seconds": 0.004346,
+        "cumulative_seconds": 0.17615080000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.sum>",
+        "calls": 1411,
+        "own_seconds": 0.048377500000000004,
+        "cumulative_seconds": 0.1681146
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 1716,
+        "function": "<genexpr>",
+        "calls": 230062,
+        "own_seconds": 0.08017930000000001,
+        "cumulative_seconds": 0.1171105
+      },
+      {
+        "file": "_compiler.py",
+        "line": 576,
+        "function": "_code",
+        "calls": 1035,
+        "own_seconds": 0.002418,
+        "cumulative_seconds": 0.1114489
+      },
+      {
+        "file": "_compiler.py",
+        "line": 37,
+        "function": "_compile",
+        "calls": 3221,
+        "own_seconds": 0.0397899,
+        "cumulative_seconds": 0.0885441
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 1429,
+        "function": "_symbols",
+        "calls": 1,
+        "own_seconds": 0.004055700000000001,
+        "cumulative_seconds": 0.0651766
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.len>",
+        "calls": 279215,
+        "own_seconds": 0.0523553,
+        "cumulative_seconds": 0.0538961
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 297,
+        "function": "symbol_index",
+        "calls": 1,
+        "own_seconds": 0.026717900000000003,
+        "cumulative_seconds": 0.047127600000000006
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'append' of 'list' objects>",
+        "calls": 148611,
+        "own_seconds": 0.0364676,
+        "cumulative_seconds": 0.0364676
+      },
+      {
+        "file": "_parser.py",
+        "line": 260,
+        "function": "get",
+        "calls": 41685,
+        "own_seconds": 0.0198365,
+        "cumulative_seconds": 0.0333122
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'search' of 're.Pattern' objects>",
+        "calls": 1063,
+        "own_seconds": 0.0292811,
+        "cumulative_seconds": 0.0292811
+      },
+      {
+        "file": "_parser.py",
+        "line": 167,
+        "function": "__getitem__",
+        "calls": 36626,
+        "own_seconds": 0.018402400000000003,
+        "cumulative_seconds": 0.025916900000000003
+      }
+    ],
+    "context": [
+      {
+        "file": "service.py",
+        "line": 54,
+        "function": "build_problem_context",
+        "calls": 1,
+        "own_seconds": 0.0027410000000000004,
+        "cumulative_seconds": 1.5195451000000002
+      },
+      {
+        "file": "operational.py",
+        "line": 21,
+        "function": "observe_phase",
+        "calls": 2,
+        "own_seconds": 0.0060767,
+        "cumulative_seconds": 1.4880553
+      },
+      {
+        "file": "symbols.py",
+        "line": 86,
+        "function": "recover_symbol_context",
+        "calls": 1,
+        "own_seconds": 0.0409711,
+        "cumulative_seconds": 1.4767352
+      },
+      {
+        "file": "symbols.py",
+        "line": 109,
+        "function": "node_for",
+        "calls": 396,
+        "own_seconds": 0.0033520000000000004,
+        "cumulative_seconds": 0.8163674000000001
+      },
+      {
+        "file": "ast.py",
+        "line": 284,
+        "function": "iter_child_nodes",
+        "calls": 311387,
+        "own_seconds": 0.364647,
+        "cumulative_seconds": 0.7513708
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.next>",
+        "calls": 430,
+        "own_seconds": 0.000501,
+        "cumulative_seconds": 0.708207
+      },
+      {
+        "file": "symbols.py",
+        "line": 113,
+        "function": "<genexpr>",
+        "calls": 396,
+        "own_seconds": 0.05607210000000001,
+        "cumulative_seconds": 0.7077060000000001
+      },
+      {
+        "file": "ast.py",
+        "line": 384,
+        "function": "walk",
+        "calls": 50720,
+        "own_seconds": 0.069301,
+        "cumulative_seconds": 0.6382224000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'extend' of 'collections.deque' objects>",
+        "calls": 50720,
+        "own_seconds": 0.06582750000000001,
+        "cumulative_seconds": 0.5491371
+      },
+      {
+        "file": "symbols.py",
+        "line": 66,
+        "function": "_body_nodes",
+        "calls": 313442,
+        "own_seconds": 0.20669980000000002,
+        "cumulative_seconds": 0.49275240000000003
+      },
+      {
+        "file": "symbols.py",
+        "line": 117,
+        "function": "resolved_callees",
+        "calls": 54,
+        "own_seconds": 0.0038335,
+        "cumulative_seconds": 0.2750695
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'update' of 'set' objects>",
+        "calls": 54,
+        "own_seconds": 0.0008615000000000001,
+        "cumulative_seconds": 0.2699807
+      },
+      {
+        "file": "symbols.py",
+        "line": 122,
+        "function": "<genexpr>",
+        "calls": 963,
+        "own_seconds": 0.0210292,
+        "cumulative_seconds": 0.2691192
+      },
+      {
+        "file": "ast.py",
+        "line": 272,
+        "function": "iter_fields",
+        "calls": 378004,
+        "own_seconds": 0.17076870000000002,
+        "cumulative_seconds": 0.2560794
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.isinstance>",
+        "calls": 793125,
+        "own_seconds": 0.1839271,
+        "cumulative_seconds": 0.1839271
+      },
+      {
+        "file": "symbols.py",
+        "line": 100,
+        "function": "tree",
+        "calls": 456,
+        "own_seconds": 0.0010677,
+        "cumulative_seconds": 0.10493010000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.getattr>",
+        "calls": 269332,
+        "own_seconds": 0.0859616,
+        "cumulative_seconds": 0.0859616
+      },
+      {
+        "file": "ast.py",
+        "line": 30,
+        "function": "parse",
+        "calls": 12,
+        "own_seconds": 0.0277183,
+        "cumulative_seconds": 0.085874
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.compile>",
+        "calls": 12,
+        "own_seconds": 0.058155700000000005,
+        "cumulative_seconds": 0.058155700000000005
+      },
+      {
+        "file": "project_intelligence_v2.py",
+        "line": 297,
+        "function": "symbol_index",
+        "calls": 1,
+        "own_seconds": 0.0274257,
+        "cumulative_seconds": 0.051089
+      }
+    ],
+    "ledger": [
+      {
+        "file": "grounding.py",
+        "line": 249,
+        "function": "build_evidence_ledger",
+        "calls": 1,
+        "own_seconds": 0.0318106,
+        "cumulative_seconds": 1.9367660000000002
+      },
+      {
+        "file": "ast.py",
+        "line": 418,
+        "function": "visit",
+        "calls": 120399,
+        "own_seconds": 0.1467918,
+        "cumulative_seconds": 1.4387979000000002
+      },
+      {
+        "file": "ast.py",
+        "line": 424,
+        "function": "generic_visit",
+        "calls": 110593,
+        "own_seconds": 0.27289060000000004,
+        "cumulative_seconds": 1.4383726000000001
+      },
+      {
+        "file": "grounding.py",
+        "line": 124,
+        "function": "visit_FunctionDef",
+        "calls": 1198,
+        "own_seconds": 0.0021783,
+        "cumulative_seconds": 1.3824273
+      },
+      {
+        "file": "grounding.py",
+        "line": 138,
+        "function": "visit_Call",
+        "calls": 6691,
+        "own_seconds": 0.041770600000000005,
+        "cumulative_seconds": 0.6216993000000001
+      },
+      {
+        "file": "grounding.py",
+        "line": 204,
+        "function": "visit_Assign",
+        "calls": 2602,
+        "own_seconds": 0.0067946000000000005,
+        "cumulative_seconds": 0.4369385
+      },
+      {
+        "file": "grounding.py",
+        "line": 229,
+        "function": "visit_Assert",
+        "calls": 1871,
+        "own_seconds": 0.012374900000000001,
+        "cumulative_seconds": 0.3629254
+      },
+      {
+        "file": "ast.py",
+        "line": 30,
+        "function": "parse",
+        "calls": 54,
+        "own_seconds": 0.10978260000000001,
+        "cumulative_seconds": 0.304917
+      },
+      {
+        "file": "grounding.py",
+        "line": 132,
+        "function": "visit_ClassDef",
+        "calls": 164,
+        "own_seconds": 0.00026430000000000003,
+        "cumulative_seconds": 0.2276582
+      },
+      {
+        "file": "grounding.py",
+        "line": 178,
+        "function": "_assignment",
+        "calls": 2602,
+        "own_seconds": 0.022519900000000002,
+        "cumulative_seconds": 0.20700980000000002
+      },
+      {
+        "file": "grounding.py",
+        "line": 44,
+        "function": "_atom",
+        "calls": 8869,
+        "own_seconds": 0.0218117,
+        "cumulative_seconds": 0.19998200000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.compile>",
+        "calls": 54,
+        "own_seconds": 0.1951344,
+        "cumulative_seconds": 0.1951344
+      },
+      {
+        "file": "ast.py",
+        "line": 272,
+        "function": "iter_fields",
+        "calls": 344927,
+        "own_seconds": 0.1364263,
+        "cumulative_seconds": 0.1948437
+      },
+      {
+        "file": "ast.py",
+        "line": 434,
+        "function": "visit_Constant",
+        "calls": 16942,
+        "own_seconds": 0.0416279,
+        "cumulative_seconds": 0.157591
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.getattr>",
+        "calls": 392188,
+        "own_seconds": 0.1547655,
+        "cumulative_seconds": 0.1547655
+      },
+      {
+        "file": "grounding.py",
+        "line": 231,
+        "function": "<genexpr>",
+        "calls": 2785,
+        "own_seconds": 0.0117292,
+        "cumulative_seconds": 0.14620160000000001
+      },
+      {
+        "file": "grounding.py",
+        "line": 81,
+        "function": "_safe_expression",
+        "calls": 2064,
+        "own_seconds": 0.0057979,
+        "cumulative_seconds": 0.13960640000000002
+      },
+      {
+        "file": "ast.py",
+        "line": 1815,
+        "function": "unparse",
+        "calls": 1904,
+        "own_seconds": 0.0051701,
+        "cumulative_seconds": 0.13323110000000002
+      },
+      {
+        "file": "ast.py",
+        "line": 384,
+        "function": "walk",
+        "calls": 20403,
+        "own_seconds": 0.0294394,
+        "cumulative_seconds": 0.1298222
+      },
+      {
+        "file": "ast.py",
+        "line": 869,
+        "function": "visit",
+        "calls": 1904,
+        "own_seconds": 0.0026420000000000003,
+        "cumulative_seconds": 0.1269519
+      }
+    ],
+    "causal_slice": [
+      {
+        "file": "causal.py",
+        "line": 1277,
+        "function": "build_causal_slice",
+        "calls": 1,
+        "own_seconds": 0.8057311,
+        "cumulative_seconds": 47.122302700000006
+      },
+      {
+        "file": "causal.py",
+        "line": 1018,
+        "function": "_responsibility_profile",
+        "calls": 247,
+        "own_seconds": 0.0179472,
+        "cumulative_seconds": 20.033223900000003
+      },
+      {
+        "file": "ast.py",
+        "line": 418,
+        "function": "visit",
+        "calls": 300103,
+        "own_seconds": 0.6143117,
+        "cumulative_seconds": 18.446758900000003
+      },
+      {
+        "file": "ast.py",
+        "line": 424,
+        "function": "generic_visit",
+        "calls": 131096,
+        "own_seconds": 0.37627950000000004,
+        "cumulative_seconds": 18.4454065
+      },
+      {
+        "file": "causal.py",
+        "line": 675,
+        "function": "visit_FunctionDef",
+        "calls": 4796,
+        "own_seconds": 0.112462,
+        "cumulative_seconds": 17.5924018
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.next>",
+        "calls": 63549,
+        "own_seconds": 0.06266820000000001,
+        "cumulative_seconds": 12.5216504
+      },
+      {
+        "file": "causal.py",
+        "line": 1076,
+        "function": "<genexpr>",
+        "calls": 412,
+        "own_seconds": 12.3965326,
+        "cumulative_seconds": 12.3965326
+      },
+      {
+        "file": "causal.py",
+        "line": 669,
+        "function": "visit_ClassDef",
+        "calls": 722,
+        "own_seconds": 0.0013932,
+        "cumulative_seconds": 11.186721
+      },
+      {
+        "file": "causal.py",
+        "line": 714,
+        "function": "_call",
+        "calls": 22055,
+        "own_seconds": 0.3594026,
+        "cumulative_seconds": 9.2488226
+      },
+      {
+        "file": "causal.py",
+        "line": 639,
+        "function": "source_nodes",
+        "calls": 70670,
+        "own_seconds": 0.41431250000000003,
+        "cumulative_seconds": 8.885093000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.sorted>",
+        "calls": 449860,
+        "own_seconds": 0.5483838000000001,
+        "cumulative_seconds": 7.506432200000001
+      },
+      {
+        "file": "causal.py",
+        "line": 771,
+        "function": "visit_If",
+        "calls": 5110,
+        "own_seconds": 1.3054717,
+        "cumulative_seconds": 7.2589079000000005
+      },
+      {
+        "file": "causal.py",
+        "line": 734,
+        "function": "visit_Call",
+        "calls": 11844,
+        "own_seconds": 0.025185600000000002,
+        "cumulative_seconds": 5.9696876
+      },
+      {
+        "file": "causal.py",
+        "line": 751,
+        "function": "visit_Assign",
+        "calls": 11267,
+        "own_seconds": 0.0475341,
+        "cumulative_seconds": 5.2270314
+      },
+      {
+        "file": "causal.py",
+        "line": 616,
+        "function": "node",
+        "calls": 89673,
+        "own_seconds": 0.5117755,
+        "cumulative_seconds": 4.444946600000001
+      },
+      {
+        "file": "causal.py",
+        "line": 737,
+        "function": "_assign",
+        "calls": 11267,
+        "own_seconds": 0.0735823,
+        "cumulative_seconds": 4.2651468
+      },
+      {
+        "file": "causal.py",
+        "line": 429,
+        "function": "_refs",
+        "calls": 41220,
+        "own_seconds": 0.44487620000000005,
+        "cumulative_seconds": 3.7424501
+      },
+      {
+        "file": "__init__.py",
+        "line": 174,
+        "function": "search",
+        "calls": 72158,
+        "own_seconds": 0.08818590000000001,
+        "cumulative_seconds": 3.6514471000000004
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.any>",
+        "calls": 22333,
+        "own_seconds": 1.6166793000000002,
+        "cumulative_seconds": 3.4352156000000003
+      },
+      {
+        "file": "causal.py",
+        "line": 1056,
+        "function": "<genexpr>",
+        "calls": 432,
+        "own_seconds": 3.4029284000000004,
+        "cumulative_seconds": 3.4029284000000004
+      }
+    ],
+    "pairwise_comparison": [
+      {
+        "file": "semantic.py",
+        "line": 1191,
+        "function": "pairwise_root_matrix",
+        "calls": 1,
+        "own_seconds": 5.9600000000000005e-05,
+        "cumulative_seconds": 2.7655461000000003
+      },
+      {
+        "file": "semantic.py",
+        "line": 1195,
+        "function": "<genexpr>",
+        "calls": 13,
+        "own_seconds": 3.1400000000000004e-05,
+        "cumulative_seconds": 2.3725525000000003
+      },
+      {
+        "file": "semantic.py",
+        "line": 286,
+        "function": "root_cause_signature",
+        "calls": 12,
+        "own_seconds": 0.0489616,
+        "cumulative_seconds": 2.3725211
+      },
+      {
+        "file": "semantic.py",
+        "line": 197,
+        "function": "is_transparent_wrapper",
+        "calls": 12,
+        "own_seconds": 0.35915050000000004,
+        "cumulative_seconds": 2.1645227
+      },
+      {
+        "file": "semantic.py",
+        "line": 159,
+        "function": "_incoming",
+        "calls": 4,
+        "own_seconds": 0.6270837,
+        "cumulative_seconds": 1.6480805
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.sorted>",
+        "calls": 172860,
+        "own_seconds": 0.5946767000000001,
+        "cumulative_seconds": 0.6855661000000001
+      },
+      {
+        "file": "semantic.py",
+        "line": 1196,
+        "function": "<genexpr>",
+        "calls": 67,
+        "own_seconds": 0.030317200000000002,
+        "cumulative_seconds": 0.392934
+      },
+      {
+        "file": "semantic.py",
+        "line": 388,
+        "function": "_compare_root_candidates",
+        "calls": 66,
+        "own_seconds": 0.36237600000000003,
+        "cumulative_seconds": 0.3626168
+      },
+      {
+        "file": "semantic.py",
+        "line": 153,
+        "function": "_origin_node",
+        "calls": 24,
+        "own_seconds": 0.0001542,
+        "cumulative_seconds": 0.3153645
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.next>",
+        "calls": 30,
+        "own_seconds": 0.0001089,
+        "cumulative_seconds": 0.3152557
+      },
+      {
+        "file": "semantic.py",
+        "line": 156,
+        "function": "<genexpr>",
+        "calls": 24,
+        "own_seconds": 0.3151203,
+        "cumulative_seconds": 0.3151203
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'setdefault' of 'dict' objects>",
+        "calls": 406844,
+        "own_seconds": 0.23054780000000002,
+        "cumulative_seconds": 0.23054780000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'append' of 'list' objects>",
+        "calls": 406848,
+        "own_seconds": 0.1050153,
+        "cumulative_seconds": 0.1050153
+      },
+      {
+        "file": "semantic.py",
+        "line": 163,
+        "function": "<lambda>",
+        "calls": 406844,
+        "own_seconds": 0.0908196,
+        "cumulative_seconds": 0.0908196
+      },
+      {
+        "file": "semantic.py",
+        "line": 166,
+        "function": "_transparent_forwarded_names",
+        "calls": 7,
+        "own_seconds": 0.000151,
+        "cumulative_seconds": 0.0005616
+      },
+      {
+        "file": "ast.py",
+        "line": 30,
+        "function": "parse",
+        "calls": 11,
+        "own_seconds": 1.79e-05,
+        "cumulative_seconds": 0.0004337
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.compile>",
+        "calls": 11,
+        "own_seconds": 0.0004158,
+        "cumulative_seconds": 0.0004158
+      },
+      {
+        "file": "semantic.py",
+        "line": 390,
+        "function": "result",
+        "calls": 50,
+        "own_seconds": 4.58e-05,
+        "cumulative_seconds": 0.0001134
+      },
+      {
+        "file": "<string>",
+        "line": 2,
+        "function": "__init__",
+        "calls": 12,
+        "own_seconds": 7.02e-05,
+        "cumulative_seconds": 7.02e-05
+      },
+      {
+        "file": "semantic.py",
+        "line": 359,
+        "function": "<lambda>",
+        "calls": 26,
+        "own_seconds": 3.3100000000000005e-05,
+        "cumulative_seconds": 6.98e-05
+      }
+    ]
+  },
+  "nodes": 87742,
+  "edges": 101711,
+  "roots": 12,
+  "semantic_sha256": "236b16f8063032988850fe10319e013835495ebe0b3d2a47d9e152b527c6167f",
+  "filesystem_mutations": 0,
+  "qwen_requests": 0
+}
