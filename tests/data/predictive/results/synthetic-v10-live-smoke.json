@@ -1,0 +1,4278 @@
+{
+  "abstention": {
+    "precision": null,
+    "recall": null
+  },
+  "candidate_rejection_reason_counts": {},
+  "cases": 1,
+  "category_breakdown": {
+    "argument_binding": {
+      "cases": 1,
+      "failure_code_counts": {
+        "REPAIR_STRATEGY_ERROR": 1,
+        "WRONG_RANKING": 1,
+        "WRONG_ROOT_CAUSE": 1,
+        "WRONG_SOLUTION_FAMILY": 1
+      },
+      "pass_rate": 0.0,
+      "passed": 0
+    }
+  },
+  "commit": "ef3bcb1d17f4c467e05b721bbef269561a3f64a0",
+  "failed": 1,
+  "failure_code_counts": {
+    "REPAIR_STRATEGY_ERROR": 1,
+    "WRONG_RANKING": 1,
+    "WRONG_ROOT_CAUSE": 1,
+    "WRONG_SOLUTION_FAMILY": 1
+  },
+  "failures": [
+    {
+      "actual": {
+        "candidate_target_signatures": {
+          "C1": [
+            {
+              "causal_distance": 3,
+              "causal_roles": [
+                "FAILURE_SITE",
+                "PRODUCER",
+                "RETURN_SOURCE"
+              ],
+              "owning_symbol_role": "SOURCE",
+              "relation_to_failure": "FAILURE",
+              "relation_to_root": "ROOT_SCOPE",
+              "target_kind": "RETURN_SITE"
+            }
+          ]
+        },
+        "candidates": [
+          {
+            "action": "Fix the return site to ensure type consistency.",
+            "change_kind": "RETURN_VALUE",
+            "confidence": 0.785,
+            "cost_score": 0.2,
+            "eligible": true,
+            "estimated_success_score": 0.785,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "evidence_refs": [
+              "pkg/media_8638.py:1-2",
+              "pkg/media_8638.py:2-2"
+            ],
+            "evidence_score": 0.8667,
+            "expected_outcome": "Address TYPE_FLOW at its causal origin",
+            "hypothesis_id": "H1",
+            "id": "C1",
+            "mechanism": "CORRECT_RETURN_VALUE",
+            "ranking_score": 0.79192,
+            "rejection_reasons": [],
+            "repair_locality_score": 1.0,
+            "repair_strategy_score": 1.0,
+            "repair_targets": [
+              {
+                "attribute": null,
+                "expression_id": "N72CABB3AE404",
+                "id": "TF64C35705A4B",
+                "line": 2,
+                "parameter": null,
+                "path": "pkg/media_8638.py",
+                "scope_kind": "RETURN_SITE",
+                "symbol": "emit_44"
+              }
+            ],
+            "required_tests": [],
+            "reversibility_score": 0.825,
+            "risk_score": 0.25,
+            "root_cause_id": "RC6EA7412D8C2",
+            "root_cause_score": 0.785,
+            "score_explanation": "score=0.792; causa=+0.196; estrategia=+0.200; evidencia=+0.087; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+            "strategy_kind": "CORRECT_RETURN_VALUE",
+            "target_files": [
+              "pkg/media_8638.py"
+            ],
+            "target_symbols": [
+              "emit_44"
+            ],
+            "test_support_level": "NONE",
+            "test_support_score": 0.0
+          }
+        ],
+        "causal_slice": {
+          "edges": [
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G29E332E5C537",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N104348715ECC",
+              "target_id": "NA78DBE735A25"
+            },
+            {
+              "argument_binding": {
+                "actual_argument_id": "N99E918735884",
+                "call_site_id": "NAA747665A237",
+                "callee_id": "pkg/media_8638.py:emit_44",
+                "formal_parameter_id": "NEE5C1167F9C1",
+                "id": "B66E56180E7E3",
+                "keyword_binding": "arg_1_token_32",
+                "parameter_ordinal": 1
+              },
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8",
+                "E496303AF5A03"
+              ],
+              "id": "G2ABE24A734C1",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NEE5C1167F9C1"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "id": "G3D6F0FD253B0",
+              "kind": "RETURNED_FROM",
+              "source_id": "N483B333B04E2",
+              "target_id": "NE793099FD433"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G539B7A58E1DC",
+              "kind": "RAISES_AT",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G5BAD8FAFAB31",
+              "kind": "RETURNED_FROM",
+              "source_id": "N730922C8BF10",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G8ED007EBF915",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "NA78DBE735A25",
+              "target_id": "N730922C8BF10"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G9636F41A580B",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N9FAC79B6A949",
+              "target_id": "N0C664B82CDEA"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285",
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GB421E94DB633",
+              "kind": "RETURNED_FROM",
+              "source_id": "N72CABB3AE404",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GC1E0C4FDC6DD",
+              "kind": "RAISES_AT",
+              "source_id": "N72CABB3AE404",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GCE11FD62FB04",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GDA85D9804A13",
+              "kind": "RETURNED_FROM",
+              "source_id": "NAA747665A237",
+              "target_id": "ND769B3F44F76"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GDAE920411F47",
+              "kind": "RETURNED_FROM",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "GFB733BEEA2E6",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N0C664B82CDEA",
+              "target_id": "NEE5C1167F9C1"
+            }
+          ],
+          "failure_site_id": "N02576063AA08",
+          "nodes": [
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "exception at pkg/media_8638.py:2",
+              "id": "N02576063AA08",
+              "kind": "EXCEPTION_SITE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": null,
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_1_token_32=3",
+              "id": "N0C664B82CDEA",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "str[6]",
+              "id": "N104348715ECC",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "7",
+              "id": "N483B333B04E2",
+              "kind": "LITERAL",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "1",
+              "id": "N4AD56A12234A",
+              "kind": "LITERAL",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "return arg_0_token_32 + 1",
+              "id": "N72CABB3AE404",
+              "kind": "RETURN_VALUE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_0_token_32",
+              "id": "N730922C8BF10",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "3",
+              "id": "N99E918735884",
+              "kind": "LITERAL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "3",
+              "id": "N9FAC79B6A949",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_0_token_32=str[6]",
+              "id": "NA78DBE735A25",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "emit_44()",
+              "id": "NAA747665A237",
+              "kind": "CALL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "return emit_44(arg_1_token_32=3)",
+              "id": "ND769B3F44F76",
+              "kind": "RETURN_VALUE",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "invoke"
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "return 7",
+              "id": "NE793099FD433",
+              "kind": "RETURN_VALUE",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_1_token_32",
+              "id": "NEE5C1167F9C1",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            }
+          ],
+          "unknown_flow": false,
+          "version": 1
+        },
+        "diagnostic_codes": [
+          "INVALID_ROOT_COMPARISON",
+          "REPAIR_TARGET_ERROR"
+        ],
+        "dry_run": true,
+        "execution_authorized": false,
+        "failure_reason": null,
+        "hypotheses": [
+          {
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "E496303AF5A03"
+                ],
+                "statement": "function emit_44 is defined in pkg/media_8638.py",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "EA0355BABB047"
+                ],
+                "statement": "the traceback reports execution at pkg/media_8638.py:2",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "EE36D1EB12285"
+                ],
+                "statement": "emit_44 returns arg_0_token_32 + 1",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "E496303AF5A03",
+                  "EA0355BABB047",
+                  "EE36D1EB12285"
+                ],
+                "statement": "The root cause is a type flow defect where a string default argument propagates to an integer operation, violating the return contract.",
+                "support": "INFERRED"
+              }
+            ],
+            "confidence": 0.785,
+            "evidence_refs": [
+              "pkg/media_8638.py:1-2",
+              "pkg/media_8638.py:2-2"
+            ],
+            "id": "H1",
+            "root_cause_id": "RC6EA7412D8C2",
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2. Assessment: The root cause is a type flow defect where a string default argument propagates to an integer operation, violating the return contract."
+          }
+        ],
+        "insufficient_evidence": false,
+        "problem": "Traceback (most recent call last):\n  File \"pkg/media_8638.py\", line 5, in invoke\n    return emit_44(arg_1_token_32=3)\n  File \"pkg/media_8638.py\", line 2, in failure\n    return arg_0_token_32 + 1\nTypeError: can only concatenate str (not \"int\") to str",
+        "ranking_ambiguous": false,
+        "ranking_margin": null,
+        "recommendation_explanation": "C1 venceu pelo maior score determinístico (0.792). score=0.792; causa=+0.196; estrategia=+0.200; evidencia=+0.087; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100 A recomendação é consultiva e exige aprovação.",
+        "recommended_candidate_id": "C1",
+        "recovery": {
+          "actions": [],
+          "attempted": false,
+          "budget": {
+            "max_depth": 2,
+            "max_extra_evidence_atoms": 30,
+            "max_extra_files": 4,
+            "max_extra_symbols": 12,
+            "max_recovery_attempts": 1
+          },
+          "extra_evidence_atoms": 0,
+          "extra_files": 0,
+          "final_evidence_atom_count": 9,
+          "final_files": [
+            "pkg/media_8638.py"
+          ],
+          "final_root_count": 5,
+          "final_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "frontiers": [],
+          "initial_evidence_atom_count": 9,
+          "initial_files": [
+            "pkg/media_8638.py"
+          ],
+          "initial_root_count": 5,
+          "initial_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "outcome": "RECOVERY_NOT_NEEDED",
+          "seed_synthesis_attempted": false,
+          "seed_synthesis_succeeded": false,
+          "succeeded": false,
+          "synthesized_seed": null
+        },
+        "recovery_schema_version": 1,
+        "rejected_candidates": [],
+        "repair_strategies": [
+          {
+            "compatible": true,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "id": "S1",
+            "locality_score": 1.0,
+            "mechanism": "CORRECT_RETURN_VALUE",
+            "rationale": "Fix the return site to ensure type consistency.",
+            "root_cause_id": "RC6EA7412D8C2",
+            "strategy_kind": "CORRECT_RETURN_VALUE",
+            "target_files": [
+              "pkg/media_8638.py"
+            ],
+            "target_symbols": [
+              "emit_44"
+            ]
+          }
+        ],
+        "requires_approval": true,
+        "retrieval_escalation": {
+          "attempted": false,
+          "causal_relations": [],
+          "expanded_candidates": [],
+          "initial_candidates": [],
+          "max_depth": 0,
+          "max_extra_files": 0,
+          "max_extra_symbols": 0,
+          "reasons": [],
+          "succeeded": false
+        },
+        "root_cause_candidates": [
+          {
+            "causal_distance": 4,
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RC6EA7412D8C2",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "RETURN_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.785,
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 3,
+            "causal_path": [
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R4E262957415E",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": "N104348715ECC",
+              "binding_id": "BC94C633C7892",
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "default_argument_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "ARGUMENT_BINDING_DEFECT",
+              "parameter_ordinal": 0,
+              "producer_id": "NA78DBE735A25",
+              "return_site_id": null,
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.66,
+            "statement": "default arg_0_token_32=str[6] at pkg/media_8638.py:1 flows to the failure site: default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 2,
+            "causal_path": [
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RB133938BB5FE",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "external_input_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "CONSUMER_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N730922C8BF10"
+            },
+            "score": 0.6475,
+            "statement": "arg_0_token_32 at pkg/media_8638.py:1 flows to the failure site: arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R6B84E3ADE7E2",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "emit_44",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N72CABB3AE404"
+            },
+            "score": 0.523333,
+            "statement": "return arg_0_token_32 + 1 at pkg/media_8638.py:2 flows to the failure site: return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N4AD56A12234A",
+              "N02576063AA08"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RAB8CAE33BC17",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "observed_at_failure_path",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N4AD56A12234A"
+            },
+            "score": 0.423333,
+            "statement": "1 at pkg/media_8638.py:2 flows to the failure site: 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          }
+        ],
+        "root_cause_selections": [
+          {
+            "reason": "STRUCTURAL_DOMINANCE",
+            "rejected": [
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "R4E262957415E"
+              },
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "RB133938BB5FE"
+              },
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "R6B84E3ADE7E2"
+              }
+            ],
+            "selected_id": "RC6EA7412D8C2",
+            "structurally_dominant": true
+          }
+        ],
+        "root_cause_signatures": {
+          "R4E262957415E": {
+            "causal_roles": [
+              "ARGUMENT_SOURCE",
+              "CALLEE"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "contract_role": "INPUT",
+            "defect_bearing_relation": "default_argument_to_formal_parameter",
+            "entity_identity": "ARGUMENT_SLOT:0:POSITIONAL",
+            "origin_role": "BOUNDARY",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "ARGUMENT_BINDING_DEFECT"
+          },
+          "R6B84E3ADE7E2": {
+            "causal_roles": [
+              "FAILURE_SITE",
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "contract_role": "RETURN",
+            "defect_bearing_relation": "return_site_to_caller_assignment",
+            "entity_identity": "RETURN_CONTRACT:MANIFESTATION:RETURN",
+            "origin_role": "MANIFESTATION",
+            "relation_to_failure": "MANIFESTATION",
+            "responsibility_kind": "MANIFESTATION_ONLY"
+          },
+          "RAB8CAE33BC17": {
+            "causal_roles": [
+              "FAILURE_SITE",
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "contract_role": "STATE",
+            "defect_bearing_relation": "observed_at_failure_path",
+            "entity_identity": "STATE_PROPAGATION:MANIFESTATION:STATE",
+            "origin_role": "MANIFESTATION",
+            "relation_to_failure": "MANIFESTATION",
+            "responsibility_kind": "MANIFESTATION_ONLY"
+          },
+          "RB133938BB5FE": {
+            "causal_roles": [
+              "ARGUMENT_SOURCE",
+              "CALLEE"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "contract_role": "INPUT",
+            "defect_bearing_relation": "external_input_to_formal_parameter",
+            "entity_identity": "ARGUMENT_BINDING:BOUNDARY:INPUT",
+            "origin_role": "BOUNDARY",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "CONSUMER_CONTRACT_DEFECT"
+          },
+          "RC6EA7412D8C2": {
+            "causal_roles": [
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "contract_role": "NONE",
+            "defect_bearing_relation": "return_site_to_caller_assignment",
+            "entity_identity": "TYPE_FLOW:SOURCE:NONE",
+            "origin_role": "SOURCE",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "RETURN_CONTRACT_DEFECT"
+          }
+        },
+        "root_pairwise_comparisons": [
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "RETURN_CONTRACT_VIOLATED",
+            "rejected_id": "R4E262957415E",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "RETURN_CONTRACT_VIOLATED",
+            "rejected_id": "RB133938BB5FE",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RB133938BB5FE",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": "RB133938BB5FE",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "RB133938BB5FE",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": null,
+            "reason": "INSUFFICIENT_TO_DISTINGUISH",
+            "rejected_id": null,
+            "valid": true
+          }
+        ],
+        "schema_version": 6,
+        "semantic_schema_version": 2
+      },
+      "adversarial_tags": [
+        "distractor"
+      ],
+      "category": "argument_binding",
+      "diagnostics": {
+        "decision_stable_across_runs": true,
+        "deterministic_across_runs": true,
+        "diagnostic_codes": [
+          "INVALID_ROOT_COMPARISON",
+          "REPAIR_TARGET_ERROR"
+        ],
+        "failure_reason": null
+      },
+      "expected": {
+        "acceptable_evidence": [
+          "pkg/media_8638.py"
+        ],
+        "acceptable_repair_strategies": [
+          "CORRECT_ARGUMENT"
+        ],
+        "acceptable_solution_families": [],
+        "forbidden_solution_signals": [
+          "delete file",
+          "disable tests"
+        ],
+        "insufficient_evidence": false,
+        "preferred_repair_strategies": [
+          "CORRECT_ARGUMENT"
+        ],
+        "preferred_solution_families": [],
+        "relevant_files": [
+          "pkg/media_8638.py"
+        ],
+        "relevant_tests": [],
+        "repair_targets": [
+          "pkg/media_8638.py"
+        ],
+        "root_cause_signals": [],
+        "traceback_targets": [
+          "pkg/media_8638.py:2"
+        ],
+        "v10_oracle": {
+          "abstention_expected": false,
+          "binding_keyword": null,
+          "binding_slot": 0,
+          "defect_bearing_relations": [
+            "DEFAULT_TO_FORMAL"
+          ],
+          "expected_repair_strategies": [
+            "CORRECT_ARGUMENT"
+          ],
+          "import_scc_members": [],
+          "origin_paths": [
+            "pkg/media_8638.py"
+          ],
+          "origin_roles": [
+            "ARGUMENT_SOURCE"
+          ],
+          "origin_symbols": [
+            "emit_44"
+          ],
+          "population": "single_root",
+          "preferred_repair_strategy": "CORRECT_ARGUMENT",
+          "preferred_target_role": "PARAMETER",
+          "responsibility_kinds": [
+            "ARGUMENT_BINDING_DEFECT"
+          ],
+          "root_kinds": [
+            "ARGUMENT_BINDING",
+            "TYPE_FLOW"
+          ],
+          "valid_target_roles": [
+            "PARAMETER"
+          ]
+        }
+      },
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE",
+        "WRONG_SOLUTION_FAMILY",
+        "REPAIR_STRATEGY_ERROR",
+        "WRONG_RANKING"
+      ],
+      "full_metrics": {
+        "abstained": false,
+        "candidate_diversity": 1.0,
+        "candidate_families": [
+          null
+        ],
+        "candidate_generated": true,
+        "candidate_rejection_reason_counts": {},
+        "causal_origin_file_hit": null,
+        "causal_origin_symbol_hit": null,
+        "causal_path_completeness": 1.0,
+        "causal_path_validity": true,
+        "causal_root_hit": null,
+        "claim_support_precision": 0.75,
+        "claim_support_recall": 1.0,
+        "direct_support_rate": 0.75,
+        "eligible_candidate_rate": 1.0,
+        "evidence_support_precision": 0.75,
+        "exact_diversity": 1.0,
+        "expected_abstention": false,
+        "forbidden_candidate_generation_rate": 0.0,
+        "forbidden_candidate_recommendation_rate": 0.0,
+        "forbidden_solution_rate": 0.0,
+        "grounded_hypothesis_rate": 1.0,
+        "hypothesis_hit": false,
+        "inferred_claim_rate": 0.25,
+        "near_diversity": null,
+        "normalized_diversity": 1.0,
+        "ranking_ambiguous": false,
+        "ranking_hit": false,
+        "ranking_margin": null,
+        "recommendation_correct": false,
+        "recommendation_coverage": true,
+        "repair_strategy_hit": false,
+        "repair_target_hit": true,
+        "root_cause_selection_precision": 0.0,
+        "root_cause_selection_recall": null,
+        "score_contributions": {
+          "C1": {
+            "cost_score": -0.006,
+            "evidence_score": 0.08667,
+            "normalization_offset": 0.1,
+            "ranking_score": 0.79192,
+            "repair_locality_score": 0.15,
+            "repair_strategy_score": 0.2,
+            "reversibility_score": 0.0825,
+            "risk_score": -0.0175,
+            "root_cause_score": 0.19625,
+            "test_support_score": 0.0
+          }
+        },
+        "solution_family_diversity": 1.0,
+        "solution_family_hit": false,
+        "structural_support_rate": 0.0,
+        "unsupported_claim_rate": 0.0,
+        "winner_family": null
+      },
+      "id": "V10-development-argument_binding-1327c82650",
+      "latency_ms": 38432.02150001889,
+      "passed": false,
+      "retrieval": {
+        "causal_slice": {
+          "edges": [
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G29E332E5C537",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N104348715ECC",
+              "target_id": "NA78DBE735A25"
+            },
+            {
+              "argument_binding": {
+                "actual_argument_id": "N99E918735884",
+                "call_site_id": "NAA747665A237",
+                "callee_id": "pkg/media_8638.py:emit_44",
+                "formal_parameter_id": "NEE5C1167F9C1",
+                "id": "B66E56180E7E3",
+                "keyword_binding": "arg_1_token_32",
+                "parameter_ordinal": 1
+              },
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8",
+                "E496303AF5A03"
+              ],
+              "id": "G2ABE24A734C1",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NEE5C1167F9C1"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "id": "G3D6F0FD253B0",
+              "kind": "RETURNED_FROM",
+              "source_id": "N483B333B04E2",
+              "target_id": "NE793099FD433"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G539B7A58E1DC",
+              "kind": "RAISES_AT",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G5BAD8FAFAB31",
+              "kind": "RETURNED_FROM",
+              "source_id": "N730922C8BF10",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G8ED007EBF915",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "NA78DBE735A25",
+              "target_id": "N730922C8BF10"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G9636F41A580B",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N9FAC79B6A949",
+              "target_id": "N0C664B82CDEA"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285",
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GB421E94DB633",
+              "kind": "RETURNED_FROM",
+              "source_id": "N72CABB3AE404",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GC1E0C4FDC6DD",
+              "kind": "RAISES_AT",
+              "source_id": "N72CABB3AE404",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GCE11FD62FB04",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GDA85D9804A13",
+              "kind": "RETURNED_FROM",
+              "source_id": "NAA747665A237",
+              "target_id": "ND769B3F44F76"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GDAE920411F47",
+              "kind": "RETURNED_FROM",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "GFB733BEEA2E6",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N0C664B82CDEA",
+              "target_id": "NEE5C1167F9C1"
+            }
+          ],
+          "failure_site_id": "N02576063AA08",
+          "nodes": [
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "exception at pkg/media_8638.py:2",
+              "id": "N02576063AA08",
+              "kind": "EXCEPTION_SITE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": null,
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_1_token_32=3",
+              "id": "N0C664B82CDEA",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "str[6]",
+              "id": "N104348715ECC",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "7",
+              "id": "N483B333B04E2",
+              "kind": "LITERAL",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "1",
+              "id": "N4AD56A12234A",
+              "kind": "LITERAL",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "return arg_0_token_32 + 1",
+              "id": "N72CABB3AE404",
+              "kind": "RETURN_VALUE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_0_token_32",
+              "id": "N730922C8BF10",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "3",
+              "id": "N99E918735884",
+              "kind": "LITERAL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "3",
+              "id": "N9FAC79B6A949",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_0_token_32=str[6]",
+              "id": "NA78DBE735A25",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "emit_44()",
+              "id": "NAA747665A237",
+              "kind": "CALL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "return emit_44(arg_1_token_32=3)",
+              "id": "ND769B3F44F76",
+              "kind": "RETURN_VALUE",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "invoke"
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "return 7",
+              "id": "NE793099FD433",
+              "kind": "RETURN_VALUE",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_1_token_32",
+              "id": "NEE5C1167F9C1",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            }
+          ],
+          "unknown_flow": false,
+          "version": 1
+        },
+        "evidence_ledger": {
+          "atoms": [
+            {
+              "end_line": 5,
+              "id": "E189358A35859",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 4,
+              "statement": "function invoke is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "invoke"
+            },
+            {
+              "end_line": 9,
+              "id": "E33D845ED8D09",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 9,
+              "statement": "validation_return_import_boundary returns 7",
+              "strength": 0.8,
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "end_line": 2,
+              "id": "E496303AF5A03",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 1,
+              "statement": "function emit_44 is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "emit_44"
+            },
+            {
+              "end_line": 9,
+              "id": "E65451A8D5286",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 7,
+              "statement": "function validation_return_import_boundary is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "end_line": 5,
+              "id": "E6DCBA736D906",
+              "kind": "CALL_RELATION",
+              "path": "pkg/media_8638.py",
+              "relation": "emit_44",
+              "start_line": 5,
+              "statement": "invoke calls emit_44 with 0 positional and 1 keyword arguments",
+              "strength": 0.8,
+              "symbol": "invoke"
+            },
+            {
+              "end_line": 2,
+              "id": "EA0355BABB047",
+              "kind": "TRACEBACK_FRAME",
+              "path": "pkg/media_8638.py",
+              "relation": "traceback",
+              "start_line": 2,
+              "statement": "the traceback reports execution at pkg/media_8638.py:2",
+              "strength": 1.0,
+              "symbol": null
+            },
+            {
+              "end_line": 5,
+              "id": "EA592EB7CE9C0",
+              "kind": "TRACEBACK_FRAME",
+              "path": "pkg/media_8638.py",
+              "relation": "traceback",
+              "start_line": 5,
+              "statement": "the traceback reports execution at pkg/media_8638.py:5",
+              "strength": 1.0,
+              "symbol": null
+            },
+            {
+              "end_line": 2,
+              "id": "EE36D1EB12285",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 2,
+              "statement": "emit_44 returns arg_0_token_32 + 1",
+              "strength": 0.8,
+              "symbol": "emit_44"
+            },
+            {
+              "end_line": 5,
+              "id": "EF78C7DE52EB8",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 5,
+              "statement": "invoke returns emit_44(arg_1_token_32=3)",
+              "strength": 0.8,
+              "symbol": "invoke"
+            }
+          ],
+          "version": 1
+        },
+        "evidence_refs": [
+          "pkg/media_8638.py:1-9"
+        ],
+        "failure_codes": [],
+        "metrics": {
+          "avg_causal_candidates": 5,
+          "avg_causal_path_length": 3.2,
+          "causal_path_validity": true,
+          "context_bytes": 283,
+          "context_tokens": 2068,
+          "evidence_ref_validity": 1.0,
+          "expected_evidence_recall": 1.0,
+          "initial_context_files": 1,
+          "initial_evidence_atoms": 9,
+          "initial_root_candidates": 5,
+          "latency_ms": 97.91030001360923,
+          "recovery_attempted": false,
+          "recovery_extra_evidence_atoms": 0,
+          "recovery_extra_files": 0,
+          "recovery_extra_symbols": 0,
+          "recovery_outcome": "RECOVERY_NOT_NEEDED",
+          "recovery_succeeded": false,
+          "related_test_precision": 1.0,
+          "related_test_recall": null,
+          "relevant_file_precision": 1.0,
+          "relevant_file_recall_at_1": 1.0,
+          "relevant_file_recall_at_3": 1.0,
+          "traceback_target_recall": 1.0
+        },
+        "recovery": {
+          "actions": [],
+          "attempted": false,
+          "budget": {
+            "max_depth": 2,
+            "max_extra_evidence_atoms": 30,
+            "max_extra_files": 4,
+            "max_extra_symbols": 12,
+            "max_recovery_attempts": 1
+          },
+          "extra_evidence_atoms": 0,
+          "extra_files": 0,
+          "final_evidence_atom_count": 9,
+          "final_files": [
+            "pkg/media_8638.py"
+          ],
+          "final_root_count": 5,
+          "final_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "frontiers": [],
+          "initial_evidence_atom_count": 9,
+          "initial_files": [
+            "pkg/media_8638.py"
+          ],
+          "initial_root_count": 5,
+          "initial_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "outcome": "RECOVERY_NOT_NEEDED",
+          "seed_synthesis_attempted": false,
+          "seed_synthesis_succeeded": false,
+          "succeeded": false,
+          "synthesized_seed": null
+        },
+        "related_tests": [],
+        "retrieved_files": [
+          "pkg/media_8638.py"
+        ],
+        "root_cause_candidates": [
+          {
+            "causal_distance": 4,
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RC6EA7412D8C2",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "RETURN_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.785,
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 3,
+            "causal_path": [
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R4E262957415E",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": "N104348715ECC",
+              "binding_id": "BC94C633C7892",
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "default_argument_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "ARGUMENT_BINDING_DEFECT",
+              "parameter_ordinal": 0,
+              "producer_id": "NA78DBE735A25",
+              "return_site_id": null,
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.66,
+            "statement": "default arg_0_token_32=str[6] at pkg/media_8638.py:1 flows to the failure site: default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 2,
+            "causal_path": [
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RB133938BB5FE",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "external_input_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "CONSUMER_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N730922C8BF10"
+            },
+            "score": 0.6475,
+            "statement": "arg_0_token_32 at pkg/media_8638.py:1 flows to the failure site: arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R6B84E3ADE7E2",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "emit_44",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N72CABB3AE404"
+            },
+            "score": 0.523333,
+            "statement": "return arg_0_token_32 + 1 at pkg/media_8638.py:2 flows to the failure site: return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N4AD56A12234A",
+              "N02576063AA08"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RAB8CAE33BC17",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "observed_at_failure_path",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N4AD56A12234A"
+            },
+            "score": 0.423333,
+            "statement": "1 at pkg/media_8638.py:2 flows to the failure site: 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          }
+        ]
+      },
+      "safety": {
+        "authority_grants": 0,
+        "destructive_actions": 0,
+        "execution_authorized": 0,
+        "filesystem_mutations": 0,
+        "forbidden_candidate_recommendations": 0,
+        "tool_dispatches": 0
+      },
+      "split": "development",
+      "telemetry": {
+        "prompt_tokens": 2579,
+        "request_ms": [
+          38223.958800022956
+        ],
+        "requests": 1,
+        "response_tokens": 415,
+        "schema_tokens": 684
+      }
+    }
+  ],
+  "family_metrics_v10": {
+    "argument_binding": {
+      "argument_binding_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "argument_vs_return_accuracy": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "false_abstention": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "import_scc_precision": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "import_scc_recall": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "observer_exclusion_accuracy": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "recommendation_coverage": {
+        "denominator": 1,
+        "numerator": 1,
+        "population": "family=argument_binding",
+        "value": 1.0
+      },
+      "recommendation_precision": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "repair_given_correct_root": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "repair_pair_validity": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "return_contract_accuracy": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "root_selection_given_oracle_candidate": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "root_validity": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "slot_identity_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      },
+      "target_given_correct_root": {
+        "denominator": 0,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": null
+      },
+      "top1_validity": {
+        "denominator": 1,
+        "numerator": 0,
+        "population": "family=argument_binding",
+        "value": 0.0
+      }
+    }
+  },
+  "generator_version": 3,
+  "latency": {
+    "case": {
+      "average_ms": 38432.02150001889,
+      "count": 1,
+      "p50_ms": 38432.02150001889,
+      "p90_ms": 38432.02150001889,
+      "p95_ms": 38432.02150001889
+    },
+    "generation": {
+      "average_ms": 38223.958800022956,
+      "count": 1,
+      "p50_ms": 38223.958800022956,
+      "p90_ms": 38223.958800022956,
+      "p95_ms": 38223.958800022956
+    },
+    "qwen_request": {
+      "average_ms": 38223.958800022956,
+      "count": 1,
+      "p50_ms": 38223.958800022956,
+      "p90_ms": 38223.958800022956,
+      "p95_ms": 38223.958800022956
+    },
+    "retrieval": {
+      "average_ms": 97.91030001360923,
+      "count": 1,
+      "p50_ms": 97.91030001360923,
+      "p90_ms": 97.91030001360923,
+      "p95_ms": 97.91030001360923
+    },
+    "time_to_first_token": null
+  },
+  "layer_metrics": {
+    "argument_binding_accuracy": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "argument_vs_return_accuracy": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "false_abstention": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "import_scc_precision": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "import_scc_recall": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "observer_exclusion_accuracy": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "recommendation_coverage": {
+      "denominator": 1,
+      "numerator": 1,
+      "population": "generated live cases",
+      "value": 1.0
+    },
+    "recommendation_precision": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "repair_given_correct_root": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "repair_pair_validity": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "return_contract_accuracy": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "root_selection_given_oracle_candidate": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "root_validity": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "slot_identity_accuracy": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    },
+    "target_given_correct_root": {
+      "denominator": 0,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": null
+    },
+    "top1_validity": {
+      "denominator": 1,
+      "numerator": 0,
+      "population": "generated live cases",
+      "value": 0.0
+    }
+  },
+  "mode": "live",
+  "pass_rate": 0.0,
+  "passed": 0,
+  "qwen": {
+    "average_completion_tokens_per_request": 415.0,
+    "average_prompt_tokens_per_request": 2579.0,
+    "average_schema_tokens_per_request": 684.0,
+    "estimated_prompt_tokens": 2579,
+    "estimated_response_tokens": 415,
+    "estimated_schema_tokens": 684,
+    "requests": 1
+  },
+  "reasoning": {
+    "ambiguous_ranking_rate": 0.0,
+    "candidate_diversity": 1.0,
+    "candidate_generated": 1.0,
+    "causal_origin_file_hit": null,
+    "causal_origin_symbol_hit": null,
+    "causal_path_completeness": 1.0,
+    "causal_path_validity": 1.0,
+    "causal_root_hit": null,
+    "claim_support_precision": 0.75,
+    "claim_support_recall": 1.0,
+    "determinism_rate": 1.0,
+    "direct_support_rate": 0.75,
+    "eligible_candidate_rate": 1.0,
+    "evidence_support_precision": 0.75,
+    "false_abstention_rate": 0.0,
+    "forbidden_candidate_generation_rate": 0.0,
+    "forbidden_candidate_recommendation_rate": 0.0,
+    "forbidden_solution_rate": 0.0,
+    "grounded_hypothesis_rate": 1.0,
+    "hypothesis_hit": 0.0,
+    "inferred_claim_rate": 0.25,
+    "ranking_ambiguous": 0.0,
+    "ranking_hit": 0.0,
+    "ranking_margin": null,
+    "recommendation_coverage": 1.0,
+    "recommendation_precision": 0.0,
+    "repair_strategy_hit": 0.0,
+    "repair_target_hit": 1.0,
+    "root_cause_selection_precision": 0.0,
+    "root_cause_selection_recall": null,
+    "solution_family_diversity": 1.0,
+    "solution_family_hit": 0.0,
+    "structural_support_rate": 0.0,
+    "unsupported_claim_rate": 0.0
+  },
+  "results": [
+    {
+      "actual": {
+        "candidate_target_signatures": {
+          "C1": [
+            {
+              "causal_distance": 3,
+              "causal_roles": [
+                "FAILURE_SITE",
+                "PRODUCER",
+                "RETURN_SOURCE"
+              ],
+              "owning_symbol_role": "SOURCE",
+              "relation_to_failure": "FAILURE",
+              "relation_to_root": "ROOT_SCOPE",
+              "target_kind": "RETURN_SITE"
+            }
+          ]
+        },
+        "candidates": [
+          {
+            "action": "Fix the return site to ensure type consistency.",
+            "change_kind": "RETURN_VALUE",
+            "confidence": 0.785,
+            "cost_score": 0.2,
+            "eligible": true,
+            "estimated_success_score": 0.785,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "evidence_refs": [
+              "pkg/media_8638.py:1-2",
+              "pkg/media_8638.py:2-2"
+            ],
+            "evidence_score": 0.8667,
+            "expected_outcome": "Address TYPE_FLOW at its causal origin",
+            "hypothesis_id": "H1",
+            "id": "C1",
+            "mechanism": "CORRECT_RETURN_VALUE",
+            "ranking_score": 0.79192,
+            "rejection_reasons": [],
+            "repair_locality_score": 1.0,
+            "repair_strategy_score": 1.0,
+            "repair_targets": [
+              {
+                "attribute": null,
+                "expression_id": "N72CABB3AE404",
+                "id": "TF64C35705A4B",
+                "line": 2,
+                "parameter": null,
+                "path": "pkg/media_8638.py",
+                "scope_kind": "RETURN_SITE",
+                "symbol": "emit_44"
+              }
+            ],
+            "required_tests": [],
+            "reversibility_score": 0.825,
+            "risk_score": 0.25,
+            "root_cause_id": "RC6EA7412D8C2",
+            "root_cause_score": 0.785,
+            "score_explanation": "score=0.792; causa=+0.196; estrategia=+0.200; evidencia=+0.087; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100",
+            "strategy_kind": "CORRECT_RETURN_VALUE",
+            "target_files": [
+              "pkg/media_8638.py"
+            ],
+            "target_symbols": [
+              "emit_44"
+            ],
+            "test_support_level": "NONE",
+            "test_support_score": 0.0
+          }
+        ],
+        "causal_slice": {
+          "edges": [
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G29E332E5C537",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N104348715ECC",
+              "target_id": "NA78DBE735A25"
+            },
+            {
+              "argument_binding": {
+                "actual_argument_id": "N99E918735884",
+                "call_site_id": "NAA747665A237",
+                "callee_id": "pkg/media_8638.py:emit_44",
+                "formal_parameter_id": "NEE5C1167F9C1",
+                "id": "B66E56180E7E3",
+                "keyword_binding": "arg_1_token_32",
+                "parameter_ordinal": 1
+              },
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8",
+                "E496303AF5A03"
+              ],
+              "id": "G2ABE24A734C1",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NEE5C1167F9C1"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "id": "G3D6F0FD253B0",
+              "kind": "RETURNED_FROM",
+              "source_id": "N483B333B04E2",
+              "target_id": "NE793099FD433"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G539B7A58E1DC",
+              "kind": "RAISES_AT",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G5BAD8FAFAB31",
+              "kind": "RETURNED_FROM",
+              "source_id": "N730922C8BF10",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G8ED007EBF915",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "NA78DBE735A25",
+              "target_id": "N730922C8BF10"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G9636F41A580B",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N9FAC79B6A949",
+              "target_id": "N0C664B82CDEA"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285",
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GB421E94DB633",
+              "kind": "RETURNED_FROM",
+              "source_id": "N72CABB3AE404",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GC1E0C4FDC6DD",
+              "kind": "RAISES_AT",
+              "source_id": "N72CABB3AE404",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GCE11FD62FB04",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GDA85D9804A13",
+              "kind": "RETURNED_FROM",
+              "source_id": "NAA747665A237",
+              "target_id": "ND769B3F44F76"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GDAE920411F47",
+              "kind": "RETURNED_FROM",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "GFB733BEEA2E6",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N0C664B82CDEA",
+              "target_id": "NEE5C1167F9C1"
+            }
+          ],
+          "failure_site_id": "N02576063AA08",
+          "nodes": [
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "exception at pkg/media_8638.py:2",
+              "id": "N02576063AA08",
+              "kind": "EXCEPTION_SITE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": null,
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_1_token_32=3",
+              "id": "N0C664B82CDEA",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "str[6]",
+              "id": "N104348715ECC",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "7",
+              "id": "N483B333B04E2",
+              "kind": "LITERAL",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "1",
+              "id": "N4AD56A12234A",
+              "kind": "LITERAL",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "return arg_0_token_32 + 1",
+              "id": "N72CABB3AE404",
+              "kind": "RETURN_VALUE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_0_token_32",
+              "id": "N730922C8BF10",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "3",
+              "id": "N99E918735884",
+              "kind": "LITERAL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "3",
+              "id": "N9FAC79B6A949",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_0_token_32=str[6]",
+              "id": "NA78DBE735A25",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "emit_44()",
+              "id": "NAA747665A237",
+              "kind": "CALL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "return emit_44(arg_1_token_32=3)",
+              "id": "ND769B3F44F76",
+              "kind": "RETURN_VALUE",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "invoke"
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "return 7",
+              "id": "NE793099FD433",
+              "kind": "RETURN_VALUE",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_1_token_32",
+              "id": "NEE5C1167F9C1",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            }
+          ],
+          "unknown_flow": false,
+          "version": 1
+        },
+        "diagnostic_codes": [
+          "INVALID_ROOT_COMPARISON",
+          "REPAIR_TARGET_ERROR"
+        ],
+        "dry_run": true,
+        "execution_authorized": false,
+        "failure_reason": null,
+        "hypotheses": [
+          {
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "E496303AF5A03"
+                ],
+                "statement": "function emit_44 is defined in pkg/media_8638.py",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "EA0355BABB047"
+                ],
+                "statement": "the traceback reports execution at pkg/media_8638.py:2",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "EE36D1EB12285"
+                ],
+                "statement": "emit_44 returns arg_0_token_32 + 1",
+                "support": "DIRECT"
+              },
+              {
+                "evidence_ids": [
+                  "E496303AF5A03",
+                  "EA0355BABB047",
+                  "EE36D1EB12285"
+                ],
+                "statement": "The root cause is a type flow defect where a string default argument propagates to an integer operation, violating the return contract.",
+                "support": "INFERRED"
+              }
+            ],
+            "confidence": 0.785,
+            "evidence_refs": [
+              "pkg/media_8638.py:1-2",
+              "pkg/media_8638.py:2-2"
+            ],
+            "id": "H1",
+            "root_cause_id": "RC6EA7412D8C2",
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2. Assessment: The root cause is a type flow defect where a string default argument propagates to an integer operation, violating the return contract."
+          }
+        ],
+        "insufficient_evidence": false,
+        "problem": "Traceback (most recent call last):\n  File \"pkg/media_8638.py\", line 5, in invoke\n    return emit_44(arg_1_token_32=3)\n  File \"pkg/media_8638.py\", line 2, in failure\n    return arg_0_token_32 + 1\nTypeError: can only concatenate str (not \"int\") to str",
+        "ranking_ambiguous": false,
+        "ranking_margin": null,
+        "recommendation_explanation": "C1 venceu pelo maior score determinístico (0.792). score=0.792; causa=+0.196; estrategia=+0.200; evidencia=+0.087; testes=+0.000; localidade=+0.150; reversibilidade=+0.083; risco=-0.018; custo=-0.006; normalizacao=+0.100 A recomendação é consultiva e exige aprovação.",
+        "recommended_candidate_id": "C1",
+        "recovery": {
+          "actions": [],
+          "attempted": false,
+          "budget": {
+            "max_depth": 2,
+            "max_extra_evidence_atoms": 30,
+            "max_extra_files": 4,
+            "max_extra_symbols": 12,
+            "max_recovery_attempts": 1
+          },
+          "extra_evidence_atoms": 0,
+          "extra_files": 0,
+          "final_evidence_atom_count": 9,
+          "final_files": [
+            "pkg/media_8638.py"
+          ],
+          "final_root_count": 5,
+          "final_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "frontiers": [],
+          "initial_evidence_atom_count": 9,
+          "initial_files": [
+            "pkg/media_8638.py"
+          ],
+          "initial_root_count": 5,
+          "initial_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "outcome": "RECOVERY_NOT_NEEDED",
+          "seed_synthesis_attempted": false,
+          "seed_synthesis_succeeded": false,
+          "succeeded": false,
+          "synthesized_seed": null
+        },
+        "recovery_schema_version": 1,
+        "rejected_candidates": [],
+        "repair_strategies": [
+          {
+            "compatible": true,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "id": "S1",
+            "locality_score": 1.0,
+            "mechanism": "CORRECT_RETURN_VALUE",
+            "rationale": "Fix the return site to ensure type consistency.",
+            "root_cause_id": "RC6EA7412D8C2",
+            "strategy_kind": "CORRECT_RETURN_VALUE",
+            "target_files": [
+              "pkg/media_8638.py"
+            ],
+            "target_symbols": [
+              "emit_44"
+            ]
+          }
+        ],
+        "requires_approval": true,
+        "retrieval_escalation": {
+          "attempted": false,
+          "causal_relations": [],
+          "expanded_candidates": [],
+          "initial_candidates": [],
+          "max_depth": 0,
+          "max_extra_files": 0,
+          "max_extra_symbols": 0,
+          "reasons": [],
+          "succeeded": false
+        },
+        "root_cause_candidates": [
+          {
+            "causal_distance": 4,
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RC6EA7412D8C2",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "RETURN_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.785,
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 3,
+            "causal_path": [
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R4E262957415E",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": "N104348715ECC",
+              "binding_id": "BC94C633C7892",
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "default_argument_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "ARGUMENT_BINDING_DEFECT",
+              "parameter_ordinal": 0,
+              "producer_id": "NA78DBE735A25",
+              "return_site_id": null,
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.66,
+            "statement": "default arg_0_token_32=str[6] at pkg/media_8638.py:1 flows to the failure site: default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 2,
+            "causal_path": [
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RB133938BB5FE",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "external_input_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "CONSUMER_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N730922C8BF10"
+            },
+            "score": 0.6475,
+            "statement": "arg_0_token_32 at pkg/media_8638.py:1 flows to the failure site: arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R6B84E3ADE7E2",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "emit_44",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N72CABB3AE404"
+            },
+            "score": 0.523333,
+            "statement": "return arg_0_token_32 + 1 at pkg/media_8638.py:2 flows to the failure site: return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N4AD56A12234A",
+              "N02576063AA08"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RAB8CAE33BC17",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "observed_at_failure_path",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N4AD56A12234A"
+            },
+            "score": 0.423333,
+            "statement": "1 at pkg/media_8638.py:2 flows to the failure site: 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          }
+        ],
+        "root_cause_selections": [
+          {
+            "reason": "STRUCTURAL_DOMINANCE",
+            "rejected": [
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "R4E262957415E"
+              },
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "RB133938BB5FE"
+              },
+              {
+                "reason": "UPSTREAM_CONTRACT_ORIGIN",
+                "root_cause_id": "R6B84E3ADE7E2"
+              }
+            ],
+            "selected_id": "RC6EA7412D8C2",
+            "structurally_dominant": true
+          }
+        ],
+        "root_cause_signatures": {
+          "R4E262957415E": {
+            "causal_roles": [
+              "ARGUMENT_SOURCE",
+              "CALLEE"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "contract_role": "INPUT",
+            "defect_bearing_relation": "default_argument_to_formal_parameter",
+            "entity_identity": "ARGUMENT_SLOT:0:POSITIONAL",
+            "origin_role": "BOUNDARY",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "ARGUMENT_BINDING_DEFECT"
+          },
+          "R6B84E3ADE7E2": {
+            "causal_roles": [
+              "FAILURE_SITE",
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "contract_role": "RETURN",
+            "defect_bearing_relation": "return_site_to_caller_assignment",
+            "entity_identity": "RETURN_CONTRACT:MANIFESTATION:RETURN",
+            "origin_role": "MANIFESTATION",
+            "relation_to_failure": "MANIFESTATION",
+            "responsibility_kind": "MANIFESTATION_ONLY"
+          },
+          "RAB8CAE33BC17": {
+            "causal_roles": [
+              "FAILURE_SITE",
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "contract_role": "STATE",
+            "defect_bearing_relation": "observed_at_failure_path",
+            "entity_identity": "STATE_PROPAGATION:MANIFESTATION:STATE",
+            "origin_role": "MANIFESTATION",
+            "relation_to_failure": "MANIFESTATION",
+            "responsibility_kind": "MANIFESTATION_ONLY"
+          },
+          "RB133938BB5FE": {
+            "causal_roles": [
+              "ARGUMENT_SOURCE",
+              "CALLEE"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "contract_role": "INPUT",
+            "defect_bearing_relation": "external_input_to_formal_parameter",
+            "entity_identity": "ARGUMENT_BINDING:BOUNDARY:INPUT",
+            "origin_role": "BOUNDARY",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "CONSUMER_CONTRACT_DEFECT"
+          },
+          "RC6EA7412D8C2": {
+            "causal_roles": [
+              "PRODUCER",
+              "RETURN_SOURCE"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "contract_role": "NONE",
+            "defect_bearing_relation": "return_site_to_caller_assignment",
+            "entity_identity": "TYPE_FLOW:SOURCE:NONE",
+            "origin_role": "SOURCE",
+            "relation_to_failure": "UPSTREAM",
+            "responsibility_kind": "RETURN_CONTRACT_DEFECT"
+          }
+        },
+        "root_pairwise_comparisons": [
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "RETURN_CONTRACT_VIOLATED",
+            "rejected_id": "R4E262957415E",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "RETURN_CONTRACT_VIOLATED",
+            "rejected_id": "RB133938BB5FE",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "RC6EA7412D8C2",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RB133938BB5FE",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "R4E262957415E",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": "RB133938BB5FE",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "R6B84E3ADE7E2",
+            "valid": true
+          },
+          {
+            "preferred_id": "RB133938BB5FE",
+            "reason": "UPSTREAM_CONTRACT_ORIGIN",
+            "rejected_id": "RAB8CAE33BC17",
+            "valid": true
+          },
+          {
+            "preferred_id": null,
+            "reason": "INSUFFICIENT_TO_DISTINGUISH",
+            "rejected_id": null,
+            "valid": true
+          }
+        ],
+        "schema_version": 6,
+        "semantic_schema_version": 2
+      },
+      "adversarial_tags": [
+        "distractor"
+      ],
+      "category": "argument_binding",
+      "diagnostics": {
+        "decision_stable_across_runs": true,
+        "deterministic_across_runs": true,
+        "diagnostic_codes": [
+          "INVALID_ROOT_COMPARISON",
+          "REPAIR_TARGET_ERROR"
+        ],
+        "failure_reason": null
+      },
+      "expected": {
+        "acceptable_evidence": [
+          "pkg/media_8638.py"
+        ],
+        "acceptable_repair_strategies": [
+          "CORRECT_ARGUMENT"
+        ],
+        "acceptable_solution_families": [],
+        "forbidden_solution_signals": [
+          "delete file",
+          "disable tests"
+        ],
+        "insufficient_evidence": false,
+        "preferred_repair_strategies": [
+          "CORRECT_ARGUMENT"
+        ],
+        "preferred_solution_families": [],
+        "relevant_files": [
+          "pkg/media_8638.py"
+        ],
+        "relevant_tests": [],
+        "repair_targets": [
+          "pkg/media_8638.py"
+        ],
+        "root_cause_signals": [],
+        "traceback_targets": [
+          "pkg/media_8638.py:2"
+        ],
+        "v10_oracle": {
+          "abstention_expected": false,
+          "binding_keyword": null,
+          "binding_slot": 0,
+          "defect_bearing_relations": [
+            "DEFAULT_TO_FORMAL"
+          ],
+          "expected_repair_strategies": [
+            "CORRECT_ARGUMENT"
+          ],
+          "import_scc_members": [],
+          "origin_paths": [
+            "pkg/media_8638.py"
+          ],
+          "origin_roles": [
+            "ARGUMENT_SOURCE"
+          ],
+          "origin_symbols": [
+            "emit_44"
+          ],
+          "population": "single_root",
+          "preferred_repair_strategy": "CORRECT_ARGUMENT",
+          "preferred_target_role": "PARAMETER",
+          "responsibility_kinds": [
+            "ARGUMENT_BINDING_DEFECT"
+          ],
+          "root_kinds": [
+            "ARGUMENT_BINDING",
+            "TYPE_FLOW"
+          ],
+          "valid_target_roles": [
+            "PARAMETER"
+          ]
+        }
+      },
+      "failure_codes": [
+        "WRONG_ROOT_CAUSE",
+        "WRONG_SOLUTION_FAMILY",
+        "REPAIR_STRATEGY_ERROR",
+        "WRONG_RANKING"
+      ],
+      "full_metrics": {
+        "abstained": false,
+        "candidate_diversity": 1.0,
+        "candidate_families": [
+          null
+        ],
+        "candidate_generated": true,
+        "candidate_rejection_reason_counts": {},
+        "causal_origin_file_hit": null,
+        "causal_origin_symbol_hit": null,
+        "causal_path_completeness": 1.0,
+        "causal_path_validity": true,
+        "causal_root_hit": null,
+        "claim_support_precision": 0.75,
+        "claim_support_recall": 1.0,
+        "direct_support_rate": 0.75,
+        "eligible_candidate_rate": 1.0,
+        "evidence_support_precision": 0.75,
+        "exact_diversity": 1.0,
+        "expected_abstention": false,
+        "forbidden_candidate_generation_rate": 0.0,
+        "forbidden_candidate_recommendation_rate": 0.0,
+        "forbidden_solution_rate": 0.0,
+        "grounded_hypothesis_rate": 1.0,
+        "hypothesis_hit": false,
+        "inferred_claim_rate": 0.25,
+        "near_diversity": null,
+        "normalized_diversity": 1.0,
+        "ranking_ambiguous": false,
+        "ranking_hit": false,
+        "ranking_margin": null,
+        "recommendation_correct": false,
+        "recommendation_coverage": true,
+        "repair_strategy_hit": false,
+        "repair_target_hit": true,
+        "root_cause_selection_precision": 0.0,
+        "root_cause_selection_recall": null,
+        "score_contributions": {
+          "C1": {
+            "cost_score": -0.006,
+            "evidence_score": 0.08667,
+            "normalization_offset": 0.1,
+            "ranking_score": 0.79192,
+            "repair_locality_score": 0.15,
+            "repair_strategy_score": 0.2,
+            "reversibility_score": 0.0825,
+            "risk_score": -0.0175,
+            "root_cause_score": 0.19625,
+            "test_support_score": 0.0
+          }
+        },
+        "solution_family_diversity": 1.0,
+        "solution_family_hit": false,
+        "structural_support_rate": 0.0,
+        "unsupported_claim_rate": 0.0,
+        "winner_family": null
+      },
+      "id": "V10-development-argument_binding-1327c82650",
+      "latency_ms": 38432.02150001889,
+      "metrics_v10": {
+        "argument_binding_accuracy": false,
+        "argument_vs_return_accuracy": null,
+        "false_abstention": false,
+        "import_scc_precision": null,
+        "import_scc_recall": null,
+        "observer_exclusion_accuracy": null,
+        "recommendation_coverage": true,
+        "recommendation_precision": false,
+        "repair_given_correct_root": null,
+        "repair_pair_validity": false,
+        "return_contract_accuracy": null,
+        "root_selection_given_oracle_candidate": false,
+        "root_validity": false,
+        "slot_identity_accuracy": false,
+        "target_given_correct_root": null,
+        "top1_validity": false
+      },
+      "oracle": {
+        "abstention_expected": false,
+        "binding_keyword": null,
+        "binding_slot": 0,
+        "defect_bearing_relations": [
+          "DEFAULT_TO_FORMAL"
+        ],
+        "expected_repair_strategies": [
+          "CORRECT_ARGUMENT"
+        ],
+        "import_scc_members": [],
+        "origin_paths": [
+          "pkg/media_8638.py"
+        ],
+        "origin_roles": [
+          "ARGUMENT_SOURCE"
+        ],
+        "origin_symbols": [
+          "emit_44"
+        ],
+        "population": "single_root",
+        "preferred_repair_strategy": "CORRECT_ARGUMENT",
+        "preferred_target_role": "PARAMETER",
+        "responsibility_kinds": [
+          "ARGUMENT_BINDING_DEFECT"
+        ],
+        "root_kinds": [
+          "ARGUMENT_BINDING",
+          "TYPE_FLOW"
+        ],
+        "valid_target_roles": [
+          "PARAMETER"
+        ]
+      },
+      "passed": false,
+      "retrieval": {
+        "causal_slice": {
+          "edges": [
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G29E332E5C537",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N104348715ECC",
+              "target_id": "NA78DBE735A25"
+            },
+            {
+              "argument_binding": {
+                "actual_argument_id": "N99E918735884",
+                "call_site_id": "NAA747665A237",
+                "callee_id": "pkg/media_8638.py:emit_44",
+                "formal_parameter_id": "NEE5C1167F9C1",
+                "id": "B66E56180E7E3",
+                "keyword_binding": "arg_1_token_32",
+                "parameter_ordinal": 1
+              },
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8",
+                "E496303AF5A03"
+              ],
+              "id": "G2ABE24A734C1",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NEE5C1167F9C1"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "id": "G3D6F0FD253B0",
+              "kind": "RETURNED_FROM",
+              "source_id": "N483B333B04E2",
+              "target_id": "NE793099FD433"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G539B7A58E1DC",
+              "kind": "RAISES_AT",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "G5BAD8FAFAB31",
+              "kind": "RETURNED_FROM",
+              "source_id": "N730922C8BF10",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G8ED007EBF915",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "NA78DBE735A25",
+              "target_id": "N730922C8BF10"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "G9636F41A580B",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N9FAC79B6A949",
+              "target_id": "N0C664B82CDEA"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285",
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GB421E94DB633",
+              "kind": "RETURNED_FROM",
+              "source_id": "N72CABB3AE404",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GC1E0C4FDC6DD",
+              "kind": "RAISES_AT",
+              "source_id": "N72CABB3AE404",
+              "target_id": "N02576063AA08"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GCE11FD62FB04",
+              "kind": "PASSED_AS_ARGUMENT",
+              "source_id": "N99E918735884",
+              "target_id": "NAA747665A237"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "id": "GDA85D9804A13",
+              "kind": "RETURNED_FROM",
+              "source_id": "NAA747665A237",
+              "target_id": "ND769B3F44F76"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "id": "GDAE920411F47",
+              "kind": "RETURNED_FROM",
+              "source_id": "N4AD56A12234A",
+              "target_id": "N72CABB3AE404"
+            },
+            {
+              "argument_binding": null,
+              "deterministic": true,
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "id": "GFB733BEEA2E6",
+              "kind": "ASSIGNED_FROM",
+              "source_id": "N0C664B82CDEA",
+              "target_id": "NEE5C1167F9C1"
+            }
+          ],
+          "failure_site_id": "N02576063AA08",
+          "nodes": [
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "exception at pkg/media_8638.py:2",
+              "id": "N02576063AA08",
+              "kind": "EXCEPTION_SITE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": null,
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_1_token_32=3",
+              "id": "N0C664B82CDEA",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "str[6]",
+              "id": "N104348715ECC",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "7",
+              "id": "N483B333B04E2",
+              "kind": "LITERAL",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "1",
+              "id": "N4AD56A12234A",
+              "kind": "LITERAL",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03",
+                "EA0355BABB047",
+                "EE36D1EB12285"
+              ],
+              "expression": "return arg_0_token_32 + 1",
+              "id": "N72CABB3AE404",
+              "kind": "RETURN_VALUE",
+              "line": 2,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_0_token_32",
+              "id": "N730922C8BF10",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "3",
+              "id": "N99E918735884",
+              "kind": "LITERAL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "3",
+              "id": "N9FAC79B6A949",
+              "kind": "LITERAL",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": null
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "default arg_0_token_32=str[6]",
+              "id": "NA78DBE735A25",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_0_token_32"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "emit_44()",
+              "id": "NAA747665A237",
+              "kind": "CALL",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "emit_44"
+            },
+            {
+              "evidence_ids": [
+                "E189358A35859",
+                "E6DCBA736D906",
+                "EA592EB7CE9C0",
+                "EF78C7DE52EB8"
+              ],
+              "expression": "return emit_44(arg_1_token_32=3)",
+              "id": "ND769B3F44F76",
+              "kind": "RETURN_VALUE",
+              "line": 5,
+              "path": "pkg/media_8638.py",
+              "scope": "invoke",
+              "symbol": "invoke"
+            },
+            {
+              "evidence_ids": [
+                "E33D845ED8D09",
+                "E65451A8D5286"
+              ],
+              "expression": "return 7",
+              "id": "NE793099FD433",
+              "kind": "RETURN_VALUE",
+              "line": 9,
+              "path": "pkg/media_8638.py",
+              "scope": "validation_return_import_boundary",
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "evidence_ids": [
+                "E496303AF5A03"
+              ],
+              "expression": "arg_1_token_32",
+              "id": "NEE5C1167F9C1",
+              "kind": "PARAMETER",
+              "line": 1,
+              "path": "pkg/media_8638.py",
+              "scope": "emit_44",
+              "symbol": "arg_1_token_32"
+            }
+          ],
+          "unknown_flow": false,
+          "version": 1
+        },
+        "evidence_ledger": {
+          "atoms": [
+            {
+              "end_line": 5,
+              "id": "E189358A35859",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 4,
+              "statement": "function invoke is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "invoke"
+            },
+            {
+              "end_line": 9,
+              "id": "E33D845ED8D09",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 9,
+              "statement": "validation_return_import_boundary returns 7",
+              "strength": 0.8,
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "end_line": 2,
+              "id": "E496303AF5A03",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 1,
+              "statement": "function emit_44 is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "emit_44"
+            },
+            {
+              "end_line": 9,
+              "id": "E65451A8D5286",
+              "kind": "SYMBOL_DEFINITION",
+              "path": "pkg/media_8638.py",
+              "relation": "defines",
+              "start_line": 7,
+              "statement": "function validation_return_import_boundary is defined in pkg/media_8638.py",
+              "strength": 0.8,
+              "symbol": "validation_return_import_boundary"
+            },
+            {
+              "end_line": 5,
+              "id": "E6DCBA736D906",
+              "kind": "CALL_RELATION",
+              "path": "pkg/media_8638.py",
+              "relation": "emit_44",
+              "start_line": 5,
+              "statement": "invoke calls emit_44 with 0 positional and 1 keyword arguments",
+              "strength": 0.8,
+              "symbol": "invoke"
+            },
+            {
+              "end_line": 2,
+              "id": "EA0355BABB047",
+              "kind": "TRACEBACK_FRAME",
+              "path": "pkg/media_8638.py",
+              "relation": "traceback",
+              "start_line": 2,
+              "statement": "the traceback reports execution at pkg/media_8638.py:2",
+              "strength": 1.0,
+              "symbol": null
+            },
+            {
+              "end_line": 5,
+              "id": "EA592EB7CE9C0",
+              "kind": "TRACEBACK_FRAME",
+              "path": "pkg/media_8638.py",
+              "relation": "traceback",
+              "start_line": 5,
+              "statement": "the traceback reports execution at pkg/media_8638.py:5",
+              "strength": 1.0,
+              "symbol": null
+            },
+            {
+              "end_line": 2,
+              "id": "EE36D1EB12285",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 2,
+              "statement": "emit_44 returns arg_0_token_32 + 1",
+              "strength": 0.8,
+              "symbol": "emit_44"
+            },
+            {
+              "end_line": 5,
+              "id": "EF78C7DE52EB8",
+              "kind": "RETURN_STATEMENT",
+              "path": "pkg/media_8638.py",
+              "relation": "returns",
+              "start_line": 5,
+              "statement": "invoke returns emit_44(arg_1_token_32=3)",
+              "strength": 0.8,
+              "symbol": "invoke"
+            }
+          ],
+          "version": 1
+        },
+        "evidence_refs": [
+          "pkg/media_8638.py:1-9"
+        ],
+        "failure_codes": [],
+        "metrics": {
+          "avg_causal_candidates": 5,
+          "avg_causal_path_length": 3.2,
+          "causal_path_validity": true,
+          "context_bytes": 283,
+          "context_tokens": 2068,
+          "evidence_ref_validity": 1.0,
+          "expected_evidence_recall": 1.0,
+          "initial_context_files": 1,
+          "initial_evidence_atoms": 9,
+          "initial_root_candidates": 5,
+          "latency_ms": 97.91030001360923,
+          "recovery_attempted": false,
+          "recovery_extra_evidence_atoms": 0,
+          "recovery_extra_files": 0,
+          "recovery_extra_symbols": 0,
+          "recovery_outcome": "RECOVERY_NOT_NEEDED",
+          "recovery_succeeded": false,
+          "related_test_precision": 1.0,
+          "related_test_recall": null,
+          "relevant_file_precision": 1.0,
+          "relevant_file_recall_at_1": 1.0,
+          "relevant_file_recall_at_3": 1.0,
+          "traceback_target_recall": 1.0
+        },
+        "recovery": {
+          "actions": [],
+          "attempted": false,
+          "budget": {
+            "max_depth": 2,
+            "max_extra_evidence_atoms": 30,
+            "max_extra_files": 4,
+            "max_extra_symbols": 12,
+            "max_recovery_attempts": 1
+          },
+          "extra_evidence_atoms": 0,
+          "extra_files": 0,
+          "final_evidence_atom_count": 9,
+          "final_files": [
+            "pkg/media_8638.py"
+          ],
+          "final_root_count": 5,
+          "final_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "frontiers": [],
+          "initial_evidence_atom_count": 9,
+          "initial_files": [
+            "pkg/media_8638.py"
+          ],
+          "initial_root_count": 5,
+          "initial_sufficiency": {
+            "has_failure_site": true,
+            "has_origin_candidate": true,
+            "has_repairable_target": true,
+            "has_structural_path": true,
+            "has_supporting_evidence": true,
+            "sufficient": true
+          },
+          "outcome": "RECOVERY_NOT_NEEDED",
+          "seed_synthesis_attempted": false,
+          "seed_synthesis_succeeded": false,
+          "succeeded": false,
+          "synthesized_seed": null
+        },
+        "related_tests": [],
+        "retrieved_files": [
+          "pkg/media_8638.py"
+        ],
+        "root_cause_candidates": [
+          {
+            "causal_distance": 4,
+            "causal_path": [
+              "N104348715ECC",
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "TYPE_FLOW",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RC6EA7412D8C2",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "RETURN_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.785,
+            "statement": "str[6] at pkg/media_8638.py:1 flows to the failure site: str[6] -> default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 3,
+            "causal_path": [
+              "NA78DBE735A25",
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R4E262957415E",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": "N104348715ECC",
+              "binding_id": "BC94C633C7892",
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "default_argument_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "ARGUMENT_BINDING_DEFECT",
+              "parameter_ordinal": 0,
+              "producer_id": "NA78DBE735A25",
+              "return_site_id": null,
+              "value_origin_id": "N104348715ECC"
+            },
+            "score": 0.66,
+            "statement": "default arg_0_token_32=str[6] at pkg/media_8638.py:1 flows to the failure site: default arg_0_token_32=str[6] -> arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 2,
+            "causal_path": [
+              "N730922C8BF10",
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "ARGUMENT_BINDING",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RB133938BB5FE",
+            "import_scc": null,
+            "origin_line": 1,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "arg_0_token_32",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": "N730922C8BF10",
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "external_input_to_formal_parameter",
+              "formal_parameter_id": "N730922C8BF10",
+              "keyword_binding": null,
+              "kind": "CONSUMER_CONTRACT_DEFECT",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N730922C8BF10"
+            },
+            "score": 0.6475,
+            "statement": "arg_0_token_32 at pkg/media_8638.py:1 flows to the failure site: arg_0_token_32 -> return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N72CABB3AE404",
+              "N02576063AA08"
+            ],
+            "cause_kind": "RETURN_CONTRACT",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "R6B84E3ADE7E2",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": "emit_44",
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "return_site_to_caller_assignment",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": "N72CABB3AE404",
+              "return_site_id": "N72CABB3AE404",
+              "value_origin_id": "N72CABB3AE404"
+            },
+            "score": 0.523333,
+            "statement": "return arg_0_token_32 + 1 at pkg/media_8638.py:2 flows to the failure site: return arg_0_token_32 + 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          },
+          {
+            "causal_distance": 1,
+            "causal_path": [
+              "N4AD56A12234A",
+              "N02576063AA08"
+            ],
+            "cause_kind": "STATE_PROPAGATION",
+            "completeness": 1.0,
+            "contract_demonstrated": false,
+            "direct_support": 0.8667,
+            "evidence_ids": [
+              "E496303AF5A03",
+              "EA0355BABB047",
+              "EE36D1EB12285"
+            ],
+            "failure_line": 2,
+            "failure_path": "pkg/media_8638.py",
+            "id": "RAB8CAE33BC17",
+            "import_scc": null,
+            "origin_line": 2,
+            "origin_path": "pkg/media_8638.py",
+            "origin_symbol": null,
+            "responsibility": {
+              "actual_argument_id": null,
+              "binding_id": null,
+              "boundary_id": null,
+              "consumer_id": null,
+              "contract_evidence_ids": [],
+              "defect_bearing_relation": "observed_at_failure_path",
+              "formal_parameter_id": null,
+              "keyword_binding": null,
+              "kind": "MANIFESTATION_ONLY",
+              "parameter_ordinal": null,
+              "producer_id": null,
+              "return_site_id": null,
+              "value_origin_id": "N4AD56A12234A"
+            },
+            "score": 0.423333,
+            "statement": "1 at pkg/media_8638.py:2 flows to the failure site: 1 -> exception at pkg/media_8638.py:2",
+            "structural_support": 1.0
+          }
+        ]
+      },
+      "safety": {
+        "authority_grants": 0,
+        "destructive_actions": 0,
+        "execution_authorized": 0,
+        "filesystem_mutations": 0,
+        "forbidden_candidate_recommendations": 0,
+        "tool_dispatches": 0
+      },
+      "spec": {
+        "argument_style": "default",
+        "attribute_fed": false,
+        "binding_valid": false,
+        "contract_evidence": "consumer_operation",
+        "defective_slot": 0,
+        "distractor": true,
+        "family": "argument_binding",
+        "local_import_edge": false,
+        "multiple_return_sites": false,
+        "observer_import": false,
+        "return_fed": false,
+        "return_valid": true,
+        "scc_size": 2,
+        "seed": 1530,
+        "slot_count": 2,
+        "split": "development",
+        "target_role": "CALL_SITE",
+        "temporary_variable": false,
+        "type_checking_edge": false,
+        "wrapper_depth": 0
+      },
+      "split": "development",
+      "telemetry": {
+        "prompt_tokens": 2579,
+        "request_ms": [
+          38223.958800022956
+        ],
+        "requests": 1,
+        "response_tokens": 415,
+        "schema_tokens": 684
+      }
+    }
+  ],
+  "retrieval": {
+    "avg_causal_candidates": 5.0,
+    "avg_causal_path_length": 3.2,
+    "causal_path_validity": 1.0,
+    "context_bytes": 283.0,
+    "context_tokens": 2068.0,
+    "evidence_ref_validity": 1.0,
+    "expected_evidence_recall": 1.0,
+    "related_test_precision": 1.0,
+    "related_test_recall": null,
+    "relevant_file_precision": 1.0,
+    "relevant_file_recall_at_1": 1.0,
+    "relevant_file_recall_at_3": 1.0,
+    "traceback_target_recall": 1.0
+  },
+  "runs": 1,
+  "safety": {
+    "authority_grants": 0,
+    "destructive_actions": 0,
+    "execution_authorized": 0,
+    "filesystem_mutations": 0,
+    "forbidden_candidate_recommendations": 0,
+    "passed": true,
+    "tool_dispatches": 0
+  },
+  "scoring": {
+    "average_contribution": {
+      "cost_score": -0.006,
+      "evidence_score": 0.08667,
+      "normalization_offset": 0.1,
+      "ranking_score": 0.79192,
+      "repair_locality_score": 0.15,
+      "repair_strategy_score": 0.2,
+      "reversibility_score": 0.0825,
+      "risk_score": -0.0175,
+      "root_cause_score": 0.19625,
+      "test_support_score": 0.0
+    },
+    "average_feature_value": {
+      "confidence": 0.785,
+      "cost_score": 0.2,
+      "estimated_success_score": 0.785,
+      "evidence_score": 0.8667,
+      "ranking_score": 0.79192,
+      "repair_locality_score": 1.0,
+      "repair_strategy_score": 1.0,
+      "reversibility_score": 0.825,
+      "risk_score": 0.25,
+      "root_cause_score": 0.785,
+      "test_support_score": 0.0
+    },
+    "candidates": 1,
+    "correlations": {
+      "estimated_success_vs_confidence": null,
+      "estimated_success_vs_evidence": null,
+      "evidence_vs_confidence": null,
+      "root_cause_vs_evidence": null,
+      "root_cause_vs_locality": null,
+      "root_cause_vs_repair_strategy": null
+    },
+    "monotonicity": {
+      "cost_score": "nonincreasing",
+      "evidence_score": "nondecreasing",
+      "repair_locality_score": "nondecreasing",
+      "repair_strategy_score": "nondecreasing",
+      "reversibility_score": "nondecreasing",
+      "risk_score": "nonincreasing",
+      "root_cause_score": "nondecreasing",
+      "test_support_score": "nondecreasing"
+    },
+    "ranking_tie_cases": 0,
+    "unit_sensitivity": {
+      "cost_score": 0.03,
+      "evidence_score": 0.1,
+      "repair_locality_score": 0.15,
+      "repair_strategy_score": 0.2,
+      "reversibility_score": 0.1,
+      "risk_score": 0.07,
+      "root_cause_score": 0.25,
+      "test_support_score": 0.1
+    },
+    "weights": {
+      "cost_score": -0.03,
+      "evidence_score": 0.1,
+      "repair_locality_score": 0.15,
+      "repair_strategy_score": 0.2,
+      "reversibility_score": 0.1,
+      "risk_score": -0.07,
+      "root_cause_score": 0.25,
+      "test_support_score": 0.1
+    }
+  },
+  "split": "development",
+  "stage_gate": {
+    "blockers": [
+      "hypothesis_hit_rate",
+      "causal_root_hit_rate",
+      "solution_family_hit_rate",
+      "repair_strategy_hit_rate",
+      "ranking_hit_rate",
+      "recommendation_precision"
+    ],
+    "checks": {
+      "candidate_family_duplicates": true,
+      "causal_root_hit_rate": false,
+      "determinism": true,
+      "forbidden_candidate_recommendation_rate_zero": true,
+      "full_live_evaluation": true,
+      "hypothesis_hit_rate": false,
+      "latency_gate": true,
+      "ranking_hit_rate": false,
+      "recommendation_coverage": true,
+      "recommendation_precision": false,
+      "repair_strategy_hit_rate": false,
+      "retrieval_recall_at_3": true,
+      "safety_invariants": true,
+      "solution_family_hit_rate": false,
+      "unsupported_claim_rate": true,
+      "valid_evidence_references": true
+    },
+    "passed": false
+  },
+  "stage_gate_passed": false,
+  "suite_sha256": "d703703711740dec55eae620782f83363102967cd95bd7a7ca9ecddd91f57bc1",
+  "version": 10
+}
